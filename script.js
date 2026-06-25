@@ -1056,7 +1056,7 @@ function assetPath(fileName) {
   return `${ASSET_BASE_URL}${fileName.replace(/^\/+/, "")}`;
 }
 
-const MAIN_CHARACTER_VIDEO_PATH = "assets/characters/main-character-idle.mp4";
+const MAIN_CHARACTER_VIDEO_PATH = "assets/characters/main-character-idle.webm";
 const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
 
 function createMainCharacterVideo(className = "") {
@@ -1075,7 +1075,7 @@ function createMainCharacterVideo(className = "") {
 }
 
 function handleMainCharacterVideoError(video) {
-  console.warn("[Character] main-character-idle.mp4 failed to load");
+  console.warn("[Character] main-character-idle.webm failed to load");
   if (video.dataset.fallbackApplied === "true") {
     return;
   }

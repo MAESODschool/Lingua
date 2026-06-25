@@ -609,9 +609,6 @@ button {
   object-position: center bottom;
   background: transparent !important;
   background-color: transparent !important;
-  /* MP4 does not support real transparency. This blend mode is a temporary workaround for black video background. */
-  mix-blend-mode: screen;
-  filter: contrast(1.05) saturate(1.05);
   pointer-events: none;
 }
 
@@ -630,7 +627,7 @@ button {
   background: transparent !important;
   background-color: transparent !important;
   box-shadow: none;
-  filter: contrast(1.05) saturate(1.05) drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
+  filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
 }
 
 #avatarPreview.main-character-video {
@@ -1704,7 +1701,7 @@ h3 {
 .main-character-video.wanderer-avatar {
   background: transparent !important;
   background-color: transparent !important;
-  filter: contrast(1.05) saturate(1.05) drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
+  filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
 }
 
 .main-character-video-fallback.wanderer-avatar {
