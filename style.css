@@ -599,22 +599,38 @@ button {
   background: radial-gradient(circle, rgba(115, 246, 255, 0.28), transparent 68%);
 }
 
-.main-character-video {
+.main-character-video,
+.player-character-video,
+.character-video {
   display: block;
   width: 100%;
   height: auto;
   object-fit: contain;
   object-position: center bottom;
+  background: transparent !important;
+  background-color: transparent !important;
+  /* MP4 does not support real transparency. This blend mode is a temporary workaround for black video background. */
   mix-blend-mode: screen;
+  filter: contrast(1.05) saturate(1.05);
   pointer-events: none;
+}
+
+.main-character-video-wrapper,
+.player-character,
+.player-sprite,
+.character-slot,
+.vn-character:has(.main-character-video) {
+  background: transparent !important;
+  overflow: visible;
 }
 
 #avatarPreview.main-character-video,
 .main-character-video.character-avatar {
   border-radius: 0;
-  background: transparent;
+  background: transparent !important;
+  background-color: transparent !important;
   box-shadow: none;
-  filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
+  filter: contrast(1.05) saturate(1.05) drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
 }
 
 #avatarPreview.main-character-video {
@@ -1683,11 +1699,16 @@ h3 {
 .main-character-video-fallback.wanderer-avatar {
   border-radius: 0;
   box-shadow: none;
-  filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
 }
 
 .main-character-video.wanderer-avatar {
-  background: transparent;
+  background: transparent !important;
+  background-color: transparent !important;
+  filter: contrast(1.05) saturate(1.05) drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
+}
+
+.main-character-video-fallback.wanderer-avatar {
+  filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
 }
 
 .wanderer-avatar::before,
