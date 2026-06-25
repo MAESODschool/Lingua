@@ -1220,6 +1220,15 @@ Object.values(bgmTracks).forEach(track => {
   track.volume = 0.45;
 });
 
+const sfxTracks = {
+  dialogueType: new Audio(assetPath("sfx/dialogue-type.weba"))
+};
+
+Object.values(sfxTracks).forEach(track => {
+  track.loop = true;
+  track.volume = 0.28;
+});
+
 const els = {
   muteButton: document.getElementById("muteButton"),
   googleMockButton: document.getElementById("googleMockButton"),
@@ -1331,6 +1340,9 @@ const els = {
 };
 
 function showScene(name) {
+  if (name !== "story") {
+    stopDialogueTypeSfx();
+  }
   Object.values(scenes).forEach(scene => scene.classList.remove("active"));
   scenes[name].classList.add("active");
   playBgmForScene(name);
@@ -1370,6 +1382,35 @@ function playBgm(key) {
   bgmTracks[key].play().catch(() => {});
 }
 
+function shouldPlayDialogueTypeSfx() {
+  return state.lessonStoryMode
+    && state.isTypingDialogue
+    && state.audioUnlocked
+    && !state.isMuted
+    && scenes.story
+    && scenes.story.classList.contains("active");
+}
+
+function playDialogueTypeSfx() {
+  const track = sfxTracks.dialogueType;
+  if (!track || !shouldPlayDialogueTypeSfx()) {
+    return;
+  }
+
+  track.currentTime = 0;
+  track.play().catch(() => {});
+}
+
+function stopDialogueTypeSfx() {
+  const track = sfxTracks.dialogueType;
+  if (!track) {
+    return;
+  }
+
+  track.pause();
+  track.currentTime = 0;
+}
+
 function unlockAudio() {
   if (state.audioUnlocked) {
     return;
@@ -1377,6 +1418,9 @@ function unlockAudio() {
   state.audioUnlocked = true;
   const activeScene = Object.keys(scenes).find(key => scenes[key].classList.contains("active")) || "login";
   playBgmForScene(activeScene);
+  if (shouldPlayDialogueTypeSfx()) {
+    playDialogueTypeSfx();
+  }
 }
 
 function toggleMute() {
@@ -1387,6 +1431,13 @@ function toggleMute() {
       track.pause();
     }
   });
+  Object.values(sfxTracks).forEach(track => {
+    track.muted = state.isMuted;
+  });
+
+  if (state.isMuted) {
+    stopDialogueTypeSfx();
+  }
 
   if (els.muteButton) {
     els.muteButton.textContent = state.isMuted ? "เสียง: ปิด" : "เสียง: เปิด";
@@ -1397,6 +1448,9 @@ function toggleMute() {
     unlockAudio();
     const activeScene = Object.keys(scenes).find(key => scenes[key].classList.contains("active")) || "login";
     playBgmForScene(activeScene);
+    if (shouldPlayDialogueTypeSfx()) {
+      playDialogueTypeSfx();
+    }
   }
 }
 
@@ -2412,6 +2466,7 @@ function startTypewriter(text) {
   state.isTypingDialogue = true;
   els.dialogueText.textContent = "";
   setDialogueButtonReady(false);
+  playDialogueTypeSfx();
   typeNextCharacter();
 }
 
@@ -2579,6 +2634,7 @@ function stopTypewriter() {
   }
 
   state.typewriterTimer = null;
+  stopDialogueTypeSfx();
 }
 
 function setDialogueButtonReady(isReady) {
