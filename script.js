@@ -1221,7 +1221,7 @@ Object.values(bgmTracks).forEach(track => {
 });
 
 const sfxTracks = {
-  dialogueType: new Audio(assetPath("sfx/dialogue-type.weba"))
+  dialogueType: new Audio(assetPath("sfx/dialogue-type.mp3"))
 };
 
 Object.values(sfxTracks).forEach(track => {
