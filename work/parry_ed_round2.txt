@@ -1,0 +1,365 @@
+You are working on an existing HTML/CSS/JavaScript prototype of a fantasy grammar RPG called “Lingua: A Grammaria RPG”.
+Current project files:
+index.html
+style.css
+script.js
+IMPORTANT:
+Modify the actual working files. Do not only summarize. Do not simulate. Do not say it is done unless the playable UI is actually changed.
+Main goal:
+Improve the current ACT: The Past Fragment so that it teaches students properly before battles begin.
+The current battle system is mostly okay, but the major problem is:
+there is not enough lesson content before each stage
+students are sent into battle too quickly
+students still do not understand what “past” means
+regular verb rules are not explained clearly enough before practice/battle
+So fix the learning flow first.
+1. Main direction
+Please revise the game so that each major stage has this order:
+Story / dialogue introduction
+Lesson content / explanation
+Small practice / mini drills
+Then battle
+Do NOT send the student straight into battle before the lesson.
+The learning content must be expanded clearly, especially:
+What is the past?
+What is tense?
+What is V2?
+What is the difference between regular and irregular verbs?
+How to add -ed properly
+How to recognize the different regular verb spelling rules
+2. Lesson structure that must be added
+PART 1 — Teach “What is the past?” first
+Before teaching V2, create a full lesson section to help students understand the concept of past / present / future.
+Use Thai examples first.
+Show these Thai example sentences clearly:
+ฉันกินข้าววันนี้
+ฉันกินข้าวเมื่อวาน
+ฉันจะกินข้าวพรุ่งนี้
+Master Verion should explain in Thai:
+“ลองดู 3 ประโยคนี้ก่อน ผู้พเนจร ทั้งสามประโยคพูดถึงเวลาไม่เหมือนกัน
+ประโยคแรกคือวันนี้
+ประโยคที่สองคือเมื่อวาน
+และประโยคที่สามคือพรุ่งนี้”
+Then explain:
+วันนี้ = ปัจจุบัน
+เมื่อวาน = อดีต
+พรุ่งนี้ = อนาคต
+Then explain:
+“ภาษาไทยไม่ว่าจะเป็นวันนี้ เมื่อวาน หรือพรุ่งนี้
+คำกริยา ‘กิน’ ไม่ได้เปลี่ยนรูปมากนัก
+เราอาศัยคำบอกเวลาเป็นตัวช่วยให้รู้ว่าเหตุการณ์เกิดขึ้นตอนไหน”
+Then connect to English:
+Show:
+I go
+I went
+I will go
+Master Verion explains:
+“แต่ภาษาอังกฤษไม่เหมือนภาษาไทย
+ภาษาอังกฤษใช้รูปของคำกริยาเพื่อบอกเวลา
+I go = ปัจจุบัน
+I went = อดีต
+I will go = อนาคต
+นี่แหละคือแนวคิดของคำว่า tense
+เพราะฉะนั้นเราต้องใช้ให้ถูกต้อง”
+Then say:
+“วันนี้เราจะเน้นเรื่องอดีต
+และการใช้คำกริยาช่องที่ 2 หรือ V2”
+Add a small Thai concept check before moving on.
+Use 4–5 simple questions such as:
+ประโยคใดเป็นอดีต
+คำว่า “เมื่อวาน” คือเวลาใด
+คำว่า “พรุ่งนี้” คือเวลาใด
+คำว่า “วันนี้” คือเวลาใด
+“เกิดขึ้นแล้ว” หมายถึงเวลาใด
+This lesson should feel like a real teaching part, not just one short textbox.
+PART 2 — Teach V2 clearly
+After students understand past/present/future, then start V2.
+Explain:
+“กริยาช่องที่ 2 หรือ V2 คือรูปของคำกริยาที่ใช้พูดถึงเหตุการณ์ในอดีต”
+Then explain that V2 has 2 main types:
+Regular Verbs
+Irregular Verbs
+Start with Regular Verbs first.
+Explain clearly:
+what regular verbs are
+that they usually follow spelling rules
+that students must learn each rule step by step
+Then teach Regular Verbs in separated sub-lessons.
+PART 2A — Regular verbs rule 1
+Rule 1:
+General verbs add -ed
+Examples:
+walk → walked
+jump → jumped
+wash → washed
+look → looked
+open → opened
+After teaching this rule, give a short practice drill immediately.
+Do NOT wait until the end.
+Then after practice, fight a weak small enemy.
+Small practice enemy themes should be related to time / past / rewind / memory.
+Examples of small enemies:
+Time Dust
+Echo Tick
+Yesterday Sprite
+Rewind Slime
+These are light practice enemies, not bosses.
+PART 2B — Regular verbs rule 2
+Rule 2:
+Verbs ending with e add only -d
+Examples:
+like → liked
+love → loved
+live → lived
+dance → danced
+close → closed
+Teach first.
+Then short practice.
+Then a light enemy battle or mini drill.
+PART 2C — Regular verbs rule 3
+Rule 3:
+Verbs ending with y
+Case A:
+If there is a vowel before y, add -ed normally
+play → played
+enjoy → enjoyed
+stay → stayed
+Case B:
+If there is a consonant before y, change y to i and add -ed
+study → studied
+cry → cried
+try → tried
+carry → carried
+Teach first.
+Then short practice.
+Then light enemy battle or mini drill.
+PART 2D — Regular verbs rule 4
+Rule 4:
+Short CVC verbs double the final consonant before adding -ed
+Examples:
+stop → stopped
+plan → planned
+drop → dropped
+clap → clapped
+Teach first.
+Then short practice.
+Then light enemy battle or mini drill.
+Make the rule label clear:
+“CVC = พยัญชนะ + สระ + พยัญชนะ”
+Students should be able to see the categories clearly:
+เติม -ed
+ลงท้าย e เติม -d
+ลงท้าย y
+CVC doubled consonant
+3. Mini Boss for Regular Verbs
+After all regular verb rules are taught and practiced, THEN start the mini boss.
+Mini Boss:
+The -ed Forger
+This mini boss should use the full battle system.
+Requirements:
+15 regular verb questions
+Use all previously discussed battle mechanics
+In each turn:
+student answers a question
+then the boss prepares an attack
+warning appears first
+then student presses a button to prepare
+then parry phase starts
+Boss can use:
+normal attack
+strong skill
+ultimate attack
+Very important:
+If the boss is going to attack, do NOT instantly jump into parry.
+Instead:
+show a warning message
+show a button like “เตรียมพร้อม” / “Prepare”
+let the student press it
+then enter the parry screen
+This is so students have time to focus.
+Also:
+If the boss is using a stronger skill or ultimate, warn the player clearly first.
+Add a short delay after the warning, do not rush.
+4. PART 3 — Irregular Verbs
+After Regular Verbs, create a full lesson section for Irregular Verbs.
+Explain clearly:
+“Irregular Verbs คือคำกริยาที่ไม่เปลี่ยนเป็นอดีตด้วยการเติม -ed
+แต่จะเปลี่ยนรูปไปเอง
+ดังนั้นต้องจำเป็นคำ ๆ ไป”
+Then compare clearly:
+Regular:
+walk → walked
+play → played
+study → studied
+Irregular:
+go → went
+eat → ate
+see → saw
+buy → bought
+Then teach and drill before battle.
+Add:
+small drills
+some matching or multiple-choice practice
+then a light enemy or practice sequence
+then the mini boss
+5. Mini Boss for Irregular Verbs
+Mini Boss:
+The Irregular Wraith
+Requirements:
+15 irregular verb questions
+full battle system
+answer + parry in one turn
+boss attack warnings first
+player must press “เตรียมพร้อม” before parry
+use the improved parry system below
+boss may use normal, skill, or ultimate
+strong skill / ultimate must have special warning
+6. Story twist before final boss
+After the first three main learning sections are complete:
+past / tense lesson
+regular verbs
+irregular verbs
+Show a story scene where the defeated bosses are not truly gone.
+Story idea:
+The -ed Forger and The Irregular Wraith are not dead.
+Their broken letters rise into the air and merge together.
+Use this idea:
+Boss dialogue:
+“อดีตไม่ได้แตกเพราะกฎข้อเดียว...
+แต่มันแตกเพราะทุกคนเล่ามันผิดซ้ำแล้วซ้ำเล่า”
+Then the two bosses merge into:
+Final Boss:
+The Memory Breaker / ผู้ทำลายความทรงจำ
+Then start the final battle.
+7. Final Boss requirements
+Final Boss:
+The Memory Breaker
+Requirements:
+20 questions
+medium difficulty
+mix all V2 content
+include:
+regular verb changes
+irregular verb changes
+sentence completion
+choosing the correct sentence
+During the battle, insert boss dialogue lines sometimes.
+The boss should speak about why the past matters, and why it does not want to merge with present and future.
+Example themes:
+the past is the root of everything
+the past does not want to be forgotten
+the present and future try to leave the past behind
+memories told wrongly create wounds
+After final victory, Master Verion should summarize the whole lesson clearly.
+8. Battle system changes
+The battle system is okay overall, but please change the parry system.
+8.1 Warning timing is too fast
+Slow it down.
+When the enemy is about to attack:
+show a warning first
+show a button for the student to press:
+“เตรียมพร้อม”
+only after the student presses that button should the parry interface begin
+This gives the player time to prepare mentally.
+8.2 Replace current parry system
+Do NOT use countdown anymore.
+Create a new parry mechanic like this:
+There is a parry bar
+A green target zone moves
+A white line / marker also moves quickly across the bar
+The player must tap at the right moment so the white line lands inside the green zone
+The green zone becomes smaller over time
+If the player reacts too slowly, it becomes harder
+This should create a more skill-based timing system.
+Important:
+the green zone must move
+the white line must move quickly
+the green zone shrinks gradually over time
+the player must tap to stop / trigger the white line at the correct moment
+This new parry system replaces the old countdown-based parry.
+8.3 Turn clarity in battle UI
+During battle, make it visually clear whose turn it is.
+Requirement:
+When it is a character’s turn, make that character appear larger / emphasized.
+Examples:
+If it is the player’s turn, enlarge or highlight the player character
+If it is the enemy’s turn, enlarge or highlight the enemy
+This should help students immediately know whose turn it is.
+9. Lesson / dialogue UI improvements
+During dialogue and teaching scenes, use different message box colors for different speakers.
+Requirement:
+Player speech = one color
+Master Verion speech = another color
+System / narration / teaching script = another color
+This should make the lessons easier to follow.
+Example:
+Player = blue box
+Master Verion = purple or gold box
+System / lesson explanation = dark panel or neutral panel
+Do not use the same box style for all speakers.
+10. Use attached player character image
+I have attached a character image reference.
+Please add this character image as the main protagonist visual for the game.
+Use the attached chibi boy mage as the main player character:
+brown hair
+big brown eyes
+blue fantasy mage outfit
+crystal staff
+cute chibi fantasy RPG style
+Use it in:
+lesson scenes
+dialogue scenes
+battle scenes
+character/profile display if appropriate
+If needed, copy the image into the project assets and reference it locally.
+Do not hotlink external images.
+Use relative paths only.
+11. Files to edit
+Please modify the actual files:
+index.html
+style.css
+script.js
+You may create a simple local assets folder if necessary for the protagonist image, as long as paths remain relative.
+Do not use external libraries.
+Do not remove working systems unnecessarily.
+Keep:
+login
+guest login
+player data
+existing mobile-friendly structure
+fantasy RPG style
+12. Acceptance criteria
+When I open the game, I should be able to see:
+A proper lesson about:
+what past means
+Thai examples first
+then English tense comparison
+Before every major battle, there should be a real lesson first.
+Regular Verbs should be taught clearly in separate parts:
+add -ed
+ending in e
+ending in y
+CVC doubled consonant
+After each rule, there should be practice before battle.
+The student should not be thrown directly into battle without learning.
+Boss battles should use:
+answer question
+warning
+prepare button
+parry phase
+The new parry system should work with:
+moving green zone
+moving white line
+shrinking target zone over time
+In battle, the active turn owner should be visually enlarged or highlighted.
+In lesson scenes, player / teacher / system text boxes should have different colors.
+The attached protagonist image should appear as the main character.
+After the final boss, Master Verion should summarize the lesson.
+13. End-of-task report
+After editing, report:
+Files changed
+Main functions / variables added or modified
+How to test the new lesson flow and battle flow
+Any limitations
+Again:
+Do not only summarize. Modify the actual files.

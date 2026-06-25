@@ -1,0 +1,160 @@
+Fix this specific screen only.
+Current broken screen:
+A modal/panel appears with:
+ระบบสอนเล่น
+อดีตคืออะไร
+สรุปแนวคิดสำคัญ
+บทเรียน
+สิ่งใดก็ตามที่เกิดขึ้นแล้ว และจบลงแล้ว สิ่งนั้นคืออดีต
+This is NOT acceptable for the main teaching flow.
+Problem:
+This screen is still a summary modal / content card.
+It is not a real teaching scene.
+Students are just being shown a card to read.
+Do NOT present “อดีตคืออะไร” as this modal/card.
+Required change:
+Remove this summary-card style from the main lesson flow and replace it with a step-by-step dialogue teaching sequence in the normal lesson scene.
+Important:
+The “ดูคำอธิบาย” button may still open a summary modal.
+But the main lesson flow must NOT use this modal.
+What to change
+Find the lesson step / render logic that creates this exact screen:
+Title:
+อดีตคืออะไร
+Subtitle:
+สรุปแนวคิดสำคัญ
+Content card:
+สิ่งใดก็ตามที่เกิดขึ้นแล้ว และจบลงแล้ว สิ่งนั้นคืออดีต
+Remove this from the main lesson path.
+Replace it with these separate dialogue steps.
+New step-by-step teaching sequence
+Use the normal lesson scene with:
+background
+player character
+Master Verion
+dialogue box
+next button
+occasional interaction
+Do NOT use the summary modal.
+Step 1: Master Verion dialogue
+Speaker:
+มาสเตอร์เวรีออน
+Text:
+“ผู้พเนจรเอ๋ย ก่อนที่เราจะก้าวเข้าสู่ดินแดนแห่งอดีต เจ้าต้องเข้าใจก่อนว่า ‘อดีต’ คืออะไร”
+Button:
+ถัดไป
+Step 2: Master Verion dialogue
+Speaker:
+มาสเตอร์เวรีออน
+Text:
+“อดีตไม่ได้หมายถึงแค่เมื่อวาน เดือนที่แล้ว หรือปีที่แล้วเท่านั้น”
+Button:
+ถัดไป
+Step 3: Master Verion dialogue
+Speaker:
+มาสเตอร์เวรีออน
+Text:
+“สิ่งใดก็ตามที่เกิดขึ้นแล้ว และจบลงแล้ว สิ่งนั้นคืออดีต”
+Button:
+ถัดไป
+Step 4: Example thought bubbles
+Show this as visual example bubbles/cards, not as a modal summary.
+Title:
+ตัวอย่างของอดีต
+Cards:
+1 วินาทีที่แล้ว
+10 นาทีที่แล้ว
+เมื่อเช้าที่ผ่านมา
+เมื่อวาน
+ปีที่แล้ว
+Master Verion text:
+“เห็นไหม แม้แต่หนึ่งวินาทีก่อนหน้านี้ ก็กลายเป็นอดีตแล้ว เพราะมันเกิดขึ้นและผ่านไปแล้ว”
+Button:
+ถัดไป
+Step 5: Player interaction
+Master Verion asks:
+“ถ้าอย่างนั้น เจ้าคิดว่าข้อใดเป็นอดีต?”
+Choices:
+สิ่งที่กำลังเกิดขึ้นตอนนี้
+สิ่งที่เกิดขึ้นแล้วและจบลงแล้ว
+สิ่งที่ยังไม่เกิดขึ้น
+Correct answer:
+สิ่งที่เกิดขึ้นแล้วและจบลงแล้ว
+If correct, show Master Verion response:
+“ถูกต้อง อดีตคือร่องรอยของสิ่งที่เกิดขึ้นแล้ว และจบลงแล้ว”
+If wrong, show Master Verion response:
+“ยังไม่ใช่ ลองจำไว้ว่า อดีตต้องเป็นสิ่งที่เกิดขึ้นแล้ว และจบลงแล้ว”
+After feedback, continue with next step.
+Step 6: Connect to Thai examples
+Speaker:
+มาสเตอร์เวรีออน
+Text:
+“คราวนี้ลองมองประโยคภาษาไทยสามประโยคนี้ เจ้าจะเห็นว่าเวลาในประโยคต่างกัน แม้คำกริยาจะยังดูคล้ายเดิม”
+Show example cards:
+ฉันกินข้าววันนี้
+ฉันกินข้าวเมื่อวาน
+ฉันจะกินข้าวพรุ่งนี้
+Button:
+ถัดไป
+Step 7: Explain Thai time words
+Speaker:
+มาสเตอร์เวรีออน
+Text:
+“คำว่า วันนี้ บอกปัจจุบัน คำว่า เมื่อวาน บอกอดีต และคำว่า พรุ่งนี้ บอกอนาคต ภาษาไทยมักใช้คำบอกเวลาเหล่านี้ช่วยบอกว่าเหตุการณ์เกิดขึ้นตอนไหน”
+Show labels:
+วันนี้ = ปัจจุบัน
+เมื่อวาน = อดีต
+พรุ่งนี้ = อนาคต
+Button:
+ถัดไป
+Step 8: Then move to English tense
+Speaker:
+มาสเตอร์เวรีออน
+Text:
+“แต่ภาษาอังกฤษต่างออกไปเล็กน้อย ภาษาอังกฤษไม่ได้ดูแค่คำบอกเวลาเท่านั้น แต่ยังดูรูปของคำกริยาด้วย”
+Show example cards:
+I go. = Present (ปัจจุบัน)
+I went. = Past (อดีต)
+I will go. = Future (อนาคต)
+Button:
+ถัดไป
+UI requirements
+For all the steps above:
+Do not show the modal title “ระบบสอนเล่น”.
+Do not show “สรุปแนวคิดสำคัญ” in the main lesson flow.
+Do not show the small blue “บทเรียน” summary card as the main teaching content.
+Use the normal lesson scene layout instead.
+Show Master Verion and the player character.
+Use dialogue boxes with speaker name.
+Use example bubbles/cards only as supporting visuals.
+Use one idea per screen.
+Use the main bottom button as “ถัดไป” or “ตอบคำถาม” depending on the step.
+The screen should feel like Master Verion is teaching, not like a summary popup.
+Summary modal rule
+The summary modal is allowed ONLY when the user clicks:
+ดูคำอธิบาย
+or
+ทบทวนเนื้อหา
+It must not appear automatically as part of the main lesson flow.
+So:
+Main lesson = dialogue teaching scene
+ดูคำอธิบาย = optional summary modal
+ทบทวนเนื้อหา = optional summary modal
+Acceptance criteria
+After this fix:
+When starting the lesson “อดีตคืออะไร”, I should NOT see the modal/card screen with:
+ระบบสอนเล่น
+สรุปแนวคิดสำคัญ
+blue card “บทเรียน”
+I should instead see Master Verion speaking step by step.
+The definition of past should be taught through dialogue:
+“สิ่งใดก็ตามที่เกิดขึ้นแล้ว และจบลงแล้ว สิ่งนั้นคืออดีต”
+Examples like 1 วินาทีที่แล้ว, 10 นาทีที่แล้ว, เมื่อเช้าที่ผ่านมา should appear as visual example cards/bubbles.
+The player should get an interactive choice question after the explanation.
+The main lesson flow should continue normally after this sequence.
+The optional “ดูคำอธิบาย” button can still show a summary modal, but only when clicked.
+Please modify the actual files and report:
+files changed
+function/render section changed
+where this specific modal was removed from the main lesson flow
+how to test this exact lesson screen

@@ -1,0 +1,273 @@
+const PAST_FRAGMENT_ACT = {
+  id: "past-fragment",
+  title: "ACT: The Past Fragment",
+  subtitle: "ภารกิจฟื้นคืนอดีตด้วยคำกริยาช่องที่ 2",
+  reward: "Past Fragment",
+  badge: "ผู้ฟื้นคืนอดีต",
+  objectives: [
+    "เข้าใจอดีต ปัจจุบัน และอนาคตจากตัวอย่างภาษาไทย",
+    "เข้าใจแนวคิด tense ว่าภาษาอังกฤษเปลี่ยนรูปกริยาเพื่อบอกเวลา",
+    "ใช้ V2 เพื่อเล่าเหตุการณ์ที่เกิดขึ้นแล้ว",
+    "เติม -ed / -d ให้ Regular Verbs ได้ถูกต้อง",
+    "จำและใช้ Irregular Verbs พื้นฐานได้",
+    "เลือก V2 ในประโยค Past Simple ได้"
+  ],
+  stages: [
+    {
+      id: "prologue",
+      type: "story",
+      title: "เงาแห่งอดีตที่แตกสลาย",
+      dialogues: [
+        { speaker: "ระบบบรรยาย", text: "\"ประตูแห่งอดีตเปิดออกพร้อมหมอกสีม่วง เศษประโยคผิดรูปลอยอยู่รอบหอคอยแห่ง Unity\"" },
+        { speaker: "ระบบบรรยาย", text: "\"Yesterday, I go to school. Last night, she eat dinner. Two days ago, they play football. ประโยคเหล่านั้นแตกร้าวราวกับความทรงจำที่ถูกเล่าผิด\"" },
+        { speaker: "ผู้พเนจร", text: "\"ทำไมประโยคพวกนี้ถึงแตกออกครับ?\"" },
+        { speaker: "มาสเตอร์เวรีออน", text: "\"เพราะมันกำลังเล่าเรื่องในอดีต แต่หัวใจของประโยคยังติดอยู่ในปัจจุบัน ก่อนจะใช้ V2 ได้ เจ้าต้องเข้าใจก่อนว่าอดีตคืออะไร\"" }
+      ]
+    },
+    {
+      id: "what-is-past",
+      type: "lesson-quiz",
+      title: "What is the Past?",
+      thaiTitle: "อดีตคืออะไร",
+      enemy: "Time Dust",
+      thaiEnemy: "ฝุ่นเวลา",
+      completionKey: "introCompleted",
+      reward: { grammaria: 30, fragment: "Time Spark" },
+      lesson: [
+        "มาสเตอร์เวรีออน: ลองดู 3 ประโยคนี้ก่อน ผู้พเนจร ทั้งสามประโยคพูดถึงเวลาไม่เหมือนกัน",
+        "ภาษาไทย: ฉันกินข้าววันนี้",
+        "ภาษาไทย: ฉันกินข้าวเมื่อวาน",
+        "ภาษาไทย: ฉันจะกินข้าวพรุ่งนี้",
+        "วันนี้ = ปัจจุบัน",
+        "เมื่อวาน = อดีต",
+        "พรุ่งนี้ = อนาคต",
+        "ภาษาไทยไม่ว่าจะเป็นวันนี้ เมื่อวาน หรือพรุ่งนี้ คำกริยา 'กิน' ไม่ได้เปลี่ยนรูปมากนัก เราใช้คำบอกเวลาเป็นตัวช่วยให้รู้ว่าเหตุการณ์เกิดขึ้นตอนไหน"
+      ],
+      questions: [
+        { prompt: "ประโยคใดเป็นเหตุการณ์ในอดีต", options: ["ฉันกินข้าววันนี้", "ฉันกินข้าวเมื่อวาน", "ฉันจะกินข้าวพรุ่งนี้"], answer: "ฉันกินข้าวเมื่อวาน", explanation: "คำว่า เมื่อวาน บอกว่าเหตุการณ์เกิดขึ้นแล้ว จึงเป็นอดีต" },
+        { prompt: "คำว่า 'พรุ่งนี้' บอกเวลาใด", options: ["อดีต", "ปัจจุบัน", "อนาคต"], answer: "อนาคต", explanation: "พรุ่งนี้คือเวลาที่ยังมาไม่ถึง จึงเป็นอนาคต" },
+        { prompt: "คำว่า 'วันนี้' มักใช้พูดถึงเวลาใด", options: ["อดีต", "ปัจจุบัน", "อนาคต"], answer: "ปัจจุบัน", explanation: "วันนี้คือเวลาที่กำลังเกิดขึ้นหรือเกี่ยวข้องกับปัจจุบัน" },
+        { prompt: "คำว่า 'เมื่อวาน' บอกว่าเหตุการณ์เป็นอย่างไร", options: ["เกิดขึ้นแล้ว", "กำลังเกิดขึ้น", "ยังไม่เกิดขึ้น"], answer: "เกิดขึ้นแล้ว", explanation: "เมื่อวานคือเวลาที่ผ่านไปแล้ว" },
+        { prompt: "ประโยค 'ฉันจะกินข้าวพรุ่งนี้' เป็นเวลาใด", options: ["อดีต", "ปัจจุบัน", "อนาคต"], answer: "อนาคต", explanation: "คำว่า จะ และ พรุ่งนี้ บอกว่าเหตุการณ์ยังไม่เกิดขึ้น" }
+      ]
+    },
+    {
+      id: "what-is-tense",
+      type: "lesson-quiz",
+      title: "What is Tense?",
+      thaiTitle: "Tense คืออะไร",
+      enemy: "Echo Tick",
+      thaiEnemy: "ติ๊กสะท้อนอดีต",
+      completionKey: "tenseLessonCompleted",
+      reward: { grammaria: 30, fragment: "Tense Spark" },
+      lesson: [
+        "เปรียบเทียบภาษาไทย: ฉันกินข้าววันนี้ / ฉันกินข้าวเมื่อวาน / ฉันจะกินข้าวพรุ่งนี้",
+        "เปรียบเทียบภาษาอังกฤษ: I go. / I went. / I will go.",
+        "มาสเตอร์เวรีออน: ในภาษาไทย คำกริยามักไม่เปลี่ยนรูปมากนัก แต่ในภาษาอังกฤษไม่ใช่แบบนั้น ภาษาอังกฤษใช้รูปของกริยาเพื่อบอกเวลา นี่แหละคือแนวคิดของคำว่า tense",
+        "I go. = ปัจจุบัน / Present",
+        "I went. = อดีต / Past",
+        "I will go. = อนาคต / Future",
+        "วันนี้เราจะเน้นพลังของอดีต นั่นคือการใช้กริยาช่องที่ 2 หรือ V2"
+      ],
+      questions: [
+        { prompt: "I go. เป็นเวลาใด", options: ["Present", "Past", "Future"], answer: "Present", explanation: "go เป็นรูปปัจจุบัน" },
+        { prompt: "I went. เป็นเวลาใด", options: ["Present", "Past", "Future"], answer: "Past", explanation: "went เป็น V2 ใช้พูดถึงอดีต" },
+        { prompt: "I will go. เป็นเวลาใด", options: ["Present", "Past", "Future"], answer: "Future", explanation: "will + V1 ใช้พูดถึงอนาคต" },
+        { prompt: "ถ้าจะเล่าเรื่องที่เกิดขึ้นเมื่อวาน ภาษาอังกฤษมักต้องใช้กริยารูปใด", options: ["V1", "V2", "will + V1"], answer: "V2", explanation: "เหตุการณ์ที่เกิดขึ้นแล้วใช้ V2" }
+      ]
+    },
+    {
+      id: "regular-intro",
+      type: "lesson-only",
+      title: "Regular Verbs and -ed Workshop",
+      thaiTitle: "โรงหลอม -ed แห่งอดีต",
+      completionKey: "regularRulesCompleted",
+      reward: { grammaria: 10, fragment: "Regular Gate Opened" },
+      lesson: [
+        "มาสเตอร์เวรีออน: กริยาช่องที่ 2 แบ่งออกเป็น 2 กลุ่มใหญ่",
+        "Regular Verbs คือคำกริยาที่เปลี่ยนเป็นอดีตตามกฎ มักเติม -ed หรือ -d ได้",
+        "Irregular Verbs คือคำกริยาที่ไม่ทำตามกฎ ต้องจำรูปของมันโดยเฉพาะ",
+        "เราจะเริ่มจาก Regular Verbs ก่อน เพราะมันเป็นประตูแรกของอดีต"
+      ],
+      questions: []
+    },
+    {
+      id: "regular-rule-1",
+      type: "lesson-quiz",
+      title: "Regular Rule 1",
+      thaiTitle: "คำกริยาทั่วไปเติม -ed",
+      enemy: "Time Dust",
+      thaiEnemy: "ฝุ่นเวลา",
+      reward: { grammaria: 20, fragment: "Rule 1 Spark" },
+      lesson: [
+        "Regular Verbs คือคำกริยาที่เปลี่ยนเป็นอดีตโดยการเติม -ed ได้ตามกฎ",
+        "คำกริยาทั่วไป เติม -ed ได้เลย",
+        "Examples: walk -> walked, jump -> jumped, wash -> washed, look -> looked, help -> helped, watch -> watched, open -> opened, clean -> cleaned"
+      ],
+      questions: regularRuleOneQuestions
+    },
+    {
+      id: "regular-rule-2",
+      type: "lesson-quiz",
+      title: "Regular Rule 2",
+      thaiTitle: "คำลงท้ายด้วย e เติม -d",
+      enemy: "Echo Tick",
+      thaiEnemy: "ติ๊กสะท้อนอดีต",
+      reward: { grammaria: 20, fragment: "Rule 2 Spark" },
+      lesson: [
+        "ถ้าคำกริยาลงท้ายด้วย e อยู่แล้ว ไม่ต้องเติม e ซ้ำ ให้เติมแค่ -d",
+        "Examples: like -> liked, love -> loved, live -> lived, dance -> danced, close -> closed, move -> moved"
+      ],
+      questions: regularRuleTwoQuestions
+    },
+    {
+      id: "regular-rule-3",
+      type: "lesson-quiz",
+      title: "Regular Rule 3",
+      thaiTitle: "คำลงท้ายด้วย y",
+      enemy: "Yesterday Sprite",
+      thaiEnemy: "ภูตเมื่อวาน",
+      reward: { grammaria: 25, fragment: "Rule 3 Spark" },
+      lesson: [
+        "คำที่ลงท้ายด้วย y ต้องดูตัวอักษรก่อน y",
+        "ถ้าหน้า y เป็นสระ ให้เติม -ed ได้เลย เช่น play -> played, enjoy -> enjoyed, stay -> stayed",
+        "ถ้าหน้า y เป็นพยัญชนะ ให้เปลี่ยน y เป็น i แล้วเติม -ed เช่น study -> studied, cry -> cried, try -> tried, carry -> carried"
+      ],
+      questions: regularRuleThreeQuestions
+    },
+    {
+      id: "regular-rule-4",
+      type: "lesson-quiz",
+      title: "Regular Rule 4",
+      thaiTitle: "คำสั้นเพิ่มพยัญชนะท้าย",
+      enemy: "Rewind Slime",
+      thaiEnemy: "สไลม์ย้อนเวลา",
+      reward: { grammaria: 25, fragment: "Rule 4 Spark" },
+      lesson: [
+        "คำกริยาสั้นบางคำที่มีรูปแบบ พยัญชนะ + สระ + พยัญชนะ ต้องเพิ่มพยัญชนะท้ายอีกหนึ่งตัวก่อนเติม -ed",
+        "CVC = พยัญชนะ + สระ + พยัญชนะ เช่น stop, plan, drop, clap",
+        "Examples: stop -> stopped, plan -> planned, drop -> dropped, clap -> clapped"
+      ],
+      questions: regularRuleFourQuestions
+    },
+    {
+      id: "ed-mini-boss",
+      type: "mini-boss",
+      title: "Mini Boss 1: The -ed Forger",
+      thaiTitle: "ช่างหลอม -ed ที่ผิดเพี้ยน",
+      enemy: "The -ed Forger",
+      completionKey: "edMiniBossDefeated",
+      reward: { grammaria: 80, fragment: "Ed Fragment" },
+      lesson: [
+        "The -ed Forger ปรากฏตัว มันคือช่างตีเวลาเสื่อมสลายที่หลอมคำกริยาอดีตผิดรูป",
+        "คำผิดที่มันสร้างไว้: studyed, stoped, loveed, playied, danceed, droped",
+        "ใช้กฎ -ed ทั้ง 4 ข้อเพื่อทำลายการหลอมผิดรูป"
+      ],
+      questions: edForgerQuestions
+    },
+    {
+      id: "irregular-lesson",
+      type: "lesson-quiz",
+      title: "Irregular Verbs",
+      thaiTitle: "ถ้ำกริยาที่ไม่เชื่อฟังกฎ",
+      enemy: "Memory Bat",
+      thaiEnemy: "ค้างคาวความทรงจำ",
+      completionKey: "irregularLessonCompleted",
+      reward: { grammaria: 35, fragment: "Irregular Memory Spark" },
+      lesson: [
+        "Irregular Verbs คือคำกริยาที่ไม่เปลี่ยนเป็นอดีตด้วยการเติม -ed แต่เปลี่ยนรูปไปเอง จึงต้องจำเป็นคำ ๆ ไป",
+        "Regular: walk -> walked, play -> played, study -> studied",
+        "Irregular: go -> went, eat -> ate, see -> saw, buy -> bought",
+        "มาสเตอร์เวรีออน: Regular Verbs เดินตามกฎของโรงหลอม -ed แต่ Irregular Verbs มีเส้นทางของตัวเอง มันไม่ยอมเติม -ed ดังนั้นเจ้าต้องจำรูปอดีตของมันให้ได้",
+        "go -> went, eat -> ate, see -> saw, buy -> bought, take -> took, come -> came, have -> had, do -> did, make -> made, write -> wrote, meet -> met, choose -> chose, read -> read, give -> gave, get -> got"
+      ],
+      questions: irregularPracticeQuestions
+    },
+    {
+      id: "irregular-mini-boss",
+      type: "mini-boss",
+      title: "Mini Boss 2: The Irregular Wraith",
+      thaiTitle: "วิญญาณกริยาไร้กฎ",
+      enemy: "The Irregular Wraith",
+      completionKey: "irregularMiniBossDefeated",
+      reward: { grammaria: 90, fragment: "Irregular Fragment" },
+      lesson: [
+        "The Irregular Wraith ซ่อนรูป V2 ไว้ในถ้ำความทรงจำ",
+        "กริยากลุ่มนี้ไม่เติม -ed ต้องเลือก V2 ที่ถูกต้องจากความจำ",
+        "ตอบให้ถูกและเตรียมปัดป้องการโจมตีของวิญญาณไร้กฎ"
+      ],
+      questions: irregularWraithQuestions
+    },
+    {
+      id: "merge-twist",
+      type: "story-stage",
+      title: "Story Twist",
+      thaiTitle: "บอสทั้งสองยังไม่ตาย และหลอมรวมกัน",
+      completionKey: "twistSeen",
+      reward: { grammaria: 20, fragment: "Merged Memory Warning" },
+      lesson: [
+        "ผู้พเนจรคิดว่าบอสทั้งสองถูกกำจัดแล้ว แต่เศษของ The -ed Forger และ The Irregular Wraith ยังไม่หายไป",
+        "Boss dialogue: อดีตไม่ได้แตกเพราะกฎข้อเดียว...แต่มันแตกเพราะทุกคนเล่ามันผิดซ้ำแล้วซ้ำเล่า",
+        "เศษตัวอักษรของ Regular และ Irregular ลอยขึ้นสู่ฟ้า ก่อนหลอมรวมเป็น The Memory Breaker",
+        "มาสเตอร์เวรีออน: พลังของ Regular และ Irregular กำลังหลอมรวมกัน ระวังให้ดี ผู้พเนจร นี่คืออดีตที่ถูกเล่าผิดทั้งหมดรวมเป็นหนึ่งเดียว"
+      ],
+      questions: []
+    },
+    {
+      id: "final-boss",
+      type: "final-boss",
+      title: "Final Boss: The Memory Breaker",
+      thaiTitle: "ผู้ทำลายความทรงจำ",
+      enemy: "The Memory Breaker",
+      completionKey: "finalBossDefeated",
+      bossDialogueLines: [
+        "อดีตคือรากของทุกสิ่ง หากอดีตผิดพลาด ปัจจุบันก็ไร้ความหมาย",
+        "ข้าไม่ยอมหลอมรวมกับปัจจุบันและอนาคต เพราะพวกมันพยายามลืมข้า",
+        "เจ้าคิดว่าอนาคตสำคัญกว่าอดีตอย่างนั้นหรือ",
+        "ถ้าไม่มีอดีต เจ้าจะรู้ได้อย่างไรว่าเคยล้ม เคยเรียนรู้ และเคยเติบโต",
+        "จงปล่อยให้อดีตแยกออกไป ข้าจะปกป้องมันจากการถูกลืม",
+        "ความทรงจำที่ถูกเล่าผิด คือบาดแผลของ Lingua"
+      ],
+      reward: { grammaria: 150, fragment: "Past Fragment", badge: "ผู้ฟื้นคืนอดีต" },
+      lesson: [
+        "The -ed Forger และ The Irregular Wraith หลอมรวมกันเป็น The Memory Breaker",
+        "Final Boss จะทดสอบทุกอย่าง: Regular Verbs, Irregular Verbs, sentence completion และ correct sentences",
+        "เมื่อ HP ต่ำ บอสจะใช้อัลติ เตรียมปัดป้องให้ดี"
+      ],
+      questions: finalBossQuestions
+    },
+    {
+      id: "ending",
+      type: "ending",
+      title: "Ending",
+      thaiTitle: "ได้รับ Past Fragment",
+      lesson: [
+        "The Memory Breaker: ข้าไม่ได้เกลียดปัจจุบันหรืออนาคต...ข้าเพียงกลัวว่าอดีตจะถูกลืม",
+        "มาสเตอร์เวรีออน: อดีตไม่ควรถูกขังไว้ และไม่ควรถูกลืม อดีตมีหน้าที่บอกเราว่าเคยเกิดอะไรขึ้น เพื่อให้ปัจจุบันเข้าใจตนเอง และให้อนาคตเดินต่อไปได้อย่างถูกทาง",
+        "ได้รับ Past Fragment",
+        "ได้รับ Badge: ผู้ฟื้นคืนอดีต",
+        "ดินแดนแห่งอดีตฟื้นคืนแล้ว"
+      ]
+    }
+  ],
+  endingLines: [
+    "The Memory Breaker collapses, but before disappearing it speaks: ข้าไม่ได้เกลียดปัจจุบันหรืออนาคต...ข้าเพียงกลัวว่าอดีตจะถูกลืม",
+    "มาสเตอร์เวรีออน: อดีตไม่ควรถูกขังไว้ และไม่ควรถูกลืม อดีตมีหน้าที่บอกเราว่าเคยเกิดอะไรขึ้น เพื่อให้ปัจจุบันเข้าใจตนเอง และให้อนาคตเดินต่อไปได้อย่างถูกทาง",
+    "ระบบ: ได้รับ Past Fragment ได้รับ Badge: ผู้ฟื้นคืนอดีต ดินแดนแห่งอดีตฟื้นคืนแล้ว"
+  ],
+  summary: [
+    "อดีตคือเหตุการณ์ที่เกิดขึ้นแล้ว",
+    "ภาษาไทยมักใช้คำบอกเวลา เช่น เมื่อวาน วันนี้ พรุ่งนี้ เพื่อบอกช่วงเวลา",
+    "ภาษาอังกฤษใช้รูปของกริยาเพื่อบอกเวลา นี่คือแนวคิดของ tense",
+    "เมื่อต้องการเล่าเหตุการณ์ในอดีต เราใช้กริยาช่องที่ 2 หรือ V2",
+    "V2 แบ่งได้เป็น 2 กลุ่มใหญ่ คือ Regular Verbs และ Irregular Verbs",
+    "Regular Verbs มักเติม -ed หรือ -d ตามกฎ",
+    "คำลงท้ายด้วย e เติมแค่ -d",
+    "คำลงท้ายด้วยพยัญชนะ + y เปลี่ยน y เป็น i แล้วเติม -ed",
+    "คำสั้นบางคำต้องเพิ่มพยัญชนะท้ายก่อนเติม -ed",
+    "Irregular Verbs ไม่เติม -ed แต่เปลี่ยนรูป เช่น go -> went, eat -> ate, see -> saw",
+    "คำบอกเวลา เช่น yesterday, last night, last week, ago มักเป็นสัญญาณของ Past Simple",
+    "ถ้าใช้ V2 ถูกต้อง เราจะเล่าอดีตได้ชัดเจนและถูกต้อง"
+  ]
+};
+

@@ -1,0 +1,454 @@
+You are working on the existing HTML/CSS/JavaScript project “Lingua: A Grammaria RPG”.
+Current files:
+index.html
+style.css
+script.js
+Please modify the actual working files. Do not only summarize. Do not simulate. Do not say it is done unless the playable game is actually changed.
+This is a correction pass for ACT: The Past Fragment.
+Do not rebuild the whole project from scratch.
+Do not remove existing systems unless absolutely necessary.
+Keep:
+login / guest login
+player data
+localStorage
+ACT progression
+lesson stages
+battle system
+parry system
+charm system if present
+character assets
+current fantasy RPG UI style
+Main goal:
+Fix all issues listed below.
+1. Time Dust enemy has no design
+Current problem:
+The enemy named “Time Dust” has no proper design or appears as a placeholder.
+Required fix:
+Use the Memory Shade design as the temporary design for Time Dust.
+Implementation:
+If there is an enemy sprite lookup, map Time Dust to the same image as Memory Shade.
+Suggested asset path:
+assets/memory-shade.png
+Example:
+timeDust: "assets/memory-shade.png"
+Acceptance:
+Whenever Time Dust appears, it should show the Memory Shade sprite, not a placeholder.
+2. Echo Tick enemy has no design
+Current problem:
+The enemy named “Echo Tick” has no proper design or appears as a placeholder.
+Required fix:
+Use the Memory Shade design as the temporary design for Echo Tick.
+Implementation:
+Map Echo Tick to the same Memory Shade image.
+Example:
+echoTick: "assets/memory-shade.png"
+Acceptance:
+Whenever Echo Tick appears, it should show the Memory Shade sprite.
+3. Rewind Slime enemy has no design
+Current problem:
+The enemy named “Rewind Slime” has no proper design or appears as a placeholder.
+Required fix:
+Use the Memory Shade design as the temporary design for Rewind Slime.
+Implementation:
+Map Rewind Slime to the same Memory Shade image.
+Example:
+rewindSlime: "assets/memory-shade.png"
+Acceptance:
+Whenever Rewind Slime appears, it should show the Memory Shade sprite.
+4. Restore the Charm system after attack
+Current problem:
+The charm selection system after boosting or enhancing attacks has disappeared.
+Required fix:
+Restore the charm selection mechanic after the player answers correctly / prepares an attack.
+Expected behavior:
+After the player answers an attack question correctly:
+Show attack result or “คำตอบถูกต้อง”
+Then show a charm selection step before final attack damage is applied, if the charm system was previously designed/implemented.
+Player chooses one charm to enhance the attack.
+Apply the selected charm effect.
+Then continue to enemy warning / enemy attack / parry phase.
+If the previous charm system exists in code, reconnect it to the current battle flow.
+If it was removed, re-add a simple version.
+Example charm options:
+เพิ่มพลังโจมตี
+ฟื้นฟู Grammaria
+ลดพลังโจมตีศัตรู
+โจมตีซ้ำเล็กน้อย
+UI:
+Show 2–3 charm cards.
+Each card should have title, short effect, and select button.
+Do not make it a plain alert.
+Acceptance:
+After a correct battle answer, the player should be able to select a charm before the attack fully resolves.
+5. Tense teaching must not be a summary modal or content box
+Current problem:
+The Tense lesson is being shown as a summary card/modal with blocks like:
+Tense คืออะไร
+ตัวอย่างสำคัญ
+Present
+This is wrong.
+Required fix:
+The Tense lesson must be presented as a story-style teaching dialogue, like the opening scene.
+Do NOT show the main Tense lesson as:
+a summary modal
+a content grid
+a static card
+a big textbox filled with information
+Instead use:
+Master Verion dialogue
+one idea per step
+example cards appearing gradually
+player interaction choices
+teacher feedback
+Important:
+Summary modal can still exist only for “ดูคำอธิบาย” or “ทบทวนเนื้อหา”.
+But the main teaching flow must be dialogue-based.
+6. Add better definition of “past”
+Current problem:
+The lesson does not explain “past” deeply enough.
+Required teaching content:
+Past means “something that already happened and has ended.”
+It does not have to be only yesterday, last month, or last year.
+Even:
+1 second ago
+10 minutes ago
+this morning
+earlier today
+can be past if the event already happened and ended.
+Please write the explanation in a fantasy game tone suitable for Master Verion.
+Use this style:
+Master Verion:
+“ผู้พเนจรเอ๋ย ก่อนที่เราจะใช้พลังของอดีต เจ้าต้องเข้าใจก่อนว่า ‘อดีต’ ไม่ได้หมายถึงเมื่อวานเท่านั้น
+สิ่งใดก็ตามที่เกิดขึ้นแล้ว และจบลงแล้ว สิ่งนั้นคืออดีต
+หนึ่งวินาทีก่อนหน้านี้ ก็เป็นอดีต
+สิบนาทีก่อน ก็เป็นอดีต
+เมื่อเช้าที่ผ่านมา ก็เป็นอดีต
+เมื่อวาน เดือนที่แล้ว หรือปีที่แล้ว ก็ล้วนเป็นอดีตเช่นกัน
+อดีตคือร่องรอยของสิ่งที่เคยเกิดขึ้น และภาษาคือพลังที่ช่วยให้เราบอกเล่าร่องรอยนั้นได้ถูกต้อง”
+Then continue with Thai examples:
+ฉันกินข้าววันนี้
+ฉันกินข้าวเมื่อวาน
+ฉันจะกินข้าวพรุ่งนี้
+Then explain:
+วันนี้ = ปัจจุบัน
+เมื่อวาน = อดีต
+พรุ่งนี้ = อนาคต
+Then connect to English:
+I go. = Present (ปัจจุบัน)
+I went. = Past (อดีต)
+I will go. = Future (อนาคต)
+7. Add Thai translations in parentheses for Present / Past / Future
+Current problem:
+English labels Present, Past, Future appear without Thai translations.
+Required fix:
+Everywhere the game shows Present, Past, Future, include Thai translation in parentheses.
+Use:
+Present (ปัจจุบัน)
+Past (อดีต)
+Future (อนาคต)
+Examples:
+I go. = Present (ปัจจุบัน)
+I went. = Past (อดีต)
+I will go. = Future (อนาคต)
+Acceptance:
+No standalone Present / Past / Future should appear in beginner lesson screens without Thai meaning.
+8. Regular and Irregular teaching must be dialogue-based
+Current problem:
+Regular and Irregular lessons are still displayed like content boxes or summaries.
+Required fix:
+The Regular Verbs and Irregular Verbs teaching sections must use story dialogue like the opening scene.
+Do not dump content into one box.
+For Regular Verbs:
+Master Verion should explain step by step:
+What Regular Verbs are
+They follow spelling rules
+Teach one rule at a time
+Show examples
+Ask one small question
+Give feedback
+Then practice
+For Irregular Verbs:
+Master Verion should explain:
+Irregular Verbs do not follow -ed rules
+They change form in their own way
+Students must remember them word by word
+Compare regular vs irregular
+Then practice
+Tone:
+Warm, magical, teacher-like, similar to opening scene.
+Not dry textbook language.
+9. Fix regular -ed practice answer choices
+Current problem:
+In regular -ed practice, some choices include -ing, s, es forms.
+That is not appropriate for this stage.
+Required fix:
+For regular -ed spelling practice, all answer choices should be past-form attempts, not unrelated tense forms.
+Bad example:
+jump → jumped / jumping / jumps
+Good example:
+jump → jumped / jumpd / jumpped / jumpied
+The purpose is to train correct -ed spelling rules.
+So distractors should be wrong -ed-style forms.
+Apply this to:
+general add -ed
+ending in e add -d
+ending in y
+CVC double consonant
+Examples:
+walk:
+walked
+walkd
+walkked
+walkied
+love:
+loved
+loveed
+lovied
+lovd
+study:
+studied
+studyed
+studyied
+studed
+play:
+played
+playied
+plaied
+playd
+stop:
+stopped
+stoped
+stopied
+stopd
+drop:
+dropped
+droped
+dropd
+dropied
+Acceptance:
+During regular verb spelling practice, do not use distractors like walking, walks, watches, etc.
+Use wrong past-form spellings instead.
+10. Improve verb banks for Grade 9 level
+Current problem:
+Verb practice is too repetitive and too easy for Grade 9 / ม.3.
+Many verbs are repeated too often.
+Required fix:
+Expand the verb banks and use more varied verbs suitable for ม.3.
+Keep some easy words for scaffolding, but include more varied and moderately challenging words.
+Create or update centralized verb banks.
+Suggested regular verb banks:
+Regular Rule 1: general add -ed
+Use verbs such as:
+walk → walked
+jump → jumped
+help → helped
+watch → watched
+open → opened
+clean → cleaned
+finish → finished
+answer → answered
+listen → listened
+visit → visited
+collect → collected
+explain → explained
+return → returned
+repair → repaired
+remember → remembered
+Regular Rule 2: ending in e add -d
+Use:
+like → liked
+love → loved
+live → lived
+dance → danced
+close → closed
+move → moved
+decide → decided
+arrive → arrived
+create → created
+practice → practiced
+receive → received
+hope → hoped
+Regular Rule 3A: vowel + y add -ed
+Use:
+play → played
+enjoy → enjoyed
+stay → stayed
+obey → obeyed
+delay → delayed
+Regular Rule 3B: consonant + y change y to i + ed
+Use:
+study → studied
+cry → cried
+try → tried
+carry → carried
+copy → copied
+hurry → hurried
+worry → worried
+reply → replied
+apply → applied
+Regular Rule 4: CVC double final consonant + ed
+Use:
+stop → stopped
+plan → planned
+drop → dropped
+clap → clapped
+grab → grabbed
+hug → hugged
+travel → travelled / traveled
+prefer → preferred
+admit → admitted
+occur → occurred
+Note:
+For American spelling, “traveled” is accepted.
+For British spelling, “travelled” is accepted.
+Pick one spelling consistently, preferably American “traveled” unless the app currently uses British.
+Suggested irregular verb bank for Grade 9:
+go → went
+eat → ate
+see → saw
+buy → bought
+take → took
+come → came
+have → had
+do → did
+make → made
+write → wrote
+meet → met
+choose → chose
+read → read
+give → gave
+get → got
+speak → spoke
+break → broke
+bring → brought
+think → thought
+teach → taught
+catch → caught
+find → found
+leave → left
+feel → felt
+keep → kept
+hear → heard
+lose → lost
+send → sent
+spend → spent
+build → built
+Implementation:
+Use these banks to generate or replace repetitive questions.
+Avoid repeating the same verbs too often inside one section.
+Use easier verbs early, harder verbs later.
+11. Improve parry bar difficulty with 3 zones
+Current problem:
+The parry bar is too easy because the player only needs to hit the green zone.
+Required fix:
+Change the parry bar into 3 scoring zones:
+Orange zone = largest / okay timing
+Yellow zone = smaller / good timing
+Green zone = smallest / perfect timing
+Suggested scoring:
+Green = Perfect Parry
+no damage
+counterattack or bonus Grammaria
+Yellow = Good Parry
+reduced damage
+Orange = Weak Parry
+small damage reduction
+Outside all zones = Fail
+full damage
+Visual behavior:
+The colored target zone group should move across the bar.
+The white marker line moves quickly.
+The player taps when the white marker is inside the best zone.
+The green zone is at the center.
+Yellow surrounds green.
+Orange surrounds yellow.
+Orange is widest, yellow is smaller, green is smallest.
+Example zone design:
+[ orange ][ yellow ][ green ][ yellow ][ orange ]
+Or if easier:
+One moving target group:
+outer orange area
+middle yellow area
+center green area
+The green area should be narrow enough to require concentration.
+Additional difficulty:
+The target zone may shrink over time, or the green center may shrink first.
+The white marker speed may increase slightly on boss ultimate attacks.
+Acceptance:
+The parry interface must clearly show orange, yellow, and green zones.
+The result must say:
+Perfect Parry
+Good Parry
+Weak Parry
+Miss
+Do not keep the old single green-zone-only system.
+12. Fix progression bug after y-ending -ed practice
+Current problem:
+After the practice section for verbs ending with y, the game cannot continue.
+The content after that disappears or the next button stops working.
+Required fix:
+Debug and fix the progression after the y-ending regular verb lesson.
+The game must continue in this order:
+Regular Rule 1: add -ed
+Practice Rule 1
+Regular Rule 2: ending in e add -d
+Practice Rule 2
+Regular Rule 3: ending in y
+Practice Rule 3
+Regular Rule 4: CVC double final consonant
+Practice Rule 4
+Mini Boss 1: The -ed Forger
+Acceptance:
+After completing the y-ending practice, the player must be able to continue to:
+Regular Rule 4 / CVC double final consonant
+The “ถัดไป” or main button must work.
+No JavaScript errors in console.
+No undefined lesson step.
+No missing next stage id.
+No broken index in lesson step array.
+Please specifically check:
+lesson step array after y rule
+currentStep index increment
+nextStep / nextStage id
+button handler after choice answer
+any conditional that accidentally ends the section early
+13. Testing checklist
+After editing, test the following:
+Time Dust uses Memory Shade image.
+Echo Tick uses Memory Shade image.
+Rewind Slime uses Memory Shade image.
+Memory Shade uses official Memory Shade image.
+Charm selection appears after correct attack answer.
+Tense lesson is dialogue-based, not a summary modal.
+Definition of past includes:
+already happened
+already ended
+1 second ago / 10 minutes ago / this morning also count as past
+Present / Past / Future show Thai translations in parentheses.
+Regular lesson is dialogue-based.
+Irregular lesson is dialogue-based.
+Regular -ed practice choices are all past-form spelling attempts.
+Verb banks are more varied and suitable for Grade 9.
+Parry bar has orange/yellow/green scoring zones.
+Parry result shows Perfect / Good / Weak / Miss.
+After y-ending practice, the game continues to CVC rule.
+The game can proceed to The -ed Forger mini boss.
+No console errors.
+14. End report
+After editing, report:
+Files changed
+Enemy sprite mappings changed
+Charm system restored where
+Tense lesson rendering changed how
+Past definition added where
+Present/Past/Future translation added where
+Regular/Irregular teaching changed how
+Regular distractor choices changed how
+Verb banks added/updated
+Parry bar updated how
+Progression bug after y-ending practice fixed how
+How to test the complete flow
+Again:
+Modify the actual files.
+Do not only summarize.
+Do not say done unless the game is actually changed.

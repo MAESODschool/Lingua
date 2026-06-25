@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lingua - RPG แห่งแกรมมาเรีย</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <button id="muteButton" class="mute-button" type="button" aria-pressed="false">เสียง: เปิด</button>
+  <main class="game-shell">
+    <section id="loginScene" class="scene active">
+      <div class="sky-orbit"></div>
+      <div class="login-card">
+        <p class="eyebrow">ยินดีต้อนรับ</p>
+        <h1>Lingua</h1>
+        <p class="subtitle">A Grammaria RPG</p>
+        <div class="form-grid">
+          <button id="googleMockButton" class="primary-button">เข้าสู่ระบบด้วย Gmail</button>
+          <button id="guestLoginButton" class="secondary-button">เข้าเล่นแบบ Guest</button>
+          <label>
+            <span>กรอกชื่อผู้เล่น</span>
+            <input id="loginDisplayName" type="text" autocomplete="name" placeholder="เช่น Mina">
+          </label>
+          <label>
+            <span>กรอกอีเมล Gmail</span>
+            <input id="loginEmail" type="email" autocomplete="email" placeholder="name@gmail.com">
+          </label>
+          <button id="enterLinguaButton" class="primary-button">เริ่มเข้าสู่โลก Lingua</button>
+        </div>
+        <p id="loginStatus" class="form-status">ข้อมูลจะถูกบันทึกในเครื่องชั่วคราว</p>
+      </div>
+    </section>
+
+    <section id="createCharacterScene" class="scene">
+      <div class="create-card">
+        <p class="eyebrow">ผู้เล่นใหม่</p>
+        <h2>สร้างตัวละคร</h2>
+        <div class="form-grid">
+          <div class="two-column-form">
+            <label>
+              <span>ระดับชั้น</span>
+              <select id="classNameSelect">
+                <option value="ป.4">ป.4</option>
+                <option value="ป.5">ป.5</option>
+                <option value="ป.6">ป.6</option>
+                <option value="ม.1">ม.1</option>
+                <option value="ม.2">ม.2</option>
+                <option value="ม.3">ม.3</option>
+              </select>
+            </label>
+            <label>
+              <span>ห้อง</span>
+              <input id="roomInput" type="text" placeholder="เช่น 1">
+            </label>
+          </div>
+          <fieldset class="avatar-options">
+            <legend>เลือก Avatar</legend>
+            <label>
+              <input type="radio" name="avatarType" value="littleMage" checked>
+              <span>นักเวทน้อย</span>
+            </label>
+            <label>
+              <input type="radio" name="avatarType" value="traveler">
+              <span>นักเดินทาง</span>
+            </label>
+            <label>
+              <input type="radio" name="avatarType" value="traineeGuardian">
+              <span>ผู้พิทักษ์ฝึกหัด</span>
+            </label>
+          </fieldset>
+          <fieldset class="avatar-options">
+            <legend>เพศ / รูปลักษณ์พื้นฐาน</legend>
+            <label>
+              <input type="radio" name="avatarGender" value="male">
+              <span>ชาย</span>
+            </label>
+            <label>
+              <input type="radio" name="avatarGender" value="female">
+              <span>หญิง</span>
+            </label>
+            <label>
+              <input type="radio" name="avatarGender" value="other" checked>
+              <span>ไม่ระบุ / อื่น ๆ</span>
+            </label>
+          </fieldset>
+          <fieldset class="avatar-options">
+            <legend>รูปร่างพื้นฐาน</legend>
+            <label>
+              <input type="radio" name="avatarBodyType" value="small">
+              <span>ตัวเล็ก</span>
+            </label>
+            <label>
+              <input type="radio" name="avatarBodyType" value="normal" checked>
+              <span>ปกติ</span>
+            </label>
+            <label>
+              <input type="radio" name="avatarBodyType" value="tall">
+              <span>สูง</span>
+            </label>
+          </fieldset>
+          <div class="avatar-preview-panel">
+            <div id="avatarPreview" class="avatar-preview avatar-gender-other avatar-body-normal"></div>
+            <p id="avatarPreviewText">ตัวอย่าง: ไม่ระบุ / ปกติ</p>
+          </div>
+          <button id="createCharacterButton" class="primary-button">เริ่มการเดินทาง</button>
+        </div>
+        <p id="createStatus" class="form-status">สร้างตัวละครเพื่อเริ่มบันทึกความก้าวหน้า</p>
+      </div>
+    </section>
+
+    <section id="titleScene" class="scene">
+      <div class="sky-orbit"></div>
+      <div class="title-card">
+        <p class="eyebrow">ต้นแบบ 1</p>
+        <h1>Lingua</h1>
+        <p class="subtitle">RPG แห่งแกรมมาเรีย</p>
+        <button id="startButton" class="primary-button">เริ่มการเดินทาง</button>
+      </div>
+    </section>
+
+    <section id="storyScene" class="scene story-scene lesson-screen">
+      <header class="lesson-header">
+        <button id="lessonBackButton" class="lesson-round-btn" type="button" aria-label="กลับ">←</button>
+        <div class="lesson-title-banner">
+          <h2>บทเรียน</h2>
+          <p id="lessonActLabel" class="lesson-act-label">ACT: The Past Fragment</p>
+          <p id="lessonLocationLabel" class="lesson-location-label">หอคอยแห่ง Unity</p>
+        </div>
+        <button id="lessonDictionaryButton" class="lesson-dictionary-btn" type="button" aria-label="พจนานุกรม">
+          <span class="dictionary-icon">▤</span>
+          <span>พจนานุกรม</span>
+          <i aria-hidden="true"></i>
+        </button>
+      </header>
+
+      <div class="story-upper lesson-scene">
+        <div class="story-illustration lesson-bg-magic" aria-label="Magical library and Unity Tower lesson scene">
+          <div class="library-arch left"></div>
+          <div class="library-arch right"></div>
+          <div class="floating-letter letter-a">A</div>
+          <div class="floating-letter letter-b">G</div>
+          <div class="floating-letter letter-c">Ω</div>
+          <div class="floating-letter letter-d">V2</div>
+          <div class="floating-letter letter-e">L</div>
+          <div class="magic-circle"></div>
+          <div class="tower-art">
+            <span></span>
+          </div>
+
+          <div id="storyWanderer" class="vn-character wanderer-in-scene">
+            <div class="character-avatar wanderer-avatar"></div>
+            <strong>ผู้พเนจร</strong>
+          </div>
+
+          <div id="storyVerion" class="vn-character verion-in-scene">
+            <img class="character-avatar verion-avatar lesson-character-teacher" src="assets/master-verion.png" alt="มาสเตอร์เวรีออน">
+            <strong>อาจารย์เวเรียน</strong>
+          </div>
+
+          <div id="dialoguePanel" class="dialogue-panel vn-dialogue dialogue-box">
+            <p id="speakerName" class="speaker-name"></p>
+            <p id="dialogueText" class="dialogue-text"></p>
+            <div id="dialogueChoices" class="dialogue-choices hidden"></div>
+          </div>
+
+          <div id="lessonStoryVisual" class="lesson-story-visual hidden" aria-live="polite"></div>
+
+          <div id="nounActivityVisual" class="activity-brief lesson-example-panel hidden">
+            <button id="explanationCloseButton" class="explanation-close" type="button" aria-label="ปิดคำอธิบาย">×</button>
+            <div class="explanation-header">
+              <p class="speaker-name">ระบบสอนเล่น</p>
+              <h3>ภารกิจฟื้นคืนอดีต</h3>
+              <p id="activityFeedback" class="activity-feedback">เรียนรู้ Verb ช่องที่ 2 เพื่อฟื้นคืน Past Fragment</p>
+            </div>
+            <div class="explanation-scroll-area">
+              <div id="wordGrid" class="word-grid lesson-chip-grid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="story-lower lesson-controls">
+        <button id="lessonSelectButton" class="lesson-round-btn lesson-map-btn" type="button">
+          <span>⌖</span>
+          <strong>แผนที่</strong>
+        </button>
+
+        <div class="lesson-progress-card">
+          <span>บทเรียน</span>
+          <strong id="lessonProgressText">1 / 1</strong>
+          <div class="lesson-progress-track">
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+        </div>
+
+        <div id="dialogueActions" class="story-actions lesson-main-action">
+          <div id="storyNameForm" class="story-name-form hidden">
+            <label for="storyNameInput">บอกชื่อของเจ้า</label>
+            <input id="storyNameInput" type="text" maxlength="24" placeholder="กรอกชื่อของคุณ">
+            <button id="confirmNameButton" class="primary-button">ยืนยันชื่อ</button>
+            <p id="namePromptStatus" class="form-status"></p>
+          </div>
+          <button id="nextDialogueButton" class="primary-button">ถัดไป</button>
+        </div>
+
+        <div id="nounActivity" class="activity-panel hidden">
+          <button id="battleButton" class="primary-button hidden">เริ่มตอบคำถาม</button>
+        </div>
+
+        <div class="lesson-side-actions">
+          <button id="lessonExplainButton" class="secondary-button" type="button">ดูคำอธิบาย</button>
+          <button id="lessonReviewButton" class="secondary-button" type="button">ทบทวนเนื้อหา</button>
+          <button id="skipLessonButton" class="secondary-button" type="button">ข้ามบทเรียน</button>
+          <button id="skipBattleButton" class="secondary-button" type="button">ข้ามไปต่อสู้</button>
+        </div>
+
+        <button class="lesson-round-btn lesson-bag-btn" type="button" disabled>
+          <span>▣</span>
+          <strong>กระเป๋า</strong>
+        </button>
+      </div>
+    </section>
+
+    <section id="battleScene" class="scene">
+      <header class="scene-header compact">
+        <button id="battleExitButton" class="battle-exit-button" type="button">ออกจากการต่อสู้</button>
+        <p class="eyebrow">การต่อสู้</p>
+        <h2 id="battleTitle">The Memory Breaker</h2>
+      </header>
+
+      <div class="battle-stage">
+        <article id="battlePlayer" class="combatant player-side">
+          <div class="character-avatar wanderer-avatar small"></div>
+          <div class="combat-text">
+            <h3>ผู้พเนจร</h3>
+            <div class="hp-bar" aria-label="Player HP">
+              <span id="playerHpFill"></span>
+            </div>
+            <p id="playerHpText">พลังชีวิต 100 / 100</p>
+            <div id="playerApPips" class="ap-pips" aria-label="Action Points"></div>
+          </div>
+        </article>
+
+        <article id="battleEnemy" class="combatant enemy-side">
+          <img id="battleEnemySprite" class="wisp-avatar enemy-memory-shade enemy-sprite" src="assets/memory-shade.png" alt="Memory Shade">
+          <div class="combat-text">
+            <h3 id="battleEnemyName">Memory Shade</h3>
+            <p id="battleEnemyDescription" class="enemy-description">เงาความทรงจำที่บิดเบือนคำกริยาในอดีต</p>
+            <div class="hp-bar enemy" aria-label="Enemy HP">
+              <span id="enemyHpFill"></span>
+            </div>
+            <p id="enemyHpText">พลังชีวิต 80 / 80</p>
+          </div>
+        </article>
+      </div>
+
+      <div class="battle-dashboard">
+        <div class="stat-pill">
+          <span>แกรมมาเรีย</span>
+          <strong id="grammariaText">0</strong>
+        </div>
+        <div class="stat-pill">
+          <span>โล่</span>
+          <strong id="shieldText">ไม่มี</strong>
+        </div>
+      </div>
+
+      <section class="battle-panel">
+        <p id="battleMessage" class="battle-message">เศษประโยคอดีตกำลังสั่นไหว</p>
+
+        <div id="bossIntentPanel" class="boss-intent-panel hidden">
+          <p class="enemy-attack-label">สัญญาณจากศัตรู</p>
+          <h3 id="bossIntentName">Memory Shade</h3>
+          <p id="bossIntentText">ศัตรูกำลังเตรียมโจมตี</p>
+          <p id="bossIntentType" class="boss-intent-type">เตรียมป้องกัน</p>
+          <button id="bossIntentReadyButton" class="primary-button" type="button">เตรียมพร้อม</button>
+        </div>
+
+        <div id="actionMenu" class="button-grid">
+          <button id="attackButton" class="action-button">โจมตี</button>
+          <button id="itemButton" class="action-button">ไอเทม</button>
+          <button id="focusButton" class="action-button">ตั้งสมาธิ</button>
+        </div>
+
+        <div id="questionPanel" class="question-panel hidden">
+          <h3 id="questionText"></h3>
+          <div id="answerOptions" class="answer-options"></div>
+        </div>
+
+        <div id="charmPanel" class="charm-panel hidden">
+          <h3>เลือกเครื่องรางเวท 1 ชิ้น</h3>
+          <div id="charmOptions" class="charm-options"></div>
+        </div>
+
+        <div id="chargePanel" class="timing-panel hidden">
+          <h3>ชาร์จแกรมมาเรีย</h3>
+          <div id="chargeBar" class="timing-bar">
+            <div id="perfectZone" class="perfect-zone"></div>
+            <div id="chargeMarker" class="timing-marker"></div>
+          </div>
+          <button id="stopChargeButton" class="primary-button">หยุดชาร์จ</button>
+        </div>
+
+        <div id="parryPanel" class="countdown-parry hidden">
+          <p class="enemy-attack-label">ศัตรูโจมตี</p>
+          <h3 id="enemyAttackName">ดูดกลืนชื่อ</h3>
+          <p id="parryHitText" class="parry-hit-text">Hit 1 / 1</p>
+          <p class="parry-instruction">กดปัดป้องเมื่อเส้นสีขาวเข้าโซนเป้าหมาย: ส้ม = Weak, เหลือง = Good, เขียวกลาง = Perfect</p>
+          <div id="parryCountdown" class="parry-countdown">TAP</div>
+          <div id="parryGauge" class="parry-gauge">
+            <div id="parryGaugeZone" class="parry-gauge-zone"></div>
+            <div id="parryGaugeMarker" class="parry-gauge-marker"></div>
+          </div>
+          <p id="parryHitResult" class="parry-hit-result"></p>
+          <button id="parryButton" class="primary-button">ปัดป้อง</button>
+        </div>
+
+        <div id="pointParryPanel" class="point-parry-panel hidden">
+          <p class="enemy-attack-label">Point Parry</p>
+          <h3 id="pointParryTitle">จับจุดพลังที่แตกออก</h3>
+          <p id="pointParryInstruction">แตะวงเวทที่ปรากฏให้ทันก่อนการโจมตี</p>
+          <div id="pointParryArena" class="point-parry-arena"></div>
+          <p id="pointParryResult" class="parry-hit-result"></p>
+        </div>
+
+        <button id="continueBattleButton" class="primary-button hidden">ดำเนินต่อ</button>
+      </section>
+    </section>
+
+    <section id="victoryScene" class="scene">
+      <div class="victory-card">
+        <p class="eyebrow">จบบท</p>
+        <h2 id="victoryTitle">ได้รับ Past Fragment</h2>
+        <p>ศัตรูที่พ่ายแพ้: <strong id="victoryEnemy">The Memory Breaker</strong></p>
+        <p id="victoryStory" class="story-close">อดีตของ Lingua ฟื้นคืนด้วยพลังของคำกริยาช่องที่ 2</p>
+        <div class="reward-list">
+          <div>
+            <span>แกรมมาเรียที่ได้รับ</span>
+            <strong id="victoryGrammaria">0</strong>
+          </div>
+          <div>
+            <span>Fragment ที่ได้รับ</span>
+            <strong id="victoryExtra">0</strong>
+          </div>
+          <div>
+            <span>Badge</span>
+            <strong id="victoryBadge">ผู้ฟื้นคืนอดีต</strong>
+          </div>
+        </div>
+        <p id="victoryFragmentText" class="fragment-text">สรุปบทเรียนโดยมาสเตอร์เวรีออน</p>
+        <button id="returnTitleButton" class="primary-button">กลับไปหน้าเริ่มต้น</button>
+      </div>
+    </section>
+
+    <div id="sceneTransition" class="scene-transition hidden">
+      <div class="transition-rune"></div>
+      <p id="transitionText">กำลังเข้าสู่หอคอยแห่ง Unity...</p>
+    </div>
+
+    <div id="gameModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="gameModalTitle">
+      <div class="game-modal-card">
+        <button id="gameModalClose" class="game-modal-close" type="button" aria-label="ปิด">×</button>
+        <h3 id="gameModalTitle"></h3>
+        <p id="gameModalBody"></p>
+        <div id="gameModalContent" class="game-modal-content"></div>
+        <div id="gameModalActions" class="game-modal-actions"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

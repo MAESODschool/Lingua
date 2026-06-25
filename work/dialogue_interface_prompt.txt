@@ -1,0 +1,332 @@
+You are working on the existing HTML/CSS/JavaScript project “Lingua: A Grammaria RPG”.
+I attached a reference image for the lesson interface. Please redesign the LESSON / TEACHING interface to match the attached reference image as closely as possible.
+Important:
+Modify the actual files: index.html, style.css, script.js
+Do not only summarize.
+Do not rebuild the whole project.
+Keep the existing game logic, lesson data, questions, stage flow, login, player data, localStorage, and battle system.
+This task is mainly about the lesson interface layout and visual style.
+Use the attached image as the main visual reference for the lesson screen.
+Keep everything mobile-first, vertical 9:16 style.
+No external libraries.
+Main visual style
+The lesson screen must look like a polished mobile fantasy RPG lesson interface, not a plain web page.
+Style direction:
+2D chibi fantasy RPG
+Blue / purple / gold magical atmosphere
+Magical library / Unity Tower background
+Floating letters and glowing grammar symbols
+Ornate gold frames
+Parchment panels
+Glossy large buttons
+Clear separation between upper lesson display and lower control panel
+Thai UI text must be readable and large enough
+Overall layout
+The page should be divided into 3 clear zones:
+Top Header Area
+Main Lesson Display Area
+Bottom Control Area
+The whole screen should feel like one fixed mobile game screen, not a long scrolling web article.
+Use min-height: 100dvh if possible, but allow scrolling only if absolutely necessary on small screens.
+1. Top Header Area
+Place this at the top of the screen.
+It should include:
+Top-left
+A circular back button with gold trim.
+Icon/text:
+←
+Top-center
+A large ornate fantasy title banner.
+The main title should be:
+บทเรียน
+Under it, show the current ACT:
+ACT: The Past Fragment
+Under the ACT, show the current location/stage name, for example:
+หอคอยแห่ง Unity
+or
+ประตูแห่งเมื่อวาน
+or
+โรงหลอม -ed แห่งอดีต
+The header should look like the attached image:
+purple/dark blue plaque
+gold trim
+small gem decoration
+fantasy RPG style
+Top-right
+A circular dictionary / notebook button.
+Text:
+พจนานุกรม
+Add a small red notification dot if possible, like the reference image.
+2. Main Lesson Display Area
+This is the large upper-middle area.
+It should contain:
+fantasy background
+character scene
+dialogue / lesson panel
+current teaching example
+small activity / check question panel
+The main display area should take about 65–70% of the screen height.
+Background
+Use a magical library / Unity Tower style background:
+dark blue and purple
+glowing magical circle
+floating letters such as A, G, Ω, L, V2
+books, runes, lanterns, sparkles
+not too busy behind text
+If the project does not have a real background image, create the effect with CSS gradients, glow circles, pseudo-elements, and floating letter decorations.
+Characters
+Place characters inside the main lesson area.
+Left side:
+The Wanderer / ผู้พเนจร
+Use the attached protagonist image if available in assets
+If no image asset exists, use the existing character visual
+The character should stand in the lower-left of the main display area
+Right side:
+Master Verion / มาสเตอร์เวรีออน
+Use the existing teacher visual if available
+If no image asset exists, create a styled placeholder or keep the current teacher character
+The teacher should stand on the lower-right of the main display area
+Characters should be visible and large enough, similar to the reference image.
+Do not make them tiny icons only.
+3. Dialogue / Teaching Text Box
+Place the main dialogue box over the lower part of the main lesson display area, above the activity panel.
+The box should look like the reference:
+parchment background
+ornate gold border
+rounded fantasy frame
+large readable Thai text
+speaker nameplate on top-left of the dialogue box
+The speaker nameplate should change based on who is speaking:
+Master Verion = มาสเตอร์เวรีออน
+Player = ผู้พเนจร
+System/Narration = ระบบ / บทเรียน
+Use different colors for different speakers:
+Master Verion box/nameplate: purple + gold
+Player box/nameplate: blue + gold
+System / lesson explanation: dark navy or parchment neutral + gold
+This is important:
+The user must clearly know who is speaking.
+Example text layout:
+Nameplate:
+มาสเตอร์เวรีออน
+Dialogue text:
+ลองดู 3 ประโยคนี้ก่อน ผู้พเนจร ทั้งสามประโยคพูดถึงเวลาไม่เหมือนกัน
+Keep line-height comfortable.
+Do not make text too small.
+4. Teaching Example Panel
+Below or near the dialogue box, show a lesson example panel.
+It should be a smaller ornate panel, like the reference image’s mini question panel.
+This panel should show the current teaching point.
+For the “What is the Past?” lesson, show:
+ฉันกินข้าววันนี้
+ฉันกินข้าวเมื่อวาน
+ฉันจะกินข้าวพรุ่งนี้
+Then show labels:
+วันนี้ = ปัจจุบัน
+เมื่อวาน = อดีต
+พรุ่งนี้ = อนาคต
+For the tense comparison lesson, show:
+I go = Present
+I went = Past
+I will go = Future
+For Regular Verbs, show examples like:
+walk → walked
+love → loved
+study → studied
+stop → stopped
+For Irregular Verbs, show examples like:
+go → went
+eat → ate
+see → saw
+buy → bought
+The panel should not look like plain text.
+Use:
+chips
+arrow cards
+highlighted keywords
+small icons
+glowing effect for important words such as V2, Past, -ed
+5. Mini Check / Practice Panel
+When the lesson has a quick check question, show it inside a small activity panel below the teaching example.
+This should look like the reference image where there are answer choices inside a framed panel.
+Example:
+Question:
+ประโยคใดเป็นเหตุการณ์ในอดีต
+Options:
+ฉันกินข้าววันนี้
+ฉันกินข้าวเมื่อวาน
+ฉันจะกินข้าวพรุ่งนี้
+Or:
+Question:
+I went. เป็นเวลาใด
+Options:
+Present
+Past
+Future
+Answer buttons should be large rounded glossy buttons.
+Use different colors:
+blue
+purple
+gold
+green for selected/correct
+red for wrong if needed
+Do not make the answer choices too small.
+6. Bottom Control Area
+This is the lower 30–35% of the screen.
+It must be clearly separated from the main lesson area by a large ornate gold-framed panel.
+This lower panel should contain only controls.
+It should look like the reference image.
+Elements inside bottom panel:
+Left side
+Progress badge/card:
+บทเรียน
+1 / 4
+Or use current stage progress:
+บทเรียน
+2 / 6
+Add a small progress bar with dots/stars if possible.
+Center
+Main large action button.
+Depending on state, button text can be:
+ต่อไป
+ตอบคำถาม
+ยืนยันคำตอบ
+เริ่มฝึก
+เริ่มต่อสู้
+The main button should be large, glossy, and easy to tap.
+Use blue for “ตอบคำถาม” and green for “ต่อไป”.
+Right side
+Utility buttons:
+ดูคำอธิบาย
+ทบทวนเนื้อหา
+Make them medium-sized glossy buttons, stacked vertically.
+Bottom-left
+Optional round button:
+แผนที่บทเรียน
+Bottom-right
+Optional round button:
+กระเป๋า
+Keep these decorative but functional if existing systems support them.
+If not functional yet, they can be disabled but must not break the UI.
+7. Lesson screen states
+Please support these lesson UI states:
+Dialogue mode
+Shows characters
+Shows speaker dialogue box
+Shows next button
+Teaching mode
+Shows explanation
+Shows example panel
+Shows next button
+Quick check mode
+Shows question
+Shows answer choices
+Shows feedback after answer
+Shows explanation
+Shows next button
+Practice intro mode
+Shows lesson summary
+Shows “เริ่มฝึก” button
+Battle intro mode
+Shows story warning
+Shows “เริ่มต่อสู้” button
+The UI should transition cleanly between these states.
+8. Make the lesson content feel bigger and clearer
+The current lesson content is too small and too short.
+Please increase:
+font size
+spacing
+line-height
+panel size
+character size
+example card size
+button size
+The lesson screen should feel like a real teaching moment.
+Students should be able to read the explanation easily on a phone.
+Avoid cramming too much text into one box.
+If the lesson is long, split it into multiple dialogue/teaching slides.
+9. Responsive behavior
+For mobile portrait:
+Use single-column vertical layout
+Header at top
+Scene in middle
+controls at bottom
+keep buttons large
+For desktop:
+Center the mobile game frame
+Keep max width around 430–520px
+Do not stretch too wide
+Background outside the phone frame can be dark/magical
+10. Specific CSS / implementation suggestions
+You may create or update these classes:
+.lesson-screen
+.lesson-header
+.lesson-title-banner
+.lesson-act-label
+.lesson-location-label
+.lesson-scene
+.lesson-bg-magic
+.lesson-character
+.lesson-character.player
+.lesson-character.teacher
+.dialogue-box
+.dialogue-box.teacher
+.dialogue-box.player
+.dialogue-box.system
+.dialogue-nameplate
+.lesson-example-panel
+.lesson-check-panel
+.lesson-choice-grid
+.lesson-choice-btn
+.lesson-controls
+.lesson-progress-card
+.lesson-main-action
+.lesson-side-actions
+.lesson-round-btn
+Use CSS variables if helpful:
+--gold
+--deep-blue
+--purple
+--parchment
+--glow-blue
+--glow-violet
+11. Do not break existing game logic
+Do not remove:
+current ACT data
+stage progression
+answer checking
+battle system
+localStorage save/load
+login/guest login
+character data
+Only adapt the lesson interface and connect it to the existing lesson data.
+If the current code uses render functions, update the lesson render function.
+For example:
+renderLesson()
+renderDialogue()
+renderStage()
+renderQuestion()
+renderActivity()
+If names are different, inspect the code and modify the correct functions.
+12. Acceptance test
+After editing, when I open index.html and enter a lesson stage, I should see:
+A top fantasy header like the reference image
+Main title: บทเรียน
+ACT: The Past Fragment
+Current stage/location name
+Magical library / Unity Tower style background
+The Wanderer on the left
+Master Verion on the right
+A large readable dialogue box
+Different dialogue box colors for player / teacher / system
+A lesson example panel
+A quick check / answer choice panel when needed
+A bottom control panel clearly separated from the lesson scene
+Large buttons: ต่อไป / ตอบคำถาม / ดูคำอธิบาย / ทบทวนเนื้อหา
+Progress badge such as บทเรียน 1/4
+Mobile layout should look like a game screen, not a plain webpage
+At the end, report:
+Files changed
+Main UI classes/functions modified
+How to test the lesson interface
+Any limitations

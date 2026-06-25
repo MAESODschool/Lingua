@@ -1,0 +1,441 @@
+You are working on the existing HTML/CSS/JavaScript project “Lingua: A Grammaria RPG”.
+Current files:
+index.html
+style.css
+script.js
+I will attach 3 new enemy design images:
+Time Dust
+Echo Tick
+Rewind Slime
+Please modify the actual working files. Do not only summarize. Do not simulate. Do not say it is done unless the game is actually changed.
+This is a bug-fix + system-polish + content-expansion pass for ACT: The Past Fragment.
+Do not rebuild the whole project from scratch.
+Do not remove existing lesson content.
+Do not remove login, guest login, player data, localStorage, ACT data, lesson progression, battle system, parry system, or charm system.
+Main fixes required:
+Fix progression after Mini Boss 1.
+Improve parry input stability.
+Add more charm variety.
+Fix Back button behavior.
+Expand character dialogue so it feels more natural and more game-like.
+Add a skip-to-battle system with confirmation and enemy selection.
+Add the 3 new enemy designs from the attached images.
+1. Fix progression after Mini Boss 1
+Current bug:
+After defeating Mini Boss 1: The -ed Forger, the story/progression cannot continue.
+Expected flow:
+Player defeats The -ed Forger.
+Show victory / reward screen.
+Show reward:
+Ed Fragment
+Grammaria
+Show short story after victory.
+Continue to the Irregular Verbs lesson.
+The “ถัดไป” or continue button must work.
+Required story after Mini Boss 1:
+มาสเตอร์เวรีออน:
+“ดีมาก ผู้พเนจร โรงหลอม -ed เริ่มกลับมาจดจำกฎของมันได้อีกครั้งแล้ว”
+“แต่เส้นทางของอดีตยังไม่สิ้นสุด คำกริยาบางคำไม่ยอมเดินตามกฎของ -ed”
+“ต่อจากนี้ เจ้าจะได้พบกับคำกริยาที่เปลี่ยนรูปไปเอง กริยาเหล่านั้นเรียกว่า Irregular Verbs”
+Then continue to:
+Irregular Verbs / ถ้ำกริยาที่ไม่เชื่อฟังกฎ
+Please check and fix:
+missing nextStageId
+missing nextStepId
+battle victory callback
+stage completion flag
+currentStage/currentStep index
+localStorage save/load after boss victory
+button handler after boss victory
+broken condition after The -ed Forger
+Set progress flag:
+playerData.progress.pastFragmentAct.edMiniBossDefeated = true
+Unlock:
+Irregular Verbs lesson / Irregular Cave
+Acceptance:
+After defeating The -ed Forger, the game must continue to Irregular Verbs without freezing or getting stuck.
+2. Improve parry input stability
+Current issue:
+The parry bar looks okay, but sometimes when the player taps at the correct point, it does not count. It feels delayed or unfair.
+Required fix:
+Make parry input more stable and fair.
+Implementation requirements:
+Use requestAnimationFrame for parry animation if possible.
+Track marker position and target zone positions in JavaScript state, not only CSS.
+When the player taps, immediately freeze the current marker position.
+Evaluate using the frozen value at the exact tap moment.
+Use pointerdown or touchstart instead of click for parry.
+Prevent double triggering.
+Add small tolerance so visually correct taps feel fair.
+Suggested tolerance:
+const HIT_TOLERANCE = 6;
+The visual bar and hit calculation must match.
+Parry zones:
+Orange = Weak Parry
+Yellow = Good Parry
+Green = Perfect Parry
+Outside = Miss
+Scoring:
+Perfect Parry = no damage + small counterattack or bonus Grammaria
+Good Parry = reduced damage
+Weak Parry = small damage reduction
+Miss = full damage
+Acceptance:
+If player taps visually inside green, result should reliably be Perfect.
+If player taps visually inside yellow, result should reliably be Good.
+If player taps visually inside orange, result should reliably be Weak.
+No delayed feeling.
+Works on mobile and desktop.
+3. Add more charm variety
+Current issue:
+Charm selection exists but has too few options and feels repetitive.
+Required fix:
+Add a bigger charm pool and make charm effects feel more varied.
+Charm should appear after a correct answer, before the final attack resolves.
+Add at least 12 charms:
+รูนพลังโจมตี
+Effect: increase current attack damage by 30%
+ประกายแกรมมาเรีย
+Effect: gain extra Grammaria after this turn
+โจมตีสะท้อน
+Effect: deal a small extra hit after main attack
+โล่สมาธิ
+Effect: reduce damage from next enemy attack
+หน่วงเวลา
+Effect: slow the parry marker for next parry phase
+เขตปัดป้องกว้างขึ้น
+Effect: slightly widen orange/yellow/green parry zones for next parry
+แทงทะลุความทรงจำ
+Effect: bonus damage against memory/time enemies
+แสงเยียวยา
+Effect: restore small player HP
+โอกาสครั้งที่สอง
+Effect: if next parry misses, upgrade it to Weak Parry once
+ชาร์จผลึก
+Effect: build 1 crystal charge; at 3 charges, next attack deals heavy bonus damage
+คำใบ้จากอาจารย์
+Effect: next question removes one wrong answer
+เปลวไฟแห่งอดีต
+Effect: bonus damage if the question is about V2 / Past Simple
+พลังแห่งการทบทวน
+Effect: if next answer is wrong, show explanation and allow one retry without enemy counterattack
+เงาสะท้อนเวลา
+Effect: repeat 25% of the damage dealt this turn at the start of next turn
+Charm selection rules:
+Show 3 random charm cards after correct answers.
+Avoid showing the exact same 3 cards repeatedly.
+Show title, short description, and select button.
+Apply effect clearly.
+Show feedback:
+“เลือก Charm: รูนพลังโจมตี — พลังโจมตีเพิ่มขึ้น”
+Continue battle normally after selection.
+Create battleState.activeEffects if needed:
+battleState.activeEffects = {
+damageMultiplier: 1,
+nextDamageReduction: 0,
+parrySlow: false,
+parryZoneBonus: 0,
+secondChance: false,
+hintNextQuestion: false,
+retryNextWrong: false,
+echoDamageNextTurn: 0,
+crystalCharge: 0
+};
+Acceptance:
+Charm selection appears after correct answers.
+At least 12 charms exist.
+Charm effects visibly affect the battle.
+Charm UI remains mobile-friendly.
+4. Fix Back button behavior
+Current issue:
+The Back button does not return to the previous screen, previous lesson step, or previous content correctly.
+Required behavior:
+If in lesson step
+If current lesson step index > 0, go to previous lesson step.
+If current lesson step index == 0, go back to stage map.
+If in question
+If feedback is open, go back to the question state or previous step.
+If question is not answered yet, go back to previous teaching step.
+If modal is open
+Back button should close modal first.
+If in battle
+Do not break battle state.
+Show confirmation:
+“ออกจากการต่อสู้นี้หรือไม่?”
+Options:
+อยู่ต่อ
+ออกจากการต่อสู้
+If user confirms exit:
+return to the stage intro or stage map
+do not corrupt progress
+Implementation suggestion:
+Use a simple navigation stack or fix the existing navigation system.
+Acceptance:
+Back works in lesson.
+Back closes modal.
+Back during battle asks confirmation.
+Back does not reset progress unexpectedly.
+No console errors.
+5. Expand dialogue and make character speech more natural
+Current issue:
+The dialogue is too short and sounds like the user/teacher directly explaining content. It does not yet feel like Master Verion naturally teaching in the Lingua world.
+Required fix:
+Rewrite and expand key lesson dialogue so it feels:
+warmer
+more magical
+more like Master Verion speaking
+less like a textbook
+less like the user directly teaching
+more like a story-guided RPG lesson
+Do not put all information in one text box.
+Break it into steps.
+One idea per dialogue step.
+Style guide for Master Verion
+Master Verion should sound:
+wise
+kind
+patient
+slightly mysterious
+like a mentor in a fantasy world
+clear enough for Grade 8–9 students
+Example style:
+“ผู้พเนจรเอ๋ย ก่อนที่เราจะใช้พลังของอดีต เจ้าต้องรู้ก่อนว่าอดีตไม่ใช่เพียงเรื่องไกลตัว”
+“บางครั้ง อดีตอาจอยู่ใกล้มาก เพียงหนึ่งวินาทีก่อนหน้านี้ก็กลายเป็นอดีตแล้ว เพราะมันเกิดขึ้น และจบลงไปแล้ว”
+Replace short/dry lines with longer guided dialogue
+For “อดีตคืออะไร”, use this sequence:
+Step 1:
+มาสเตอร์เวรีออน:
+“ผู้พเนจรเอ๋ย ก่อนที่เราจะก้าวเข้าสู่ดินแดนแห่งอดีต เจ้าต้องเข้าใจก่อนว่า ‘อดีต’ คืออะไร”
+Step 2:
+มาสเตอร์เวรีออน:
+“หลายคนคิดว่าอดีตต้องเป็นเรื่องไกลตัว เช่น เมื่อวาน เดือนที่แล้ว หรือปีที่แล้ว แต่ความจริงแล้ว อดีตอาจอยู่ใกล้กว่านั้นมาก”
+Step 3:
+มาสเตอร์เวรีออน:
+“สิ่งใดก็ตามที่เกิดขึ้นแล้ว และจบลงแล้ว สิ่งนั้นคืออดีต”
+Step 4:
+มาสเตอร์เวรีออน:
+“หนึ่งวินาทีก่อนหน้านี้ ก็เป็นอดีต สิบนาทีก่อน ก็เป็นอดีต เมื่อเช้าที่ผ่านมา ก็เป็นอดีตเช่นกัน”
+Step 5:
+มาสเตอร์เวรีออน:
+“อดีตคือร่องรอยของสิ่งที่เคยเกิดขึ้น และภาษาคือเวทมนตร์ที่ช่วยให้เราบอกเล่าร่องรอยนั้นได้ถูกต้อง”
+Then add interaction:
+มาสเตอร์เวรีออน:
+“ถ้าอย่างนั้น เจ้าคิดว่าข้อใดคืออดีต?”
+Choices:
+สิ่งที่กำลังเกิดขึ้นตอนนี้
+สิ่งที่เกิดขึ้นแล้วและจบลงแล้ว
+สิ่งที่ยังไม่เกิดขึ้น
+Correct response:
+“ถูกต้อง อดีตคือสิ่งที่เกิดขึ้นแล้ว และจบลงแล้ว”
+Wrong response:
+“ยังไม่ใช่ ลองจำไว้ว่าอดีตต้องเป็นสิ่งที่ผ่านไปแล้ว ไม่ใช่สิ่งที่กำลังเกิดขึ้นหรือยังไม่เกิดขึ้น”
+For Tense lesson, use this style:
+Step 1:
+มาสเตอร์เวรีออน:
+“คราวนี้ลองมองภาษาไทยก่อนนะ ผู้พเนจร ภาษาไทยมักใช้คำบอกเวลาเพื่อบอกว่าเหตุการณ์เกิดขึ้นตอนไหน”
+Show:
+ฉันกินข้าววันนี้
+ฉันกินข้าวเมื่อวาน
+ฉันจะกินข้าวพรุ่งนี้
+Step 2:
+มาสเตอร์เวรีออน:
+“สังเกตให้ดี คำว่า ‘กิน’ ยังเป็นคำเดิม แต่คำว่า วันนี้ เมื่อวาน และ พรุ่งนี้ ทำให้เวลาของประโยคเปลี่ยนไป”
+Step 3:
+มาสเตอร์เวรีออน:
+“แต่ภาษาอังกฤษต่างออกไป ภาษาอังกฤษไม่ได้ดูแค่คำบอกเวลาเท่านั้น แต่ยังดูรูปของคำกริยาด้วย”
+Show:
+I go. = Present (ปัจจุบัน)
+I went. = Past (อดีต)
+I will go. = Future (อนาคต)
+Step 4:
+มาสเตอร์เวรีออน:
+“เมื่อเวลาเปลี่ยน รูปกริยาก็เปลี่ยนตาม นี่แหละคือแนวคิดของคำว่า tense”
+Step 5:
+มาสเตอร์เวรีออน:
+“ใน ACT นี้ เราจะไม่เรียนทุก tense พร้อมกัน เราจะมุ่งไปที่พลังของอดีต นั่นคือ Past และคำกริยาช่องที่ 2 หรือ V2”
+Then interaction:
+“จากตัวอย่างนี้ I went. อยู่ในช่วงเวลาใด?”
+Choices:
+Present (ปัจจุบัน)
+Past (อดีต)
+Future (อนาคต)
+For Regular Verbs, use natural dialogue:
+มาสเตอร์เวรีออน:
+“ในดินแดนแห่งอดีต คำกริยาบางคำเชื่อฟังกฎ พวกมันเปลี่ยนเป็นอดีตอย่างเป็นระเบียบ เราเรียกพวกมันว่า Regular Verbs”
+“คำกริยากลุ่มนี้มักเติม -ed หรือ -d เพื่อกลายเป็นอดีต แต่ไม่ได้เติมแบบเดียวกันทุกคำ เจ้าต้องดูรูปของคำให้ดี”
+Then teach each rule one by one.
+For Irregular Verbs:
+มาสเตอร์เวรีออน:
+“แต่ไม่ใช่คำกริยาทุกคำจะยอมเดินเข้าโรงหลอม -ed”
+“บางคำเปลี่ยนรูปไปเอง ราวกับมีเส้นทางของมันอยู่แล้ว เราเรียกคำเหล่านี้ว่า Irregular Verbs”
+“คำเหล่านี้ต้องจำเป็นคำ ๆ เช่น go กลายเป็น went, eat กลายเป็น ate และ see กลายเป็น saw”
+Acceptance:
+Dialogue is longer and more natural.
+It sounds like Master Verion, not like a normal classroom note.
+Lessons still remain step-by-step.
+There are interactions at suitable moments.
+6. Add Skip to Battle system
+Required feature:
+Add a button that lets the user skip directly to a battle section.
+Purpose:
+For testing and for users who already understand the lesson.
+Button label:
+ข้ามไปต่อสู้
+Where to show:
+On lesson screens, preferably as a secondary button.
+It should not replace the main learning flow.
+Behavior:
+When user clicks “ข้ามไปต่อสู้”:
+Show confirmation modal:
+“ต้องการข้ามบทเรียนไปสู่การต่อสู้ใช่หรือไม่?”
+Buttons:
+ยกเลิก
+ข้ามไปต่อสู้
+If confirmed, show an enemy selection screen.
+The player chooses which enemy/battle to jump to.
+Then start that battle immediately.
+Enemy selection screen should show:
+enemy name
+enemy image
+short description
+related lesson/battle
+Enemies to include:
+Time Dust
+Description:
+ศัตรูฝึกพื้นฐานเกี่ยวกับเวลาและอดีต
+Echo Tick
+Description:
+ศัตรูฝึกการเติม -d เมื่อคำกริยาลงท้ายด้วย e
+Rewind Slime
+Description:
+ศัตรูฝึกคำกริยาที่ต้องย้อนรูปและเติม -ed ให้ถูกต้อง
+The -ed Forger
+Description:
+Mini Boss รวมกฎ Regular Verbs
+The Irregular Wraith
+Description:
+Mini Boss รวม Irregular Verbs
+The Memory Breaker
+Description:
+Final Boss รวม V2 ทั้งหมด
+Each enemy card must show:
+image
+name
+description
+button: เริ่มต่อสู้
+Important:
+This skip system is for jumping to battle.
+It should not mark previous lessons as completed unless the battle is actually won.
+If the player wins a skipped battle:
+Give normal battle reward if appropriate.
+But do not break progression.
+Implementation:
+Create function like:
+openSkipBattleModal()
+renderBattleSelect()
+startBattleByEnemy(enemyId)
+Acceptance:
+Clicking ข้ามไปต่อสู้ opens confirmation.
+Confirm opens enemy selection.
+Enemy cards show name + image.
+Choosing enemy starts battle.
+Cancel returns to current lesson.
+No progress corruption.
+7. Add the 3 new enemy designs
+I will attach 3 enemy images.
+Add them to local assets:
+Suggested paths:
+assets/enemies/time-dust.png
+assets/enemies/echo-tick.png
+assets/enemies/rewind-slime.png
+Use the images as follows:
+Time Dust
+Use attached Time Dust design.
+Enemy id:
+timeDust
+Name:
+Time Dust / ฝุ่นเวลา
+Description:
+ฝุ่นแห่งกาลเวลาที่ลอยวนอยู่รอบเศษความทรงจำ
+Echo Tick
+Use attached Echo Tick design.
+Enemy id:
+echoTick
+Name:
+Echo Tick / ติ๊กสะท้อนอดีต
+Description:
+สิ่งมีชีวิตกลไกเวลาที่ทำให้ช่วงเวลาซ้ำไปซ้ำมา
+Rewind Slime
+Use attached Rewind Slime design.
+Enemy id:
+rewindSlime
+Name:
+Rewind Slime / สไลม์ย้อนเวลา
+Description:
+สไลม์แห่งการย้อนกลับที่กลืนเศษเวลาไว้ในตัว
+Update enemy sprite map:
+const ENEMY_SPRITES = {
+memoryShade: "assets/memory-shade.png",
+timeDust: "assets/enemies/time-dust.png",
+echoTick: "assets/enemies/echo-tick.png",
+rewindSlime: "assets/enemies/rewind-slime.png"
+};
+If the current code uses enemy names instead of IDs, map both:
+"Time Dust": "assets/enemies/time-dust.png"
+"Echo Tick": "assets/enemies/echo-tick.png"
+"Rewind Slime": "assets/enemies/rewind-slime.png"
+CSS:
+.enemy-sprite {
+object-fit: contain;
+object-position: center bottom;
+max-width: 100%;
+max-height: 100%;
+}
+Specific:
+.enemy-time-dust,
+.enemy-echo-tick,
+.enemy-rewind-slime {
+filter: drop-shadow(0 0 16px rgba(130, 80, 255, 0.55));
+}
+Acceptance:
+Time Dust no longer uses Memory Shade placeholder.
+Echo Tick no longer uses Memory Shade placeholder.
+Rewind Slime no longer uses Memory Shade placeholder.
+Each enemy uses its own attached image.
+Images are not stretched or cropped.
+Images appear in battle and skip battle selection.
+8. Testing checklist
+After editing, test:
+Defeat The -ed Forger.
+Confirm game continues to Irregular Verbs.
+Test parry many times and confirm less delay.
+Confirm parry zones register accurately.
+Confirm charm selection appears after correct answers.
+Confirm charm pool has more variety.
+Confirm Back works in lesson, modal, and battle.
+Confirm dialogue sounds more like Master Verion and is longer.
+Confirm “ข้ามไปต่อสู้” exists.
+Confirm skip requires confirmation.
+Confirm enemy selection appears after confirmation.
+Confirm enemy cards show image + name.
+Confirm Time Dust image works.
+Confirm Echo Tick image works.
+Confirm Rewind Slime image works.
+Confirm no console errors.
+Confirm no broken progression after skipped battle.
+9. End report
+After editing, report:
+Files changed
+How Mini Boss 1 progression was fixed
+How parry input stability was improved
+What new charms were added
+How Back button now works
+What dialogue content was expanded
+How skip-to-battle works
+Where the 3 enemy image assets were saved
+How enemy sprite mapping works
+How to test the full flow
+Any limitations
+Again:
+Modify the actual files.
+Do not only summarize.

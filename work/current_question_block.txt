@@ -1,0 +1,106 @@
+const regularRuleOneQuestions = [
+  { prompt: "walk ->", options: ["walked", "walkd", "walking", "walks"], answer: "walked", explanation: "walk เป็นคำกริยาทั่วไป เติม -ed" },
+  { prompt: "jump ->", options: ["jumpd", "jumped", "jumping", "jumps"], answer: "jumped", explanation: "jump เติม -ed เป็น jumped" },
+  { prompt: "wash ->", options: ["washed", "washd", "washing", "washes"], answer: "washed", explanation: "wash เติม -ed เป็น washed" },
+  { prompt: "look ->", options: ["looked", "lookked", "looking", "looks"], answer: "looked", explanation: "look เติม -ed เป็น looked" }
+];
+
+const regularRuleTwoQuestions = [
+  { prompt: "like ->", options: ["likeed", "liked", "likied", "liking"], answer: "liked", explanation: "like ลงท้ายด้วย e เติมแค่ -d" },
+  { prompt: "love ->", options: ["loveed", "loved", "lovied", "loving"], answer: "loved", explanation: "love ลงท้ายด้วย e เติมแค่ -d" },
+  { prompt: "dance ->", options: ["danceed", "danced", "dancd", "dancing"], answer: "danced", explanation: "dance ลงท้ายด้วย e เติมแค่ -d" },
+  { prompt: "close ->", options: ["closeed", "closed", "closied", "closing"], answer: "closed", explanation: "close ลงท้ายด้วย e เติมแค่ -d" }
+];
+
+const regularRuleThreeQuestions = [
+  { prompt: "play ->", options: ["played", "playied", "plaied", "playd"], answer: "played", explanation: "play มีสระ a อยู่หน้า y จึงเติม -ed ได้เลย" },
+  { prompt: "enjoy ->", options: ["enjoyed", "enjoied", "enjoyd", "enjoying"], answer: "enjoyed", explanation: "enjoy มีสระ o อยู่หน้า y จึงเติม -ed ได้เลย" },
+  { prompt: "study ->", options: ["studyed", "studied", "studyied", "studying"], answer: "studied", explanation: "study ลงท้ายด้วยพยัญชนะ + y จึงเปลี่ยน y เป็น i แล้วเติม -ed" },
+  { prompt: "cry ->", options: ["cryed", "cried", "cryied", "crying"], answer: "cried", explanation: "cry ลงท้ายด้วยพยัญชนะ + y จึงเปลี่ยน y เป็น i แล้วเติม -ed" },
+  { prompt: "try ->", options: ["tryed", "tried", "tryied", "trying"], answer: "tried", explanation: "try ลงท้ายด้วยพยัญชนะ + y จึงเปลี่ยน y เป็น i แล้วเติม -ed" }
+];
+
+const regularRuleFourQuestions = [
+  { prompt: "stop ->", options: ["stoped", "stopped", "stopied", "stopping"], answer: "stopped", explanation: "stop ต้องเพิ่ม p ก่อนเติม -ed" },
+  { prompt: "plan ->", options: ["planed", "planned", "planied", "planning"], answer: "planned", explanation: "plan ต้องเพิ่ม n ก่อนเติม -ed" },
+  { prompt: "drop ->", options: ["droped", "dropped", "dropd", "dropping"], answer: "dropped", explanation: "drop ต้องเพิ่ม p ก่อนเติม -ed" },
+  { prompt: "clap ->", options: ["claped", "clapped", "clapd", "clapping"], answer: "clapped", explanation: "clap ต้องเพิ่ม p ก่อนเติม -ed" }
+];
+
+const edForgerQuestions = [
+  ["walk", ["walked", "walkd", "walking", "walks"], "walked"],
+  ["jump", ["jumped", "jumpd", "jumping", "jumps"], "jumped"],
+  ["love", ["loveed", "loved", "lovied", "loving"], "loved"],
+  ["dance", ["danced", "danceed", "dancd", "dancing"], "danced"],
+  ["study", ["studyed", "studied", "studyied", "studying"], "studied"],
+  ["cry", ["cryed", "cried", "cryied", "crying"], "cried"],
+  ["try", ["tryed", "tried", "tryied", "trying"], "tried"],
+  ["play", ["played", "playied", "plaied", "playd"], "played"],
+  ["enjoy", ["enjoyed", "enjoied", "enjoyd", "enjoying"], "enjoyed"],
+  ["stop", ["stoped", "stopped", "stopied", "stopping"], "stopped"],
+  ["plan", ["planed", "planned", "planied", "planning"], "planned"],
+  ["drop", ["droped", "dropped", "dropd", "dropping"], "dropped"],
+  ["clap", ["claped", "clapped", "clapd", "clapping"], "clapped"],
+  ["close", ["closed", "closeed", "closied", "closing"], "closed"],
+  ["open", ["opened", "openned", "opend", "opening"], "opened"]
+].map(([verb, options, answer]) => ({
+  prompt: `${verb} ->`,
+  options,
+  answer,
+  explanation: `${verb} ในรูปอดีตที่ถูกต้องคือ ${answer}`
+}));
+
+const irregularPracticeQuestions = [
+  { prompt: "go ->", options: ["goed", "went", "goes", "going"], answer: "went", explanation: "go เป็น irregular verb รูป V2 คือ went" },
+  { prompt: "eat ->", options: ["eated", "ate", "eats", "eating"], answer: "ate", explanation: "eat เป็น irregular verb รูป V2 คือ ate" },
+  { prompt: "see ->", options: ["saw", "seed", "seen", "seeing"], answer: "saw", explanation: "see เป็น irregular verb รูป V2 คือ saw" },
+  { prompt: "buy ->", options: ["buyed", "bought", "buys", "buying"], answer: "bought", explanation: "buy เป็น irregular verb รูป V2 คือ bought" },
+  { sentence: "Yesterday, I ____ to school.", options: ["go", "went", "goes", "going"], answer: "went", explanation: "Yesterday บอกอดีต จึงใช้ went" }
+];
+
+const irregularWraithQuestions = [
+  ["go", ["goed", "went", "goes", "going"], "went"],
+  ["eat", ["eated", "ate", "eats", "eating"], "ate"],
+  ["see", ["saw", "seed", "seen", "seeing"], "saw"],
+  ["buy", ["buyed", "bought", "buys", "buying"], "bought"],
+  ["take", ["taked", "took", "taken", "taking"], "took"],
+  ["come", ["comed", "came", "comes", "coming"], "came"],
+  ["have", ["haved", "had", "has", "having"], "had"],
+  ["do", ["doed", "did", "does", "doing"], "did"],
+  ["make", ["maked", "made", "makes", "making"], "made"],
+  ["write", ["writed", "wrote", "written", "writing"], "wrote"],
+  ["meet", ["meeted", "met", "meets", "meeting"], "met"],
+  ["choose", ["choosed", "chose", "chosen", "choosing"], "chose"],
+  ["give", ["gived", "gave", "given", "giving"], "gave"],
+  ["get", ["getted", "got", "gets", "getting"], "got"],
+  ["read", ["readed", "read", "reads", "reading"], "read"]
+].map(([verb, options, answer]) => ({
+  prompt: `${verb} ->`,
+  options,
+  answer,
+  explanation: `${verb} เป็น irregular verb รูป V2 คือ ${answer}`
+}));
+
+const finalBossQuestions = [
+  { type: "verb-change", prompt: "walk ->", options: ["walked", "walkd", "walking", "walks"], answer: "walked", explanation: "walk เป็น regular verb เติม -ed" },
+  { type: "verb-change", prompt: "love ->", options: ["loveed", "loved", "lovied", "loving"], answer: "loved", explanation: "love ลงท้ายด้วย e เติมแค่ -d" },
+  { type: "verb-change", prompt: "study ->", options: ["studyed", "studied", "studyied", "studying"], answer: "studied", explanation: "study เปลี่ยน y เป็น i แล้วเติม -ed" },
+  { type: "verb-change", prompt: "stop ->", options: ["stoped", "stopped", "stopied", "stopping"], answer: "stopped", explanation: "stop ต้องเพิ่ม p ก่อนเติม -ed" },
+  { type: "verb-change", prompt: "go ->", options: ["goed", "went", "goes", "going"], answer: "went", explanation: "go เป็น irregular verb รูป V2 คือ went" },
+  { type: "verb-change", prompt: "eat ->", options: ["eated", "ate", "eats", "eating"], answer: "ate", explanation: "eat เป็น irregular verb รูป V2 คือ ate" },
+  { type: "verb-change", prompt: "choose ->", options: ["choosed", "chose", "chosen", "choosing"], answer: "chose", explanation: "choose เป็น irregular verb รูป V2 คือ chose" },
+  { type: "verb-change", prompt: "try ->", options: ["tryed", "tried", "tryied", "trying"], answer: "tried", explanation: "try เปลี่ยน y เป็น i แล้วเติม -ed" },
+  { type: "sentence-fill", sentence: "Yesterday, I ____ to school.", options: ["go", "went", "goes", "going"], answer: "went", explanation: "Yesterday บอกอดีต จึงใช้ went" },
+  { type: "sentence-fill", sentence: "Last night, she ____ a movie.", options: ["watch", "watched", "watches", "watching"], answer: "watched", explanation: "watch เป็น regular verb เติม -ed เป็น watched" },
+  { type: "sentence-fill", sentence: "Two days ago, we ____ dinner together.", options: ["eat", "ate", "eats", "eating"], answer: "ate", explanation: "eat เป็น irregular verb รูป V2 คือ ate" },
+  { type: "sentence-fill", sentence: "Last week, he ____ a new book.", options: ["buy", "bought", "buys", "buying"], answer: "bought", explanation: "buy เป็น irregular verb รูป V2 คือ bought" },
+  { type: "sentence-fill", sentence: "My mother ____ breakfast this morning.", options: ["cook", "cooked", "cooks", "cooking"], answer: "cooked", explanation: "cook เป็น regular verb เติม -ed เป็น cooked" },
+  { type: "sentence-fill", sentence: "He ____ his homework last night.", options: ["do", "did", "does", "doing"], answer: "did", explanation: "do เป็น irregular verb รูป V2 คือ did" },
+  { type: "sentence-fill", sentence: "They ____ English yesterday.", options: ["study", "studied", "studyed", "studying"], answer: "studied", explanation: "study เปลี่ยน y เป็น i แล้วเติม -ed" },
+  { type: "correct-sentence", prompt: "เลือกประโยคที่ถูกต้อง", options: ["Yesterday, I go to school.", "Yesterday, I went to school.", "Yesterday, I goes to school.", "Yesterday, I going to school."], answer: "Yesterday, I went to school.", explanation: "Yesterday บอกอดีต จึงต้องใช้ went" },
+  { type: "correct-sentence", prompt: "เลือกประโยคที่ถูกต้อง", options: ["Last night, she see a bird.", "Last night, she saw a bird.", "Last night, she sees a bird.", "Last night, she seeing a bird."], answer: "Last night, she saw a bird.", explanation: "see ในรูป V2 คือ saw" },
+  { type: "correct-sentence", prompt: "เลือกประโยคที่ถูกต้อง", options: ["We watched TV yesterday.", "We watch TV yesterday.", "We watches TV yesterday.", "We watching TV yesterday."], answer: "We watched TV yesterday.", explanation: "watch ใช้ในอดีตเป็น watched" },
+  { type: "correct-sentence", prompt: "เลือกประโยคที่ถูกต้อง", options: ["I studied English last night.", "I studyed English last night.", "I studying English last night.", "I studies English last night."], answer: "I studied English last night.", explanation: "study ต้องเปลี่ยน y เป็น i แล้วเติม -ed เป็น studied" },
+  { type: "sentence-fill", sentence: "She ____ her old friend yesterday.", options: ["meet", "met", "meets", "meeting"], answer: "met", explanation: "meet เป็น irregular verb รูป V2 คือ met" }
+];
+

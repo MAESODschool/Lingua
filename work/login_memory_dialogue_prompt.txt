@@ -1,0 +1,376 @@
+You are working on the existing HTML/CSS/JavaScript project “Lingua: A Grammaria RPG”.
+Current files:
+index.html
+style.css
+script.js
+I will attach reference images:
+Login screen reference image
+Memory Shade enemy reference image
+Player protagonist image, if needed
+Please modify the actual project files. Do not only summarize. Do not simulate. Do not say it is done unless the playable UI is actually changed.
+This task has 6 goals:
+Slow down the typewriter dialogue speed
+Add occasional interactive dialogue choices
+Fix character image sizing/cropping
+Improve lesson presentation before battles
+Replace Memory Shade design using the attached image
+Redesign the login page based on the attached login reference image
+Do not remove existing systems:
+login / guest login
+player data
+localStorage
+ACT: The Past Fragment content
+battle system
+lesson progression
+existing stage data
+1. Slow down dialogue text speed
+Current problem:
+The dialogue/typewriter text runs too fast.
+Required fix:
+Make the typewriter effect slower and easier to read.
+Suggested behavior:
+Normal dialogue speed: around 35–50ms per character
+Important teacher explanation: around 45–65ms per character
+Allow punctuation pauses:
+comma / Thai comma / short phrase pause: +150ms
+full stop / question mark / exclamation mark: +250–400ms
+Do not instantly finish the text unless the player taps a skip/complete button, if such behavior already exists.
+If there is a variable like TYPE_SPEED, DIALOGUE_SPEED, typewriterDelay, etc., adjust it.
+If not, create one centralized setting.
+Example:
+const DIALOGUE_SPEED = 45;
+const DIALOGUE_PUNCTUATION_PAUSE = {
+".": 280,
+"?": 320,
+"!": 320,
+"。": 280,
+"…": 400,
+",": 150,
+" ": 0
+};
+Acceptance:
+Dialogue should feel like a teacher is calmly explaining, not rushing.
+2. Add occasional interactive dialogue choices
+Current problem:
+Dialogue is only “Next, Next, Next”. It feels passive.
+Required change:
+Add occasional player response choices during dialogue scenes.
+Important:
+Do NOT add choices to every dialogue line.
+Only add choices at moments where a student can respond naturally.
+Examples:
+During the first lesson about past/present/future:
+Master Verion:
+“ลองดู 3 ประโยคนี้ ผู้พเนจร เธอคิดว่าประโยคใดพูดถึงอดีต?”
+Choices:
+“ฉันกินข้าววันนี้”
+“ฉันกินข้าวเมื่อวาน”
+“ฉันจะกินข้าวพรุ่งนี้”
+If player chooses correctly:
+Master Verion:
+“ถูกต้อง คำว่า ‘เมื่อวาน’ บอกว่าเหตุการณ์นั้นเกิดขึ้นแล้ว นี่แหละคืออดีต”
+If player chooses incorrectly:
+Master Verion:
+“ยังไม่ใช่ ลองสังเกตคำบอกเวลาอีกครั้ง คำว่า ‘เมื่อวาน’ คือเวลาที่ผ่านไปแล้ว”
+Another example:
+Master Verion:
+“ภาษาไทยกับภาษาอังกฤษต่างกันอย่างไรเมื่อพูดถึงเวลา?”
+Choices:
+“ภาษาไทยกริยาไม่ค่อยเปลี่ยน แต่ภาษาอังกฤษเปลี่ยนรูปกริยา”
+“ภาษาอังกฤษไม่มีอดีต”
+“ภาษาไทยต้องเติม -ed เสมอ”
+Correct response leads to teacher praise.
+Wrong response leads to teacher explanation.
+Implementation requirement:
+Add a dialogue choice system that supports:
+dialogue line
+choices
+correct/selected choice
+next dialogue response depending on choice
+Possible data format:
+{
+speaker: "teacher",
+text: "ลองดู 3 ประโยคนี้ เธอคิดว่าประโยคใดพูดถึงอดีต?",
+choices: [
+{
+text: "ฉันกินข้าววันนี้",
+nextText: "ยังไม่ใช่ วันนี้คือปัจจุบัน ลองดูคำว่าเมื่อวานอีกครั้ง"
+},
+{
+text: "ฉันกินข้าวเมื่อวาน",
+nextText: "ถูกต้อง คำว่าเมื่อวานบอกว่าเหตุการณ์เกิดขึ้นแล้ว นี่แหละคืออดีต"
+},
+{
+text: "ฉันจะกินข้าวพรุ่งนี้",
+nextText: "ยังไม่ใช่ พรุ่งนี้คืออนาคต เพราะเป็นสิ่งที่ยังไม่เกิดขึ้น"
+}
+]
+}
+If the current dialogue system cannot support branching deeply, implement simple one-step choices:
+player selects a response
+show Master Verion’s reaction
+continue normal dialogue flow
+Acceptance:
+The lesson should sometimes ask the player to think and respond, not only press Next repeatedly.
+3. Fix character image sizing/cropping
+Current problem:
+Some character images are cropped or appear with the head cut off.
+Required fix:
+Make character sprites display fully and correctly.
+Requirements:
+Character images must never have their heads cut off.
+Use object-fit: contain.
+Do not stretch images.
+Use max-height and max-width properly.
+Keep character inside the lesson scene frame.
+Player should stand on the left.
+Master Verion should stand on the right.
+In battle, active character may enlarge slightly, but still must not be cropped.
+Suggested CSS:
+.character-sprite,
+.lesson-character,
+.battle-character {
+object-fit: contain;
+object-position: center bottom;
+max-width: 100%;
+max-height: 100%;
+}
+.lesson-character-player {
+width: clamp(95px, 27vw, 150px);
+height: auto;
+}
+.lesson-character-teacher {
+width: clamp(110px, 30vw, 170px);
+height: auto;
+}
+Do not use fixed height with overflow hidden that cuts off the character.
+If the parent container has overflow: hidden, ensure the sprite has enough room.
+Acceptance:
+The full body and head of the player and teacher must be visible.
+4. Improve lesson presentation before battles
+Current problem:
+Lesson content is being dumped into one large box. Students will not read it. The lesson should feel like a teacher talking step by step.
+Required change:
+Before every battle, lesson content must be presented as short teaching dialogue slides, not one long text block.
+Do this especially for:
+What is the past?
+What is tense?
+V2
+Regular verbs
+-ed rules
+Irregular verbs
+Teaching style:
+Master Verion explains one small idea at a time.
+Use short dialogue lines.
+Use examples visually.
+Use thought bubbles or lesson bubbles.
+Ask the player small questions sometimes.
+After each rule, give a small drill before battle.
+Do NOT put all explanations in one huge panel.
+Example flow for Regular Rule 2:
+Slide 1:
+Master Verion:
+“ต่อไปดูคำกริยาที่ลงท้ายด้วย e เช่น love, like, dance”
+Slide 2:
+System / thought bubble:
+love already has e at the end.
+Slide 3:
+Master Verion:
+“เพราะมี e อยู่แล้ว เราไม่เติม e ซ้ำ แต่เติมแค่ -d”
+Visual example bubble:
+love + d = loved
+like + d = liked
+dance + d = danced
+Slide 4:
+Master Verion:
+“ลองตอบดู love เมื่อเป็นอดีตควรเป็นคำใด?”
+Choices:
+loveed
+loved
+loving
+After answer:
+Master Verion gives explanation.
+Then small practice enemy appears.
+Required for each regular rule:
+Rule 1
+General verbs add -ed
+Examples:
+walk → walked
+jump → jumped
+wash → washed
+look → looked
+Rule 2
+Ending in e add only -d
+Examples:
+love → loved
+like → liked
+dance → danced
+close → closed
+Rule 3
+Ending in y
+Vowel + y → add -ed
+play → played
+enjoy → enjoyed
+Consonant + y → change y to i + ed
+study → studied
+cry → cried
+try → tried
+Rule 4
+CVC / short verbs double final consonant + ed
+stop → stopped
+plan → planned
+drop → dropped
+clap → clapped
+Important:
+Each rule must have:
+Short teacher explanation
+Visual example bubble
+One or two interactive questions
+Then practice / small enemy
+Only after all rules are learned should the mini boss start
+For irregular verbs:
+Explain first:
+“Irregular Verbs ไม่เติม -ed แต่เปลี่ยนรูปไปเอง ต้องจำเป็นคำ ๆ”
+Compare:
+Regular:
+walk → walked
+play → played
+study → studied
+Irregular:
+go → went
+eat → ate
+see → saw
+buy → bought
+Then use drills before boss.
+Acceptance:
+Students should learn step by step before fighting. No battle should start before a lesson and small practice.
+5. Replace Memory Shade enemy design
+I will attach the official Memory Shade image.
+Use the attached Memory Shade image as the enemy design for “Memory Shade”.
+Character identity:
+Memory Shade is a shadow spirit made from broken memories and distorted language.
+Visual reference:
+dark purple / indigo ghost-like body
+glowing cyan eyes
+crystal core in chest
+floating memory shards
+broken clock fragments
+torn scroll pieces
+cute-threatening fantasy RPG enemy style
+white-background asset in the reference image
+Required:
+Copy the attached Memory Shade image into local assets.
+Suggested path:
+assets/memory-shade.png
+Use it for:
+Memory Shade enemy
+small memory-related enemy encounters if appropriate
+battle enemy sprite when enemy id/name is Memory Shade
+Do not use the old placeholder enemy for Memory Shade.
+CSS:
+.enemy-memory-shade {
+object-fit: contain;
+object-position: center bottom;
+width: clamp(115px, 33vw, 190px);
+height: auto;
+filter: drop-shadow(0 0 16px rgba(148, 92, 255, 0.65));
+}
+If the enemy appears in battle, keep it readable and not stretched.
+Acceptance:
+Memory Shade should look like the attached image, not a generic placeholder.
+6. Redesign login page based on attached login image
+I will attach the official login screen reference.
+Use this attached login image as the exact style/layout reference for the login page.
+Required login screen style:
+polished vertical mobile fantasy RPG login screen
+blue/purple magical library/tower background
+large gold “Lingua” logo
+subtitle “A Grammaria RPG”
+chibi female character on the left
+ornate parchment login panel on the right / center
+red glossy Gmail button
+blue glossy Guest button
+player name input
+Gmail email input
+large purple glossy start button
+bottom note about temporary local save
+gold trim, gems, sparkles, magic letters
+Important:
+Do not make it look like a plain webpage login.
+Layout:
+centered mobile game frame on desktop
+full-width mobile on phone
+9:16 vertical feel
+no broken plain input boxes
+buttons large and glossy
+Login UI text:
+ยินดีต้อนรับ
+Lingua
+A Grammaria RPG
+เข้าสู่ระบบด้วย Gmail
+เข้าเล่นแบบ Guest
+กรอกชื่อผู้เล่น
+เช่น Mina
+กรอกอีเมล Gmail
+name@gmail.com
+เริ่มเข้าสู่โลก Lingua
+ข้อมูลจะถูกบันทึกในเครื่องชั่วคราว
+If the current login uses mock login only, keep the behavior.
+Do not implement real Gmail OAuth unless it already exists.
+The Gmail button may remain mock login if the prototype uses localStorage.
+Acceptance:
+Login screen should visually match the attached reference image much more closely.
+7. Asset handling
+Use local relative paths only.
+Suggested assets:
+assets/player-wanderer.png
+assets/master-verion.png
+assets/memory-shade.png
+assets/login-reference-style-background.png if needed
+Do not hotlink external images.
+If image files are uploaded in the environment, copy them into the project assets folder and reference them locally.
+8. Do not break existing systems
+Keep:
+login behavior
+guest login
+localStorage
+ACT data
+stage progression
+battle system
+lesson content
+answer checking
+parry system if already implemented
+Only modify:
+dialogue speed
+occasional dialogue choices
+character image sizing
+lesson presentation style
+Memory Shade image
+login page design
+9. Acceptance test
+After editing, I should be able to confirm:
+Dialogue text is slower and easier to read.
+Some lesson dialogues include player response choices.
+Choices affect the next teacher line at least in simple one-step form.
+Character sprites are no longer cropped or headless.
+Lesson explanations are broken into smaller teaching dialogue steps.
+Regular verb rules are taught one at a time.
+Students practice after each rule before battle.
+Memory Shade uses the attached enemy image.
+Login screen visually follows the attached login reference.
+No old placeholder enemy remains for Memory Shade.
+No external library is added.
+The game still runs through the ACT flow.
+10. End report
+After editing, report:
+Files changed
+Assets added and their paths
+Dialogue speed variable/function edited
+Dialogue choice system added/modified
+Lesson render function edited
+Memory Shade rendering changed
+Login UI classes/functions changed
+How to test each change
+Any limitations
+Again:
+Modify the actual files. Do not only summarize.
