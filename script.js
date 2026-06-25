@@ -1208,8 +1208,8 @@ const state = {
   currentBgmKey: "",
   isMuted: false,
   lastDialogueTypeSfxAt: 0,
-  dialogueTypeSfxStopTimer: null,
-  dialogueTypeSfxWarned: false
+  dialogueTypeSfxWarned: false,
+  dialogueTypeSfxPoolIndex: 0
 };
 
 const bgmTracks = {
@@ -1223,9 +1223,20 @@ Object.values(bgmTracks).forEach(track => {
   track.volume = 0.45;
 });
 
-const dialogueTypeSfx = new Audio("assets/sfx/dialogue-type.mp3");
+const DIALOGUE_TYPE_SFX_PATH = "assets/sfx/dialogue-type.mp3";
+const DIALOGUE_TYPE_SFX_OFFSET = 0.12;
+const DIALOGUE_TYPE_SFX_TICK_MS = 180;
+const DIALOGUE_TYPE_SFX_COOLDOWN_MS = 65;
+const dialogueTypeSfx = new Audio(DIALOGUE_TYPE_SFX_PATH);
 dialogueTypeSfx.preload = "auto";
-dialogueTypeSfx.volume = 0.22;
+dialogueTypeSfx.volume = 0.38;
+const dialogueTypeSfxPool = Array.from({ length: 4 }, () => {
+  const track = new Audio(DIALOGUE_TYPE_SFX_PATH);
+  track.preload = "auto";
+  track.volume = 0.38;
+  return track;
+});
+dialogueTypeSfxPool.forEach(track => track.load());
 
 let dialogueTypeSfxLoadedLogged = false;
 
@@ -1401,28 +1412,48 @@ function playBgm(key) {
 }
 
 function shouldPlayDialogueTypeSfx() {
-  return state.lessonStoryMode
-    && state.isTypingDialogue
+  return state.isTypingDialogue
     && state.audioUnlocked
     && !state.isMuted
     && scenes.story
-    && scenes.story.classList.contains("active");
+    && scenes.story.classList.contains("active")
+    && els.dialoguePanel
+    && !els.dialoguePanel.classList.contains("hidden");
 }
 
 function primeDialogueTypeSfx() {
-  const wasMuted = dialogueTypeSfx.muted;
-  dialogueTypeSfx.muted = true;
-  dialogueTypeSfx.currentTime = 0;
-  dialogueTypeSfx.play()
-    .then(() => {
-      dialogueTypeSfx.pause();
-      dialogueTypeSfx.currentTime = 0;
-      dialogueTypeSfx.muted = state.isMuted || wasMuted;
-    })
-    .catch(error => {
-      dialogueTypeSfx.muted = state.isMuted || wasMuted;
-      console.warn("[SFX] Browser blocked dialogue type audio unlock", error);
-    });
+  [dialogueTypeSfx, ...dialogueTypeSfxPool].forEach(track => {
+    const originalVolume = track.volume;
+    track.volume = 0;
+    track.muted = false;
+    track.currentTime = 0;
+    track.play()
+      .then(() => {
+        track.pause();
+        track.currentTime = 0;
+        track.volume = originalVolume;
+        track.muted = state.isMuted;
+      })
+      .catch(error => {
+        track.volume = originalVolume;
+        track.muted = state.isMuted;
+        console.warn("[SFX] Browser blocked dialogue type audio unlock", error);
+      });
+  });
+}
+
+function seekDialogueTypeSfxStart(track) {
+  try {
+    track.currentTime = Math.min(DIALOGUE_TYPE_SFX_OFFSET, Math.max(track.duration - 0.05, 0) || DIALOGUE_TYPE_SFX_OFFSET);
+  } catch (error) {
+    track.currentTime = 0;
+  }
+}
+
+function getDialogueTypeSfxTrack() {
+  const track = dialogueTypeSfxPool[state.dialogueTypeSfxPoolIndex % dialogueTypeSfxPool.length];
+  state.dialogueTypeSfxPoolIndex += 1;
+  return track;
 }
 
 function playDialogueTypeSfxTick(character) {
@@ -1431,41 +1462,43 @@ function playDialogueTypeSfxTick(character) {
   }
 
   const now = typeof performance !== "undefined" ? performance.now() : Date.now();
-  const cooldown = 70;
-  if (state.typewriterIndex % 2 !== 0 || now - state.lastDialogueTypeSfxAt < cooldown) {
+  if (state.typewriterIndex % 2 !== 0 || now - state.lastDialogueTypeSfxAt < DIALOGUE_TYPE_SFX_COOLDOWN_MS) {
     return;
   }
   state.lastDialogueTypeSfxAt = now;
 
-  if (state.dialogueTypeSfxStopTimer) {
-    clearTimeout(state.dialogueTypeSfxStopTimer);
+  const track = getDialogueTypeSfxTrack();
+  if (track.dialogueTypeSfxStopTimer) {
+    clearTimeout(track.dialogueTypeSfxStopTimer);
   }
 
-  dialogueTypeSfx.pause();
-  dialogueTypeSfx.currentTime = 0;
-  dialogueTypeSfx.muted = state.isMuted;
-  dialogueTypeSfx.play().catch(error => {
+  track.pause();
+  seekDialogueTypeSfxStart(track);
+  track.volume = 0.38;
+  track.muted = state.isMuted;
+  track.play().catch(error => {
     if (!state.dialogueTypeSfxWarned) {
       console.warn("[SFX] Browser blocked dialogue type audio play", error);
       state.dialogueTypeSfxWarned = true;
     }
   });
 
-  state.dialogueTypeSfxStopTimer = setTimeout(() => {
-    dialogueTypeSfx.pause();
-    dialogueTypeSfx.currentTime = 0;
-    state.dialogueTypeSfxStopTimer = null;
-  }, 75);
+  track.dialogueTypeSfxStopTimer = setTimeout(() => {
+    track.pause();
+    track.currentTime = 0;
+    track.dialogueTypeSfxStopTimer = null;
+  }, DIALOGUE_TYPE_SFX_TICK_MS);
 }
 
 function stopDialogueTypeSfx() {
-  if (state.dialogueTypeSfxStopTimer) {
-    clearTimeout(state.dialogueTypeSfxStopTimer);
-    state.dialogueTypeSfxStopTimer = null;
-  }
-
-  dialogueTypeSfx.pause();
-  dialogueTypeSfx.currentTime = 0;
+  [dialogueTypeSfx, ...dialogueTypeSfxPool].forEach(track => {
+    if (track.dialogueTypeSfxStopTimer) {
+      clearTimeout(track.dialogueTypeSfxStopTimer);
+      track.dialogueTypeSfxStopTimer = null;
+    }
+    track.pause();
+    track.currentTime = 0;
+  });
 }
 
 function unlockAudio() {
@@ -1486,7 +1519,9 @@ function toggleMute() {
       track.pause();
     }
   });
-  dialogueTypeSfx.muted = state.isMuted;
+  [dialogueTypeSfx, ...dialogueTypeSfxPool].forEach(track => {
+    track.muted = state.isMuted;
+  });
 
   if (state.isMuted) {
     stopDialogueTypeSfx();
