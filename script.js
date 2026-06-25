@@ -1056,55 +1056,42 @@ function assetPath(fileName) {
   return `${ASSET_BASE_URL}${fileName.replace(/^\/+/, "")}`;
 }
 
-const MAIN_CHARACTER_VIDEO_PATH = "assets/characters/main-character-idle.webm";
+const MAIN_CHARACTER_GIF_PATH = "assets/characters/main-character-idle.gif";
 const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
 
-function createMainCharacterVideo(className = "") {
-  const video = document.createElement("video");
-  video.className = `main-character-video ${className}`.trim();
-  video.src = MAIN_CHARACTER_VIDEO_PATH;
-  video.autoplay = true;
-  video.loop = true;
-  video.muted = true;
-  video.playsInline = true;
-  video.preload = "auto";
-  video.setAttribute("playsinline", "");
-  video.setAttribute("webkit-playsinline", "");
-  video.setAttribute("aria-label", "ผู้พเนจร");
-  return video;
+function createMainCharacterElement(className = "") {
+  const img = document.createElement("img");
+  img.className = `main-character-gif ${className}`.trim();
+  img.src = MAIN_CHARACTER_GIF_PATH;
+  img.alt = "Main Character";
+  img.draggable = false;
+  return img;
 }
 
-function handleMainCharacterVideoError(video) {
-  console.warn("[Character] main-character-idle.webm failed to load");
-  if (video.dataset.fallbackApplied === "true") {
+function handleMainCharacterGifError(img) {
+  console.warn("[Character] main-character-idle.gif failed to load");
+  if (img.dataset.fallbackApplied === "true") {
     return;
   }
 
-  video.dataset.fallbackApplied = "true";
+  img.dataset.fallbackApplied = "true";
   const fallback = document.createElement("img");
-  if (video.id) {
-    fallback.id = video.id;
+  if (img.id) {
+    fallback.id = img.id;
   }
-  fallback.className = video.className.replace(/\bmain-character-video\b/g, "main-character-video-fallback").trim();
+  fallback.className = img.className.replace(/\bmain-character-gif\b/g, "main-character-gif-fallback").trim();
   fallback.src = MAIN_CHARACTER_FALLBACK_IMAGE_PATH;
-  fallback.alt = video.getAttribute("aria-label") || "ผู้พเนจร";
-  fallback.setAttribute("aria-hidden", video.getAttribute("aria-hidden") || "false");
-  video.replaceWith(fallback);
+  fallback.alt = img.alt || "Main Character";
+  fallback.draggable = false;
+  fallback.setAttribute("aria-hidden", img.getAttribute("aria-hidden") || "false");
+  img.replaceWith(fallback);
 }
 
-function setupMainCharacterVideos() {
-  document.querySelectorAll(".main-character-video").forEach(video => {
-    video.src = MAIN_CHARACTER_VIDEO_PATH;
-    video.autoplay = true;
-    video.loop = true;
-    video.muted = true;
-    video.playsInline = true;
-    video.preload = "auto";
-    video.setAttribute("playsinline", "");
-    video.setAttribute("webkit-playsinline", "");
-    video.addEventListener("error", () => handleMainCharacterVideoError(video), { once: true });
-    video.load();
-    video.play().catch(() => {});
+function setupMainCharacterGifs() {
+  document.querySelectorAll(".main-character-gif").forEach(img => {
+    img.src = MAIN_CHARACTER_GIF_PATH;
+    img.draggable = false;
+    img.addEventListener("error", () => handleMainCharacterGifError(img), { once: true });
   });
 }
 
@@ -2556,7 +2543,7 @@ function updateAvatarPreview() {
   const genderLabels = { male: "ชาย", female: "หญิง", other: "ไม่ระบุ" };
   const bodyLabels = { small: "ตัวเล็ก", normal: "ปกติ", tall: "สูง" };
 
-  els.avatarPreview.className = `avatar-preview main-character-video main-character-preview-video avatar-gender-${gender} avatar-body-${bodyType}`;
+  els.avatarPreview.className = `avatar-preview main-character-gif main-character-preview-gif avatar-gender-${gender} avatar-body-${bodyType}`;
   els.avatarPreviewText.textContent = `ตัวอย่าง: ${genderLabels[gender] || genderLabels.other} / ${bodyLabels[bodyType] || bodyLabels.normal}`;
 }
 
@@ -7671,5 +7658,5 @@ function bindGameAudioUnlockEvents() {
 }
 
 bindGameAudioUnlockEvents();
-setupMainCharacterVideos();
+setupMainCharacterGifs();
 bindAvatarPreviewInputs();

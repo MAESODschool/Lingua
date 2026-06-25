@@ -599,9 +599,7 @@ button {
   background: radial-gradient(circle, rgba(115, 246, 255, 0.28), transparent 68%);
 }
 
-.main-character-video,
-.player-character-video,
-.character-video {
+.main-character-gif {
   display: block;
   width: 100%;
   height: auto;
@@ -610,19 +608,20 @@ button {
   background: transparent !important;
   background-color: transparent !important;
   pointer-events: none;
+  user-select: none;
 }
 
-.main-character-video-wrapper,
+.main-character-wrapper,
 .player-character,
 .player-sprite,
 .character-slot,
-.vn-character:has(.main-character-video) {
+.vn-character:has(.main-character-gif) {
   background: transparent !important;
   overflow: visible;
 }
 
-#avatarPreview.main-character-video,
-.main-character-video.character-avatar {
+#avatarPreview.main-character-gif,
+.main-character-gif.character-avatar {
   border-radius: 0;
   background: transparent !important;
   background-color: transparent !important;
@@ -630,25 +629,28 @@ button {
   filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
 }
 
-#avatarPreview.main-character-video {
+#avatarPreview.main-character-gif {
   width: 86px;
   height: 118px;
 }
 
-.main-character-video-fallback {
+.main-character-gif-fallback {
   display: block;
   object-fit: contain;
   object-position: center bottom;
   pointer-events: none;
+  user-select: none;
 }
 
-#avatarPreview.main-character-video-fallback,
-.main-character-video-fallback.character-avatar {
+#avatarPreview.main-character-gif-fallback,
+.main-character-gif-fallback.character-avatar {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
   filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
 }
+
+/* The GIF file itself contains a black background. A transparent GIF/PNG sequence is required to remove it completely. */
 
 #avatarPreviewText {
   margin: 0;
@@ -1692,19 +1694,19 @@ h3 {
   filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
 }
 
-.main-character-video.wanderer-avatar,
-.main-character-video-fallback.wanderer-avatar {
+.main-character-gif.wanderer-avatar,
+.main-character-gif-fallback.wanderer-avatar {
   border-radius: 0;
   box-shadow: none;
 }
 
-.main-character-video.wanderer-avatar {
+.main-character-gif.wanderer-avatar {
   background: transparent !important;
   background-color: transparent !important;
   filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
 }
 
-.main-character-video-fallback.wanderer-avatar {
+.main-character-gif-fallback.wanderer-avatar {
   filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
 }
 
