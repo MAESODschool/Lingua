@@ -1207,6 +1207,9 @@ const state = {
   audioUnlocked: false,
   currentBgmKey: "",
   isMuted: false,
+  audioLocked: true,
+  typewriterAudioUnlocked: false,
+  typewriterAudioUnlockInProgress: false,
   lastDialogueTypeSfxAt: 0,
   dialogueTypeSfxWarned: false,
   dialogueTypeSfxPoolIndex: 0
@@ -1227,14 +1230,20 @@ const DIALOGUE_TYPE_SFX_PATH = "assets/sfx/dialogue-type.mp3";
 const DIALOGUE_TYPE_SFX_OFFSET = 0.12;
 const DIALOGUE_TYPE_SFX_TICK_MS = 180;
 const DIALOGUE_TYPE_SFX_COOLDOWN_MS = 65;
+const DIALOGUE_TYPE_SFX_VOLUME = 0.16;
 const dialogueTypeSfx = new Audio(DIALOGUE_TYPE_SFX_PATH);
 dialogueTypeSfx.preload = "auto";
-dialogueTypeSfx.volume = 0.38;
+dialogueTypeSfx.volume = DIALOGUE_TYPE_SFX_VOLUME;
 const dialogueTypeSfxPool = Array.from({ length: 4 }, () => {
   const track = new Audio(DIALOGUE_TYPE_SFX_PATH);
   track.preload = "auto";
-  track.volume = 0.38;
+  track.volume = DIALOGUE_TYPE_SFX_VOLUME;
   return track;
+});
+dialogueTypeSfxPool.forEach(track => {
+  track.addEventListener("error", error => {
+    console.warn("[Audio] typewriter file failed to load", error);
+  }, { once: true });
 });
 dialogueTypeSfxPool.forEach(track => track.load());
 
@@ -1246,14 +1255,14 @@ function logDialogueTypeSfxLoaded() {
   }
 
   dialogueTypeSfxLoadedLogged = true;
-  console.log("[SFX] Loaded assets/sfx/dialogue-type.mp3");
+  console.log("[Audio] Loaded assets/sfx/dialogue-type.mp3");
 }
 
 dialogueTypeSfx.addEventListener("loadeddata", logDialogueTypeSfxLoaded, { once: true });
 dialogueTypeSfx.addEventListener("canplaythrough", logDialogueTypeSfxLoaded, { once: true });
 
-dialogueTypeSfx.addEventListener("error", () => {
-  console.warn("[SFX] Failed to load assets/sfx/dialogue-type.mp3");
+dialogueTypeSfx.addEventListener("error", error => {
+  console.warn("[Audio] typewriter file failed to load", error);
 }, { once: true });
 
 dialogueTypeSfx.load();
@@ -1414,6 +1423,7 @@ function playBgm(key) {
 function shouldPlayDialogueTypeSfx() {
   return state.isTypingDialogue
     && state.audioUnlocked
+    && state.typewriterAudioUnlocked
     && !state.isMuted
     && scenes.story
     && scenes.story.classList.contains("active")
@@ -1421,24 +1431,47 @@ function shouldPlayDialogueTypeSfx() {
     && !els.dialoguePanel.classList.contains("hidden");
 }
 
-function primeDialogueTypeSfx() {
-  [dialogueTypeSfx, ...dialogueTypeSfxPool].forEach(track => {
-    const originalVolume = track.volume;
-    track.volume = 0;
-    track.muted = false;
-    track.currentTime = 0;
-    track.play()
-      .then(() => {
-        track.pause();
-        track.currentTime = 0;
-        track.volume = originalVolume;
-        track.muted = state.isMuted;
-      })
-      .catch(error => {
-        track.volume = originalVolume;
-        track.muted = state.isMuted;
-        console.warn("[SFX] Browser blocked dialogue type audio unlock", error);
-      });
+function prepareDialogueTypeSfxTrack(track, volume = DIALOGUE_TYPE_SFX_VOLUME) {
+  track.preload = "auto";
+  track.src = DIALOGUE_TYPE_SFX_PATH;
+  track.volume = volume;
+  track.muted = state.isMuted;
+  try {
+    track.load();
+  } catch (error) {
+    console.warn("[Audio] typewriter file failed to load", error);
+  }
+}
+
+function unlockDialogueTypeSfxTrack(track) {
+  const originalVolume = track.volume || DIALOGUE_TYPE_SFX_VOLUME;
+  track.muted = false;
+  track.volume = 0.01;
+  track.currentTime = 0;
+  return track.play()
+    .then(() => {
+      track.pause();
+      track.currentTime = 0;
+      track.volume = originalVolume;
+      track.muted = state.isMuted;
+      return true;
+    })
+    .catch(error => {
+      track.volume = originalVolume;
+      track.muted = state.isMuted;
+      console.warn("[Audio] typewriter play failed", error);
+      return false;
+    });
+}
+
+function resumeAudioContextIfPresent() {
+  const context = window.audioContext || window.gameAudioContext || window.linguaAudioContext;
+  if (!context || context.state !== "suspended" || typeof context.resume !== "function") {
+    return;
+  }
+
+  context.resume().catch(error => {
+    console.warn("[Audio] audio context resume failed", error);
   });
 }
 
@@ -1474,11 +1507,11 @@ function playDialogueTypeSfxTick(character) {
 
   track.pause();
   seekDialogueTypeSfxStart(track);
-  track.volume = 0.38;
+  track.volume = DIALOGUE_TYPE_SFX_VOLUME;
   track.muted = state.isMuted;
   track.play().catch(error => {
     if (!state.dialogueTypeSfxWarned) {
-      console.warn("[SFX] Browser blocked dialogue type audio play", error);
+      console.warn("[Audio] typewriter play failed", error);
       state.dialogueTypeSfxWarned = true;
     }
   });
@@ -1501,14 +1534,42 @@ function stopDialogueTypeSfx() {
   });
 }
 
-function unlockAudio() {
-  if (state.audioUnlocked) {
+function unlockGameAudio() {
+  if (state.audioUnlocked && state.typewriterAudioUnlocked) {
     return;
   }
-  state.audioUnlocked = true;
+
+  if (state.typewriterAudioUnlockInProgress) {
+    return;
+  }
+
+  console.log("[Audio] unlock requested");
+  resumeAudioContextIfPresent();
+  if (!state.audioUnlocked) {
+    state.audioUnlocked = true;
+    state.audioLocked = false;
+  }
+
   const activeScene = Object.keys(scenes).find(key => scenes[key].classList.contains("active")) || "login";
   playBgmForScene(activeScene);
-  primeDialogueTypeSfx();
+
+  if (state.typewriterAudioUnlocked) {
+    return;
+  }
+
+  state.typewriterAudioUnlockInProgress = true;
+  [dialogueTypeSfx, ...dialogueTypeSfxPool].forEach(track => prepareDialogueTypeSfxTrack(track, DIALOGUE_TYPE_SFX_VOLUME));
+  Promise.all([dialogueTypeSfx, ...dialogueTypeSfxPool].map(unlockDialogueTypeSfxTrack))
+    .then(results => {
+      state.typewriterAudioUnlocked = results.some(Boolean);
+      state.audioLocked = !state.typewriterAudioUnlocked;
+      if (state.typewriterAudioUnlocked) {
+        console.log("[Audio] typewriter unlocked");
+      }
+    })
+    .finally(() => {
+      state.typewriterAudioUnlockInProgress = false;
+    });
 }
 
 function toggleMute() {
@@ -1533,7 +1594,7 @@ function toggleMute() {
   }
 
   if (!state.isMuted) {
-    unlockAudio();
+    unlockGameAudio();
     const activeScene = Object.keys(scenes).find(key => scenes[key].classList.contains("active")) || "login";
     playBgmForScene(activeScene);
   }
@@ -7534,6 +7595,28 @@ els.gameModalClose.addEventListener("click", closeGameModal);
 els.returnTitleButton.addEventListener("click", () => showScene("login"));
 els.bossIntentReadyButton.addEventListener("click", runNextBossTurnStep);
 els.muteButton.addEventListener("click", toggleMute);
-document.addEventListener("pointerdown", unlockAudio, { once: true });
-document.addEventListener("keydown", unlockAudio, { once: true });
+
+function bindGameAudioUnlockEvents() {
+  const unlockOptions = { capture: true, passive: true };
+  document.addEventListener("pointerdown", unlockGameAudio, unlockOptions);
+  document.addEventListener("touchstart", unlockGameAudio, unlockOptions);
+  document.addEventListener("click", unlockGameAudio, unlockOptions);
+  document.addEventListener("keydown", unlockGameAudio, true);
+  [
+    els.guestLoginButton,
+    els.enterLinguaButton,
+    els.googleMockButton,
+    els.startButton,
+    els.nextDialogueButton
+  ].forEach(button => {
+    if (!button) {
+      return;
+    }
+    button.addEventListener("pointerdown", unlockGameAudio, unlockOptions);
+    button.addEventListener("touchstart", unlockGameAudio, unlockOptions);
+    button.addEventListener("click", unlockGameAudio, unlockOptions);
+  });
+}
+
+bindGameAudioUnlockEvents();
 bindAvatarPreviewInputs();
