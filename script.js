@@ -1056,6 +1056,58 @@ function assetPath(fileName) {
   return `${ASSET_BASE_URL}${fileName.replace(/^\/+/, "")}`;
 }
 
+const MAIN_CHARACTER_VIDEO_PATH = "assets/characters/main-character-idle.mp4";
+const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
+
+function createMainCharacterVideo(className = "") {
+  const video = document.createElement("video");
+  video.className = `main-character-video ${className}`.trim();
+  video.src = MAIN_CHARACTER_VIDEO_PATH;
+  video.autoplay = true;
+  video.loop = true;
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = "auto";
+  video.setAttribute("playsinline", "");
+  video.setAttribute("webkit-playsinline", "");
+  video.setAttribute("aria-label", "ผู้พเนจร");
+  return video;
+}
+
+function handleMainCharacterVideoError(video) {
+  console.warn("[Character] main-character-idle.mp4 failed to load");
+  if (video.dataset.fallbackApplied === "true") {
+    return;
+  }
+
+  video.dataset.fallbackApplied = "true";
+  const fallback = document.createElement("img");
+  if (video.id) {
+    fallback.id = video.id;
+  }
+  fallback.className = video.className.replace(/\bmain-character-video\b/g, "main-character-video-fallback").trim();
+  fallback.src = MAIN_CHARACTER_FALLBACK_IMAGE_PATH;
+  fallback.alt = video.getAttribute("aria-label") || "ผู้พเนจร";
+  fallback.setAttribute("aria-hidden", video.getAttribute("aria-hidden") || "false");
+  video.replaceWith(fallback);
+}
+
+function setupMainCharacterVideos() {
+  document.querySelectorAll(".main-character-video").forEach(video => {
+    video.src = MAIN_CHARACTER_VIDEO_PATH;
+    video.autoplay = true;
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
+    video.addEventListener("error", () => handleMainCharacterVideoError(video), { once: true });
+    video.load();
+    video.play().catch(() => {});
+  });
+}
+
 const enemySpriteMap = {
   "Memory Shade": assetPath("memory-shade.png"),
   "Time Dust": assetPath("enemies/time-dust.png"),
@@ -2504,7 +2556,7 @@ function updateAvatarPreview() {
   const genderLabels = { male: "ชาย", female: "หญิง", other: "ไม่ระบุ" };
   const bodyLabels = { small: "ตัวเล็ก", normal: "ปกติ", tall: "สูง" };
 
-  els.avatarPreview.className = `avatar-preview avatar-gender-${gender} avatar-body-${bodyType}`;
+  els.avatarPreview.className = `avatar-preview main-character-video main-character-preview-video avatar-gender-${gender} avatar-body-${bodyType}`;
   els.avatarPreviewText.textContent = `ตัวอย่าง: ${genderLabels[gender] || genderLabels.other} / ${bodyLabels[bodyType] || bodyLabels.normal}`;
 }
 
@@ -7619,4 +7671,5 @@ function bindGameAudioUnlockEvents() {
 }
 
 bindGameAudioUnlockEvents();
+setupMainCharacterVideos();
 bindAvatarPreviewInputs();

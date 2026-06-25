@@ -100,7 +100,9 @@
             </label>
           </fieldset>
           <div class="avatar-preview-panel">
-            <div id="avatarPreview" class="avatar-preview avatar-gender-other avatar-body-normal"></div>
+            <video id="avatarPreview" class="avatar-preview main-character-video main-character-preview-video avatar-gender-other avatar-body-normal" autoplay loop muted playsinline preload="auto" aria-label="ตัวอย่างตัวละครหลัก">
+              <source src="assets/characters/main-character-idle.mp4" type="video/mp4">
+            </video>
             <p id="avatarPreviewText">ตัวอย่าง: ไม่ระบุ / ปกติ</p>
           </div>
           <button id="createCharacterButton" class="primary-button">เริ่มการเดินทาง</button>
@@ -149,7 +151,9 @@
           </div>
 
           <div id="storyWanderer" class="vn-character wanderer-in-scene">
-            <div class="character-avatar wanderer-avatar"></div>
+            <video class="character-avatar wanderer-avatar main-character-video" autoplay loop muted playsinline preload="auto" aria-label="ผู้พเนจร">
+              <source src="assets/characters/main-character-idle.mp4" type="video/mp4">
+            </video>
             <strong>ผู้พเนจร</strong>
           </div>
 
@@ -233,7 +237,9 @@
 
       <div class="battle-stage">
         <article id="battlePlayer" class="combatant player-side">
-          <div class="character-avatar wanderer-avatar small"></div>
+          <video class="character-avatar wanderer-avatar main-character-video small" autoplay loop muted playsinline preload="auto" aria-label="ผู้พเนจร">
+            <source src="assets/characters/main-character-idle.mp4" type="video/mp4">
+          </video>
           <div class="combat-text">
             <h3>ผู้พเนจร</h3>
             <div class="hp-bar" aria-label="Player HP">

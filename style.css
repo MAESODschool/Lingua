@@ -599,6 +599,43 @@ button {
   background: radial-gradient(circle, rgba(115, 246, 255, 0.28), transparent 68%);
 }
 
+.main-character-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  object-position: center bottom;
+  pointer-events: none;
+}
+
+#avatarPreview.main-character-video,
+.main-character-video.character-avatar {
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
+}
+
+#avatarPreview.main-character-video {
+  width: 86px;
+  height: 118px;
+}
+
+.main-character-video-fallback {
+  display: block;
+  object-fit: contain;
+  object-position: center bottom;
+  pointer-events: none;
+}
+
+#avatarPreview.main-character-video-fallback,
+.main-character-video-fallback.character-avatar {
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
+}
+
 #avatarPreviewText {
   margin: 0;
   color: var(--muted);
@@ -1639,6 +1676,17 @@ h3 {
   background: transparent url("assets/male.png") center bottom / contain no-repeat;
   box-shadow: none;
   filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
+}
+
+.main-character-video.wanderer-avatar,
+.main-character-video-fallback.wanderer-avatar {
+  border-radius: 0;
+  box-shadow: none;
+  filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
+}
+
+.main-character-video.wanderer-avatar {
+  background: transparent;
 }
 
 .wanderer-avatar::before,
