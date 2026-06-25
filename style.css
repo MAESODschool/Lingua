@@ -650,8 +650,6 @@ button {
   filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
 }
 
-/* The GIF file itself contains a black background. A transparent GIF/PNG sequence is required to remove it completely. */
-
 #avatarPreviewText {
   margin: 0;
   color: var(--muted);

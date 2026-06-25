@@ -1056,20 +1056,20 @@ function assetPath(fileName) {
   return `${ASSET_BASE_URL}${fileName.replace(/^\/+/, "")}`;
 }
 
-const MAIN_CHARACTER_GIF_PATH = "assets/characters/main-character-idle.gif";
+const MAIN_CHARACTER_IMAGE_PATH = "assets/characters/main-character-idle-transparent.webp";
 const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
 
 function createMainCharacterElement(className = "") {
   const img = document.createElement("img");
   img.className = `main-character-gif ${className}`.trim();
-  img.src = MAIN_CHARACTER_GIF_PATH;
+  img.src = MAIN_CHARACTER_IMAGE_PATH;
   img.alt = "Main Character";
   img.draggable = false;
   return img;
 }
 
 function handleMainCharacterGifError(img) {
-  console.warn("[Character] main-character-idle.gif failed to load");
+  console.warn("[Character] main-character-idle-transparent.webp failed to load");
   if (img.dataset.fallbackApplied === "true") {
     return;
   }
@@ -1089,7 +1089,7 @@ function handleMainCharacterGifError(img) {
 
 function setupMainCharacterGifs() {
   document.querySelectorAll(".main-character-gif").forEach(img => {
-    img.src = MAIN_CHARACTER_GIF_PATH;
+    img.src = MAIN_CHARACTER_IMAGE_PATH;
     img.draggable = false;
     img.addEventListener("error", () => handleMainCharacterGifError(img), { once: true });
   });
