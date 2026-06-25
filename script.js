@@ -1206,7 +1206,10 @@ const state = {
   nextDialogueHold: null,
   audioUnlocked: false,
   currentBgmKey: "",
-  isMuted: false
+  isMuted: false,
+  lastDialogueTypeSfxAt: 0,
+  dialogueTypeSfxStopTimer: null,
+  dialogueTypeSfxWarned: false
 };
 
 const bgmTracks = {
@@ -1220,14 +1223,29 @@ Object.values(bgmTracks).forEach(track => {
   track.volume = 0.45;
 });
 
-const sfxTracks = {
-  dialogueType: new Audio(assetPath("sfx/dialogue-type.mp3"))
-};
+const dialogueTypeSfx = new Audio("assets/sfx/dialogue-type.mp3");
+dialogueTypeSfx.preload = "auto";
+dialogueTypeSfx.volume = 0.22;
 
-Object.values(sfxTracks).forEach(track => {
-  track.loop = true;
-  track.volume = 0.28;
-});
+let dialogueTypeSfxLoadedLogged = false;
+
+function logDialogueTypeSfxLoaded() {
+  if (dialogueTypeSfxLoadedLogged) {
+    return;
+  }
+
+  dialogueTypeSfxLoadedLogged = true;
+  console.log("[SFX] Loaded assets/sfx/dialogue-type.mp3");
+}
+
+dialogueTypeSfx.addEventListener("loadeddata", logDialogueTypeSfxLoaded, { once: true });
+dialogueTypeSfx.addEventListener("canplaythrough", logDialogueTypeSfxLoaded, { once: true });
+
+dialogueTypeSfx.addEventListener("error", () => {
+  console.warn("[SFX] Failed to load assets/sfx/dialogue-type.mp3");
+}, { once: true });
+
+dialogueTypeSfx.load();
 
 const els = {
   muteButton: document.getElementById("muteButton"),
@@ -1391,24 +1409,63 @@ function shouldPlayDialogueTypeSfx() {
     && scenes.story.classList.contains("active");
 }
 
-function playDialogueTypeSfx() {
-  const track = sfxTracks.dialogueType;
-  if (!track || !shouldPlayDialogueTypeSfx()) {
+function primeDialogueTypeSfx() {
+  const wasMuted = dialogueTypeSfx.muted;
+  dialogueTypeSfx.muted = true;
+  dialogueTypeSfx.currentTime = 0;
+  dialogueTypeSfx.play()
+    .then(() => {
+      dialogueTypeSfx.pause();
+      dialogueTypeSfx.currentTime = 0;
+      dialogueTypeSfx.muted = state.isMuted || wasMuted;
+    })
+    .catch(error => {
+      dialogueTypeSfx.muted = state.isMuted || wasMuted;
+      console.warn("[SFX] Browser blocked dialogue type audio unlock", error);
+    });
+}
+
+function playDialogueTypeSfxTick(character) {
+  if (!shouldPlayDialogueTypeSfx() || /\s/.test(character)) {
     return;
   }
 
-  track.currentTime = 0;
-  track.play().catch(() => {});
+  const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+  const cooldown = 70;
+  if (state.typewriterIndex % 2 !== 0 || now - state.lastDialogueTypeSfxAt < cooldown) {
+    return;
+  }
+  state.lastDialogueTypeSfxAt = now;
+
+  if (state.dialogueTypeSfxStopTimer) {
+    clearTimeout(state.dialogueTypeSfxStopTimer);
+  }
+
+  dialogueTypeSfx.pause();
+  dialogueTypeSfx.currentTime = 0;
+  dialogueTypeSfx.muted = state.isMuted;
+  dialogueTypeSfx.play().catch(error => {
+    if (!state.dialogueTypeSfxWarned) {
+      console.warn("[SFX] Browser blocked dialogue type audio play", error);
+      state.dialogueTypeSfxWarned = true;
+    }
+  });
+
+  state.dialogueTypeSfxStopTimer = setTimeout(() => {
+    dialogueTypeSfx.pause();
+    dialogueTypeSfx.currentTime = 0;
+    state.dialogueTypeSfxStopTimer = null;
+  }, 75);
 }
 
 function stopDialogueTypeSfx() {
-  const track = sfxTracks.dialogueType;
-  if (!track) {
-    return;
+  if (state.dialogueTypeSfxStopTimer) {
+    clearTimeout(state.dialogueTypeSfxStopTimer);
+    state.dialogueTypeSfxStopTimer = null;
   }
 
-  track.pause();
-  track.currentTime = 0;
+  dialogueTypeSfx.pause();
+  dialogueTypeSfx.currentTime = 0;
 }
 
 function unlockAudio() {
@@ -1418,9 +1475,7 @@ function unlockAudio() {
   state.audioUnlocked = true;
   const activeScene = Object.keys(scenes).find(key => scenes[key].classList.contains("active")) || "login";
   playBgmForScene(activeScene);
-  if (shouldPlayDialogueTypeSfx()) {
-    playDialogueTypeSfx();
-  }
+  primeDialogueTypeSfx();
 }
 
 function toggleMute() {
@@ -1431,9 +1486,7 @@ function toggleMute() {
       track.pause();
     }
   });
-  Object.values(sfxTracks).forEach(track => {
-    track.muted = state.isMuted;
-  });
+  dialogueTypeSfx.muted = state.isMuted;
 
   if (state.isMuted) {
     stopDialogueTypeSfx();
@@ -1448,9 +1501,6 @@ function toggleMute() {
     unlockAudio();
     const activeScene = Object.keys(scenes).find(key => scenes[key].classList.contains("active")) || "login";
     playBgmForScene(activeScene);
-    if (shouldPlayDialogueTypeSfx()) {
-      playDialogueTypeSfx();
-    }
   }
 }
 
@@ -2464,9 +2514,9 @@ function startTypewriter(text) {
   state.typewriterText = text;
   state.typewriterIndex = 0;
   state.isTypingDialogue = true;
+  state.lastDialogueTypeSfxAt = 0;
   els.dialogueText.textContent = "";
   setDialogueButtonReady(false);
-  playDialogueTypeSfx();
   typeNextCharacter();
 }
 
@@ -2477,12 +2527,14 @@ function typeNextCharacter() {
 
   state.typewriterIndex += 1;
   els.dialogueText.textContent = state.typewriterText.slice(0, state.typewriterIndex);
+  const revealedCharacter = state.typewriterText[state.typewriterIndex - 1] || "";
 
   if (state.typewriterIndex >= state.typewriterText.length) {
     finishTypewriter();
     return;
   }
 
+  playDialogueTypeSfxTick(revealedCharacter);
   state.typewriterTimer = setTimeout(typeNextCharacter, getTypewriterDelay());
 }
 
