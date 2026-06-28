@@ -2113,6 +2113,32 @@ h3 {
   filter: drop-shadow(0 0 16px rgba(148, 92, 255, 0.65));
 }
 
+.timedust-gif,
+.wisp-avatar.timedust-gif,
+.skip-enemy-card img.timedust-gif {
+  display: block;
+  object-fit: contain;
+  object-position: center bottom;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none;
+  pointer-events: none;
+  user-select: none;
+}
+
+.wisp-avatar.timedust-gif {
+  width: clamp(126px, 32vw, 196px);
+  height: clamp(126px, 32vw, 196px);
+  filter: drop-shadow(0 0 18px rgba(190, 138, 255, 0.58));
+}
+
+.combatant .timedust-gif,
+.combatant.is-active-turn .timedust-gif,
+#battleEnemy .timedust-gif {
+  animation: none !important;
+  transform: none !important;
+}
+
 .wisp-avatar span {
   width: 12px;
   height: 12px;

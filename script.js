@@ -1061,6 +1061,8 @@ const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
 const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-idle-transparent.webp";
 const TEACHER_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("master-verion.png");
 const GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-animated.gif";
+const TIME_DUST_IMAGE_PATH = "assets/characters/timedust-transparent.webp";
+const TIME_DUST_FALLBACK_IMAGE_PATH = assetPath("enemies/time-dust.png");
 
 function createMainCharacterElement(className = "") {
   const img = document.createElement("img");
@@ -1126,7 +1128,7 @@ function setupAnimatedGrammarHallBackground() {
 
 const enemySpriteMap = {
   "Memory Shade": assetPath("memory-shade.png"),
-  "Time Dust": assetPath("enemies/time-dust.png"),
+  "Time Dust": TIME_DUST_IMAGE_PATH,
   "Echo Tick": assetPath("enemies/echo-tick.png"),
   "Rewind Slime": assetPath("enemies/rewind-slime.png"),
   "Yesterday Sprite": assetPath("memory-shade.png"),
@@ -6549,8 +6551,19 @@ function updateBattleEnemyVisual(stage = null) {
   const enemyName = stage && stage.enemy ? stage.enemy : "Memory Shade";
   const thaiName = stage && stage.thaiEnemy ? stage.thaiEnemy : enemyName;
   const sprite = enemySpriteMap[enemyName] || assetPath("memory-shade.png");
+  const isTimeDust = enemyName === "Time Dust";
 
   if (els.battleEnemySprite) {
+    els.battleEnemySprite.onerror = null;
+    els.battleEnemySprite.classList.toggle("timedust-gif", isTimeDust);
+    if (isTimeDust) {
+      els.battleEnemySprite.onerror = error => {
+        console.warn("[TimeDust] transparent GIF failed to load", error);
+        els.battleEnemySprite.onerror = null;
+        els.battleEnemySprite.classList.remove("timedust-gif");
+        els.battleEnemySprite.src = TIME_DUST_FALLBACK_IMAGE_PATH;
+      };
+    }
     els.battleEnemySprite.src = sprite;
     els.battleEnemySprite.alt = enemyName;
   }
@@ -7542,14 +7555,23 @@ function renderBattleSelect() {
   skipBattleEnemies.forEach(enemy => {
     const card = document.createElement("article");
     card.className = "skip-enemy-card";
+    const isTimeDust = enemy.name === "Time Dust";
     card.innerHTML = `
-      <img src="${enemySpriteMap[enemy.name] || assetPath("memory-shade.png")}" alt="${enemy.name}">
+      <img class="${isTimeDust ? "timedust-gif" : ""}" src="${enemySpriteMap[enemy.name] || assetPath("memory-shade.png")}" alt="${enemy.name}">
       <div>
         <h4>${enemy.thaiName}</h4>
         <p>${enemy.description}</p>
         <p>${enemy.lesson}</p>
       </div>
     `;
+    if (isTimeDust) {
+      const timeDustImage = card.querySelector("img");
+      timeDustImage.addEventListener("error", error => {
+        console.warn("[TimeDust] transparent GIF failed to load", error);
+        timeDustImage.classList.remove("timedust-gif");
+        timeDustImage.src = TIME_DUST_FALLBACK_IMAGE_PATH;
+      }, { once: true });
+    }
 
     const button = document.createElement("button");
     button.type = "button";
