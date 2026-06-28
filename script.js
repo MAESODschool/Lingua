@@ -1063,6 +1063,8 @@ const TEACHER_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("master-verion.png");
 const GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-animated.gif";
 const TIME_DUST_IMAGE_PATH = "assets/characters/timedust-transparent.webp";
 const TIME_DUST_FALLBACK_IMAGE_PATH = assetPath("enemies/time-dust.png");
+const ECHO_TRICK_IMAGE_PATH = "assets/characters/echo-trick-transparent.webp";
+const ECHO_TRICK_FALLBACK_IMAGE_PATH = assetPath("enemies/echo-tick.png");
 
 function createMainCharacterElement(className = "") {
   const img = document.createElement("img");
@@ -1129,7 +1131,7 @@ function setupAnimatedGrammarHallBackground() {
 const enemySpriteMap = {
   "Memory Shade": assetPath("memory-shade.png"),
   "Time Dust": TIME_DUST_IMAGE_PATH,
-  "Echo Tick": assetPath("enemies/echo-tick.png"),
+  "Echo Tick": ECHO_TRICK_IMAGE_PATH,
   "Rewind Slime": assetPath("enemies/rewind-slime.png"),
   "Yesterday Sprite": assetPath("memory-shade.png"),
   "Memory Bat": assetPath("memory-shade.png"),
@@ -6552,16 +6554,21 @@ function updateBattleEnemyVisual(stage = null) {
   const thaiName = stage && stage.thaiEnemy ? stage.thaiEnemy : enemyName;
   const sprite = enemySpriteMap[enemyName] || assetPath("memory-shade.png");
   const isTimeDust = enemyName === "Time Dust";
+  const isEchoTrick = enemyName === "Echo Tick";
 
   if (els.battleEnemySprite) {
     els.battleEnemySprite.onerror = null;
     els.battleEnemySprite.classList.toggle("timedust-gif", isTimeDust);
-    if (isTimeDust) {
+    els.battleEnemySprite.classList.toggle("echo-trick-gif", isEchoTrick);
+    if (isTimeDust || isEchoTrick) {
+      const specialEnemyClass = isTimeDust ? "timedust-gif" : "echo-trick-gif";
+      const fallbackSprite = isTimeDust ? TIME_DUST_FALLBACK_IMAGE_PATH : ECHO_TRICK_FALLBACK_IMAGE_PATH;
+      const warnLabel = isTimeDust ? "TimeDust" : "EchoTrick";
       els.battleEnemySprite.onerror = error => {
-        console.warn("[TimeDust] transparent GIF failed to load", error);
+        console.warn(`[${warnLabel}] transparent GIF failed to load`, error);
         els.battleEnemySprite.onerror = null;
-        els.battleEnemySprite.classList.remove("timedust-gif");
-        els.battleEnemySprite.src = TIME_DUST_FALLBACK_IMAGE_PATH;
+        els.battleEnemySprite.classList.remove(specialEnemyClass);
+        els.battleEnemySprite.src = fallbackSprite;
       };
     }
     els.battleEnemySprite.src = sprite;
@@ -7556,20 +7563,24 @@ function renderBattleSelect() {
     const card = document.createElement("article");
     card.className = "skip-enemy-card";
     const isTimeDust = enemy.name === "Time Dust";
+    const isEchoTrick = enemy.name === "Echo Tick";
+    const specialEnemyClass = isTimeDust ? "timedust-gif" : (isEchoTrick ? "echo-trick-gif" : "");
     card.innerHTML = `
-      <img class="${isTimeDust ? "timedust-gif" : ""}" src="${enemySpriteMap[enemy.name] || assetPath("memory-shade.png")}" alt="${enemy.name}">
+      <img class="${specialEnemyClass}" src="${enemySpriteMap[enemy.name] || assetPath("memory-shade.png")}" alt="${enemy.name}">
       <div>
         <h4>${enemy.thaiName}</h4>
         <p>${enemy.description}</p>
         <p>${enemy.lesson}</p>
       </div>
     `;
-    if (isTimeDust) {
-      const timeDustImage = card.querySelector("img");
-      timeDustImage.addEventListener("error", error => {
-        console.warn("[TimeDust] transparent GIF failed to load", error);
-        timeDustImage.classList.remove("timedust-gif");
-        timeDustImage.src = TIME_DUST_FALLBACK_IMAGE_PATH;
+    if (isTimeDust || isEchoTrick) {
+      const specialEnemyImage = card.querySelector("img");
+      const fallbackSprite = isTimeDust ? TIME_DUST_FALLBACK_IMAGE_PATH : ECHO_TRICK_FALLBACK_IMAGE_PATH;
+      const warnLabel = isTimeDust ? "TimeDust" : "EchoTrick";
+      specialEnemyImage.addEventListener("error", error => {
+        console.warn(`[${warnLabel}] transparent GIF failed to load`, error);
+        specialEnemyImage.classList.remove(specialEnemyClass);
+        specialEnemyImage.src = fallbackSprite;
       }, { once: true });
     }
 

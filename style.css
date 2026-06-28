@@ -2114,8 +2114,11 @@ h3 {
 }
 
 .timedust-gif,
+.echo-trick-gif,
 .wisp-avatar.timedust-gif,
-.skip-enemy-card img.timedust-gif {
+.wisp-avatar.echo-trick-gif,
+.skip-enemy-card img.timedust-gif,
+.skip-enemy-card img.echo-trick-gif {
   display: block;
   object-fit: contain;
   object-position: center bottom;
@@ -2132,9 +2135,18 @@ h3 {
   filter: drop-shadow(0 0 18px rgba(190, 138, 255, 0.58));
 }
 
+.wisp-avatar.echo-trick-gif {
+  width: clamp(126px, 32vw, 196px);
+  height: clamp(126px, 32vw, 196px);
+  filter: drop-shadow(0 0 18px rgba(105, 222, 255, 0.58));
+}
+
 .combatant .timedust-gif,
+.combatant .echo-trick-gif,
 .combatant.is-active-turn .timedust-gif,
-#battleEnemy .timedust-gif {
+.combatant.is-active-turn .echo-trick-gif,
+#battleEnemy .timedust-gif,
+#battleEnemy .echo-trick-gif {
   animation: none !important;
   transform: none !important;
 }
