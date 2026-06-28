@@ -1992,6 +1992,30 @@ h3 {
   animation: idleFloat 3.1s ease-in-out infinite;
 }
 
+/* Animated character files already contain motion; prevent extra CSS zoom/breathing. */
+.vn-character:has(.main-character-gif),
+.vn-character:has(.main-character-gif-fallback),
+.vn-character:has(.teacher-character-gif) {
+  animation: none !important;
+  transform: none !important;
+}
+
+.main-character-gif,
+.main-character-gif-fallback,
+.teacher-character-gif,
+.vn-character.is-speaking .main-character-gif,
+.vn-character.is-speaking .main-character-gif-fallback,
+.vn-character.is-speaking .teacher-character-gif,
+.combatant .main-character-gif,
+.combatant .main-character-gif-fallback,
+.combatant.is-speaking .main-character-gif,
+.combatant.is-speaking .main-character-gif-fallback,
+.combatant.is-active-turn .main-character-gif,
+.combatant.is-active-turn .main-character-gif-fallback {
+  animation: none !important;
+  transform: none !important;
+}
+
 #battlePlayer.player-attack-motion {
   animation: playerAttackMotion 520ms ease;
 }
