@@ -600,6 +600,9 @@ button {
 }
 
 .main-character-gif {
+  animation: none !important;
+  transition: none;
+  transform-origin: center bottom;
   display: block;
   width: 100%;
   height: auto;
@@ -612,10 +615,12 @@ button {
 }
 
 .main-character-wrapper,
+.character-static-holder,
 .player-character,
 .player-sprite,
 .character-slot,
 .vn-character:has(.main-character-gif) {
+  animation: none !important;
   background: transparent !important;
   overflow: visible;
 }
@@ -635,6 +640,9 @@ button {
 }
 
 .main-character-gif-fallback {
+  animation: none !important;
+  transition: none;
+  transform-origin: center bottom;
   display: block;
   object-fit: contain;
   object-position: center bottom;
@@ -968,6 +976,9 @@ h3 {
   gap: 6px;
   color: white;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
+}
+
+.vn-character:not(.character-static-holder) {
   animation: idleFloat 3.4s ease-in-out infinite;
 }
 
@@ -975,13 +986,16 @@ h3 {
   width: clamp(92px, 22vw, 142px);
   height: clamp(128px, 30vw, 190px);
   margin: 0;
-  animation: idleBreath 2.8s ease-in-out infinite;
   object-fit: contain;
   object-position: center bottom;
 }
 
-.vn-character.is-speaking .character-avatar,
-.combatant.is-speaking .character-avatar {
+.vn-character:not(.character-static-holder) .character-avatar:not(.main-character-gif):not(.main-character-gif-fallback):not(.teacher-character-gif) {
+  animation: idleBreath 2.8s ease-in-out infinite;
+}
+
+.vn-character.is-speaking .character-avatar:not(.main-character-gif):not(.main-character-gif-fallback):not(.teacher-character-gif),
+.combatant.is-speaking .character-avatar:not(.main-character-gif):not(.main-character-gif-fallback):not(.teacher-character-gif) {
   animation: speakingPulse 900ms ease-in-out infinite;
   box-shadow: 0 0 28px rgba(255, 213, 106, 0.55), 0 0 12px rgba(115, 246, 255, 0.35);
 }
@@ -1709,6 +1723,9 @@ h3 {
 }
 
 .teacher-character-gif {
+  animation: none !important;
+  transition: none;
+  transform-origin: center bottom;
   display: block;
   width: 100%;
   height: auto;
@@ -1726,6 +1743,7 @@ h3 {
 .npc-teacher,
 .teacher-character-wrapper,
 .vn-character:has(.teacher-character-gif) {
+  animation: none !important;
   background: transparent !important;
   overflow: visible;
 }
@@ -1978,12 +1996,12 @@ h3 {
   z-index: 2;
 }
 
-.combatant.is-active-turn .character-avatar,
+.combatant.is-active-turn .character-avatar:not(.main-character-gif):not(.main-character-gif-fallback):not(.teacher-character-gif),
 .combatant.is-active-turn .wisp-avatar {
   animation: speakingPulse 900ms ease-in-out infinite;
 }
 
-.combatant .character-avatar,
+.combatant .character-avatar:not(.main-character-gif):not(.main-character-gif-fallback):not(.teacher-character-gif),
 .wisp-avatar {
   animation: idleBreath 3s ease-in-out infinite;
 }
@@ -1995,7 +2013,8 @@ h3 {
 /* Animated character files already contain motion; prevent extra CSS zoom/breathing. */
 .vn-character:has(.main-character-gif),
 .vn-character:has(.main-character-gif-fallback),
-.vn-character:has(.teacher-character-gif) {
+.vn-character:has(.teacher-character-gif),
+.character-static-holder {
   animation: none !important;
   transform: none !important;
 }
@@ -2003,6 +2022,7 @@ h3 {
 .main-character-gif,
 .main-character-gif-fallback,
 .teacher-character-gif,
+.character-static-holder .character-avatar,
 .vn-character.is-speaking .main-character-gif,
 .vn-character.is-speaking .main-character-gif-fallback,
 .vn-character.is-speaking .teacher-character-gif,
