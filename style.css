@@ -1998,10 +1998,16 @@ h3 {
 .combatant {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.05);
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.combatant .combat-text {
+  width: auto;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .combatant.is-active-turn {
@@ -2090,9 +2096,18 @@ h3 {
   text-align: right;
 }
 
+#battlePlayer .main-character-gif.small,
+#battlePlayer .main-character-gif-fallback.small {
+  width: clamp(118px, 24vw, 150px);
+  height: clamp(148px, 31vw, 190px);
+  flex: 0 0 auto;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
 .wisp-avatar {
-  width: 84px;
-  height: 84px;
+  width: clamp(112px, 22vw, 150px);
+  height: clamp(112px, 22vw, 150px);
   flex: 0 0 auto;
   display: grid;
   place-items: center;
@@ -2102,8 +2117,8 @@ h3 {
 }
 
 .enemy-memory-shade {
-  width: clamp(112px, 30vw, 180px);
-  height: clamp(112px, 30vw, 180px);
+  width: clamp(136px, 27vw, 210px);
+  height: clamp(136px, 27vw, 210px);
   display: block;
   object-fit: contain;
   object-position: center bottom;
@@ -2130,14 +2145,14 @@ h3 {
 }
 
 .wisp-avatar.timedust-gif {
-  width: clamp(126px, 32vw, 196px);
-  height: clamp(126px, 32vw, 196px);
+  width: clamp(150px, 31vw, 230px);
+  height: clamp(150px, 31vw, 230px);
   filter: drop-shadow(0 0 18px rgba(190, 138, 255, 0.58));
 }
 
 .wisp-avatar.echo-trick-gif {
-  width: clamp(126px, 32vw, 196px);
-  height: clamp(126px, 32vw, 196px);
+  width: clamp(150px, 31vw, 230px);
+  height: clamp(150px, 31vw, 230px);
   filter: drop-shadow(0 0 18px rgba(105, 222, 255, 0.58));
 }
 
@@ -2833,6 +2848,28 @@ h3 {
   .enemy-side {
     flex-direction: row;
     text-align: left;
+  }
+
+  #battlePlayer .main-character-gif.small,
+  #battlePlayer .main-character-gif-fallback.small {
+    width: clamp(110px, 32vw, 132px);
+    height: clamp(138px, 40vw, 168px);
+  }
+
+  .wisp-avatar {
+    width: clamp(104px, 30vw, 132px);
+    height: clamp(104px, 30vw, 132px);
+  }
+
+  .enemy-memory-shade {
+    width: clamp(124px, 36vw, 160px);
+    height: clamp(124px, 36vw, 160px);
+  }
+
+  .wisp-avatar.timedust-gif,
+  .wisp-avatar.echo-trick-gif {
+    width: clamp(132px, 39vw, 170px);
+    height: clamp(132px, 39vw, 170px);
   }
 
   .button-grid {
