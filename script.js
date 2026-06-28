@@ -1056,15 +1056,27 @@ function assetPath(fileName) {
   return `${ASSET_BASE_URL}${fileName.replace(/^\/+/, "")}`;
 }
 
-const MAIN_CHARACTER_IMAGE_PATH = "assets/characters/main-character-idle-transparent-clean.webp";
+const MAIN_CHARACTER_IMAGE_PATH = "assets/characters/main-character-idle-transparent-clean-optimized.webp";
 const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
-const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-idle-transparent-clean.webp";
+const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-idle-transparent-clean-optimized.webp";
 const TEACHER_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("master-verion.png");
 const GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-animated.gif";
-const TIME_DUST_IMAGE_PATH = "assets/characters/timedust-transparent-clean.webp";
+const GRAMMAR_HALL_STATIC_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-static.webp";
+const TIME_DUST_IMAGE_PATH = "assets/characters/timedust-transparent-clean-optimized.webp";
 const TIME_DUST_FALLBACK_IMAGE_PATH = assetPath("enemies/time-dust.png");
-const ECHO_TRICK_IMAGE_PATH = "assets/characters/echo-trick-transparent-clean.webp";
+const ECHO_TRICK_IMAGE_PATH = "assets/characters/echo-trick-transparent-clean-optimized.webp";
 const ECHO_TRICK_FALLBACK_IMAGE_PATH = assetPath("enemies/echo-tick.png");
+
+const mobilePerformanceQuery = window.matchMedia("(max-width: 768px)");
+const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+function isPerformanceStaticBackgroundMode() {
+  return mobilePerformanceQuery.matches || reducedMotionQuery.matches;
+}
+
+function updatePerformanceMode() {
+  document.documentElement.classList.toggle("performance-static-bg", isPerformanceStaticBackgroundMode());
+}
 
 function createMainCharacterElement(className = "") {
   const img = document.createElement("img");
@@ -1076,7 +1088,7 @@ function createMainCharacterElement(className = "") {
 }
 
 function handleMainCharacterGifError(img) {
-  console.warn("[Character] main-character-idle-transparent-clean.webp failed to load");
+  console.warn("[Character] main-character-idle-transparent-clean-optimized.webp failed to load");
   if (img.dataset.fallbackApplied === "true") {
     return;
   }
@@ -1103,7 +1115,7 @@ function setupMainCharacterGifs() {
 }
 
 function handleTeacherCharacterGifError(img) {
-  console.warn("[Character] master-verion-idle-transparent-clean.webp failed to load");
+  console.warn("[Character] master-verion-idle-transparent-clean-optimized.webp failed to load");
   if (img.dataset.fallbackApplied === "true") {
     return;
   }
@@ -1121,11 +1133,20 @@ function setupTeacherCharacterGifs() {
 }
 
 function setupAnimatedGrammarHallBackground() {
+  updatePerformanceMode();
+  [mobilePerformanceQuery, reducedMotionQuery].forEach(query => {
+    if (typeof query.addEventListener === "function") {
+      query.addEventListener("change", updatePerformanceMode);
+    } else if (typeof query.addListener === "function") {
+      query.addListener(updatePerformanceMode);
+    }
+  });
+
   const backgroundProbe = new Image();
   backgroundProbe.addEventListener("error", error => {
     console.warn("[Background] animated GIF failed to load", error);
   }, { once: true });
-  backgroundProbe.src = GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH;
+  backgroundProbe.src = isPerformanceStaticBackgroundMode() ? GRAMMAR_HALL_STATIC_BACKGROUND_PATH : GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH;
 }
 
 const enemySpriteMap = {

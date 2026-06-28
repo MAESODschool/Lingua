@@ -1688,6 +1688,37 @@ h3 {
   background-repeat: no-repeat, no-repeat, no-repeat;
 }
 
+html.performance-static-bg .lesson-screen,
+html.performance-static-bg .lesson-bg-magic,
+html.performance-static-bg #battleScene {
+  background-image:
+    linear-gradient(180deg, rgba(8, 7, 28, 0.36), rgba(15, 9, 38, 0.5)),
+    url("assets/backgrounds/grammar-hall-static.webp"),
+    url("assets/unity-tower-background.png");
+}
+
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
+  .lesson-screen,
+  .lesson-bg-magic,
+  #battleScene {
+    background-image:
+      linear-gradient(180deg, rgba(8, 7, 28, 0.36), rgba(15, 9, 38, 0.5)),
+      url("assets/backgrounds/grammar-hall-static.webp"),
+      url("assets/unity-tower-background.png");
+  }
+
+  .scene.active {
+    animation: none;
+  }
+
+  .dialogue-panel,
+  .activity-panel,
+  .battle-panel,
+  .game-modal-content {
+    backdrop-filter: none;
+  }
+}
+
 .hero-card,
 .combatant {
   padding: 14px;
@@ -2044,6 +2075,10 @@ h3 {
 .main-character-gif,
 .main-character-gif-fallback,
 .teacher-character-gif,
+.timedust-gif,
+.echo-trick-gif,
+.wisp-avatar.timedust-gif,
+.wisp-avatar.echo-trick-gif,
 .character-static-holder .character-avatar,
 .vn-character.is-speaking .main-character-gif,
 .vn-character.is-speaking .main-character-gif-fallback,
@@ -2055,7 +2090,11 @@ h3 {
 .combatant.is-active-turn .main-character-gif,
 .combatant.is-active-turn .main-character-gif-fallback {
   animation: none !important;
-  transform: none !important;
+  transform: translateZ(0) !important;
+  backface-visibility: hidden;
+  will-change: transform;
+  image-rendering: auto;
+  filter: none !important;
 }
 
 #battlePlayer.player-attack-motion {
@@ -2147,13 +2186,13 @@ h3 {
 .wisp-avatar.timedust-gif {
   width: clamp(150px, 31vw, 230px);
   height: clamp(150px, 31vw, 230px);
-  filter: drop-shadow(0 0 18px rgba(190, 138, 255, 0.58));
+  filter: none;
 }
 
 .wisp-avatar.echo-trick-gif {
   width: clamp(150px, 31vw, 230px);
   height: clamp(150px, 31vw, 230px);
-  filter: drop-shadow(0 0 18px rgba(105, 222, 255, 0.58));
+  filter: none;
 }
 
 .combatant .timedust-gif,
@@ -2163,7 +2202,10 @@ h3 {
 #battleEnemy .timedust-gif,
 #battleEnemy .echo-trick-gif {
   animation: none !important;
-  transform: none !important;
+  transform: translateZ(0) !important;
+  backface-visibility: hidden;
+  will-change: transform;
+  filter: none !important;
 }
 
 .wisp-avatar span {
