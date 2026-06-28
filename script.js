@@ -1056,14 +1056,14 @@ function assetPath(fileName) {
   return `${ASSET_BASE_URL}${fileName.replace(/^\/+/, "")}`;
 }
 
-const MAIN_CHARACTER_IMAGE_PATH = "assets/characters/main-character-idle-transparent.webp";
+const MAIN_CHARACTER_IMAGE_PATH = "assets/characters/main-character-idle-transparent-clean.webp";
 const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
-const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-idle-transparent.webp";
+const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-idle-transparent-clean.webp";
 const TEACHER_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("master-verion.png");
 const GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-animated.gif";
-const TIME_DUST_IMAGE_PATH = "assets/characters/timedust-transparent.webp";
+const TIME_DUST_IMAGE_PATH = "assets/characters/timedust-transparent-clean.webp";
 const TIME_DUST_FALLBACK_IMAGE_PATH = assetPath("enemies/time-dust.png");
-const ECHO_TRICK_IMAGE_PATH = "assets/characters/echo-trick-transparent.webp";
+const ECHO_TRICK_IMAGE_PATH = "assets/characters/echo-trick-transparent-clean.webp";
 const ECHO_TRICK_FALLBACK_IMAGE_PATH = assetPath("enemies/echo-tick.png");
 
 function createMainCharacterElement(className = "") {
@@ -1076,7 +1076,7 @@ function createMainCharacterElement(className = "") {
 }
 
 function handleMainCharacterGifError(img) {
-  console.warn("[Character] main-character-idle-transparent.webp failed to load");
+  console.warn("[Character] main-character-idle-transparent-clean.webp failed to load");
   if (img.dataset.fallbackApplied === "true") {
     return;
   }
@@ -1103,7 +1103,7 @@ function setupMainCharacterGifs() {
 }
 
 function handleTeacherCharacterGifError(img) {
-  console.warn("[Character] master-verion-idle-transparent.webp failed to load");
+  console.warn("[Character] master-verion-idle-transparent-clean.webp failed to load");
   if (img.dataset.fallbackApplied === "true") {
     return;
   }
