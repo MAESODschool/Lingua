@@ -1060,6 +1060,7 @@ const MAIN_CHARACTER_IMAGE_PATH = "assets/characters/main-character-idle-transpa
 const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
 const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-idle-transparent.webp";
 const TEACHER_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("master-verion.png");
+const GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-animated.gif";
 
 function createMainCharacterElement(className = "") {
   const img = document.createElement("img");
@@ -1113,6 +1114,14 @@ function setupTeacherCharacterGifs() {
     img.draggable = false;
     img.addEventListener("error", () => handleTeacherCharacterGifError(img), { once: true });
   });
+}
+
+function setupAnimatedGrammarHallBackground() {
+  const backgroundProbe = new Image();
+  backgroundProbe.addEventListener("error", error => {
+    console.warn("[Background] animated GIF failed to load", error);
+  }, { once: true });
+  backgroundProbe.src = GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH;
 }
 
 const enemySpriteMap = {
@@ -7678,6 +7687,7 @@ function bindGameAudioUnlockEvents() {
 }
 
 bindGameAudioUnlockEvents();
+setupAnimatedGrammarHallBackground();
 setupMainCharacterGifs();
 setupTeacherCharacterGifs();
 bindAvatarPreviewInputs();
