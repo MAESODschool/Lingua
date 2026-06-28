@@ -100,6 +100,47 @@ const BOSS_ACTIONS = [
   { type: "ultimate", label: "อัลติ", damage: 35, warning: "บอสกำลังใช้อัลติ! เตรียมปัดป้อง!", zoneWidth: 24, minZoneWidth: 8, speed: 650, zoneSpeed: 1250, shrinkPerSecond: 7, parryDuration: 3100 }
 ];
 
+const DEFAULT_POINT_PARRY_CONFIG = {
+  enabled: true,
+  counterDamage: 8,
+  preventDamage: true,
+  chance: 0.25,
+  ultimateChanceBonus: 0.1,
+  targetCount: 1,
+  duration: 2800,
+  size: 72,
+  messageTemplate: "Perfect Parry - รับดาเมจ 0 และสวนกลับ {damage}"
+};
+
+const BOSS_POINT_PARRY_CONFIGS = {
+  edForger: {
+    counterDamage: 10,
+    chance: 0.35,
+    targetCount: 2,
+    duration: 2600,
+    size: 66
+  },
+  irregularWraith: {
+    counterDamage: 10,
+    chance: 0.45,
+    targetCount: 2,
+    duration: 2400,
+    size: 62
+  },
+  memoryBreaker: {
+    counterDamage: 10,
+    chance: 0.45,
+    lowHpChance: 0.6,
+    targetCount: 2,
+    lowHpTargetCount: 3,
+    duration: 2500,
+    lowHpDuration: 2300,
+    size: 62,
+    lowHpSize: 58,
+    lowHpThreshold: 0.45
+  }
+};
+
 const bossQuestionBanks = {
   edForger: [
     { prompt: "study →", options: ["studied", "studyed", "studyied", "studed"], answer: "studied", explanation: "study ลงท้ายด้วยพยัญชนะ + y จึงเปลี่ยน y เป็น i แล้วเติม -ed" },
@@ -4960,6 +5001,59 @@ function getBossKey(stage) {
   return null;
 }
 
+function getParryConfigForBoss(stage, action = null) {
+  const bossKey = getBossKey(stage);
+  const keyedConfig = bossKey ? BOSS_POINT_PARRY_CONFIGS[bossKey] || {} : {};
+  const stageConfig = stage?.parryConfig || {};
+  const config = {
+    ...DEFAULT_POINT_PARRY_CONFIG,
+    ...keyedConfig,
+    ...stageConfig
+  };
+
+  if (stage?.parryEnabled === false || stageConfig.enabled === false) {
+    config.enabled = false;
+  }
+
+  if (stage?.parryReward != null) {
+    config.counterDamage = stage.parryReward;
+  }
+
+  const hpPercent = state.enemyMaxHp ? state.enemyHp / state.enemyMaxHp : 1;
+  const lowHpThreshold = config.lowHpThreshold ?? 0.45;
+  const isLowHp = hpPercent <= lowHpThreshold;
+
+  if (isLowHp) {
+    if (config.lowHpChance != null) {
+      config.chance = config.lowHpChance;
+    }
+    if (config.lowHpTargetCount != null) {
+      config.targetCount = config.lowHpTargetCount;
+    }
+    if (config.lowHpDuration != null) {
+      config.duration = config.lowHpDuration;
+    }
+    if (config.lowHpSize != null) {
+      config.size = config.lowHpSize;
+    }
+  }
+
+  if (action?.type === "ultimate") {
+    config.chance += config.ultimateChanceBonus || 0;
+  }
+
+  config.chance = clamp(config.chance, 0, 1);
+  config.counterDamage = Math.max(0, Math.round(config.counterDamage || 0));
+  return config;
+}
+
+function buildPointParryMessage(config, damage, result) {
+  if (result === "PERFECT") {
+    return (config.messageTemplate || DEFAULT_POINT_PARRY_CONFIG.messageTemplate).replace("{damage}", damage);
+  }
+  return null;
+}
+
 function getBossQuestion(stage) {
   const key = getBossKey(stage);
   const rawBank = key ? bossQuestionBanks[key] : null;
@@ -5643,11 +5737,9 @@ function chooseActBossAction(battle) {
     baseAction = BOSS_ACTIONS.find(action => action.type === "skill");
   }
 
-  if (!patterns) {
-    return { ...baseAction, sequence: ["attack"], bossKey: null };
-  }
-
-  const pattern = baseAction.type === "ultimate"
+  const pattern = !patterns
+    ? ["attack"]
+    : baseAction.type === "ultimate"
     ? (bossKey === "memoryBreaker" ? ["question", "question", "attack"] : ["question", "attack"])
     : sample(patterns, 1)[0];
 
@@ -5661,20 +5753,11 @@ function chooseActBossAction(battle) {
 }
 
 function chooseBossDefenseStep(action, battle) {
-  const bossKey = action.bossKey || getBossKey(battle.stage);
-  const hpPercent = state.enemyHp / state.enemyMaxHp;
-  let pointChance = 0.25;
-  if (bossKey === "edForger") {
-    pointChance = 0.35;
-  } else if (bossKey === "irregularWraith") {
-    pointChance = 0.45;
-  } else if (bossKey === "memoryBreaker") {
-    pointChance = hpPercent <= 0.45 ? 0.6 : 0.45;
+  const parryConfig = getParryConfigForBoss(battle.stage, action);
+  if (!parryConfig.enabled) {
+    return "attack";
   }
-  if (action.type === "ultimate") {
-    pointChance += 0.1;
-  }
-  return Math.random() < pointChance ? "point" : "attack";
+  return Math.random() < parryConfig.chance ? "point" : "attack";
 }
 
 function bossIntentLabel(turn) {
@@ -5777,32 +5860,23 @@ function runNextBossTurnStep() {
 
 function getPointParryDifficulty() {
   const battle = state.actBattle;
-  const bossKey = getBossKey(battle?.stage);
-  const hpPercent = state.enemyHp / state.enemyMaxHp;
-  let targetCount = 1;
-  let duration = 2800;
-  let size = 72;
-
-  if (bossKey === "edForger") {
-    targetCount = 2;
-    duration = 2600;
-    size = 66;
-  } else if (bossKey === "irregularWraith") {
-    targetCount = 2;
-    duration = 2400;
-    size = 62;
-  } else if (bossKey === "memoryBreaker") {
-    targetCount = hpPercent <= 0.45 ? 3 : 2;
-    duration = hpPercent <= 0.45 ? 2300 : 2500;
-    size = hpPercent <= 0.45 ? 58 : 62;
-  }
-
-  return { targetCount, duration, size };
+  const config = getParryConfigForBoss(battle?.stage, battle?.pendingBossAction);
+  return {
+    targetCount: config.targetCount,
+    duration: config.duration,
+    size: config.size
+  };
 }
 
 function showPointParryStep() {
   const battle = state.actBattle;
   if (!battle || !battle.pendingBossAction) {
+    return;
+  }
+
+  const parryConfig = getParryConfigForBoss(battle.stage, battle.pendingBossAction);
+  if (!parryConfig.enabled) {
+    showBossAttackStep();
     return;
   }
 
@@ -5865,12 +5939,13 @@ function resolvePointParry(result) {
 
   const action = battle.pendingBossAction;
   const effects = state.battleActiveEffects || {};
+  const parryConfig = getParryConfigForBoss(battle.stage, action);
   let damage = action.damage;
   let counterDamage = 0;
 
   if (result === "PERFECT") {
-    damage = 0;
-    counterDamage = 10;
+    damage = parryConfig.preventDamage ? 0 : damage;
+    counterDamage = parryConfig.counterDamage;
     battle.criticalCounterReady = true;
     gainActAP(1);
   } else if (result === "GOOD") {
@@ -5904,7 +5979,7 @@ function resolvePointParry(result) {
   showOnlyBattlePanel(null);
   setBattleTurnOwner("player");
   els.battleMessage.textContent = result === "PERFECT"
-    ? `PERFECT POINT PARRY! สวนกลับ ${counterDamage} และได้รับ Critical Counter`
+    ? `${buildPointParryMessage(parryConfig, counterDamage, result)} และได้รับ Critical Counter`
     : result === "GOOD"
       ? `POINT GUARD! ลดดาเมจ เหลือรับ ${damage}`
       : `MISS! รับดาเมจ ${damage}`;
