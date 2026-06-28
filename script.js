@@ -1058,6 +1058,8 @@ function assetPath(fileName) {
 
 const MAIN_CHARACTER_IMAGE_PATH = "assets/characters/main-character-idle-transparent.webp";
 const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
+const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-idle-transparent.webp";
+const TEACHER_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("master-verion.png");
 
 function createMainCharacterElement(className = "") {
   const img = document.createElement("img");
@@ -1092,6 +1094,24 @@ function setupMainCharacterGifs() {
     img.src = MAIN_CHARACTER_IMAGE_PATH;
     img.draggable = false;
     img.addEventListener("error", () => handleMainCharacterGifError(img), { once: true });
+  });
+}
+
+function handleTeacherCharacterGifError(img) {
+  console.warn("[Character] master-verion-idle-transparent.webp failed to load");
+  if (img.dataset.fallbackApplied === "true") {
+    return;
+  }
+
+  img.dataset.fallbackApplied = "true";
+  img.src = TEACHER_CHARACTER_FALLBACK_IMAGE_PATH;
+}
+
+function setupTeacherCharacterGifs() {
+  document.querySelectorAll(".teacher-character-gif").forEach(img => {
+    img.src = TEACHER_CHARACTER_IMAGE_PATH;
+    img.draggable = false;
+    img.addEventListener("error", () => handleTeacherCharacterGifError(img), { once: true });
   });
 }
 
@@ -7659,4 +7679,5 @@ function bindGameAudioUnlockEvents() {
 
 bindGameAudioUnlockEvents();
 setupMainCharacterGifs();
+setupTeacherCharacterGifs();
 bindAvatarPreviewInputs();

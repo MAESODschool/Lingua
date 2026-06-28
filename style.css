@@ -1708,6 +1708,28 @@ h3 {
   filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
 }
 
+.teacher-character-gif {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  object-position: center bottom;
+  background: transparent !important;
+  pointer-events: none;
+  user-select: none;
+}
+
+.teacher-character,
+.teacher-sprite,
+.teacher-avatar,
+.master-verion,
+.npc-teacher,
+.teacher-character-wrapper,
+.vn-character:has(.teacher-character-gif) {
+  background: transparent !important;
+  overflow: visible;
+}
+
 .wanderer-avatar::before,
 .wanderer-avatar::after {
   display: none;
