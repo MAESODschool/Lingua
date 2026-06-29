@@ -1730,7 +1730,7 @@ function shouldPlayDialogueTypeSfx() {
 
 function canPlayTypewriterSfx() {
   if (state.isPrologueActive) {
-    return true;
+    return state.prologueTyping === true;
   }
   return state.isTypingDialogue
     && scenes.story
@@ -1819,6 +1819,25 @@ function stopDialogueTypeSfx() {
     track.pause();
     track.currentTime = 0;
   });
+}
+
+function stopPrologueTypewriterSound() {
+  dialogueTypeSfxPool.forEach(track => {
+    if (track.dialogueTypeSfxStopTimer) {
+      clearTimeout(track.dialogueTypeSfxStopTimer);
+      track.dialogueTypeSfxStopTimer = null;
+    }
+    track.pause();
+    track.currentTime = 0;
+  });
+  state.lastDialogueTypeSfxAt = 0;
+}
+
+function clearPrologueTypingTimer() {
+  if (state.prologueTimer) {
+    clearTimeout(state.prologueTimer);
+    state.prologueTimer = null;
+  }
 }
 
 function unlockGameAudio() {
@@ -3151,11 +3170,28 @@ function playPrologueTypeSfx() {
   if (!canPlayTypewriterSfx() || state.isMuted || !state.audioUnlocked || !state.typewriterAudioUnlocked) {
     return;
   }
+  const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+  if (now - state.lastDialogueTypeSfxAt < DIALOGUE_TYPE_SFX_COOLDOWN_MS) {
+    return;
+  }
+  state.lastDialogueTypeSfxAt = now;
   const track = dialogueTypeSfxPool[state.dialogueTypeSfxPoolIndex % dialogueTypeSfxPool.length];
   state.dialogueTypeSfxPoolIndex += 1;
+  if (track.dialogueTypeSfxStopTimer) {
+    clearTimeout(track.dialogueTypeSfxStopTimer);
+    track.dialogueTypeSfxStopTimer = null;
+  }
   try {
-    track.currentTime = DIALOGUE_TYPE_SFX_OFFSET;
+    track.pause();
+    seekDialogueTypeSfxStart(track);
+    track.volume = DIALOGUE_TYPE_SFX_VOLUME;
+    track.muted = state.isMuted;
     track.play().catch(() => {});
+    track.dialogueTypeSfxStopTimer = setTimeout(() => {
+      track.pause();
+      track.currentTime = 0;
+      track.dialogueTypeSfxStopTimer = null;
+    }, DIALOGUE_TYPE_SFX_TICK_MS);
   } catch (error) {
     if (!state.dialogueTypeSfxWarned) {
       state.dialogueTypeSfxWarned = true;
@@ -3170,6 +3206,8 @@ function showPrologueIntro(onComplete) {
     return;
   }
 
+  stopDialogueTypeSfx();
+  cleanupPrologueTypingState();
   state.isPrologueActive = true;
   state.prologueIndex = 0;
   state.prologueTextIndex = 0;
@@ -3186,7 +3224,8 @@ function showPrologueIntro(onComplete) {
 }
 
 function startPrologueLine() {
-  clearTimeout(state.prologueTimer);
+  clearPrologueTypingTimer();
+  stopPrologueTypewriterSound();
   const line = PROLOGUE_LINES[state.prologueIndex] || "";
   state.prologueCurrentLine = line;
   state.prologueTextIndex = 0;
@@ -3214,8 +3253,9 @@ function typePrologueCharacter() {
 }
 
 function finishPrologueLine() {
-  clearTimeout(state.prologueTimer);
+  clearPrologueTypingTimer();
   state.prologueTyping = false;
+  stopPrologueTypewriterSound();
   els.prologueText.textContent = state.prologueCurrentLine || "";
   const isLastLine = state.prologueIndex >= PROLOGUE_LINES.length - 1;
   els.prologueHint.textContent = isLastLine ? "แตะหน้าจอเพื่อเข้าสู่บทเรียน" : "แตะเพื่อไปต่อ";
@@ -3242,16 +3282,23 @@ function completePrologueIntro() {
   if (!state.isPrologueActive) {
     return;
   }
-  clearTimeout(state.prologueTimer);
+  cleanupPrologueTypingState();
   markPrologueSeenForCurrentUser();
   const onComplete = state.prologueCompleteCallback || setupStoryScene;
   state.isPrologueActive = false;
   state.prologueCompleteCallback = null;
   els.prologueOverlay.classList.remove("visible");
   setTimeout(() => {
+    cleanupPrologueTypingState();
     els.prologueOverlay.classList.add("hidden");
     onComplete();
   }, 520);
+}
+
+function cleanupPrologueTypingState() {
+  clearPrologueTypingTimer();
+  state.prologueTyping = false;
+  stopPrologueTypewriterSound();
 }
 
 function startGameAfterLogin() {
