@@ -16,7 +16,7 @@
         <p class="eyebrow">Close Beta</p>
         <h1>Lingua</h1>
         <p class="subtitle">A Grammaria RPG</p>
-        <p id="authModeLabel" class="auth-mode-label">Close Beta: Local Test Mode</p>
+        <p id="authModeLabel" class="auth-mode-label">Close Beta: Online Account Mode</p>
         <div class="form-grid">
           <div class="auth-tabs" role="tablist" aria-label="เลือกวิธีเข้าเกม">
             <button id="showLoginPanelButton" class="auth-tab is-active" type="button">เข้าสู่ระบบ</button>
@@ -24,20 +24,20 @@
           </div>
 
           <div id="loginPanel" class="auth-panel">
-            <p id="loginLocalNotice" class="auth-local-note">บัญชี Local ใช้ได้เฉพาะเครื่อง/เบราว์เซอร์ที่สมัครไว้ หากต้องการเล่นข้ามเครื่อง ต้องเชื่อมระบบฐานข้อมูลออนไลน์</p>
+            <p id="loginLocalNotice" class="auth-local-note hidden">บัญชี Local ใช้ได้เฉพาะเครื่อง/เบราว์เซอร์ที่สมัครไว้ หากต้องการเล่นข้ามเครื่อง ต้องเชื่อมระบบฐานข้อมูลออนไลน์</p>
             <label>
               <span>ชื่อผู้ใช้</span>
               <input id="loginUsername" type="text" autocomplete="username" placeholder="mina_beta">
             </label>
             <label>
               <span>PIN / รหัสผ่าน</span>
-              <input id="loginPin" type="password" autocomplete="current-password" placeholder="อย่างน้อย 4 ตัว">
+              <input id="loginPin" type="password" autocomplete="current-password" placeholder="อย่างน้อย 6 ตัว">
             </label>
             <button id="loginButton" class="primary-button" type="button">เข้าสู่เกม</button>
           </div>
 
           <div id="registerPanel" class="auth-panel hidden">
-            <p id="registerLocalNotice" class="auth-local-note">ขณะนี้เป็นโหมดทดสอบแบบ Local บัญชีจะบันทึกเฉพาะเครื่องและเบราว์เซอร์นี้เท่านั้น หากเปลี่ยนเครื่องหรือเปลี่ยนเบราว์เซอร์ อาจไม่พบบัญชีเดิม</p>
+            <p id="registerLocalNotice" class="auth-local-note hidden">ขณะนี้เป็นโหมดทดสอบแบบ Local บัญชีจะบันทึกเฉพาะเครื่องและเบราว์เซอร์นี้เท่านั้น หากเปลี่ยนเครื่องหรือเปลี่ยนเบราว์เซอร์ อาจไม่พบบัญชีเดิม</p>
             <label>
               <span>ชื่อเล่น</span>
               <input id="registerDisplayName" type="text" autocomplete="name" placeholder="เช่น Mina">
@@ -48,7 +48,7 @@
             </label>
             <label>
               <span>PIN / รหัสผ่าน</span>
-              <input id="registerPin" type="password" autocomplete="new-password" placeholder="อย่างน้อย 4 ตัว">
+              <input id="registerPin" type="password" autocomplete="new-password" placeholder="อย่างน้อย 6 ตัว">
             </label>
             <label>
               <span>ยืนยัน PIN</span>
@@ -66,7 +66,7 @@
             <p>โหมด Guest จะบันทึกข้อมูลเฉพาะเครื่องนี้เท่านั้น</p>
           </div>
         </div>
-        <p id="loginStatus" class="form-status">Local fallback สำหรับทดสอบ Close Beta เท่านั้น</p>
+        <p id="loginStatus" class="form-status">เข้าสู่ระบบบัญชีออนไลน์ Close Beta</p>
       </div>
     </section>
 
@@ -417,6 +417,6 @@
     </div>
   </main>
 
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>

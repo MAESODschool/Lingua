@@ -1,3 +1,20 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
 // Lingua Prototype 1 uses small scene switches and one shared state object.
 const scenes = {
   login: document.getElementById("loginScene"),
@@ -1295,16 +1312,24 @@ const playerStorage = {
 
 const AUTH_CONFIG = {
   betaCode: "LINGUA_BETA_2026",
-  mode: "local",
-  remoteEnabled: false,
-  provider: null,
-  useRemoteAuth: false
+  mode: "remote",
+  remoteEnabled: true,
+  provider: "firebase",
+  useRemoteAuth: true
 };
 
 const REMOTE_AUTH_CONFIG = {
   provider: "firebase",
-  enabled: false,
-  firebaseConfig: null,
+  enabled: true,
+  firebaseConfig: {
+    apiKey: "AIzaSyBA5JKnMcAdzFcjdVnksofzGHWxWPTGNZA",
+    authDomain: "lingua-close-beta-1.firebaseapp.com",
+    projectId: "lingua-close-beta-1",
+    storageBucket: "lingua-close-beta-1.firebasestorage.app",
+    messagingSenderId: "1061012230661",
+    appId: "1:1061012230661:web:9156e800d671491c61c26c",
+    measurementId: "G-4FXFY4QRZQ"
+  },
   supabaseUrl: "",
   supabaseAnonKey: ""
 };
@@ -1326,7 +1351,10 @@ const AUTH_COPY = {
   loginLocalNotice: "บัญชี Local ใช้ได้เฉพาะเครื่อง/เบราว์เซอร์ที่สมัครไว้ หากต้องการเล่นข้ามเครื่อง ต้องเชื่อมระบบฐานข้อมูลออนไลน์",
   registerLocalNotice: "ขณะนี้เป็นโหมดทดสอบแบบ Local บัญชีจะบันทึกเฉพาะเครื่องและเบราว์เซอร์นี้เท่านั้น หากเปลี่ยนเครื่องหรือเปลี่ยนเบราว์เซอร์ อาจไม่พบบัญชีเดิม",
   registerLocalSuccess: "สมัครสำเร็จแล้ว บัญชีนี้ยังเป็นบัญชี Local ใช้ได้เฉพาะเครื่อง/เบราว์เซอร์นี้",
-  localUserNotFound: "ไม่พบผู้ใช้ในเบราว์เซอร์นี้ หากคุณสมัครจากเครื่องหรือเบราว์เซอร์อื่น ระบบ Local จะยังไม่สามารถดึงบัญชีเดิมได้"
+  remoteRegisterSuccess: "สมัครสำเร็จแล้ว บัญชีนี้เป็นบัญชีออนไลน์ สามารถใช้ข้ามเครื่องได้",
+  localUserNotFound: "ไม่พบผู้ใช้ในเบราว์เซอร์นี้ หากคุณสมัครจากเครื่องหรือเบราว์เซอร์อื่น ระบบ Local จะยังไม่สามารถดึงบัญชีเดิมได้",
+  remoteAuthUnavailable: "ไม่สามารถเชื่อมต่อบัญชีออนไลน์ได้ กรุณาลองใหม่",
+  remoteLoginFailed: "ไม่พบบัญชีนี้ หรือ PIN ไม่ถูกต้อง"
 };
 
 function isRemoteAuthConfigured() {
@@ -1352,6 +1380,23 @@ function getAuthPanelNotice(panelName) {
     return panelName === "register" ? AUTH_COPY.remoteRegisterNotice : AUTH_COPY.remoteLoginNotice;
   }
   return panelName === "register" ? AUTH_COPY.registerLocalNotice : AUTH_COPY.loginLocalNotice;
+}
+
+const firebaseApp = initializeApp(REMOTE_AUTH_CONFIG.firebaseConfig);
+const firebaseAuth = getAuth(firebaseApp);
+const firestoreDb = getFirestore(firebaseApp);
+let resolveFirebaseAuthReady = null;
+const firebaseAuthReady = new Promise(resolve => {
+  resolveFirebaseAuthReady = resolve;
+});
+
+onAuthStateChanged(firebaseAuth, user => {
+  resolveFirebaseAuthReady(user);
+});
+
+async function waitForFirebaseAuthReady() {
+  await firebaseAuthReady;
+  return firebaseAuth.currentUser;
 }
 
 // Auth Service
@@ -2479,11 +2524,15 @@ function addBattleMessageLine(lines, text) {
 }
 
 function normalizeUsername(username) {
-  return username.trim().toLowerCase();
+  return String(username || "").trim().toLowerCase();
 }
 
 function isValidUsername(username) {
-  return /^[a-zA-Z0-9_]{3,20}$/.test(username);
+  return /^[a-z0-9_]{3,20}$/.test(normalizeUsername(username));
+}
+
+function usernameToInternalEmail(username) {
+  return `${normalizeUsername(username)}@lingua.local`;
 }
 
 function getRegisteredUserId(username) {
@@ -2547,14 +2596,112 @@ async function hashPin(pin, salt) {
 
 function createSessionUser(user) {
   return {
-    userId: user.id,
-    id: user.id,
+    userId: user.uid || user.id,
+    uid: user.uid || user.id,
+    id: user.uid || user.id,
     username: user.username,
-    email: user.id,
+    email: user.email || user.id,
     displayName: user.displayName,
     mode: user.mode,
     isGuest: user.mode === "guest"
   };
+}
+
+function sanitizeForFirestore(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function getPlayerDocRef(uid) {
+  return doc(firestoreDb, "players", uid);
+}
+
+function createFirestorePlayerDoc(sessionUser, progress) {
+  return {
+    uid: sessionUser.uid,
+    username: sessionUser.username,
+    displayName: sessionUser.displayName,
+    mode: "registered",
+    hasSeenPrologue: Boolean(progress.hasSeenPrologue),
+    progress: sanitizeForFirestore(progress),
+    settings: {
+      soundEnabled: true,
+      musicEnabled: true,
+      language: "th"
+    }
+  };
+}
+
+function createRemotePlayerData(sessionUser, savedProgress = null) {
+  const fallback = createDefaultPlayerData(sessionUser);
+  const merged = savedProgress ? mergeDeep(fallback, sanitizeForFirestore(savedProgress)) : fallback;
+  merged.userId = sessionUser.uid;
+  merged.uid = sessionUser.uid;
+  merged.id = sessionUser.uid;
+  merged.username = sessionUser.username;
+  merged.email = sessionUser.email;
+  merged.displayName = merged.displayName || sessionUser.displayName;
+  merged.mode = "registered";
+  merged.isGuest = false;
+  return merged;
+}
+
+function mapFirebaseAuthError(error) {
+  const code = error?.code || "";
+  if (
+    code.includes("invalid-credential") ||
+    code.includes("user-not-found") ||
+    code.includes("wrong-password") ||
+    code.includes("invalid-login-credentials")
+  ) {
+    return AUTH_COPY.remoteLoginFailed;
+  }
+  if (code.includes("email-already-in-use")) {
+    return "ชื่อผู้ใช้นี้ถูกใช้แล้ว";
+  }
+  if (code.includes("weak-password")) {
+    return "PIN ต้องมีอย่างน้อย 6 ตัว";
+  }
+  if (code.includes("network-request-failed") || code.includes("unavailable")) {
+    return AUTH_COPY.remoteAuthUnavailable;
+  }
+  if (code.includes("unauthorized-domain")) {
+    return "โดเมนนี้ยังไม่ได้รับอนุญาตใน Firebase Auth กรุณาเพิ่มโดเมนของเว็บใน Authorized domains";
+  }
+  return error?.message ? "ไม่สามารถเชื่อมต่อบัญชีออนไลน์ได้ กรุณาลองใหม่" : AUTH_COPY.remoteAuthUnavailable;
+}
+
+async function loadRemoteSessionUser(firebaseUser, fallbackUsername = "") {
+  const playerRef = getPlayerDocRef(firebaseUser.uid);
+  const snapshot = await getDoc(playerRef);
+  if (snapshot.exists()) {
+    const data = snapshot.data();
+    return createSessionUser({
+      uid: firebaseUser.uid,
+      id: firebaseUser.uid,
+      username: data.username || fallbackUsername || firebaseUser.email?.split("@")[0] || firebaseUser.uid,
+      email: firebaseUser.email,
+      displayName: data.displayName || fallbackUsername || "Lingua Player",
+      mode: "registered"
+    });
+  }
+
+  const username = normalizeUsername(fallbackUsername || firebaseUser.email?.split("@")[0] || firebaseUser.uid);
+  const sessionUser = createSessionUser({
+    uid: firebaseUser.uid,
+    id: firebaseUser.uid,
+    username,
+    email: firebaseUser.email,
+    displayName: username || "Lingua Player",
+    mode: "registered"
+  });
+  const defaultProgress = createDefaultPlayerData(sessionUser);
+  await setDoc(playerRef, {
+    ...createFirestorePlayerDoc(sessionUser, defaultProgress),
+    createdAt: serverTimestamp(),
+    lastLoginAt: serverTimestamp(),
+    lastActiveAt: serverTimestamp()
+  });
+  return sessionUser;
 }
 
 const localAuthProvider = {
@@ -2568,8 +2715,8 @@ const localAuthProvider = {
     if (!isValidUsername(username)) {
       throw new Error("ชื่อผู้ใช้ต้องเป็น a-z, A-Z, 0-9 หรือ _ ความยาว 3–20 ตัว");
     }
-    if ((pin || "").length < 4) {
-      throw new Error("PIN ต้องมีอย่างน้อย 4 ตัว");
+    if ((pin || "").length < 6) {
+      throw new Error("PIN ต้องมีอย่างน้อย 6 ตัว");
     }
     if (pin !== confirmPin) {
       throw new Error("PIN และยืนยัน PIN ต้องตรงกัน");
@@ -2677,20 +2824,111 @@ const localAuthProvider = {
 const remoteAuthProvider = {
   mode: "remote",
 
-  async register() {
-    throw new Error("ระบบบัญชีออนไลน์ยังไม่ได้ตั้งค่า Firebase/Supabase");
+  async register({ username, pin, confirmPin, displayName, betaCode }) {
+    try {
+      const normalizedUsername = normalizeUsername(username);
+      if (!displayName.trim()) {
+        throw new Error("กรุณากรอกชื่อเล่น");
+      }
+      if (!isValidUsername(normalizedUsername)) {
+        throw new Error("ชื่อผู้ใช้ต้องเป็น a-z, 0-9 หรือ _ ความยาว 3–20 ตัว");
+      }
+      if ((pin || "").length < 6) {
+        throw new Error("PIN ต้องมีอย่างน้อย 6 ตัว");
+      }
+      if (pin !== confirmPin) {
+        throw new Error("PIN และยืนยัน PIN ต้องตรงกัน");
+      }
+      // Close beta frontend validation is convenient for testing. Production should
+      // validate beta eligibility in a backend or Cloud Function.
+      if ((betaCode || "").trim() !== AUTH_CONFIG.betaCode) {
+        throw new Error("รหัส Close Beta ไม่ถูกต้อง");
+      }
+
+      const credential = await createUserWithEmailAndPassword(firebaseAuth, usernameToInternalEmail(normalizedUsername), pin);
+      const sessionUser = createSessionUser({
+        uid: credential.user.uid,
+        id: credential.user.uid,
+        username: normalizedUsername,
+        email: credential.user.email,
+        displayName: displayName.trim(),
+        mode: "registered"
+      });
+      const defaultProgress = createDefaultPlayerData(sessionUser);
+      defaultProgress.hasSeenPrologue = false;
+      await setDoc(getPlayerDocRef(sessionUser.uid), {
+        ...createFirestorePlayerDoc(sessionUser, defaultProgress),
+        createdAt: serverTimestamp(),
+        lastLoginAt: serverTimestamp(),
+        lastActiveAt: serverTimestamp()
+      });
+      state.currentUser = sessionUser;
+      playerData = defaultProgress;
+      playerStorage.set(AUTH_STORAGE_KEYS.currentUser, JSON.stringify(sessionUser));
+      return sessionUser;
+    } catch (error) {
+      if (error instanceof Error && !error.code) {
+        throw error;
+      }
+      throw new Error(mapFirebaseAuthError(error));
+    }
   },
 
-  async login() {
-    throw new Error("ระบบบัญชีออนไลน์ยังไม่ได้ตั้งค่า Firebase/Supabase");
+  async login({ username, pin }) {
+    try {
+      const normalizedUsername = normalizeUsername(username);
+      if (!isValidUsername(normalizedUsername)) {
+        throw new Error("กรุณากรอกชื่อผู้ใช้ให้ถูกต้อง");
+      }
+      if (!pin) {
+        throw new Error("กรุณากรอก PIN");
+      }
+
+      const credential = await signInWithEmailAndPassword(firebaseAuth, usernameToInternalEmail(normalizedUsername), pin);
+      const sessionUser = await loadRemoteSessionUser(credential.user, normalizedUsername);
+      state.currentUser = sessionUser;
+      playerStorage.set(AUTH_STORAGE_KEYS.currentUser, JSON.stringify(sessionUser));
+      await progressService.loadProgress(sessionUser.uid);
+      await updateDoc(getPlayerDocRef(sessionUser.uid), {
+        lastLoginAt: serverTimestamp(),
+        lastActiveAt: serverTimestamp()
+      });
+      return sessionUser;
+    } catch (error) {
+      if (error instanceof Error && !error.code) {
+        throw error;
+      }
+      throw new Error(mapFirebaseAuthError(error));
+    }
   },
 
-  logout() {
-    localAuthProvider.logout();
+  async logout() {
+    try {
+      await signOut(firebaseAuth);
+    } catch (error) {
+      console.warn("[Auth] Firebase signOut failed; clearing local game session.", error);
+    }
+    playerStorage.remove(AUTH_STORAGE_KEYS.currentUser);
+    state.currentUser = null;
+    playerData = null;
   },
 
   getCurrentUser() {
-    return localAuthProvider.getCurrentUser();
+    if (state.currentUser) {
+      return state.currentUser;
+    }
+    const saved = playerStorage.get(AUTH_STORAGE_KEYS.currentUser);
+    if (!saved) {
+      return null;
+    }
+    try {
+      state.currentUser = JSON.parse(saved);
+      return state.currentUser;
+    } catch (error) {
+      console.warn("[Auth] Failed to restore current Firebase session", error);
+      playerStorage.remove(AUTH_STORAGE_KEYS.currentUser);
+      return null;
+    }
   },
 
   isLoggedIn() {
@@ -2748,7 +2986,33 @@ const authService = {
 };
 
 const progressService = {
-  loadProgress(userId) {
+  async loadProgress(userId) {
+    if (userId !== "guest" && getAuthMode() === "remote") {
+      const firebaseUser = firebaseAuth.currentUser;
+      if (!firebaseUser || firebaseUser.uid !== userId) {
+        throw new Error(AUTH_COPY.remoteAuthUnavailable);
+      }
+      const sessionUser = getCurrentUser() || await loadRemoteSessionUser(firebaseUser);
+      const snapshot = await getDoc(getPlayerDocRef(userId));
+      if (!snapshot.exists()) {
+        const defaultProgress = createDefaultPlayerData(sessionUser);
+        await setDoc(getPlayerDocRef(userId), {
+          ...createFirestorePlayerDoc(sessionUser, defaultProgress),
+          createdAt: serverTimestamp(),
+          lastLoginAt: serverTimestamp(),
+          lastActiveAt: serverTimestamp()
+        });
+        playerData = defaultProgress;
+        return playerData;
+      }
+      const data = snapshot.data();
+      const remoteProgress = createRemotePlayerData(sessionUser, data.progress || {});
+      remoteProgress.hasSeenPrologue = Boolean(data.hasSeenPrologue || remoteProgress.hasSeenPrologue);
+      remoteProgress.displayName = data.displayName || remoteProgress.displayName;
+      playerData = remoteProgress;
+      return playerData;
+    }
+
     const saved = playerStorage.get(getPlayerStorageKey(userId));
     if (saved) {
       return JSON.parse(saved);
@@ -2758,18 +3022,52 @@ const progressService = {
     return legacySaved ? JSON.parse(legacySaved) : null;
   },
 
-  saveProgress(userId, progress) {
+  async saveProgress(userId, progress) {
+    if (userId !== "guest" && getAuthMode() === "remote") {
+      const firebaseUser = firebaseAuth.currentUser;
+      if (!firebaseUser || firebaseUser.uid !== userId) {
+        console.warn("[Firestore] Skip save: Firebase session is not ready for this player.");
+        return false;
+      }
+      const now = new Date().toISOString();
+      const nextProgress = {
+        ...progress,
+        updatedAt: now,
+        progress: {
+          ...progress.progress,
+          lastUpdatedAt: now
+        }
+      };
+      await setDoc(getPlayerDocRef(userId), {
+        uid: userId,
+        username: nextProgress.username,
+        displayName: nextProgress.displayName,
+        mode: "registered",
+        hasSeenPrologue: Boolean(nextProgress.hasSeenPrologue),
+        progress: sanitizeForFirestore(nextProgress),
+        settings: {
+          soundEnabled: nextProgress.settings?.sound !== false,
+          musicEnabled: true,
+          language: nextProgress.settings?.language || "th"
+        },
+        lastActiveAt: serverTimestamp()
+      }, { merge: true });
+      return true;
+    }
+
     playerStorage.set(getPlayerStorageKey(userId), JSON.stringify(progress));
+    return true;
   },
 
   createDefaultProgress(user) {
     return createDefaultPlayerData(user);
   },
 
-  migrateGuestProgressToUser(userId) {
-    const guestProgress = this.loadProgress("guest");
-    if (guestProgress && !this.loadProgress(userId)) {
-      this.saveProgress(userId, { ...guestProgress, userId, isGuest: false });
+  async migrateGuestProgressToUser(userId) {
+    const guestProgress = await this.loadProgress("guest");
+    const existingProgress = await this.loadProgress(userId);
+    if (guestProgress && !existingProgress) {
+      await this.saveProgress(userId, { ...guestProgress, userId, isGuest: false });
     }
   }
 };
@@ -2798,7 +3096,7 @@ function updateAuthUi() {
   }
   if (els.logoutButton) {
     els.logoutButton.classList.toggle("hidden", !user);
-    els.logoutButton.textContent = user ? `Logout: ${user.displayName}` : "Logout";
+    els.logoutButton.textContent = user ? `ผู้เล่น: ${user.displayName} | Logout` : "Logout";
   }
 }
 
@@ -2812,7 +3110,7 @@ function showAuthPanel(panelName) {
   setAuthStatus(getAuthPanelNotice(showRegister ? "register" : "login"));
 }
 
-function enterGameForCurrentUser(statusMessage) {
+async function enterGameForCurrentUser(statusMessage) {
   const user = getCurrentUser();
   if (!user) {
     showScene("login");
@@ -2821,8 +3119,8 @@ function enterGameForCurrentUser(statusMessage) {
 
   updateAuthUi();
   setAuthStatus(statusMessage);
-  if (hasExistingPlayer(user.userId)) {
-    loadPlayerProfile(user.userId);
+  if (await hasExistingPlayer(user.userId)) {
+    await loadPlayerProfile(user.userId);
     runSceneTransition(statusMessage, startGameAfterLogin);
     return;
   }
@@ -2844,6 +3142,9 @@ function shouldShowPrologueForCurrentUser() {
   const key = getPrologueSeenStorageKey(user);
   if (playerData?.hasSeenPrologue === true) {
     return false;
+  }
+  if (getAuthMode() === "remote" && user && !user.isGuest) {
+    return true;
   }
   return playerStorage.get(key) !== "true";
 }
@@ -2992,7 +3293,7 @@ async function registerCloseBetaUser() {
       confirmPin: els.registerConfirmPin.value,
       betaCode: els.registerBetaCode.value
     });
-    enterGameForCurrentUser(AUTH_COPY.registerLocalSuccess);
+    await enterGameForCurrentUser(getAuthMode() === "remote" ? AUTH_COPY.remoteRegisterSuccess : AUTH_COPY.registerLocalSuccess);
   } catch (error) {
     setAuthStatus(error.message || "สมัครไม่สำเร็จ");
   }
@@ -3005,34 +3306,46 @@ async function loginRegisteredUser() {
       username: els.loginUsername.value,
       pin: els.loginPin.value
     });
-    enterGameForCurrentUser("เข้าสู่ระบบสำเร็จ กำลังโหลด progress เดิม");
+    await enterGameForCurrentUser("เข้าสู่ระบบสำเร็จ กำลังโหลด progress เดิม");
   } catch (error) {
     setAuthStatus(error.message || "เข้าสู่ระบบไม่สำเร็จ");
   }
 }
 
-function hasExistingPlayer(userId) {
-  return Boolean(progressService.loadProgress(userId));
+async function hasExistingPlayer(userId) {
+  const profile = await progressService.loadProgress(userId);
+  return Boolean(profile?.className && profile?.room);
 }
 
-function loginAsGuest() {
+async function loginAsGuest() {
   state.currentUser = authService.startGuestSession();
   setAuthStatus("กำลังโหลดข้อมูล Guest... progress จะอยู่เฉพาะเครื่องนี้");
-  enterGameForCurrentUser(hasExistingPlayer("guest") ? "พบข้อมูล Guest เดิม กำลังเข้าสู่โลก Lingua" : "กำลังเตรียมตัวละคร Guest ใหม่");
+  await enterGameForCurrentUser(await hasExistingPlayer("guest") ? "พบข้อมูล Guest เดิม กำลังเข้าสู่โลก Lingua" : "กำลังเตรียมตัวละคร Guest ใหม่");
 }
 
-function logoutCurrentUser() {
+async function logoutCurrentUser() {
   clearEnemyTurnTimer();
   stopTimer("charge");
   stopParryCountdown();
-  authService.logout();
+  await authService.logout();
   updateAuthUi();
   setAuthStatus("ออกจากระบบแล้ว สามารถเลือกผู้เล่นใหม่ได้");
   showScene("login");
 }
 
-function initializeAuthUi() {
+async function initializeAuthUi() {
   showAuthPanel("login");
+  if (getAuthMode() === "remote") {
+    const firebaseUser = await waitForFirebaseAuthReady();
+    if (firebaseUser && (!state.currentUser || state.currentUser.isGuest || state.currentUser.uid !== firebaseUser.uid)) {
+      state.currentUser = await loadRemoteSessionUser(firebaseUser);
+      playerStorage.set(AUTH_STORAGE_KEYS.currentUser, JSON.stringify(state.currentUser));
+      await progressService.loadProgress(firebaseUser.uid);
+    } else if (!firebaseUser && state.currentUser && !state.currentUser.isGuest) {
+      state.currentUser = null;
+      playerStorage.remove(AUTH_STORAGE_KEYS.currentUser);
+    }
+  }
   const user = getCurrentUser();
   updateAuthUi();
   if (user) {
@@ -3040,15 +3353,16 @@ function initializeAuthUi() {
   }
 }
 
-function loadPlayerData(userId) {
+async function loadPlayerData(userId) {
   return progressService.loadProgress(userId);
 }
 
-function loadPlayerProfile(userId) {
-  playerData = loadPlayerData(userId);
+async function loadPlayerProfile(userId) {
+  playerData = await loadPlayerData(userId);
   if (playerData) {
     state.currentUser = {
       userId: playerData.userId,
+      uid: playerData.uid || playerData.userId,
       id: playerData.userId,
       username: playerData.username || playerData.userId,
       email: playerData.email || playerData.userId,
@@ -3145,8 +3459,11 @@ function savePlayerData() {
   }
 
   playerData.updatedAt = new Date().toISOString();
-  progressService.saveProgress(playerData.userId, playerData);
-  return true;
+  return progressService.saveProgress(playerData.userId, playerData).catch(error => {
+    console.warn("[Progress] Failed to save player data", error);
+    setAuthStatus(AUTH_COPY.remoteAuthUnavailable);
+    return false;
+  });
 }
 
 function mergeDeep(target, source) {
@@ -3191,7 +3508,7 @@ function addUniqueProgressItem(listName, value) {
   }
 }
 
-function createCharacterFromForm() {
+async function createCharacterFromForm() {
   const user = getCurrentUser();
   if (!user) {
     els.createStatus.textContent = "กรุณาเข้าสู่ระบบก่อนสร้างตัวละคร";
@@ -3222,7 +3539,7 @@ function createCharacterFromForm() {
     color: "blue"
   };
 
-  savePlayerProfile();
+  await savePlayerProfile();
   els.createStatus.textContent = "บันทึกข้อมูลแล้ว";
   runSceneTransition("บันทึกข้อมูลแล้ว กำลังเข้าสู่โลก Lingua...", startGameAfterLogin);
 }
@@ -8444,7 +8761,11 @@ function bindGameAudioUnlockEvents() {
 }
 
 bindGameAudioUnlockEvents();
-initializeAuthUi();
+initializeAuthUi().catch(error => {
+  console.warn("[Auth] Failed to initialize Firebase auth state", error);
+  updateAuthUi();
+  setAuthStatus(AUTH_COPY.remoteAuthUnavailable);
+});
 setupAnimatedGrammarHallBackground();
 setupMainCharacterGifs();
 setupTeacherCharacterGifs();
