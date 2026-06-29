@@ -16,6 +16,7 @@
         <p class="eyebrow">Close Beta</p>
         <h1>Lingua</h1>
         <p class="subtitle">A Grammaria RPG</p>
+        <p id="authModeLabel" class="auth-mode-label">Close Beta: Local Test Mode</p>
         <div class="form-grid">
           <div class="auth-tabs" role="tablist" aria-label="เลือกวิธีเข้าเกม">
             <button id="showLoginPanelButton" class="auth-tab is-active" type="button">เข้าสู่ระบบ</button>
@@ -23,6 +24,7 @@
           </div>
 
           <div id="loginPanel" class="auth-panel">
+            <p id="loginLocalNotice" class="auth-local-note">บัญชี Local ใช้ได้เฉพาะเครื่อง/เบราว์เซอร์ที่สมัครไว้ หากต้องการเล่นข้ามเครื่อง ต้องเชื่อมระบบฐานข้อมูลออนไลน์</p>
             <label>
               <span>ชื่อผู้ใช้</span>
               <input id="loginUsername" type="text" autocomplete="username" placeholder="mina_beta">
@@ -35,6 +37,7 @@
           </div>
 
           <div id="registerPanel" class="auth-panel hidden">
+            <p id="registerLocalNotice" class="auth-local-note">ขณะนี้เป็นโหมดทดสอบแบบ Local บัญชีจะบันทึกเฉพาะเครื่องและเบราว์เซอร์นี้เท่านั้น หากเปลี่ยนเครื่องหรือเปลี่ยนเบราว์เซอร์ อาจไม่พบบัญชีเดิม</p>
             <label>
               <span>ชื่อเล่น</span>
               <input id="registerDisplayName" type="text" autocomplete="name" placeholder="เช่น Mina">
@@ -393,6 +396,14 @@
     <div id="sceneTransition" class="scene-transition hidden">
       <div class="transition-rune"></div>
       <p id="transitionText">กำลังเข้าสู่หอคอยแห่ง Unity...</p>
+    </div>
+
+    <div id="prologueOverlay" class="prologue-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="prologueText">
+      <div class="prologue-content">
+        <p id="prologueText" class="prologue-text"></p>
+        <p id="prologueHint" class="prologue-hint">แตะเพื่อไปต่อ</p>
+        <button id="prologueNextButton" class="prologue-next-button" type="button">ถัดไป</button>
+      </div>
     </div>
 
     <div id="gameModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="gameModalTitle">

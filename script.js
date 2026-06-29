@@ -42,6 +42,18 @@ const prologueDialogue = [
   }
 ];
 
+const PROLOGUE_LINES = [
+  "ในดินแดนหนึ่งที่ถ้อยคำไม่ใช่เพียงเสียงพูด แต่คือพลังที่หล่อเลี้ยงโลกทั้งใบ…",
+  "ดินแดนนั้นมีชื่อว่า ‘Lingua’ โลกแห่งภาษา เวทมนตร์ และความหมายที่ซ่อนอยู่ในทุกประโยค",
+  "ครั้งหนึ่ง Lingua เคยสงบงดงาม เหล่าผู้เรียนใช้คำศัพท์และไวยากรณ์สร้างแสงสว่างให้กับดินแดน",
+  "แต่เมื่อกฎแห่งภาษาเริ่มบิดเบือน เศษเสี้ยวแห่งความผิดพลาดได้ตื่นขึ้น กลายเป็นมอนสเตอร์แห่งไวยากรณ์",
+  "คำกริยาหลงทาง ประโยคแตกสลาย และพลังของกาลเวลาเริ่มปั่นป่วนไปทั่วอาณาจักร",
+  "เจ้าคือผู้ถูกเรียกมายัง Lingua เพื่อเรียนรู้พลังของภาษา และฟื้นฟูความหมายที่สูญหาย",
+  "ทุกบทเรียนคือเวทมนตร์ ทุกคำตอบคือการต่อสู้ และทุกชัยชนะจะพา Lingua กลับคืนสู่สมดุล",
+  "จงตั้งใจฟัง เรียนรู้ และใช้พลังแห่งถ้อยคำให้ถูกต้อง…",
+  "การเดินทางของเจ้าใน Lingua กำลังจะเริ่มต้นขึ้น"
+];
+
 const namingDialogue = [
   {
     speaker: "มาสเตอร์เวรีออน",
@@ -1275,11 +1287,17 @@ const playerStorage = {
   },
   set(key, value) {
     localStorage.setItem(key, value);
+  },
+  remove(key) {
+    localStorage.removeItem(key);
   }
 };
 
 const AUTH_CONFIG = {
   betaCode: "LINGUA_BETA_2026",
+  mode: "local",
+  remoteEnabled: false,
+  provider: null,
   useRemoteAuth: false
 };
 
@@ -1295,13 +1313,54 @@ const AUTH_STORAGE_KEYS = {
   users: "lingua_users",
   currentUser: "lingua_current_user",
   guestProgress: "lingua_progress_guest",
-  registeredProgressPrefix: "lingua_progress_registered_"
+  registeredProgressPrefix: "lingua_progress_registered_",
+  guestPrologueSeen: "lingua_guest_has_seen_prologue",
+  userPrologueSeenPrefix: "lingua_user_"
 };
+
+const AUTH_COPY = {
+  localModeLabel: "Close Beta: Local Test Mode",
+  remoteModeLabel: "Close Beta: Online Account Mode",
+  remoteLoginNotice: "เข้าสู่ระบบบัญชีออนไลน์ Close Beta",
+  remoteRegisterNotice: "สมัครบัญชีออนไลน์ Close Beta",
+  loginLocalNotice: "บัญชี Local ใช้ได้เฉพาะเครื่อง/เบราว์เซอร์ที่สมัครไว้ หากต้องการเล่นข้ามเครื่อง ต้องเชื่อมระบบฐานข้อมูลออนไลน์",
+  registerLocalNotice: "ขณะนี้เป็นโหมดทดสอบแบบ Local บัญชีจะบันทึกเฉพาะเครื่องและเบราว์เซอร์นี้เท่านั้น หากเปลี่ยนเครื่องหรือเปลี่ยนเบราว์เซอร์ อาจไม่พบบัญชีเดิม",
+  registerLocalSuccess: "สมัครสำเร็จแล้ว บัญชีนี้ยังเป็นบัญชี Local ใช้ได้เฉพาะเครื่อง/เบราว์เซอร์นี้",
+  localUserNotFound: "ไม่พบผู้ใช้ในเบราว์เซอร์นี้ หากคุณสมัครจากเครื่องหรือเบราว์เซอร์อื่น ระบบ Local จะยังไม่สามารถดึงบัญชีเดิมได้"
+};
+
+function isRemoteAuthConfigured() {
+  return Boolean(
+    REMOTE_AUTH_CONFIG.enabled &&
+    (REMOTE_AUTH_CONFIG.firebaseConfig || (REMOTE_AUTH_CONFIG.supabaseUrl && REMOTE_AUTH_CONFIG.supabaseAnonKey))
+  );
+}
+
+function getAuthMode() {
+  if (AUTH_CONFIG.remoteEnabled && AUTH_CONFIG.mode === "remote" && isRemoteAuthConfigured()) {
+    return "remote";
+  }
+  return "local";
+}
+
+function getAuthModeLabel() {
+  return getAuthMode() === "remote" ? AUTH_COPY.remoteModeLabel : AUTH_COPY.localModeLabel;
+}
+
+function getAuthPanelNotice(panelName) {
+  if (getAuthMode() === "remote") {
+    return panelName === "register" ? AUTH_COPY.remoteRegisterNotice : AUTH_COPY.remoteLoginNotice;
+  }
+  return panelName === "register" ? AUTH_COPY.registerLocalNotice : AUTH_COPY.loginLocalNotice;
+}
 
 // Auth Service
 // Local fallback is for testing only. A real close beta should validate beta codes
 // and hash PIN/passwords in a backend or auth provider such as Firebase/Supabase.
-if (!AUTH_CONFIG.useRemoteAuth || !REMOTE_AUTH_CONFIG.enabled) {
+if (getAuthMode() === "local") {
+  if (AUTH_CONFIG.remoteEnabled || AUTH_CONFIG.useRemoteAuth || REMOTE_AUTH_CONFIG.enabled) {
+    console.warn("[Auth] Remote auth is not configured completely. Falling back to local auth.");
+  }
   console.warn("[Auth] Using local fallback auth. This is not production-safe for a real close beta.");
 }
 
@@ -1327,6 +1386,13 @@ const state = {
   typewriterText: "",
   typewriterIndex: 0,
   isTypingDialogue: false,
+  isPrologueActive: false,
+  prologueIndex: 0,
+  prologueTextIndex: 0,
+  prologueTyping: false,
+  prologueTimer: null,
+  prologueCurrentLine: "",
+  prologueCompleteCallback: null,
   activeDialogue: [],
   awaitingName: false,
   awaitingDialogueChoice: false,
@@ -1434,6 +1500,9 @@ const els = {
   showRegisterPanelButton: document.getElementById("showRegisterPanelButton"),
   loginPanel: document.getElementById("loginPanel"),
   registerPanel: document.getElementById("registerPanel"),
+  authModeLabel: document.getElementById("authModeLabel"),
+  loginLocalNotice: document.getElementById("loginLocalNotice"),
+  registerLocalNotice: document.getElementById("registerLocalNotice"),
   loginButton: document.getElementById("loginButton"),
   registerButton: document.getElementById("registerButton"),
   guestLoginButton: document.getElementById("guestLoginButton"),
@@ -1525,6 +1594,10 @@ const els = {
   returnTitleButton: document.getElementById("returnTitleButton"),
   sceneTransition: document.getElementById("sceneTransition"),
   transitionText: document.getElementById("transitionText"),
+  prologueOverlay: document.getElementById("prologueOverlay"),
+  prologueText: document.getElementById("prologueText"),
+  prologueHint: document.getElementById("prologueHint"),
+  prologueNextButton: document.getElementById("prologueNextButton"),
   storyWanderer: document.getElementById("storyWanderer"),
   storyVerion: document.getElementById("storyVerion"),
   lessonBackButton: document.getElementById("lessonBackButton"),
@@ -2484,12 +2557,10 @@ function createSessionUser(user) {
   };
 }
 
-const authService = {
-  async register({ username, pin, confirmPin, displayName, betaCode }) {
-    if (REMOTE_AUTH_CONFIG.enabled && !REMOTE_AUTH_CONFIG.firebaseConfig && !REMOTE_AUTH_CONFIG.supabaseUrl) {
-      console.warn("[Auth] Remote auth enabled but config is incomplete. Falling back to local auth.");
-    }
+const localAuthProvider = {
+  mode: "local",
 
+  async register({ username, pin, confirmPin, displayName, betaCode }) {
     const normalizedUsername = normalizeUsername(username);
     if (!displayName.trim()) {
       throw new Error("กรุณากรอกชื่อเล่น");
@@ -2543,7 +2614,7 @@ const authService = {
     const users = readLocalUsers();
     const user = users[normalizedUsername];
     if (!user) {
-      throw new Error("ไม่พบบัญชีนี้");
+      throw new Error(AUTH_COPY.localUserNotFound);
     }
     const pinHash = await hashPin(pin, user.salt);
     if (pinHash !== user.pinHash) {
@@ -2559,7 +2630,7 @@ const authService = {
   },
 
   logout() {
-    localStorage.removeItem(AUTH_STORAGE_KEYS.currentUser);
+    playerStorage.remove(AUTH_STORAGE_KEYS.currentUser);
     state.currentUser = null;
     playerData = null;
   },
@@ -2577,7 +2648,7 @@ const authService = {
       return state.currentUser;
     } catch (error) {
       console.warn("[Auth] Failed to restore current user", error);
-      localStorage.removeItem(AUTH_STORAGE_KEYS.currentUser);
+      playerStorage.remove(AUTH_STORAGE_KEYS.currentUser);
       return null;
     }
   },
@@ -2600,6 +2671,79 @@ const authService = {
     const sessionUser = createSessionUser(user);
     playerStorage.set(AUTH_STORAGE_KEYS.currentUser, JSON.stringify(sessionUser));
     return sessionUser;
+  }
+};
+
+const remoteAuthProvider = {
+  mode: "remote",
+
+  async register() {
+    throw new Error("ระบบบัญชีออนไลน์ยังไม่ได้ตั้งค่า Firebase/Supabase");
+  },
+
+  async login() {
+    throw new Error("ระบบบัญชีออนไลน์ยังไม่ได้ตั้งค่า Firebase/Supabase");
+  },
+
+  logout() {
+    localAuthProvider.logout();
+  },
+
+  getCurrentUser() {
+    return localAuthProvider.getCurrentUser();
+  },
+
+  isLoggedIn() {
+    return Boolean(this.getCurrentUser());
+  },
+
+  isGuest() {
+    return this.getCurrentUser()?.isGuest === true;
+  },
+
+  startGuestSession() {
+    return localAuthProvider.startGuestSession();
+  }
+};
+
+function getAuthProvider() {
+  if (getAuthMode() === "remote") {
+    return remoteAuthProvider;
+  }
+  return localAuthProvider;
+}
+
+const authService = {
+  get mode() {
+    return getAuthProvider().mode;
+  },
+
+  register(data) {
+    return getAuthProvider().register(data);
+  },
+
+  login(data) {
+    return getAuthProvider().login(data);
+  },
+
+  logout() {
+    return getAuthProvider().logout();
+  },
+
+  getCurrentUser() {
+    return getAuthProvider().getCurrentUser();
+  },
+
+  isLoggedIn() {
+    return Boolean(this.getCurrentUser());
+  },
+
+  isGuest() {
+    return this.getCurrentUser()?.isGuest === true;
+  },
+
+  startGuestSession() {
+    return getAuthProvider().startGuestSession();
   }
 };
 
@@ -2642,6 +2786,16 @@ function setAuthStatus(message) {
 
 function updateAuthUi() {
   const user = getCurrentUser();
+  const isLocalMode = getAuthMode() === "local";
+  if (els.authModeLabel) {
+    els.authModeLabel.textContent = getAuthModeLabel();
+  }
+  if (els.loginLocalNotice) {
+    els.loginLocalNotice.classList.toggle("hidden", !isLocalMode);
+  }
+  if (els.registerLocalNotice) {
+    els.registerLocalNotice.classList.toggle("hidden", !isLocalMode);
+  }
   if (els.logoutButton) {
     els.logoutButton.classList.toggle("hidden", !user);
     els.logoutButton.textContent = user ? `Logout: ${user.displayName}` : "Logout";
@@ -2654,7 +2808,8 @@ function showAuthPanel(panelName) {
   els.registerPanel.classList.toggle("hidden", !showRegister);
   els.showLoginPanelButton.classList.toggle("is-active", !showRegister);
   els.showRegisterPanelButton.classList.toggle("is-active", showRegister);
-  setAuthStatus(showRegister ? "กรอกข้อมูลเพื่อสมัคร Close Beta" : "เข้าสู่ระบบด้วย username + PIN");
+  updateAuthUi();
+  setAuthStatus(getAuthPanelNotice(showRegister ? "register" : "login"));
 }
 
 function enterGameForCurrentUser(statusMessage) {
@@ -2668,12 +2823,163 @@ function enterGameForCurrentUser(statusMessage) {
   setAuthStatus(statusMessage);
   if (hasExistingPlayer(user.userId)) {
     loadPlayerProfile(user.userId);
-    runSceneTransition(statusMessage, setupStoryScene);
+    runSceneTransition(statusMessage, startGameAfterLogin);
     return;
   }
 
   els.createStatus.textContent = `${user.displayName} ยังไม่มีตัวละคร กรุณาสร้างตัวละครก่อนเริ่มเดินทาง`;
   runSceneTransition("กำลังเตรียมหน้าสร้างตัวละคร...", () => showScene("createCharacter"));
+}
+
+function getPrologueSeenStorageKey(user = getCurrentUser()) {
+  if (!user || user.isGuest || user.userId === "guest") {
+    return AUTH_STORAGE_KEYS.guestPrologueSeen;
+  }
+  const username = user.username || user.userId.replace(/^registered_/, "");
+  return `${AUTH_STORAGE_KEYS.userPrologueSeenPrefix}${normalizeUsername(username)}_has_seen_prologue`;
+}
+
+function shouldShowPrologueForCurrentUser() {
+  const user = getCurrentUser();
+  const key = getPrologueSeenStorageKey(user);
+  if (playerData?.hasSeenPrologue === true) {
+    return false;
+  }
+  return playerStorage.get(key) !== "true";
+}
+
+function markPrologueSeenForCurrentUser() {
+  const user = getCurrentUser();
+  const key = getPrologueSeenStorageKey(user);
+  playerStorage.set(key, "true");
+  if (playerData) {
+    playerData.hasSeenPrologue = true;
+    savePlayerData();
+  }
+}
+
+function playPrologueTypeSfx() {
+  if (state.isMuted || !state.audioUnlocked) {
+    return;
+  }
+  const track = dialogueTypeSfxPool[state.dialogueTypeSfxPoolIndex % dialogueTypeSfxPool.length];
+  state.dialogueTypeSfxPoolIndex += 1;
+  try {
+    track.currentTime = DIALOGUE_TYPE_SFX_OFFSET;
+    track.play().catch(() => {});
+  } catch (error) {
+    if (!state.dialogueTypeSfxWarned) {
+      state.dialogueTypeSfxWarned = true;
+      console.warn("[Audio] Prologue typewriter sound failed", error);
+    }
+  }
+}
+
+function showPrologueIntro(onComplete) {
+  if (!els.prologueOverlay || state.isPrologueActive) {
+    onComplete();
+    return;
+  }
+
+  state.isPrologueActive = true;
+  state.prologueIndex = 0;
+  state.prologueTextIndex = 0;
+  state.prologueTyping = false;
+  state.prologueCompleteCallback = onComplete;
+  els.prologueText.textContent = "";
+  els.prologueHint.textContent = "แตะเพื่อไปต่อ";
+  els.prologueNextButton.textContent = "ถัดไป";
+  els.prologueOverlay.classList.remove("hidden");
+  requestAnimationFrame(() => {
+    els.prologueOverlay.classList.add("visible");
+    startPrologueLine();
+  });
+}
+
+function startPrologueLine() {
+  clearTimeout(state.prologueTimer);
+  const line = PROLOGUE_LINES[state.prologueIndex] || "";
+  state.prologueCurrentLine = line;
+  state.prologueTextIndex = 0;
+  state.prologueTyping = true;
+  els.prologueText.textContent = "";
+  els.prologueHint.textContent = "แตะเพื่อแสดงข้อความทั้งหมด";
+  typePrologueCharacter();
+}
+
+function typePrologueCharacter() {
+  if (!state.isPrologueActive || !state.prologueTyping) {
+    return;
+  }
+  const line = state.prologueCurrentLine || "";
+  if (state.prologueTextIndex >= line.length) {
+    finishPrologueLine();
+    return;
+  }
+  state.prologueTextIndex += 1;
+  els.prologueText.textContent = line.slice(0, state.prologueTextIndex);
+  if (state.prologueTextIndex % 3 === 0) {
+    playPrologueTypeSfx();
+  }
+  state.prologueTimer = setTimeout(typePrologueCharacter, 34);
+}
+
+function finishPrologueLine() {
+  clearTimeout(state.prologueTimer);
+  state.prologueTyping = false;
+  els.prologueText.textContent = state.prologueCurrentLine || "";
+  const isLastLine = state.prologueIndex >= PROLOGUE_LINES.length - 1;
+  els.prologueHint.textContent = isLastLine ? "แตะหน้าจอเพื่อเข้าสู่บทเรียน" : "แตะเพื่อไปต่อ";
+  els.prologueNextButton.textContent = isLastLine ? "เข้าสู่บทเรียน" : "ถัดไป";
+}
+
+function advancePrologue() {
+  if (!state.isPrologueActive) {
+    return;
+  }
+  if (state.prologueTyping) {
+    finishPrologueLine();
+    return;
+  }
+  if (state.prologueIndex < PROLOGUE_LINES.length - 1) {
+    state.prologueIndex += 1;
+    startPrologueLine();
+    return;
+  }
+  completePrologueIntro();
+}
+
+function completePrologueIntro() {
+  if (!state.isPrologueActive) {
+    return;
+  }
+  clearTimeout(state.prologueTimer);
+  markPrologueSeenForCurrentUser();
+  const onComplete = state.prologueCompleteCallback || setupStoryScene;
+  state.isPrologueActive = false;
+  state.prologueCompleteCallback = null;
+  els.prologueOverlay.classList.remove("visible");
+  setTimeout(() => {
+    els.prologueOverlay.classList.add("hidden");
+    onComplete();
+  }, 520);
+}
+
+function startGameAfterLogin() {
+  if (shouldShowPrologueForCurrentUser()) {
+    showPrologueIntro(setupStoryScene);
+    return;
+  }
+  setupStoryScene();
+}
+
+function resetPrologueForCurrentUser() {
+  const key = getPrologueSeenStorageKey();
+  playerStorage.remove(key);
+  if (playerData) {
+    playerData.hasSeenPrologue = false;
+    savePlayerData();
+  }
 }
 
 async function registerCloseBetaUser() {
@@ -2686,7 +2992,7 @@ async function registerCloseBetaUser() {
       confirmPin: els.registerConfirmPin.value,
       betaCode: els.registerBetaCode.value
     });
-    enterGameForCurrentUser("สร้างบัญชีสำเร็จ กำลังเข้าสู่โลก Lingua");
+    enterGameForCurrentUser(AUTH_COPY.registerLocalSuccess);
   } catch (error) {
     setAuthStatus(error.message || "สมัครไม่สำเร็จ");
   }
@@ -2768,6 +3074,7 @@ function createDefaultPlayerData(user) {
     username: user.username || user.userId,
     email: user.email || user.userId,
     displayName: user.displayName,
+    hasSeenPrologue: false,
     mode: user.mode || (user.isGuest ? "guest" : "registered"),
     isGuest: Boolean(user.isGuest),
     characterName: "",
@@ -2917,7 +3224,7 @@ function createCharacterFromForm() {
 
   savePlayerProfile();
   els.createStatus.textContent = "บันทึกข้อมูลแล้ว";
-  runSceneTransition("บันทึกข้อมูลแล้ว กำลังเข้าสู่โลก Lingua...", setupStoryScene);
+  runSceneTransition("บันทึกข้อมูลแล้ว กำลังเข้าสู่โลก Lingua...", startGameAfterLogin);
 }
 
 function getCheckedRadioValue(name, fallback) {
@@ -8026,6 +8333,20 @@ els.registerConfirmPin.addEventListener("keydown", event => {
     registerCloseBetaUser();
   }
 });
+els.prologueOverlay.addEventListener("click", advancePrologue);
+els.prologueNextButton.addEventListener("click", event => {
+  event.stopPropagation();
+  advancePrologue();
+});
+document.addEventListener("keydown", event => {
+  if (!state.isPrologueActive) {
+    return;
+  }
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    advancePrologue();
+  }
+});
 els.createCharacterButton.addEventListener("click", createCharacterFromForm);
 els.confirmNameButton.addEventListener("click", confirmStoryName);
 els.storyNameInput.addEventListener("keydown", event => {
@@ -8109,6 +8430,7 @@ function bindGameAudioUnlockEvents() {
     els.loginButton,
     els.registerButton,
     els.logoutButton,
+    els.prologueNextButton,
     els.startButton,
     els.nextDialogueButton
   ].forEach(button => {
