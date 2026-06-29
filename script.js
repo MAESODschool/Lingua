@@ -1102,7 +1102,6 @@ const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
 const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-idle-transparent-clean-optimized.webp";
 const TEACHER_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("master-verion.png");
 const GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-animated.gif";
-const GRAMMAR_HALL_STATIC_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-static.webp";
 const TIME_DUST_IMAGE_PATH = "assets/characters/timedust-transparent-clean-optimized.webp";
 const TIME_DUST_FALLBACK_IMAGE_PATH = assetPath("enemies/time-dust.png");
 const ECHO_TRICK_IMAGE_PATH = "assets/characters/echo-trick-transparent-clean-optimized.webp";
@@ -1187,7 +1186,7 @@ function setupAnimatedGrammarHallBackground() {
   backgroundProbe.addEventListener("error", error => {
     console.warn("[Background] animated GIF failed to load", error);
   }, { once: true });
-  backgroundProbe.src = isPerformanceStaticBackgroundMode() ? GRAMMAR_HALL_STATIC_BACKGROUND_PATH : GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH;
+  backgroundProbe.src = GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH;
 }
 
 const enemySpriteMap = {

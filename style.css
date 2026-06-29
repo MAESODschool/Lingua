@@ -1693,7 +1693,7 @@ html.performance-static-bg .lesson-bg-magic,
 html.performance-static-bg #battleScene {
   background-image:
     linear-gradient(180deg, rgba(8, 7, 28, 0.36), rgba(15, 9, 38, 0.5)),
-    url("assets/backgrounds/grammar-hall-static.webp"),
+    url("assets/backgrounds/grammar-hall-animated.gif"),
     url("assets/unity-tower-background.png");
 }
 
@@ -1703,7 +1703,7 @@ html.performance-static-bg #battleScene {
   #battleScene {
     background-image:
       linear-gradient(180deg, rgba(8, 7, 28, 0.36), rgba(15, 9, 38, 0.5)),
-      url("assets/backgrounds/grammar-hall-static.webp"),
+      url("assets/backgrounds/grammar-hall-animated.gif"),
       url("assets/unity-tower-background.png");
   }
 
