@@ -1278,6 +1278,33 @@ const playerStorage = {
   }
 };
 
+const AUTH_CONFIG = {
+  betaCode: "LINGUA_BETA_2026",
+  useRemoteAuth: false
+};
+
+const REMOTE_AUTH_CONFIG = {
+  provider: "firebase",
+  enabled: false,
+  firebaseConfig: null,
+  supabaseUrl: "",
+  supabaseAnonKey: ""
+};
+
+const AUTH_STORAGE_KEYS = {
+  users: "lingua_users",
+  currentUser: "lingua_current_user",
+  guestProgress: "lingua_progress_guest",
+  registeredProgressPrefix: "lingua_progress_registered_"
+};
+
+// Auth Service
+// Local fallback is for testing only. A real close beta should validate beta codes
+// and hash PIN/passwords in a backend or auth provider such as Firebase/Supabase.
+if (!AUTH_CONFIG.useRemoteAuth || !REMOTE_AUTH_CONFIG.enabled) {
+  console.warn("[Auth] Using local fallback auth. This is not production-safe for a real close beta.");
+}
+
 const DEFAULT_ACT_PROGRESS = {
   currentActId: "past-fragment",
   currentLessonId: "what-is-past",
@@ -1402,11 +1429,21 @@ dialogueTypeSfx.load();
 
 const els = {
   muteButton: document.getElementById("muteButton"),
-  googleMockButton: document.getElementById("googleMockButton"),
+  logoutButton: document.getElementById("logoutButton"),
+  showLoginPanelButton: document.getElementById("showLoginPanelButton"),
+  showRegisterPanelButton: document.getElementById("showRegisterPanelButton"),
+  loginPanel: document.getElementById("loginPanel"),
+  registerPanel: document.getElementById("registerPanel"),
+  loginButton: document.getElementById("loginButton"),
+  registerButton: document.getElementById("registerButton"),
   guestLoginButton: document.getElementById("guestLoginButton"),
-  loginDisplayName: document.getElementById("loginDisplayName"),
-  loginEmail: document.getElementById("loginEmail"),
-  enterLinguaButton: document.getElementById("enterLinguaButton"),
+  loginUsername: document.getElementById("loginUsername"),
+  loginPin: document.getElementById("loginPin"),
+  registerDisplayName: document.getElementById("registerDisplayName"),
+  registerUsername: document.getElementById("registerUsername"),
+  registerPin: document.getElementById("registerPin"),
+  registerConfirmPin: document.getElementById("registerConfirmPin"),
+  registerBetaCode: document.getElementById("registerBetaCode"),
   loginStatus: document.getElementById("loginStatus"),
   classNameSelect: document.getElementById("classNameSelect"),
   roomInput: document.getElementById("roomInput"),
@@ -2368,95 +2405,353 @@ function addBattleMessageLine(lines, text) {
   }
 }
 
-function normalizeEmail(email) {
-  return email.trim().toLowerCase();
+function normalizeUsername(username) {
+  return username.trim().toLowerCase();
 }
 
-function getPlayerStorageKey(userIdOrEmail) {
-  const normalized = normalizeEmail(userIdOrEmail);
-  if (normalized === "guest" || normalized === "guest@lingua.local") {
-    return "lingua_player_guest";
-  }
-  return `lingua_player_${normalized}`;
+function isValidUsername(username) {
+  return /^[a-zA-Z0-9_]{3,20}$/.test(username);
 }
+
+function getRegisteredUserId(username) {
+  return `registered_${normalizeUsername(username)}`;
+}
+
+function getPlayerStorageKey(userId = "") {
+  if (userId === "guest") {
+    return AUTH_STORAGE_KEYS.guestProgress;
+  }
+  if (userId.startsWith("registered_")) {
+    return `${AUTH_STORAGE_KEYS.registeredProgressPrefix}${userId.replace(/^registered_/, "")}`;
+  }
+  return `lingua_player_${normalizeUsername(userId)}`;
+}
+
+function readLocalUsers() {
+  const saved = playerStorage.get(AUTH_STORAGE_KEYS.users);
+  if (!saved) {
+    return {};
+  }
+  try {
+    return JSON.parse(saved) || {};
+  } catch (error) {
+    console.warn("[Auth] Failed to parse local users", error);
+    return {};
+  }
+}
+
+function writeLocalUsers(users) {
+  playerStorage.set(AUTH_STORAGE_KEYS.users, JSON.stringify(users));
+}
+
+function createRandomSalt() {
+  const cryptoApi = globalThis.crypto;
+  if (!cryptoApi?.getRandomValues) {
+    console.warn("[Auth] Secure random unavailable. Local fallback salt is not production-safe.");
+    return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+  }
+  const bytes = new Uint8Array(16);
+  cryptoApi.getRandomValues(bytes);
+  return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function hashPin(pin, salt) {
+  const cryptoApi = globalThis.crypto;
+  if (!cryptoApi?.subtle) {
+    console.warn("[Auth] Web Crypto API unavailable. Using weak local-only hash fallback; not production-safe.");
+    let hash = 2166136261;
+    const input = `${salt}:${pin}`;
+    for (let index = 0; index < input.length; index += 1) {
+      hash ^= input.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return `local_${(hash >>> 0).toString(16).padStart(8, "0")}`;
+  }
+  const data = new TextEncoder().encode(`${salt}:${pin}`);
+  const digest = await cryptoApi.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function createSessionUser(user) {
+  return {
+    userId: user.id,
+    id: user.id,
+    username: user.username,
+    email: user.id,
+    displayName: user.displayName,
+    mode: user.mode,
+    isGuest: user.mode === "guest"
+  };
+}
+
+const authService = {
+  async register({ username, pin, confirmPin, displayName, betaCode }) {
+    if (REMOTE_AUTH_CONFIG.enabled && !REMOTE_AUTH_CONFIG.firebaseConfig && !REMOTE_AUTH_CONFIG.supabaseUrl) {
+      console.warn("[Auth] Remote auth enabled but config is incomplete. Falling back to local auth.");
+    }
+
+    const normalizedUsername = normalizeUsername(username);
+    if (!displayName.trim()) {
+      throw new Error("กรุณากรอกชื่อเล่น");
+    }
+    if (!isValidUsername(username)) {
+      throw new Error("ชื่อผู้ใช้ต้องเป็น a-z, A-Z, 0-9 หรือ _ ความยาว 3–20 ตัว");
+    }
+    if ((pin || "").length < 4) {
+      throw new Error("PIN ต้องมีอย่างน้อย 4 ตัว");
+    }
+    if (pin !== confirmPin) {
+      throw new Error("PIN และยืนยัน PIN ต้องตรงกัน");
+    }
+    if ((betaCode || "").trim() !== AUTH_CONFIG.betaCode) {
+      throw new Error("รหัส Close Beta ไม่ถูกต้อง");
+    }
+
+    const users = readLocalUsers();
+    if (users[normalizedUsername]) {
+      throw new Error("ชื่อผู้ใช้นี้ถูกใช้แล้ว");
+    }
+
+    const salt = createRandomSalt();
+    const pinHash = await hashPin(pin, salt);
+    const now = new Date().toISOString();
+    const user = {
+      id: getRegisteredUserId(normalizedUsername),
+      username: normalizedUsername,
+      displayName: displayName.trim(),
+      mode: "registered",
+      pinHash,
+      salt,
+      createdAt: now,
+      lastLoginAt: now
+    };
+    users[normalizedUsername] = user;
+    writeLocalUsers(users);
+    playerStorage.set(AUTH_STORAGE_KEYS.currentUser, JSON.stringify(createSessionUser(user)));
+    return createSessionUser(user);
+  },
+
+  async login({ username, pin }) {
+    const normalizedUsername = normalizeUsername(username);
+    if (!isValidUsername(username)) {
+      throw new Error("กรุณากรอกชื่อผู้ใช้ให้ถูกต้อง");
+    }
+    if (!pin) {
+      throw new Error("กรุณากรอก PIN");
+    }
+
+    const users = readLocalUsers();
+    const user = users[normalizedUsername];
+    if (!user) {
+      throw new Error("ไม่พบบัญชีนี้");
+    }
+    const pinHash = await hashPin(pin, user.salt);
+    if (pinHash !== user.pinHash) {
+      throw new Error("PIN ไม่ถูกต้อง");
+    }
+
+    user.lastLoginAt = new Date().toISOString();
+    users[normalizedUsername] = user;
+    writeLocalUsers(users);
+    const sessionUser = createSessionUser(user);
+    playerStorage.set(AUTH_STORAGE_KEYS.currentUser, JSON.stringify(sessionUser));
+    return sessionUser;
+  },
+
+  logout() {
+    localStorage.removeItem(AUTH_STORAGE_KEYS.currentUser);
+    state.currentUser = null;
+    playerData = null;
+  },
+
+  getCurrentUser() {
+    if (state.currentUser) {
+      return state.currentUser;
+    }
+    const saved = playerStorage.get(AUTH_STORAGE_KEYS.currentUser);
+    if (!saved) {
+      return null;
+    }
+    try {
+      state.currentUser = JSON.parse(saved);
+      return state.currentUser;
+    } catch (error) {
+      console.warn("[Auth] Failed to restore current user", error);
+      localStorage.removeItem(AUTH_STORAGE_KEYS.currentUser);
+      return null;
+    }
+  },
+
+  isLoggedIn() {
+    return Boolean(this.getCurrentUser());
+  },
+
+  isGuest() {
+    return this.getCurrentUser()?.isGuest === true;
+  },
+
+  startGuestSession() {
+    const user = {
+      id: "guest",
+      username: "guest",
+      displayName: "Guest Player",
+      mode: "guest"
+    };
+    const sessionUser = createSessionUser(user);
+    playerStorage.set(AUTH_STORAGE_KEYS.currentUser, JSON.stringify(sessionUser));
+    return sessionUser;
+  }
+};
+
+const progressService = {
+  loadProgress(userId) {
+    const saved = playerStorage.get(getPlayerStorageKey(userId));
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    const legacyKey = userId === "guest" ? "lingua_player_guest" : "";
+    const legacySaved = legacyKey ? playerStorage.get(legacyKey) : null;
+    return legacySaved ? JSON.parse(legacySaved) : null;
+  },
+
+  saveProgress(userId, progress) {
+    playerStorage.set(getPlayerStorageKey(userId), JSON.stringify(progress));
+  },
+
+  createDefaultProgress(user) {
+    return createDefaultPlayerData(user);
+  },
+
+  migrateGuestProgressToUser(userId) {
+    const guestProgress = this.loadProgress("guest");
+    if (guestProgress && !this.loadProgress(userId)) {
+      this.saveProgress(userId, { ...guestProgress, userId, isGuest: false });
+    }
+  }
+};
 
 function getCurrentUser() {
-  return state.currentUser;
+  return authService.getCurrentUser();
 }
 
-function loginWithGoogleMock() {
-  const displayName = els.loginDisplayName.value.trim();
-  const email = normalizeEmail(els.loginEmail.value);
+function setAuthStatus(message) {
+  if (els.loginStatus) {
+    els.loginStatus.textContent = message;
+  }
+}
 
-  if (!displayName || !email) {
-    els.loginStatus.textContent = "กรุณากรอกชื่อผู้เล่นและอีเมล Gmail";
+function updateAuthUi() {
+  const user = getCurrentUser();
+  if (els.logoutButton) {
+    els.logoutButton.classList.toggle("hidden", !user);
+    els.logoutButton.textContent = user ? `Logout: ${user.displayName}` : "Logout";
+  }
+}
+
+function showAuthPanel(panelName) {
+  const showRegister = panelName === "register";
+  els.loginPanel.classList.toggle("hidden", showRegister);
+  els.registerPanel.classList.toggle("hidden", !showRegister);
+  els.showLoginPanelButton.classList.toggle("is-active", !showRegister);
+  els.showRegisterPanelButton.classList.toggle("is-active", showRegister);
+  setAuthStatus(showRegister ? "กรอกข้อมูลเพื่อสมัคร Close Beta" : "เข้าสู่ระบบด้วย username + PIN");
+}
+
+function enterGameForCurrentUser(statusMessage) {
+  const user = getCurrentUser();
+  if (!user) {
+    showScene("login");
     return;
   }
 
-  if (!email.endsWith("@gmail.com")) {
-    els.loginStatus.textContent = "กรุณาใช้อีเมล Gmail สำหรับ mock login";
+  updateAuthUi();
+  setAuthStatus(statusMessage);
+  if (hasExistingPlayer(user.userId)) {
+    loadPlayerProfile(user.userId);
+    runSceneTransition(statusMessage, setupStoryScene);
     return;
   }
 
-  state.currentUser = {
-    userId: email,
-    email,
-    displayName,
-    isGuest: false
-  };
-
-  els.loginStatus.textContent = "กำลังโหลดข้อมูลผู้เล่น...";
-
-  if (hasExistingPlayer(email)) {
-    loadPlayerProfile(email);
-    els.loginStatus.textContent = "พบข้อมูลเดิม กำลังเข้าสู่โลก Lingua";
-    runSceneTransition("พบข้อมูลเดิม กำลังเข้าสู่โลก Lingua...", setupStoryScene);
-    return;
-  }
-
-  els.createStatus.textContent = "ยังไม่พบตัวละคร กรุณาสร้างตัวละครก่อนเริ่มเดินทาง";
+  els.createStatus.textContent = `${user.displayName} ยังไม่มีตัวละคร กรุณาสร้างตัวละครก่อนเริ่มเดินทาง`;
   runSceneTransition("กำลังเตรียมหน้าสร้างตัวละคร...", () => showScene("createCharacter"));
 }
 
-function hasExistingPlayer(userIdOrEmail) {
-  return Boolean(playerStorage.get(getPlayerStorageKey(userIdOrEmail)));
+async function registerCloseBetaUser() {
+  try {
+    setAuthStatus("กำลังสร้างบัญชี...");
+    state.currentUser = await authService.register({
+      displayName: els.registerDisplayName.value,
+      username: els.registerUsername.value,
+      pin: els.registerPin.value,
+      confirmPin: els.registerConfirmPin.value,
+      betaCode: els.registerBetaCode.value
+    });
+    enterGameForCurrentUser("สร้างบัญชีสำเร็จ กำลังเข้าสู่โลก Lingua");
+  } catch (error) {
+    setAuthStatus(error.message || "สมัครไม่สำเร็จ");
+  }
+}
+
+async function loginRegisteredUser() {
+  try {
+    setAuthStatus("กำลังเข้าสู่ระบบ...");
+    state.currentUser = await authService.login({
+      username: els.loginUsername.value,
+      pin: els.loginPin.value
+    });
+    enterGameForCurrentUser("เข้าสู่ระบบสำเร็จ กำลังโหลด progress เดิม");
+  } catch (error) {
+    setAuthStatus(error.message || "เข้าสู่ระบบไม่สำเร็จ");
+  }
+}
+
+function hasExistingPlayer(userId) {
+  return Boolean(progressService.loadProgress(userId));
 }
 
 function loginAsGuest() {
-  state.currentUser = {
-    userId: "guest",
-    email: "guest@lingua.local",
-    displayName: "Guest Player",
-    isGuest: true
-  };
+  state.currentUser = authService.startGuestSession();
+  setAuthStatus("กำลังโหลดข้อมูล Guest... progress จะอยู่เฉพาะเครื่องนี้");
+  enterGameForCurrentUser(hasExistingPlayer("guest") ? "พบข้อมูล Guest เดิม กำลังเข้าสู่โลก Lingua" : "กำลังเตรียมตัวละคร Guest ใหม่");
+}
 
-  els.loginStatus.textContent = "กำลังโหลดข้อมูล Guest...";
+function logoutCurrentUser() {
+  clearEnemyTurnTimer();
+  stopTimer("charge");
+  stopParryCountdown();
+  authService.logout();
+  updateAuthUi();
+  setAuthStatus("ออกจากระบบแล้ว สามารถเลือกผู้เล่นใหม่ได้");
+  showScene("login");
+}
 
-  if (hasExistingPlayer("guest")) {
-    loadPlayerProfile("guest");
-    els.loginStatus.textContent = "พบข้อมูล Guest เดิม กำลังเข้าสู่โลก Lingua";
-    runSceneTransition("พบข้อมูล Guest เดิม กำลังเข้าสู่โลก Lingua...", setupStoryScene);
-    return;
+function initializeAuthUi() {
+  showAuthPanel("login");
+  const user = getCurrentUser();
+  updateAuthUi();
+  if (user) {
+    setAuthStatus(`พบ session ของ ${user.displayName} กดเข้าสู่ระบบหรือ Logout เพื่อเปลี่ยนผู้เล่น`);
   }
-
-  els.createStatus.textContent = "ยังไม่พบตัวละคร Guest กรุณาสร้างตัวละครก่อนเริ่มเดินทาง";
-  runSceneTransition("กำลังเตรียมหน้าสร้างตัวละคร Guest...", () => showScene("createCharacter"));
 }
 
-function loadPlayerData(userIdOrEmail) {
-  const saved = playerStorage.get(getPlayerStorageKey(userIdOrEmail));
-  return saved ? JSON.parse(saved) : null;
+function loadPlayerData(userId) {
+  return progressService.loadProgress(userId);
 }
 
-function loadPlayerProfile(userIdOrEmail) {
-  playerData = loadPlayerData(userIdOrEmail);
+function loadPlayerProfile(userId) {
+  playerData = loadPlayerData(userId);
   if (playerData) {
     state.currentUser = {
       userId: playerData.userId,
-      email: playerData.email,
+      id: playerData.userId,
+      username: playerData.username || playerData.userId,
+      email: playerData.email || playerData.userId,
       displayName: playerData.displayName,
+      mode: playerData.mode || (playerData.isGuest ? "guest" : "registered"),
       isGuest: Boolean(playerData.isGuest)
     };
+    playerStorage.set(AUTH_STORAGE_KEYS.currentUser, JSON.stringify(state.currentUser));
+    updateAuthUi();
   }
   return playerData;
 }
@@ -2469,8 +2764,11 @@ function createDefaultPlayerData(user) {
   const now = new Date().toISOString();
   return {
     userId: user.userId,
-    email: user.email,
+    id: user.userId,
+    username: user.username || user.userId,
+    email: user.email || user.userId,
     displayName: user.displayName,
+    mode: user.mode || (user.isGuest ? "guest" : "registered"),
     isGuest: Boolean(user.isGuest),
     characterName: "",
     className: "",
@@ -2540,7 +2838,7 @@ function savePlayerData() {
   }
 
   playerData.updatedAt = new Date().toISOString();
-  playerStorage.set(getPlayerStorageKey(playerData.email), JSON.stringify(playerData));
+  progressService.saveProgress(playerData.userId, playerData);
   return true;
 }
 
@@ -2707,12 +3005,7 @@ function confirmStoryName() {
   }
 
   if (!playerData) {
-    const user = getCurrentUser() || {
-      userId: "guest",
-      email: "guest@lingua.local",
-      displayName: "Guest Player",
-      isGuest: true
-    };
+    const user = getCurrentUser() || authService.startGuestSession();
     playerData = createDefaultPlayerData(user);
   }
 
@@ -7717,9 +8010,22 @@ function startBattleByEnemy(enemyId) {
   runSceneTransition(`${enemy.name} ปรากฏตัว!`, () => startActBattle(stageIndex));
 }
 
-els.googleMockButton.addEventListener("click", loginWithGoogleMock);
+els.showLoginPanelButton.addEventListener("click", () => showAuthPanel("login"));
+els.showRegisterPanelButton.addEventListener("click", () => showAuthPanel("register"));
+els.loginButton.addEventListener("click", loginRegisteredUser);
+els.registerButton.addEventListener("click", registerCloseBetaUser);
 els.guestLoginButton.addEventListener("click", loginAsGuest);
-els.enterLinguaButton.addEventListener("click", loginWithGoogleMock);
+els.logoutButton.addEventListener("click", logoutCurrentUser);
+els.loginPin.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    loginRegisteredUser();
+  }
+});
+els.registerConfirmPin.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    registerCloseBetaUser();
+  }
+});
 els.createCharacterButton.addEventListener("click", createCharacterFromForm);
 els.confirmNameButton.addEventListener("click", confirmStoryName);
 els.storyNameInput.addEventListener("keydown", event => {
@@ -7800,8 +8106,9 @@ function bindGameAudioUnlockEvents() {
   document.addEventListener("keydown", unlockGameAudio, true);
   [
     els.guestLoginButton,
-    els.enterLinguaButton,
-    els.googleMockButton,
+    els.loginButton,
+    els.registerButton,
+    els.logoutButton,
     els.startButton,
     els.nextDialogueButton
   ].forEach(button => {
@@ -7815,6 +8122,7 @@ function bindGameAudioUnlockEvents() {
 }
 
 bindGameAudioUnlockEvents();
+initializeAuthUi();
 setupAnimatedGrammarHallBackground();
 setupMainCharacterGifs();
 setupTeacherCharacterGifs();

@@ -362,9 +362,11 @@ button {
 
 #loginScene .login-card {
   width: min(58%, 330px);
+  max-height: calc(100dvh - 32px);
   margin: 0 7% 16%;
   margin-left: auto;
   padding: 18px 16px 16px;
+  overflow-y: auto;
   border: 3px solid rgba(184, 103, 35, 0.9);
   border-radius: 22px;
   color: var(--parchment-ink);
@@ -385,6 +387,36 @@ button {
   margin-top: 0;
 }
 
+#loginScene .auth-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+#loginScene .auth-tab {
+  min-height: 38px;
+  border: 2px solid rgba(117, 70, 29, 0.62);
+  border-radius: 999px;
+  color: #4a2b18;
+  background: rgba(255, 247, 221, 0.7);
+  font-weight: 900;
+}
+
+#loginScene .auth-tab.is-active {
+  color: white;
+  background: linear-gradient(180deg, #a84bd6, #61259d 55%, #40136d);
+  border-color: rgba(255, 225, 142, 0.92);
+}
+
+#loginScene .auth-panel {
+  display: grid;
+  gap: 8px;
+}
+
+#loginScene .auth-panel.hidden {
+  display: none !important;
+}
+
 #loginScene .form-grid label span {
   color: #4a2b18;
   font-size: 0.86rem;
@@ -398,12 +430,26 @@ button {
   background: rgba(38, 26, 21, 0.9);
 }
 
-#loginScene #googleMockButton {
+#loginScene #loginButton,
+#loginScene #registerButton {
   min-height: 52px;
   border: 2px solid rgba(255, 225, 142, 0.88);
   border-radius: 999px;
-  background: linear-gradient(180deg, #f15c4d, #af2027);
-  box-shadow: 0 5px 0 #6b2e16, 0 0 16px rgba(241, 92, 77, 0.34);
+  background: linear-gradient(180deg, #a84bd6, #61259d 55%, #40136d);
+  box-shadow: 0 5px 0 #6b2e16, 0 0 16px rgba(168, 75, 214, 0.34);
+}
+
+#loginScene .guest-panel {
+  display: grid;
+  gap: 6px;
+}
+
+#loginScene .guest-panel p {
+  margin: 0;
+  color: #5b3a23;
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.25;
 }
 
 #loginScene #guestLoginButton {
@@ -415,16 +461,6 @@ button {
   box-shadow: 0 5px 0 #173164, 0 0 16px rgba(57, 133, 220, 0.28);
 }
 
-#loginScene #enterLinguaButton {
-  min-height: 62px;
-  margin-top: 4px;
-  border: 3px solid rgba(255, 225, 142, 0.92);
-  border-radius: 20px;
-  background: linear-gradient(180deg, #a84bd6, #61259d 55%, #40136d);
-  box-shadow: 0 6px 0 #7c4617, 0 0 18px rgba(168, 75, 214, 0.36);
-  font-size: clamp(1.08rem, 4.8vw, 1.55rem);
-}
-
 #loginScene #loginStatus {
   margin: 12px auto 0;
   padding: 8px 10px;
@@ -433,6 +469,21 @@ button {
   color: #fff4c4;
   background: rgba(25, 18, 62, 0.88);
   font-size: 0.78rem;
+}
+
+.logout-button {
+  position: fixed;
+  top: 12px;
+  right: 112px;
+  z-index: 80;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 213, 106, 0.55);
+  border-radius: 999px;
+  color: white;
+  background: rgba(20, 15, 48, 0.86);
+  box-shadow: 0 0 14px rgba(115, 246, 255, 0.18);
+  font-weight: 900;
 }
 
 .form-grid {
