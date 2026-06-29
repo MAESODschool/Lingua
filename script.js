@@ -1312,6 +1312,7 @@ const playerStorage = {
 
 const AUTH_CONFIG = {
   betaCode: "LINGUA_BETA_2026",
+  requireBetaCode: false,
   mode: "firebase",
   remoteEnabled: true,
   provider: "firebase",
@@ -1371,6 +1372,17 @@ function getAuthMode() {
   return "local";
 }
 
+function shouldValidateBetaCode() {
+  return AUTH_CONFIG.requireBetaCode === true;
+}
+
+function getRegisterBetaCodeValue() {
+  if (shouldValidateBetaCode()) {
+    return els.registerBetaCode?.value || "";
+  }
+  return AUTH_CONFIG.betaCode;
+}
+
 function getAuthModeLabel() {
   return getAuthMode() === "firebase" ? AUTH_COPY.remoteModeLabel : AUTH_COPY.localModeLabel;
 }
@@ -1427,6 +1439,14 @@ const DEFAULT_ACT_PROGRESS = {
   lastUpdatedAt: null
 };
 
+const GRAMMARIA_POINTS = {
+  correctAnswer: 10,
+  parry: 15,
+  charge: 5
+};
+
+const CONFIGURED_MAX_GRAMMARIA = 750;
+
 const state = {
   currentUser: null,
   dialogueIndex: 0,
@@ -1462,6 +1482,8 @@ const state = {
   enemyMaxHp: 80,
   actStageIndex: 0,
   actBattle: null,
+  currentBattleStats: null,
+  lastGrammariaResult: null,
   lastStageResult: null,
   lessonSteps: [],
   lessonStepIndex: 0,
@@ -1562,6 +1584,7 @@ const els = {
   registerBetaCode: document.getElementById("registerBetaCode"),
   loginStatus: document.getElementById("loginStatus"),
   classNameSelect: document.getElementById("classNameSelect"),
+  keyStageSelect: document.getElementById("keyStageSelect"),
   roomInput: document.getElementById("roomInput"),
   avatarPreview: document.getElementById("avatarPreview"),
   avatarPreviewText: document.getElementById("avatarPreviewText"),
@@ -1576,6 +1599,7 @@ const els = {
   dialogueText: document.getElementById("dialogueText"),
   dialogueChoices: document.getElementById("dialogueChoices"),
   nextDialogueButton: document.getElementById("nextDialogueButton"),
+  lessonGrammariaDisplay: document.getElementById("lessonGrammariaDisplay"),
   dialoguePanel: document.getElementById("dialoguePanel"),
   dialogueActions: document.getElementById("dialogueActions"),
   lessonStoryVisual: document.getElementById("lessonStoryVisual"),
@@ -2725,7 +2749,7 @@ const localAuthProvider = {
     if (pin !== confirmPin) {
       throw new Error("PIN และยืนยัน PIN ต้องตรงกัน");
     }
-    if ((betaCode || "").trim() !== AUTH_CONFIG.betaCode) {
+    if (shouldValidateBetaCode() && (betaCode || "").trim() !== AUTH_CONFIG.betaCode) {
       throw new Error("รหัส Close Beta ไม่ถูกต้อง");
     }
 
@@ -2845,7 +2869,7 @@ const remoteAuthProvider = {
       }
       // Close beta frontend validation is convenient for testing. Production should
       // validate beta eligibility in a backend or Cloud Function.
-      if ((betaCode || "").trim() !== AUTH_CONFIG.betaCode) {
+      if (shouldValidateBetaCode() && (betaCode || "").trim() !== AUTH_CONFIG.betaCode) {
         throw new Error("รหัส Close Beta ไม่ถูกต้อง");
       }
 
@@ -3326,7 +3350,7 @@ async function registerCloseBetaUser() {
       username: els.registerUsername.value,
       pin: els.registerPin.value,
       confirmPin: els.registerConfirmPin.value,
-      betaCode: els.registerBetaCode.value
+      betaCode: getRegisterBetaCodeValue()
     });
     await enterGameForCurrentUser(getAuthMode() === "firebase" ? AUTH_COPY.remoteRegisterSuccess : AUTH_COPY.registerLocalSuccess);
   } catch (error) {
@@ -3429,6 +3453,7 @@ function createDefaultPlayerData(user) {
     characterName: "",
     className: "",
     room: "",
+    keyStage: user.keyStage || "",
     avatar: {
       gender: "other",
       bodyType: "normal",
@@ -3456,6 +3481,12 @@ function createDefaultPlayerData(user) {
       unlockedFragments: [],
       restoredCores: [],
       defeatedEnemies: [],
+      grammaria: createDefaultGrammariaState(),
+      playerProfile: {
+        keyStage: user.keyStage || "",
+        className: "",
+        room: ""
+      },
       pastFragmentAct: {
         ...DEFAULT_ACT_PROGRESS,
         introCompleted: false,
@@ -3552,6 +3583,7 @@ async function createCharacterFromForm() {
   }
 
   const className = els.classNameSelect.value;
+  const keyStage = els.keyStageSelect?.value || getKeyStageFromClassName(className);
   const room = els.roomInput.value.trim();
   const avatarChoice = document.querySelector("input[name=\"avatarType\"]:checked");
   const genderChoice = document.querySelector("input[name=\"avatarGender\"]:checked");
@@ -3565,7 +3597,14 @@ async function createCharacterFromForm() {
   playerData = createDefaultPlayerData(user);
   playerData.characterName = "";
   playerData.className = className;
+  playerData.keyStage = keyStage;
   playerData.room = room;
+  playerData.progress.playerProfile = {
+    ...(playerData.progress.playerProfile || {}),
+    keyStage,
+    className,
+    room
+  };
   playerData.avatar = {
     gender: genderChoice ? genderChoice.value : "other",
     bodyType: bodyTypeChoice ? bodyTypeChoice.value : "normal",
@@ -4033,6 +4072,8 @@ function ensureActProgress() {
     return null;
   }
 
+  ensureGrammariaState();
+
   const defaults = {
     ...DEFAULT_ACT_PROGRESS,
     introCompleted: false,
@@ -4061,6 +4102,324 @@ function ensureActProgress() {
     fragments: Array.isArray(saved.fragments) ? saved.fragments : defaults.fragments
   };
   return playerData.progress.pastFragmentAct;
+}
+
+function createDefaultGrammariaState() {
+  return {
+    total: 0,
+    earnedByBoss: {},
+    history: [],
+    finalEvaluation: null
+  };
+}
+
+function getKeyStageFromClassName(className = "") {
+  if (/ป\.[1-3]/.test(className)) {
+    return "lowerPrimary";
+  }
+  if (/ม\.[1-3]/.test(className)) {
+    return "lowerSecondary";
+  }
+  return "upperPrimary";
+}
+
+function getKeyStageLabel(keyStage) {
+  const labels = {
+    lowerPrimary: "ช่วงชั้นที่ 1 ป.1 - ป.3",
+    upperPrimary: "ช่วงชั้นที่ 2 ป.4 - ป.6",
+    lowerSecondary: "ช่วงชั้นที่ 3 ม.1 - ม.3"
+  };
+
+  return labels[keyStage] || labels.upperPrimary;
+}
+
+function ensureGrammariaState() {
+  if (!playerData) {
+    return null;
+  }
+
+  if (!playerData.progress) {
+    playerData.progress = {};
+  }
+
+  const saved = playerData.progress.grammaria || {};
+  const total = Number.isFinite(Number(saved.total))
+    ? Number(saved.total)
+    : Number(playerData.grammaria || 0);
+  playerData.progress.grammaria = {
+    ...createDefaultGrammariaState(),
+    ...saved,
+    total,
+    earnedByBoss: saved.earnedByBoss && typeof saved.earnedByBoss === "object" ? saved.earnedByBoss : {},
+    history: Array.isArray(saved.history) ? saved.history : []
+  };
+
+  const className = playerData.className || "";
+  const keyStage = playerData.progress.playerProfile?.keyStage
+    || playerData.keyStage
+    || getKeyStageFromClassName(className);
+  playerData.keyStage = keyStage;
+  playerData.progress.playerProfile = {
+    ...(playerData.progress.playerProfile || {}),
+    keyStage,
+    className,
+    room: playerData.room || ""
+  };
+  playerData.grammaria = playerData.progress.grammaria.total;
+  updateLessonGrammariaDisplay();
+  return playerData.progress.grammaria;
+}
+
+function getCurrentBattleStats() {
+  return state.actBattle?.grammariaStats || state.currentBattleStats || null;
+}
+
+function createBattleStats(boss) {
+  const bossId = getBossProgressId(boss) || boss?.id || boss?.enemy || "unknown-boss";
+  return {
+    bossId,
+    bossName: boss?.thaiEnemy || boss?.enemy || boss?.title || "บอสแห่ง Lingua",
+    correctAnswers: 0,
+    wrongAnswers: 0,
+    parryCount: 0,
+    grammariaChargeCount: 0,
+    parryEvents: {},
+    startedAt: Date.now()
+  };
+}
+
+function recordCorrectAnswerForGrammaria() {
+  const stats = getCurrentBattleStats();
+  if (stats) {
+    stats.correctAnswers += 1;
+  }
+}
+
+function recordWrongAnswerForGrammaria() {
+  const stats = getCurrentBattleStats();
+  if (stats) {
+    stats.wrongAnswers += 1;
+  }
+}
+
+function recordParryForGrammaria(result, eventKey = "") {
+  const stats = getCurrentBattleStats();
+  if (!stats || !["GOOD", "PERFECT"].includes(result)) {
+    return;
+  }
+
+  const key = eventKey || `${stats.parryCount}:${Date.now()}`;
+  if (stats.parryEvents[key]) {
+    return;
+  }
+  stats.parryEvents[key] = result;
+  stats.parryCount += 1;
+}
+
+function recordGrammariaChargeUse() {
+  const stats = getCurrentBattleStats();
+  if (stats) {
+    stats.grammariaChargeCount += 1;
+  }
+}
+
+function calculateBossGrammaria(stats) {
+  const correctPoints = (stats?.correctAnswers || 0) * GRAMMARIA_POINTS.correctAnswer;
+  const parryPoints = (stats?.parryCount || 0) * GRAMMARIA_POINTS.parry;
+  const chargePoints = (stats?.grammariaChargeCount || 0) * GRAMMARIA_POINTS.charge;
+
+  return {
+    correctPoints,
+    parryPoints,
+    chargePoints,
+    total: correctPoints + parryPoints + chargePoints
+  };
+}
+
+function awardBossGrammaria(stage, stats = getCurrentBattleStats()) {
+  const progressState = ensureGrammariaState();
+  if (!progressState || !stage) {
+    return null;
+  }
+
+  const bossId = stats?.bossId || getBossProgressId(stage) || stage.id;
+  const bossName = stats?.bossName || stage.thaiEnemy || stage.enemy || stage.title;
+  const saved = progressState.earnedByBoss[bossId];
+  if (saved) {
+    const duplicateResult = {
+      ...saved,
+      bossId,
+      bossName,
+      duplicate: true,
+      earned: saved.earned || 0,
+      totalAfter: progressState.total
+    };
+    state.lastGrammariaResult = duplicateResult;
+    return duplicateResult;
+  }
+
+  const cleanStats = {
+    bossId,
+    bossName,
+    correctAnswers: stats?.correctAnswers || 0,
+    wrongAnswers: stats?.wrongAnswers || 0,
+    parryCount: stats?.parryCount || 0,
+    grammariaChargeCount: stats?.grammariaChargeCount || 0
+  };
+  const points = calculateBossGrammaria(cleanStats);
+  const completedAt = new Date().toISOString();
+  const result = {
+    ...cleanStats,
+    correctPoints: points.correctPoints,
+    parryPoints: points.parryPoints,
+    chargePoints: points.chargePoints,
+    earned: points.total,
+    completedAt,
+    duplicate: false,
+    totalAfter: progressState.total + points.total
+  };
+
+  progressState.total = result.totalAfter;
+  progressState.earnedByBoss[bossId] = result;
+  progressState.history.push(result);
+  playerData.grammaria = progressState.total;
+  state.grammaria = progressState.total;
+  state.lastGrammariaResult = result;
+  updateLessonGrammariaDisplay();
+  console.log("[Grammaria] earned from boss:", {
+    bossId,
+    earned: result.earned,
+    total: progressState.total
+  });
+  return result;
+}
+
+function renderBossGrammariaResult(result, onContinue) {
+  if (!result) {
+    if (typeof onContinue === "function") {
+      onContinue();
+    }
+    return;
+  }
+
+  const panel = document.createElement("div");
+  panel.className = "grammaria-result";
+  panel.innerHTML = `
+    <div class="grammaria-breakdown">
+      <div class="grammaria-breakdown-row"><span>ตอบถูก ${result.correctAnswers || 0} ข้อ × ${GRAMMARIA_POINTS.correctAnswer}</span><strong>${result.correctPoints || 0}</strong></div>
+      <div class="grammaria-breakdown-row"><span>Point Parry ${result.parryCount || 0} ครั้ง × ${GRAMMARIA_POINTS.parry}</span><strong>${result.parryPoints || 0}</strong></div>
+      <div class="grammaria-breakdown-row"><span>Grammaria Charge ${result.grammariaChargeCount || 0} ครั้ง × ${GRAMMARIA_POINTS.charge}</span><strong>${result.chargePoints || 0}</strong></div>
+      <div class="grammaria-total-row"><span>ได้รับจากบอสนี้</span><strong>${result.earned || 0} Grammaria</strong></div>
+      <div class="grammaria-total-row"><span>Grammaria สะสมทั้งหมด</span><strong>${result.totalAfter || 0}</strong></div>
+    </div>
+    ${result.duplicate ? "<p class=\"grammaria-result-note\">บอสนี้เคยให้คะแนนแล้ว จึงไม่เพิ่มคะแนนซ้ำ</p>" : ""}
+  `;
+
+  openGameModal({
+    title: `ชัยชนะเหนือ ${result.bossName || "บอสแห่ง Lingua"}`,
+    body: "แต้ม Grammaria ที่ได้รับ",
+    content: panel,
+    actions: [
+      {
+        label: "ไปต่อ",
+        primary: true,
+        onClick: () => {
+          closeGameModal();
+          if (typeof onContinue === "function") {
+            onContinue();
+          }
+        }
+      }
+    ]
+  });
+}
+
+function updateLessonGrammariaDisplay() {
+  if (!els?.lessonGrammariaDisplay) {
+    return;
+  }
+
+  const total = playerData?.progress?.grammaria?.total ?? playerData?.grammaria ?? 0;
+  els.lessonGrammariaDisplay.textContent = `Grammaria สะสม: ${Number(total) || 0}`;
+}
+
+function calculateFinalGrammariaEvaluation(progress = playerData?.progress) {
+  const grammariaState = ensureGrammariaState();
+  const totalGrammaria = grammariaState?.total || 0;
+  // TODO: ปรับคะแนนเต็มตามจำนวนบอสจริงของ ACT เมื่อเพิ่ม content ครบทุก ACT
+  const historyMax = Math.max((grammariaState?.history?.length || 0) * 120, 1);
+  const maxGrammariaPossible = Math.max(CONFIGURED_MAX_GRAMMARIA, historyMax);
+  const grammariaPercent = clamp(Math.round((totalGrammaria / maxGrammariaPossible) * 100), 0, 100);
+  const keyStage = progress?.playerProfile?.keyStage || playerData?.keyStage || "upperPrimary";
+  let qualityLevel = "ควรฝึกฝนเพิ่มเติม";
+  let summaryText = "ผู้เล่นควรกลับไปทบทวนบทเรียน ฝึกตอบคำถาม และลองต่อสู้กับบอสอีกครั้งเพื่อเสริมความมั่นใจ";
+
+  if (grammariaPercent >= 90) {
+    qualityLevel = "ดีเยี่ยม";
+    summaryText = "ผู้เล่นสามารถใช้พลังภาษาได้อย่างแม่นยำ มีความเข้าใจบทเรียนและรับมือกับสถานการณ์ใน Lingua ได้โดดเด่น";
+  } else if (grammariaPercent >= 75) {
+    qualityLevel = "ดีมาก";
+    summaryText = "ผู้เล่นมีความเข้าใจภาษาในระดับดีมาก สามารถตอบคำถามและใช้กลยุทธ์ในการต่อสู้ได้อย่างเหมาะสม";
+  } else if (grammariaPercent >= 60) {
+    qualityLevel = "ผ่านเกณฑ์";
+    summaryText = "ผู้เล่นมีความเข้าใจพื้นฐานตามช่วงชั้นที่เลือก และสามารถพัฒนาต่อได้จากการทบทวนบทเรียนเพิ่มเติม";
+  }
+
+  return {
+    playerName: playerData?.characterName || playerData?.displayName || playerData?.username || "ผู้เล่น",
+    keyStage,
+    keyStageLabel: getKeyStageLabel(keyStage),
+    totalGrammaria,
+    maxGrammariaPossible,
+    grammariaPercent,
+    qualityLevel,
+    summaryText,
+    evaluatedAt: new Date().toISOString()
+  };
+}
+
+function showFinalGrammariaEvaluation(onContinue = null) {
+  const progress = ensureActProgress();
+  if (!progress || !playerData) {
+    return;
+  }
+
+  const evaluation = calculateFinalGrammariaEvaluation(playerData.progress);
+  playerData.progress.grammaria.finalEvaluation = evaluation;
+  savePlayerData();
+
+  const panel = document.createElement("div");
+  panel.className = "final-evaluation-panel";
+  panel.innerHTML = `
+    <div class="final-evaluation-summary">ชื่อผู้เล่น: ${evaluation.playerName}</div>
+    <div class="grammaria-breakdown">
+      <div class="grammaria-breakdown-row"><span>ช่วงชั้น</span><strong>${evaluation.keyStageLabel}</strong></div>
+      <div class="grammaria-breakdown-row"><span>Grammaria สะสมทั้งหมด</span><strong>${evaluation.totalGrammaria}</strong></div>
+      <div class="grammaria-breakdown-row"><span>คิดเป็น</span><strong>${evaluation.grammariaPercent}%</strong></div>
+      <div class="grammaria-total-row"><span>ระดับคุณภาพ</span><strong>${evaluation.qualityLevel}</strong></div>
+    </div>
+    <div class="final-evaluation-summary">${evaluation.summaryText}</div>
+  `;
+
+  openGameModal({
+    title: "ผลการประเมินพลังภาษาแห่ง Lingua",
+    body: "ผลการประเมินพลังภาษา",
+    content: panel,
+    actions: [
+      {
+        label: onContinue ? "เล่นต่อ/ทบทวนบทเรียน" : "กลับหน้าแรก",
+        primary: true,
+        onClick: () => {
+          closeGameModal();
+          if (typeof onContinue === "function") {
+            onContinue();
+          } else {
+            showScene("login");
+          }
+        }
+      }
+    ]
+  });
 }
 
 function getStageIndexById(stageId) {
@@ -4155,6 +4514,7 @@ function validateProgress(progress) {
   if (!progress.unlockedStages.length) {
     progress.unlockedStages.push(fallbackStage);
   }
+  ensureGrammariaState();
   return progress;
 }
 
@@ -4165,6 +4525,7 @@ function loadProgress() {
   }
   validateProgress(progress);
   console.log("[Progress] Loaded:", progress);
+  updateLessonGrammariaDisplay();
   return progress;
 }
 
@@ -4178,6 +4539,7 @@ function saveProgress(updateObject = {}) {
   validateProgress(progress);
   progress.lastUpdatedAt = new Date().toISOString();
   playerData.progress.currentScene = progress.currentScreen;
+  ensureGrammariaState();
   savePlayerData();
   console.log("[Progress] Saved:", progress);
   return progress;
@@ -4305,6 +4667,7 @@ function updateLessonChrome(stage = null, stageIndex = 0, mode = "lesson") {
   els.lessonActLabel.textContent = PAST_FRAGMENT_ACT.title;
   els.lessonLocationLabel.textContent = mode === "story" ? "หอคอยแห่ง Unity" : location;
   els.lessonProgressText.textContent = `${current} / ${total}`;
+  updateLessonGrammariaDisplay();
 }
 
 function closeExplanationPanel() {
@@ -5610,7 +5973,7 @@ function completeNonBattleStage(stage) {
     correctAnswers: 0,
     totalQuestions: 0
   };
-  grantActReward(stage);
+  grantActReward(stage, { awardGrammaria: false });
   showStageReward(stage);
 }
 
@@ -5669,8 +6032,11 @@ function startActBattle(stageIndex) {
     awaitingGrammarCharge: false,
     pendingGrammarCharge: null,
     isActive: true,
-    victoryHandled: false
+    victoryHandled: false,
+    grammariaStats: createBattleStats(stage)
   };
+  state.currentBattleStats = state.actBattle.grammariaStats;
+  console.log("[Grammaria] battle stats:", state.currentBattleStats);
   state.playerHp = 100;
   state.enemyMaxHp = enemyMaxHp;
   state.enemyHp = state.enemyMaxHp;
@@ -5769,6 +6135,7 @@ function chooseActFocusAnswer(option, question) {
   const feedback = document.createElement("div");
   feedback.className = "answer-feedback";
   if (isCorrect) {
+    recordCorrectAnswerForGrammaria();
     gainActAP(2);
     battle.focusBuff = {
       damageMultiplier: 1.25,
@@ -5778,6 +6145,7 @@ function chooseActFocusAnswer(option, question) {
     feedback.innerHTML = `<strong>ตั้งสมาธิสำเร็จ!</strong><br>ฟื้น AP +2 และการโจมตีครั้งถัดไปทรงพลังขึ้น<br>${question.explanation || ""}`;
     els.battleMessage.textContent = "Grammaria นิ่งขึ้น การโจมตีครั้งถัดไปได้รับ Focus Buff";
   } else {
+    recordWrongAnswerForGrammaria();
     gainActAP(1);
     feedback.innerHTML = `<strong>สมาธิยังไม่นิ่ง</strong><br>ฟื้น AP +1 คำตอบที่ถูกคือ <strong>${correctAnswer}</strong><br>${question.explanation || ""}`;
     els.battleMessage.textContent = "ยังรวบรวมสมาธิได้บางส่วน ฟื้น AP +1";
@@ -5868,6 +6236,7 @@ function chooseActAnswer(option) {
   if (isCorrect) {
     setBattleTurnOwner("player");
     battle.correctAnswers += 1;
+    recordCorrectAnswerForGrammaria();
     battle.correctStreak = (battle.correctStreak || 0) + 1;
     const bonusGrammaria = consumeBattleEffectValue("nextCorrectBonusGrammaria", 0);
     battle.pendingPlayerAttack = {
@@ -5889,6 +6258,7 @@ function chooseActAnswer(option) {
     }
 
     setBattleTurnOwner("enemy");
+    recordWrongAnswerForGrammaria();
     state.playerHp = clamp(state.playerHp - 12, 0, 100);
     triggerMotion(els.battleEnemy, "enemy-attack-motion");
     feedback.innerHTML = `<strong>ยังไม่ถูกต้อง</strong><br>คำตอบที่ถูกคือ <strong>${question.correctAnswer || question.answer}</strong><br>${question.explanation}`;
@@ -6902,6 +7272,7 @@ function resolvePointParry(result) {
   } else if (result === "GOOD") {
     damage = Math.round(action.damage * 0.5);
   }
+  recordParryForGrammaria(result, `point:${battle.turnNumber}:${battle.pendingBossTurn?.stepIndex || 0}`);
 
   if (state.shield > 0) {
     damage = Math.round(damage * (1 - state.shield));
@@ -7036,10 +7407,12 @@ function chooseBossQuestionAnswer(option, question) {
 
   if (isCorrect) {
     battle.pendingBossTurn.correctQuestions += 1;
+    recordCorrectAnswerForGrammaria();
     battle.pendingBossAction.damage = Math.max(4, battle.pendingBossAction.damage - 7);
     feedback.innerHTML = `<strong>คำตอบถูกต้อง!</strong><br>เจ้าต้านพลังของบอสได้<br>${question.explanation}`;
   } else {
     battle.pendingBossTurn.wrongQuestions += 1;
+    recordWrongAnswerForGrammaria();
     battle.pendingBossAction.damage += 6;
     const chipDamage = battle.stage.type === "final-boss" ? 10 : 7;
     state.playerHp = clamp(state.playerHp - chipDamage, 0, 100);
@@ -7245,6 +7618,7 @@ function stopActParry(forcedResult = null) {
     effects.stunOnPerfectParry = 0;
     effects.perfectTimelineCounterMultiplier = 1;
   }
+  recordParryForGrammaria(parryResult, `act:${battle.turnNumber}:${battle.pendingBossTurn?.stepIndex || 0}`);
 
   if (effects.reflectNextBossAttack) {
     const reflectedDamage = Math.max(1, Math.round(action.damage * effects.reflectNextBossAttack));
@@ -7356,13 +7730,15 @@ function addUniqueActValue(list, value) {
   }
 }
 
-function grantActReward(stage) {
+function grantActReward(stage, options = {}) {
   const progress = ensureActProgress();
   if (!progress) {
-    return;
+    return null;
   }
 
+  const shouldAwardGrammaria = options.awardGrammaria !== false;
   const alreadyCompleted = progress.completedStages.includes(stage.id);
+  const grammariaResult = shouldAwardGrammaria ? awardBossGrammaria(stage) : null;
   addUniqueActValue(progress.completedStages, stage.id);
   markCompletedLesson(stage.id);
   markBossDefeated(stage);
@@ -7373,9 +7749,8 @@ function grantActReward(stage) {
     addUniqueActValue(progress.fragments, stage.reward.fragment);
     addUniqueActValue(progress.rewards, stage.reward.fragment);
   }
-  if (!alreadyCompleted && stage.reward) {
-    progress.grammariaEarned += stage.reward.grammaria || 0;
-    playerData.grammaria = (playerData.grammaria || 0) + (stage.reward.grammaria || 0);
+  if (!alreadyCompleted && stage.reward && shouldAwardGrammaria) {
+    progress.grammariaEarned = playerData.progress.grammaria.total;
   }
   if (stage.reward && stage.reward.badge) {
     progress.badge = stage.reward.badge;
@@ -7395,6 +7770,7 @@ function grantActReward(stage) {
     currentDialogueIndex: 0,
     currentLessonStepIndex: 0
   });
+  return grammariaResult;
 }
 
 function handleTimeDustDefeated(stage) {
@@ -7465,13 +7841,16 @@ function handleActEnemyDefeated(source = "damage") {
 
   if (normalizedEnemyId === "timeDust") {
     const defeatedStage = battle.stage;
-    grantActReward(defeatedStage);
+    const grammariaResult = grantActReward(defeatedStage);
     state.grammaria = playerData ? playerData.grammaria || state.grammaria : state.grammaria;
-    showTimeDustNextLessonFallback(defeatedStage);
-    setTimeout(() => {
-      console.log("[TimeDust] Auto transition timeout fired");
-      transitionToRegularEdLessonAfterTimeDust(defeatedStage);
-    }, 1000);
+    state.actBattle = null;
+    renderBossGrammariaResult(grammariaResult, () => {
+      showTimeDustNextLessonFallback(defeatedStage);
+      setTimeout(() => {
+        console.log("[TimeDust] Transition after Grammaria result fired");
+        transitionToRegularEdLessonAfterTimeDust(defeatedStage);
+      }, 400);
+    });
     return true;
   }
 
@@ -7491,7 +7870,7 @@ function completeActStage() {
     correctAnswers: battle.correctAnswers,
     totalQuestions: stage.questions.length
   };
-  grantActReward(stage);
+  const grammariaResult = grantActReward(stage);
   state.actBattle = null;
   state.grammaria = playerData ? playerData.grammaria || state.grammaria : state.grammaria;
 
@@ -7501,11 +7880,15 @@ function completeActStage() {
   }
 
   if (stage.type === "final-boss") {
-    runSceneTransition("ความทรงจำสุดท้ายกำลังกลับคืน...", () => startPostBossDialogue(stage));
+    renderBossGrammariaResult(grammariaResult, () => {
+      runSceneTransition("ความทรงจำสุดท้ายกำลังกลับคืน...", () => startPostBossDialogue(stage));
+    });
     return;
   }
 
-  runSceneTransition(`ได้รับ ${stage.reward.fragment}`, () => startPostBossDialogue(stage));
+  renderBossGrammariaResult(grammariaResult, () => {
+    runSceneTransition(`ได้รับ ${stage.reward.fragment}`, () => startPostBossDialogue(stage));
+  });
 }
 
 function restoreLessonUIAfterBattle() {
@@ -7528,6 +7911,9 @@ function restoreLessonUIAfterBattle() {
 
 function showStageReward(stage) {
   const nextIndex = state.actStageIndex + 1;
+  const grammariaEarned = state.lastGrammariaResult?.bossId === (getBossProgressId(stage) || stage.id)
+    ? state.lastGrammariaResult.earned || 0
+    : 0;
   state.isLessonSummaryOpen = false;
   restoreLessonUIAfterBattle();
   const rewardLines = [
@@ -7535,12 +7921,12 @@ function showStageReward(stage) {
       ? `คำตอบถูกต้อง: ${state.lastStageResult.correctAnswers} / ${state.lastStageResult.totalQuestions}`
       : "บทเรียนเสร็จสิ้น",
     `Fragment: ${stage.reward.fragment}`,
-    `Grammaria: +${stage.reward.grammaria}`
+    `Grammaria ที่ได้รับ: +${grammariaEarned}`
   ];
 
   updateLessonChrome(stage, state.actStageIndex, "lesson");
   els.nounActivityVisual.querySelector("h3").textContent = "ได้รับ Fragment";
-  els.activityFeedback.textContent = `ได้รับ ${stage.reward.fragment} และ Grammaria +${stage.reward.grammaria}`;
+  els.activityFeedback.textContent = `ได้รับ ${stage.reward.fragment} และ Grammaria +${grammariaEarned}`;
   renderActionCards(rewardLines, "lesson-card");
   const nextStage = getPlayableStages()[nextIndex];
   if (nextStage) {
@@ -7825,6 +8211,7 @@ function stopCharge() {
   const perfectWidth = state.selectedCharm && state.selectedCharm.id === "focusGlyph" ? 30 : 18;
   const result = timingResult(progress, perfectWidth);
   stopTimer("charge");
+  recordGrammariaChargeUse();
   resolvePlayerAttack(result);
 }
 
@@ -8224,6 +8611,7 @@ function resolveEnemyHit(parryResult, hitNumber) {
   if (parryResult === "PERFECT") {
     attack.perfectStreak += 1;
     attack.maxPerfectStreak = Math.max(attack.maxPerfectStreak, attack.perfectStreak);
+    recordParryForGrammaria(parryResult, `legacy:${hitNumber}:${attack.results.length}`);
   } else {
     attack.perfectStreak = 0;
   }
@@ -8362,7 +8750,9 @@ function thaiParryName(result) {
 }
 
 function showActEnding() {
-  runSceneTransition("Past Fragment กำลังฟื้นคืน...", completeActVictoryScene);
+  showFinalGrammariaEvaluation(() => {
+    runSceneTransition("Past Fragment กำลังฟื้นคืน...", completeActVictoryScene);
+  });
 }
 
 function completeActVictoryScene() {

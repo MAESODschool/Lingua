@@ -54,10 +54,6 @@
               <span>ยืนยัน PIN</span>
               <input id="registerConfirmPin" type="password" autocomplete="new-password" placeholder="กรอกซ้ำอีกครั้ง">
             </label>
-            <label>
-              <span>รหัส Close Beta</span>
-              <input id="registerBetaCode" type="text" autocomplete="off" placeholder="LINGUA_BETA_2026">
-            </label>
             <button id="registerButton" class="primary-button" type="button">สร้างบัญชี</button>
           </div>
 
@@ -85,6 +81,14 @@
                 <option value="ม.1">ม.1</option>
                 <option value="ม.2">ม.2</option>
                 <option value="ม.3">ม.3</option>
+              </select>
+            </label>
+            <label>
+              <span>ช่วงชั้น</span>
+              <select id="keyStageSelect">
+                <option value="upperPrimary">ช่วงชั้นที่ 2: ป.4 - ป.6</option>
+                <option value="lowerPrimary">ช่วงชั้นที่ 1: ป.1 - ป.3</option>
+                <option value="lowerSecondary">ช่วงชั้นที่ 3: ม.1 - ม.3</option>
               </select>
             </label>
             <label>
@@ -242,6 +246,7 @@
             <p id="namePromptStatus" class="form-status"></p>
           </div>
           <button id="nextDialogueButton" class="primary-button">ถัดไป</button>
+          <p id="lessonGrammariaDisplay" class="lesson-grammaria-display">Grammaria สะสม: 0</p>
         </div>
 
         <div id="nounActivity" class="activity-panel hidden">
