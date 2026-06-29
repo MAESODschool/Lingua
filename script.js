@@ -1312,7 +1312,7 @@ const playerStorage = {
 
 const AUTH_CONFIG = {
   betaCode: "LINGUA_BETA_2026",
-  mode: "remote",
+  mode: "firebase",
   remoteEnabled: true,
   provider: "firebase",
   useRemoteAuth: true
@@ -1346,7 +1346,7 @@ const AUTH_STORAGE_KEYS = {
 const AUTH_COPY = {
   localModeLabel: "Close Beta: Local Test Mode",
   remoteModeLabel: "Close Beta: Online Account Mode",
-  remoteLoginNotice: "เข้าสู่ระบบบัญชีออนไลน์ Close Beta",
+  remoteLoginNotice: "บัญชีออนไลน์สามารถเข้าสู่ระบบจากเบราว์เซอร์หรืออุปกรณ์อื่นได้",
   remoteRegisterNotice: "สมัครบัญชีออนไลน์ Close Beta",
   loginLocalNotice: "บัญชี Local ใช้ได้เฉพาะเครื่อง/เบราว์เซอร์ที่สมัครไว้ หากต้องการเล่นข้ามเครื่อง ต้องเชื่อมระบบฐานข้อมูลออนไลน์",
   registerLocalNotice: "ขณะนี้เป็นโหมดทดสอบแบบ Local บัญชีจะบันทึกเฉพาะเครื่องและเบราว์เซอร์นี้เท่านั้น หากเปลี่ยนเครื่องหรือเปลี่ยนเบราว์เซอร์ อาจไม่พบบัญชีเดิม",
@@ -1365,18 +1365,18 @@ function isRemoteAuthConfigured() {
 }
 
 function getAuthMode() {
-  if (AUTH_CONFIG.remoteEnabled && AUTH_CONFIG.mode === "remote" && isRemoteAuthConfigured()) {
-    return "remote";
+  if (AUTH_CONFIG.remoteEnabled && AUTH_CONFIG.mode === "firebase" && isRemoteAuthConfigured()) {
+    return "firebase";
   }
   return "local";
 }
 
 function getAuthModeLabel() {
-  return getAuthMode() === "remote" ? AUTH_COPY.remoteModeLabel : AUTH_COPY.localModeLabel;
+  return getAuthMode() === "firebase" ? AUTH_COPY.remoteModeLabel : AUTH_COPY.localModeLabel;
 }
 
 function getAuthPanelNotice(panelName) {
-  if (getAuthMode() === "remote") {
+  if (getAuthMode() === "firebase") {
     return panelName === "register" ? AUTH_COPY.remoteRegisterNotice : AUTH_COPY.remoteLoginNotice;
   }
   return panelName === "register" ? AUTH_COPY.registerLocalNotice : AUTH_COPY.loginLocalNotice;
@@ -1385,6 +1385,9 @@ function getAuthPanelNotice(panelName) {
 const firebaseApp = initializeApp(REMOTE_AUTH_CONFIG.firebaseConfig);
 const firebaseAuth = getAuth(firebaseApp);
 const firestoreDb = getFirestore(firebaseApp);
+const firebaseReady = getAuthMode() === "firebase";
+console.log("[Auth] mode:", AUTH_CONFIG.mode);
+console.log("[Firebase] initialized:", firebaseReady);
 let resolveFirebaseAuthReady = null;
 const firebaseAuthReady = new Promise(resolve => {
   resolveFirebaseAuthReady = resolve;
@@ -1480,7 +1483,6 @@ const state = {
   isMuted: false,
   audioLocked: true,
   typewriterAudioUnlocked: false,
-  typewriterAudioUnlockInProgress: false,
   lastDialogueTypeSfxAt: 0,
   dialogueTypeSfxWarned: false,
   dialogueTypeSfxPoolIndex: 0
@@ -1666,6 +1668,10 @@ const els = {
 };
 
 function showScene(name) {
+  if (name === "login" || name === "createCharacter") {
+    stopTypewriter();
+    state.isTypingDialogue = false;
+  }
   if (name !== "story") {
     stopDialogueTypeSfx();
   }
@@ -1709,10 +1715,24 @@ function playBgm(key) {
 }
 
 function shouldPlayDialogueTypeSfx() {
+  if (!canPlayTypewriterSfx()) {
+    return false;
+  }
   return state.isTypingDialogue
     && state.audioUnlocked
     && state.typewriterAudioUnlocked
     && !state.isMuted
+    && scenes.story
+    && scenes.story.classList.contains("active")
+    && els.dialoguePanel
+    && !els.dialoguePanel.classList.contains("hidden");
+}
+
+function canPlayTypewriterSfx() {
+  if (state.isPrologueActive) {
+    return true;
+  }
+  return state.isTypingDialogue
     && scenes.story
     && scenes.story.classList.contains("active")
     && els.dialoguePanel
@@ -1729,27 +1749,6 @@ function prepareDialogueTypeSfxTrack(track, volume = DIALOGUE_TYPE_SFX_VOLUME) {
   } catch (error) {
     console.warn("[Audio] typewriter file failed to load", error);
   }
-}
-
-function unlockDialogueTypeSfxTrack(track) {
-  const originalVolume = track.volume || DIALOGUE_TYPE_SFX_VOLUME;
-  track.muted = false;
-  track.volume = 0.01;
-  track.currentTime = 0;
-  return track.play()
-    .then(() => {
-      track.pause();
-      track.currentTime = 0;
-      track.volume = originalVolume;
-      track.muted = state.isMuted;
-      return true;
-    })
-    .catch(error => {
-      track.volume = originalVolume;
-      track.muted = state.isMuted;
-      console.warn("[Audio] typewriter play failed", error);
-      return false;
-    });
 }
 
 function resumeAudioContextIfPresent() {
@@ -1827,10 +1826,6 @@ function unlockGameAudio() {
     return;
   }
 
-  if (state.typewriterAudioUnlockInProgress) {
-    return;
-  }
-
   console.log("[Audio] unlock requested");
   resumeAudioContextIfPresent();
   if (!state.audioUnlocked) {
@@ -1845,19 +1840,9 @@ function unlockGameAudio() {
     return;
   }
 
-  state.typewriterAudioUnlockInProgress = true;
   [dialogueTypeSfx, ...dialogueTypeSfxPool].forEach(track => prepareDialogueTypeSfxTrack(track, DIALOGUE_TYPE_SFX_VOLUME));
-  Promise.all([dialogueTypeSfx, ...dialogueTypeSfxPool].map(unlockDialogueTypeSfxTrack))
-    .then(results => {
-      state.typewriterAudioUnlocked = results.some(Boolean);
-      state.audioLocked = !state.typewriterAudioUnlocked;
-      if (state.typewriterAudioUnlocked) {
-        console.log("[Audio] typewriter unlocked");
-      }
-    })
-    .finally(() => {
-      state.typewriterAudioUnlockInProgress = false;
-    });
+  state.typewriterAudioUnlocked = true;
+  state.audioLocked = false;
 }
 
 function toggleMute() {
@@ -2822,7 +2807,7 @@ const localAuthProvider = {
 };
 
 const remoteAuthProvider = {
-  mode: "remote",
+  mode: "firebase",
 
   async register({ username, pin, confirmPin, displayName, betaCode }) {
     try {
@@ -2845,7 +2830,9 @@ const remoteAuthProvider = {
         throw new Error("รหัส Close Beta ไม่ถูกต้อง");
       }
 
+      console.log("[Auth] registering username:", normalizedUsername);
       const credential = await createUserWithEmailAndPassword(firebaseAuth, usernameToInternalEmail(normalizedUsername), pin);
+      console.log("[Auth] Firebase uid:", credential.user.uid);
       const sessionUser = createSessionUser({
         uid: credential.user.uid,
         id: credential.user.uid,
@@ -2862,6 +2849,7 @@ const remoteAuthProvider = {
         lastLoginAt: serverTimestamp(),
         lastActiveAt: serverTimestamp()
       });
+      console.log("[Firestore] player profile saved:", sessionUser.uid);
       state.currentUser = sessionUser;
       playerData = defaultProgress;
       playerStorage.set(AUTH_STORAGE_KEYS.currentUser, JSON.stringify(sessionUser));
@@ -2945,7 +2933,7 @@ const remoteAuthProvider = {
 };
 
 function getAuthProvider() {
-  if (getAuthMode() === "remote") {
+  if (getAuthMode() === "firebase") {
     return remoteAuthProvider;
   }
   return localAuthProvider;
@@ -2987,7 +2975,7 @@ const authService = {
 
 const progressService = {
   async loadProgress(userId) {
-    if (userId !== "guest" && getAuthMode() === "remote") {
+    if (userId !== "guest" && getAuthMode() === "firebase") {
       const firebaseUser = firebaseAuth.currentUser;
       if (!firebaseUser || firebaseUser.uid !== userId) {
         throw new Error(AUTH_COPY.remoteAuthUnavailable);
@@ -3023,7 +3011,7 @@ const progressService = {
   },
 
   async saveProgress(userId, progress) {
-    if (userId !== "guest" && getAuthMode() === "remote") {
+    if (userId !== "guest" && getAuthMode() === "firebase") {
       const firebaseUser = firebaseAuth.currentUser;
       if (!firebaseUser || firebaseUser.uid !== userId) {
         console.warn("[Firestore] Skip save: Firebase session is not ready for this player.");
@@ -3143,7 +3131,7 @@ function shouldShowPrologueForCurrentUser() {
   if (playerData?.hasSeenPrologue === true) {
     return false;
   }
-  if (getAuthMode() === "remote" && user && !user.isGuest) {
+  if (getAuthMode() === "firebase" && user && !user.isGuest) {
     return true;
   }
   return playerStorage.get(key) !== "true";
@@ -3160,7 +3148,7 @@ function markPrologueSeenForCurrentUser() {
 }
 
 function playPrologueTypeSfx() {
-  if (state.isMuted || !state.audioUnlocked) {
+  if (!canPlayTypewriterSfx() || state.isMuted || !state.audioUnlocked || !state.typewriterAudioUnlocked) {
     return;
   }
   const track = dialogueTypeSfxPool[state.dialogueTypeSfxPoolIndex % dialogueTypeSfxPool.length];
@@ -3293,7 +3281,7 @@ async function registerCloseBetaUser() {
       confirmPin: els.registerConfirmPin.value,
       betaCode: els.registerBetaCode.value
     });
-    await enterGameForCurrentUser(getAuthMode() === "remote" ? AUTH_COPY.remoteRegisterSuccess : AUTH_COPY.registerLocalSuccess);
+    await enterGameForCurrentUser(getAuthMode() === "firebase" ? AUTH_COPY.remoteRegisterSuccess : AUTH_COPY.registerLocalSuccess);
   } catch (error) {
     setAuthStatus(error.message || "สมัครไม่สำเร็จ");
   }
@@ -3335,7 +3323,7 @@ async function logoutCurrentUser() {
 
 async function initializeAuthUi() {
   showAuthPanel("login");
-  if (getAuthMode() === "remote") {
+  if (getAuthMode() === "firebase") {
     const firebaseUser = await waitForFirebaseAuthReady();
     if (firebaseUser && (!state.currentUser || state.currentUser.isGuest || state.currentUser.uid !== firebaseUser.uid)) {
       state.currentUser = await loadRemoteSessionUser(firebaseUser);
