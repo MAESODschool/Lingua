@@ -1523,17 +1523,32 @@ const state = {
   typewriterAudioUnlocked: false,
   lastDialogueTypeSfxAt: 0,
   dialogueTypeSfxWarned: false,
-  dialogueTypeSfxPoolIndex: 0
+  dialogueTypeSfxPoolIndex: 0,
+  victoryMusicPlayedForBattle: false,
+  victoryMusicActive: false
 };
 
-const bgmTracks = {
-  login: new Audio(assetPath("bgm/into-lingua-v1.mp3")),
-  hall: new Audio(assetPath("bgm/verions-grammar-hall.mp3")),
-  battle: new Audio(assetPath("bgm/lingua-spell-battle.mp3"))
+const BGM_PATHS = {
+  login: "assets/bgm/into-lingua-v1.mp3",
+  hall: "assets/bgm/verions-grammar-hall.mp3",
+  battle: "assets/bgm/lingua-spell-battle.mp3",
+  victoryScene: "assets/bgm/victory-scene.mp3"
 };
 
-Object.values(bgmTracks).forEach(track => {
-  track.loop = true;
+const BGM_LOOP = {
+  login: true,
+  hall: true,
+  battle: true,
+  victoryScene: false
+};
+
+const bgmTracks = Object.fromEntries(
+  Object.entries(BGM_PATHS).map(([key, path]) => [key, new Audio(path)])
+);
+
+Object.entries(bgmTracks).forEach(([key, track]) => {
+  track.loop = Boolean(BGM_LOOP[key]);
+  track.preload = "auto";
   track.volume = 0.45;
 });
 
@@ -1760,16 +1775,22 @@ function bgmKeyForScene(sceneName) {
 }
 
 function playBgmForScene(sceneName) {
+  if (sceneName === "victory") {
+    playVictorySceneMusicOnce();
+    return;
+  }
+  stopVictorySceneMusic();
   playBgm(bgmKeyForScene(sceneName));
 }
 
-function playBgm(key) {
+function playBgm(key, options = {}) {
   if (!state.audioUnlocked || state.isMuted || !bgmTracks[key]) {
-    return;
+    return false;
   }
 
-  if (state.currentBgmKey === key && !bgmTracks[key].paused) {
-    return;
+  const shouldRestart = options.restart === true;
+  if (!shouldRestart && state.currentBgmKey === key && !bgmTracks[key].paused) {
+    return true;
   }
 
   Object.entries(bgmTracks).forEach(([trackKey, track]) => {
@@ -1780,7 +1801,51 @@ function playBgm(key) {
   });
 
   state.currentBgmKey = key;
+  bgmTracks[key].loop = Boolean(BGM_LOOP[key]);
+  bgmTracks[key].muted = state.isMuted;
+  if (shouldRestart) {
+    bgmTracks[key].currentTime = 0;
+  }
   bgmTracks[key].play().catch(() => {});
+  return true;
+}
+
+function playVictorySceneMusic() {
+  const didPlay = playBgm("victoryScene", { restart: true });
+  if (didPlay) {
+    state.victoryMusicActive = true;
+  }
+  return didPlay;
+}
+
+function playVictorySceneMusicOnce() {
+  if (state.victoryMusicPlayedForBattle) {
+    return false;
+  }
+
+  const didPlay = playVictorySceneMusic();
+  if (didPlay) {
+    state.victoryMusicPlayedForBattle = true;
+  }
+  return didPlay;
+}
+
+function stopVictorySceneMusic() {
+  const track = bgmTracks.victoryScene;
+  if (!track) {
+    return;
+  }
+  track.pause();
+  track.currentTime = 0;
+  state.victoryMusicActive = false;
+  if (state.currentBgmKey === "victoryScene") {
+    state.currentBgmKey = "";
+  }
+}
+
+function resetVictorySceneMusicForBattle() {
+  state.victoryMusicPlayedForBattle = false;
+  stopVictorySceneMusic();
 }
 
 function shouldPlayDialogueTypeSfx() {
@@ -2037,8 +2102,12 @@ function toggleMute() {
 
   if (!state.isMuted) {
     unlockGameAudio();
-    const activeScene = Object.keys(scenes).find(key => scenes[key].classList.contains("active")) || "login";
-    playBgmForScene(activeScene);
+    if (state.victoryMusicActive || state.currentBgmKey === "victoryScene") {
+      playBgm("victoryScene");
+    } else {
+      const activeScene = Object.keys(scenes).find(key => scenes[key].classList.contains("active")) || "login";
+      playBgmForScene(activeScene);
+    }
   }
 }
 
@@ -4648,6 +4717,8 @@ function renderBossGrammariaResult(result, onContinue) {
     return;
   }
 
+  playVictorySceneMusicOnce();
+
   const panel = document.createElement("div");
   panel.className = "grammaria-result";
   panel.innerHTML = `
@@ -6347,6 +6418,7 @@ function startActBattle(stageIndex) {
     completeNonBattleStage(stageConfig);
     return;
   }
+  resetVictorySceneMusicForBattle();
   const enemyMaxHp = stage.type === "final-boss" ? 140 : 100;
   state.timeDustTransitionComplete = false;
   state.actStageIndex = stageIndex;
@@ -8211,6 +8283,7 @@ function handleActEnemyDefeated(source = "damage") {
   };
 
   els.battleMessage.textContent = `${battle.stage.thaiEnemy || battle.stage.enemy} พ่ายแพ้แล้ว! กำลังเปิดบทเรียนถัดไป...`;
+  playVictorySceneMusicOnce();
 
   console.log("[TimeDust] Victory message shown", {
     enemyId: normalizedEnemyId,
