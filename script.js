@@ -1453,6 +1453,14 @@ const GRAMMARIA_CHARGE_CONFIG = {
   max: 100
 };
 
+const REVIVE_CONFIG = {
+  enabled: true,
+  chance: 0.10,
+  hpPercentAfterRevive: 0.35,
+  maxRevivesPerBattle: 1,
+  source: "master"
+};
+
 const CONFIGURED_MAX_GRAMMARIA = 750;
 
 const state = {
@@ -1534,6 +1542,15 @@ const DIALOGUE_TYPE_SFX_OFFSET = 0.12;
 const DIALOGUE_TYPE_SFX_TICK_MS = 180;
 const DIALOGUE_TYPE_SFX_COOLDOWN_MS = 65;
 const DIALOGUE_TYPE_SFX_VOLUME = 0.16;
+const SFX_PATHS = {
+  attack: "assets/sfx/attack-hit.mp3",
+  button: "assets/sfx/button-click.mp3"
+};
+const SFX_VOLUME = {
+  attack: 0.65,
+  button: 0.45
+};
+const SFX_POOL_SIZE = 3;
 const dialogueTypeSfx = new Audio(DIALOGUE_TYPE_SFX_PATH);
 dialogueTypeSfx.preload = "auto";
 dialogueTypeSfx.volume = DIALOGUE_TYPE_SFX_VOLUME;
@@ -1549,6 +1566,24 @@ dialogueTypeSfxPool.forEach(track => {
   }, { once: true });
 });
 dialogueTypeSfxPool.forEach(track => track.load());
+
+const sfxPools = Object.fromEntries(
+  Object.entries(SFX_PATHS).map(([key, path]) => [
+    key,
+    Array.from({ length: SFX_POOL_SIZE }, () => {
+      const track = new Audio(path);
+      track.preload = "auto";
+      track.volume = SFX_VOLUME[key] || 0.5;
+      track.addEventListener("error", error => {
+        console.warn(`[Audio] ${key} SFX failed to load`, error);
+      }, { once: true });
+      return track;
+    })
+  ])
+);
+const sfxPoolIndexes = Object.fromEntries(Object.keys(SFX_PATHS).map(key => [key, 0]));
+sfxPools.attack.forEach(track => track.load());
+sfxPools.button.forEach(track => track.load());
 
 let dialogueTypeSfxLoadedLogged = false;
 
@@ -1810,6 +1845,81 @@ function getDialogueTypeSfxTrack() {
   return track;
 }
 
+function prepareSfxTrack(track, key) {
+  track.preload = "auto";
+  track.volume = SFX_VOLUME[key] || 0.5;
+  track.muted = state.isMuted;
+  try {
+    track.load();
+  } catch (error) {
+    console.warn(`[Audio] ${key} SFX failed to load`, error);
+  }
+}
+
+function getSfxTrack(key) {
+  const pool = sfxPools[key];
+  if (!pool || !pool.length) {
+    return null;
+  }
+  const index = sfxPoolIndexes[key] % pool.length;
+  sfxPoolIndexes[key] = index + 1;
+  return pool[index];
+}
+
+function playSfx(key) {
+  if (!state.audioUnlocked || state.isMuted) {
+    return;
+  }
+
+  const track = getSfxTrack(key);
+  if (!track) {
+    return;
+  }
+
+  track.pause();
+  track.currentTime = 0;
+  track.volume = SFX_VOLUME[key] || 0.5;
+  track.muted = state.isMuted;
+  track.play().catch(() => {});
+}
+
+function playAttackSfx() {
+  playSfx("attack");
+}
+
+function playButtonSfx() {
+  if (!state.audioUnlocked) {
+    unlockGameAudio();
+  }
+  playSfx("button");
+}
+
+function shouldPlayButtonSfxForEvent(event) {
+  const button = event.target?.closest?.("button");
+  if (!button || button.disabled || button.getAttribute("aria-disabled") === "true") {
+    return false;
+  }
+  if (button.id === "stopChargeButton") {
+    return false;
+  }
+  return true;
+}
+
+function handleButtonSfxPointer(event) {
+  if (shouldPlayButtonSfxForEvent(event)) {
+    playButtonSfx();
+  }
+}
+
+function handleButtonSfxKey(event) {
+  if (event.repeat || (event.key !== "Enter" && event.key !== " ")) {
+    return;
+  }
+  if (shouldPlayButtonSfxForEvent(event)) {
+    playButtonSfx();
+  }
+}
+
 function playDialogueTypeSfxTick(character) {
   if (!shouldPlayDialogueTypeSfx() || /\s/.test(character)) {
     return;
@@ -1894,6 +2004,9 @@ function unlockGameAudio() {
   }
 
   [dialogueTypeSfx, ...dialogueTypeSfxPool].forEach(track => prepareDialogueTypeSfxTrack(track, DIALOGUE_TYPE_SFX_VOLUME));
+  Object.entries(sfxPools).forEach(([key, pool]) => {
+    pool.forEach(track => prepareSfxTrack(track, key));
+  });
   state.typewriterAudioUnlocked = true;
   state.audioLocked = false;
 }
@@ -1907,6 +2020,9 @@ function toggleMute() {
     }
   });
   [dialogueTypeSfx, ...dialogueTypeSfxPool].forEach(track => {
+    track.muted = state.isMuted;
+  });
+  Object.values(sfxPools).flat().forEach(track => {
     track.muted = state.isMuted;
   });
 
@@ -1959,6 +2075,7 @@ function closeGameModal() {
   }
 
   els.gameModal.classList.add("hidden");
+  els.gameModalClose.classList.remove("hidden");
   els.gameModalTitle.textContent = "";
   els.gameModalBody.textContent = "";
   els.gameModalContent.innerHTML = "";
@@ -1969,11 +2086,12 @@ function isGameModalOpen() {
   return els.gameModal && !els.gameModal.classList.contains("hidden");
 }
 
-function openGameModal({ title, body = "", content = "", actions = [] }) {
+function openGameModal({ title, body = "", content = "", actions = [], lockClose = false }) {
   if (!els.gameModal) {
     return;
   }
 
+  els.gameModalClose.classList.toggle("hidden", Boolean(lockClose));
   els.gameModalTitle.textContent = title;
   els.gameModalBody.textContent = body;
   els.gameModalContent.innerHTML = "";
@@ -2029,7 +2147,219 @@ function setActionButtonsEnabled(isEnabled) {
 }
 
 function isActBattleEnded(battle = state.actBattle) {
-  return !battle || battle.victoryHandled || battle.phase === "ended" || battle.isActive === false;
+  return !battle || battle.victoryHandled || battle.isDefeated || battle.battleLocked || battle.phase === "ended" || battle.isActive === false;
+}
+
+function disableBattleInputsForDefeat() {
+  setActionButtonsEnabled(false);
+  [
+    els.answerOptions,
+    els.charmOptions,
+    els.continueBattleButton,
+    els.stopChargeButton,
+    els.parryButton,
+    els.bossIntentReadyButton
+  ].filter(Boolean).forEach(container => {
+    if (container.tagName === "BUTTON") {
+      container.disabled = true;
+      return;
+    }
+    container.querySelectorAll("button").forEach(button => {
+      button.disabled = true;
+    });
+  });
+}
+
+function cleanupBattleInputState() {
+  stopTimer("charge");
+  stopParryCountdown();
+  if (state.pointParry?.timeout) {
+    clearTimeout(state.pointParry.timeout);
+  }
+  state.pointParry = null;
+  state.parryAttack = null;
+  state.shield = 0;
+  state.guardShield = 0;
+}
+
+function getRevivedHp(percent = REVIVE_CONFIG.hpPercentAfterRevive) {
+  return Math.max(1, Math.round(100 * percent));
+}
+
+function tryPlayerRevive(reason = "") {
+  const battle = state.actBattle;
+  if (!battle || battle.reviveUsedThisBattle || (battle.reviveCount || 0) >= REVIVE_CONFIG.maxRevivesPerBattle) {
+    return false;
+  }
+
+  const effects = state.battleActiveEffects || {};
+  if (effects.surviveFatalOnce) {
+    effects.surviveFatalOnce = false;
+    battle.reviveUsedThisBattle = true;
+    battle.reviveCount = (battle.reviveCount || 0) + 1;
+    battle.justRevived = true;
+    state.playerHp = getRevivedHp(effects.surviveFatalHealPercent || 0.4);
+    updateBattleStats();
+    syncBattleStateToPlayerData();
+    els.battleMessage.textContent = `${reason ? `${reason}\n` : ""}เครื่องรางแห่ง Lingua เปล่งประกาย! พลังสุดท้ายปกป้องเจ้าจากความพ่ายแพ้`;
+    return true;
+  }
+
+  if (!REVIVE_CONFIG.enabled || Math.random() > REVIVE_CONFIG.chance) {
+    return false;
+  }
+
+  battle.reviveUsedThisBattle = true;
+  battle.reviveCount = (battle.reviveCount || 0) + 1;
+  battle.justRevived = true;
+  state.playerHp = getRevivedHp();
+  updateBattleStats();
+  syncBattleStateToPlayerData();
+  els.battleMessage.textContent = `${reason ? `${reason}\n` : ""}แสงเวทของมาสเตอร์เวร์ออนสว่างขึ้น! เจ้าได้รับโอกาสสุดท้ายและฟื้นพลังกลับมา`;
+  return true;
+}
+
+function resolvePlayerDefeat(reason = "HP เหลือ 0") {
+  const battle = state.actBattle;
+  if (!battle) {
+    if (state.playerHp <= 0) {
+      showLegacyDefeatScreen(reason);
+      return true;
+    }
+    return false;
+  }
+  if (battle.battleLocked || battle.isDefeated || battle.victoryHandled) {
+    return true;
+  }
+  if (state.playerHp > 0) {
+    return false;
+  }
+
+  state.playerHp = 0;
+  updateBattleStats();
+  syncBattleStateToPlayerData();
+
+  if (tryPlayerRevive(reason)) {
+    return false;
+  }
+
+  showDefeatScreen(reason);
+  return true;
+}
+
+function showLegacyDefeatScreen(reason = "HP เหลือ 0") {
+  state.playerHp = 0;
+  disableBattleInputsForDefeat();
+  cleanupBattleInputState();
+  updateBattleStats();
+
+  const content = document.createElement("div");
+  content.className = "defeat-result";
+  content.innerHTML = `
+    <p class="defeat-cause">${reason}</p>
+    <p>พลังของเจ้าหมดลงในการต่อสู้ครั้งนี้ แต่บทเรียนยังไม่สิ้นสุด</p>
+  `;
+
+  openGameModal({
+    title: "พ่ายแพ้…",
+    body: "HP เหลือ 0",
+    content,
+    lockClose: true,
+    actions: [
+      {
+        label: "ลองสู้ใหม่",
+        primary: true,
+        onClick: () => {
+          closeGameModal();
+          resetBattle();
+        }
+      },
+      {
+        label: "ไปเรียนบทนี้ใหม่",
+        onClick: () => {
+          closeGameModal();
+          resetBattle();
+          showScene("story");
+        }
+      }
+    ]
+  });
+}
+
+function showDefeatScreen(reason = "HP เหลือ 0") {
+  const battle = state.actBattle;
+  if (!battle) {
+    return;
+  }
+
+  battle.isDefeated = true;
+  battle.battleLocked = true;
+  battle.isActive = false;
+  battle.phase = "defeated";
+  disableBattleInputsForDefeat();
+  cleanupBattleInputState();
+  showOnlyBattlePanel(null);
+  updateBattleStats();
+  saveProgress({
+    currentStageId: battle.stage.id,
+    currentLessonId: battle.stage.id,
+    currentScreen: "lesson",
+    lastSafeScreen: "lesson",
+    currentDialogueIndex: battle.reviewDialogueIndex || 0,
+    currentLessonStepIndex: battle.reviewLessonStepIndex || 0
+  });
+
+  const content = document.createElement("div");
+  content.className = "defeat-result";
+  content.innerHTML = `
+    <p class="defeat-cause">${reason || "HP เหลือ 0"}</p>
+    <p>พลังของเจ้าหมดลงในการต่อสู้ครั้งนี้ แต่บทเรียนยังไม่สิ้นสุด</p>
+  `;
+
+  openGameModal({
+    title: "พ่ายแพ้…",
+    body: "HP เหลือ 0",
+    content,
+    lockClose: true,
+    actions: [
+      {
+        label: "ลองสู้ใหม่",
+        primary: true,
+        onClick: retryCurrentBattle
+      },
+      {
+        label: "ไปเรียนบทนี้ใหม่",
+        onClick: returnToCurrentLessonFromDefeat
+      }
+    ]
+  });
+}
+
+function retryCurrentBattle() {
+  const battle = state.actBattle;
+  const stageIndex = battle?.reviewStageIndex ?? state.actStageIndex;
+  closeGameModal();
+  cleanupBattleInputState();
+  state.actBattle = null;
+  state.currentBattleStats = null;
+  state.playerHp = 100;
+  state.enemyHp = 100;
+  runSceneTransition("ลุกขึ้นอีกครั้ง การต่อสู้เริ่มใหม่...", () => startActBattle(stageIndex));
+}
+
+function returnToCurrentLessonFromDefeat() {
+  const battle = state.actBattle;
+  const stageIndex = battle?.reviewStageIndex ?? state.actStageIndex;
+  closeGameModal();
+  cleanupBattleInputState();
+  state.actBattle = null;
+  state.currentBattleStats = null;
+  state.playerHp = 100;
+  state.enemyHp = 100;
+  restoreLessonUIAfterBattle();
+  runSceneTransition("กลับไปทบทวนบทเรียนอีกครั้ง...", () => {
+    showStageLesson(stageIndex, { lessonStepIndex: 0, dialogueIndex: 0 });
+  });
 }
 
 function clearForcedSceneTransitionLock() {
@@ -6048,6 +6378,14 @@ function startActBattle(stageIndex) {
     awaitingGrammarCharge: false,
     pendingGrammarCharge: null,
     isActive: true,
+    isDefeated: false,
+    battleLocked: false,
+    reviveUsedThisBattle: false,
+    reviveCount: 0,
+    justRevived: false,
+    reviewStageIndex: stageIndex,
+    reviewLessonStepIndex: state.lessonStepIndex || 0,
+    reviewDialogueIndex: state.lessonStoryStepIndex || 0,
     victoryHandled: false,
     grammariaStats: createBattleStats(stage)
   };
@@ -6170,6 +6508,9 @@ function chooseActFocusAnswer(option, question) {
   els.answerOptions.appendChild(feedback);
   updateBattleStats();
   syncBattleStateToPlayerData();
+  if (!isCorrect && resolvePlayerDefeat("HP เหลือ 0")) {
+    return;
+  }
   battle.pendingBossAction = chooseActBossAction(battle);
   battle.advanceQuestionOnContinue = false;
   if (battle.pendingBossAction && battle.pendingBossAction.sequence) {
@@ -6276,6 +6617,7 @@ function chooseActAnswer(option) {
     setBattleTurnOwner("enemy");
     recordWrongAnswerForGrammaria();
     state.playerHp = clamp(state.playerHp - 12, 0, 100);
+    playAttackSfx();
     triggerMotion(els.battleEnemy, "enemy-attack-motion");
     feedback.innerHTML = `<strong>ยังไม่ถูกต้อง</strong><br>คำตอบที่ถูกคือ <strong>${question.correctAnswer || question.answer}</strong><br>${question.explanation}`;
   }
@@ -6283,6 +6625,9 @@ function chooseActAnswer(option) {
   els.answerOptions.appendChild(feedback);
   updateBattleStats();
   syncBattleStateToPlayerData();
+  if (!isCorrect && resolvePlayerDefeat("HP เหลือ 0")) {
+    return;
+  }
   battle.pendingBossAction = chooseActBossAction(battle);
 
   if (isCorrect) {
@@ -6471,6 +6816,7 @@ function triggerEnemyHitFeedback(amount = 0, label = "") {
   if (amount <= 0) {
     return;
   }
+  playAttackSfx();
   if (amount > 0) {
     showEnemyDamageFloat(amount, label);
   }
@@ -7314,6 +7660,9 @@ function resolvePointParry(result) {
 
   state.playerHp = clamp(state.playerHp - damage, 0, 100);
   state.enemyHp = clamp(state.enemyHp - counterDamage, 0, state.enemyMaxHp);
+  if (damage > 0) {
+    playAttackSfx();
+  }
 
   if (counterDamage) {
     triggerMotion(els.battlePlayer, "player-attack-motion");
@@ -7336,20 +7685,22 @@ function resolvePointParry(result) {
     handleActEnemyDefeated("pointParryCounter");
     return;
   }
+  if (resolvePlayerDefeat("HP เหลือ 0")) {
+    return;
+  }
 
   const hasMoreBossSteps = battle.pendingBossTurn && battle.pendingBossTurn.stepIndex < battle.pendingBossTurn.sequence.length;
   if (!hasMoreBossSteps) {
     finalizeBossTurnState();
-    if (state.playerHp <= 0) {
-      state.playerHp = 35;
-      updateBattleStats();
-      els.battleMessage.textContent += "\nมาสเตอร์เวรีออนประคองความทรงจำไว้ เจ้าลุกขึ้นพร้อมพลังชีวิต 35";
+    if (resolvePlayerDefeat("HP เหลือ 0")) {
+      return;
     }
   }
 
   els.continueBattleButton.textContent = hasMoreBossSteps ? "ดำเนินต่อ" : (battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "เทิร์นถัดไป");
   els.continueBattleButton.onclick = hasMoreBossSteps ? runNextBossTurnStep : continueActBattle;
   els.continueBattleButton.classList.remove("hidden");
+  battle.justRevived = false;
 }
 
 function showBossAttackStep() {
@@ -7442,6 +7793,7 @@ function chooseBossQuestionAnswer(option, question) {
     battle.pendingBossAction.damage += 6;
     const chipDamage = battle.stage.type === "final-boss" ? 10 : 7;
     state.playerHp = clamp(state.playerHp - chipDamage, 0, 100);
+    playAttackSfx();
     triggerMotion(els.battleEnemy, "enemy-attack-motion");
     feedback.innerHTML = `<strong>ยังไม่ถูกต้อง!</strong><br>บอสโจมตีแรงขึ้น คำตอบที่ถูกคือ <strong>${question.correctAnswer || question.answer}</strong><br>${question.explanation}`;
   }
@@ -7449,9 +7801,15 @@ function chooseBossQuestionAnswer(option, question) {
   els.answerOptions.appendChild(feedback);
   updateBattleStats();
   syncBattleStateToPlayerData();
-  els.battleMessage.textContent = isCorrect
-    ? "คำตอบถูกต้อง! พลังโจมตีของบอสอ่อนลง"
-    : "ยังไม่ถูกต้อง! บอสสะสมพลังโจมตีเพิ่มขึ้น";
+  if (!isCorrect && resolvePlayerDefeat("HP เหลือ 0")) {
+    return;
+  }
+  if (!battle.justRevived) {
+    els.battleMessage.textContent = isCorrect
+      ? "คำตอบถูกต้อง! พลังโจมตีของบอสอ่อนลง"
+      : "ยังไม่ถูกต้อง! บอสสะสมพลังโจมตีเพิ่มขึ้น";
+  }
+  battle.justRevived = false;
   els.continueBattleButton.textContent = "ดำเนินต่อ";
   els.continueBattleButton.onclick = runNextBossTurnStep;
   els.continueBattleButton.classList.remove("hidden");
@@ -7471,10 +7829,8 @@ function finishBossTurn() {
   showOnlyBattlePanel(null);
   setBattleTurnOwner("player");
 
-  if (state.playerHp <= 0) {
-    state.playerHp = 35;
-    updateBattleStats();
-    els.battleMessage.textContent += "\nมาสเตอร์เวรีออนประคองความทรงจำไว้ เจ้าลุกขึ้นพร้อมพลังชีวิต 35";
+  if (resolvePlayerDefeat("HP เหลือ 0")) {
+    return;
   }
 
   els.continueBattleButton.textContent = battle.questionIndex >= battle.stage.questions.length - 1 || state.enemyHp <= 0 ? "รับรางวัล" : "คำถามถัดไป";
@@ -7663,13 +8019,10 @@ function stopActParry(forcedResult = null) {
   }
 
   state.playerHp = clamp(state.playerHp - damage, 0, 100);
-  if (state.playerHp <= 0 && effects.surviveFatalOnce) {
-    effects.surviveFatalOnce = false;
-    const healAmount = Math.max(1, Math.round(100 * (effects.surviveFatalHealPercent || 0.4)));
-    state.playerHp = clamp(1 + healAmount, 1, 100);
-    damage = 0;
-  }
   state.enemyHp = clamp(state.enemyHp - counterDamage, 0, state.enemyMaxHp);
+  if (damage > 0) {
+    playAttackSfx();
+  }
   battle.awaitingParry = false;
   battle.awaitingPrepare = false;
   stopParryCountdown();
@@ -7689,19 +8042,21 @@ function stopActParry(forcedResult = null) {
     handleActEnemyDefeated("parryCounter");
     return;
   }
+  if (resolvePlayerDefeat("HP เหลือ 0")) {
+    return;
+  }
 
   const hasMoreBossSteps = battle.pendingBossTurn && battle.pendingBossTurn.stepIndex < battle.pendingBossTurn.sequence.length;
   if (!hasMoreBossSteps) {
     finalizeBossTurnState();
-    if (state.playerHp <= 0) {
-      state.playerHp = 35;
-      updateBattleStats();
-      els.battleMessage.textContent += "\nมาสเตอร์เวรีออนประคองความทรงจำไว้ เจ้าลุกขึ้นพร้อมพลังชีวิต 35";
+    if (resolvePlayerDefeat("HP เหลือ 0")) {
+      return;
     }
   }
   els.continueBattleButton.textContent = hasMoreBossSteps ? "ดำเนินต่อ" : (battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "คำถามถัดไป");
   els.continueBattleButton.onclick = hasMoreBossSteps ? runNextBossTurnStep : continueActBattle;
   els.continueBattleButton.classList.remove("hidden");
+  battle.justRevived = false;
 }
 
 function continueActBattle() {
@@ -7741,10 +8096,8 @@ function continueActBattle() {
     return;
   }
 
-  if (state.playerHp <= 0) {
-    state.playerHp = 35;
-    updateBattleStats();
-    els.battleMessage.textContent = "มาสเตอร์เวรีออนประคองความทรงจำไว้ เจ้าลุกขึ้นพร้อมพลังชีวิต 35";
+  if (resolvePlayerDefeat("HP เหลือ 0")) {
+    return;
   }
 
   beginActPlayerTurn("เทิร์นใหม่เริ่มแล้ว เลือกการกระทำ");
@@ -8178,6 +8531,7 @@ function startGrammariaChargeHold(event = null) {
     return;
   }
 
+  playButtonSfx();
   charge.isCharging = true;
   charge.lastTime = null;
   if (els.stopChargeButton) {
@@ -8812,6 +9166,9 @@ function finishEnemyAttackSequence() {
   totalDamage = Math.round(totalDamage);
   state.playerHp = clamp(state.playerHp - totalDamage, 0, 100);
   state.enemyHp = clamp(state.enemyHp - totalCounterDamage, 0, 80);
+  if (totalDamage > 0) {
+    playAttackSfx();
+  }
   triggerEnemyHitFeedback(totalCounterDamage);
 
   updateBattleStats();
@@ -8826,10 +9183,8 @@ function finishEnemyAttackSequence() {
     return;
   }
 
-  if (state.playerHp <= 0) {
-    state.playerHp = 35;
-    updateBattleStats();
-    els.battleMessage.textContent += "\nอาจารย์เวเรียนประคองบทเรียนไว้ ผู้พเนจรลุกขึ้นพร้อมพลังชีวิต 35";
+  if (resolvePlayerDefeat("HP เหลือ 0")) {
+    return;
   }
 
   els.continueBattleButton.textContent = "ตาผู้เล่น";
@@ -9319,6 +9674,9 @@ els.gameModalClose.addEventListener("click", closeGameModal);
 els.returnTitleButton.addEventListener("click", () => showScene("login"));
 els.bossIntentReadyButton.addEventListener("click", runNextBossTurnStep);
 els.muteButton.addEventListener("click", toggleMute);
+
+document.addEventListener("pointerdown", handleButtonSfxPointer, true);
+document.addEventListener("keydown", handleButtonSfxKey, true);
 
 function bindGameAudioUnlockEvents() {
   const unlockOptions = { capture: true, passive: true };

@@ -2900,6 +2900,25 @@ html.performance-static-bg #battleScene {
   line-height: 1.55;
 }
 
+.defeat-result {
+  display: grid;
+  gap: 10px;
+  color: #3c2412;
+  font-weight: 800;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.defeat-cause {
+  margin: 0;
+  padding: 10px 12px;
+  border: 2px solid rgba(153, 36, 54, 0.28);
+  border-radius: 14px;
+  background: rgba(255, 230, 230, 0.72);
+  color: #7a1830;
+  font-weight: 900;
+}
+
 .skip-enemy-grid {
   display: grid;
   gap: 10px;
