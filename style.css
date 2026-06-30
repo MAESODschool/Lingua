@@ -2247,8 +2247,10 @@ html.performance-static-bg #battleScene {
 .teacher-character-gif,
 .timedust-gif,
 .echo-trick-gif,
+.yesterday-spirit-gif,
 .wisp-avatar.timedust-gif,
 .wisp-avatar.echo-trick-gif,
+.wisp-avatar.yesterday-spirit-gif,
 .character-static-holder .character-avatar,
 .vn-character.is-speaking .main-character-gif,
 .vn-character.is-speaking .main-character-gif-fallback,
@@ -2339,10 +2341,13 @@ html.performance-static-bg #battleScene {
 
 .timedust-gif,
 .echo-trick-gif,
+.yesterday-spirit-gif,
 .wisp-avatar.timedust-gif,
 .wisp-avatar.echo-trick-gif,
+.wisp-avatar.yesterday-spirit-gif,
 .skip-enemy-card img.timedust-gif,
-.skip-enemy-card img.echo-trick-gif {
+.skip-enemy-card img.echo-trick-gif,
+.skip-enemy-card img.yesterday-spirit-gif {
   display: block;
   object-fit: contain;
   object-position: center bottom;
@@ -2365,12 +2370,21 @@ html.performance-static-bg #battleScene {
   filter: none;
 }
 
+.wisp-avatar.yesterday-spirit-gif {
+  width: clamp(170px, 34vw, 250px);
+  height: clamp(170px, 34vw, 250px);
+  filter: none;
+}
+
 .combatant .timedust-gif,
 .combatant .echo-trick-gif,
+.combatant .yesterday-spirit-gif,
 .combatant.is-active-turn .timedust-gif,
 .combatant.is-active-turn .echo-trick-gif,
+.combatant.is-active-turn .yesterday-spirit-gif,
 #battleEnemy .timedust-gif,
-#battleEnemy .echo-trick-gif {
+#battleEnemy .echo-trick-gif,
+#battleEnemy .yesterday-spirit-gif {
   animation: none !important;
   transform: translateZ(0) !important;
   backface-visibility: hidden;
@@ -3160,7 +3174,8 @@ html.performance-static-bg #battleScene {
   }
 
   .wisp-avatar.timedust-gif,
-  .wisp-avatar.echo-trick-gif {
+  .wisp-avatar.echo-trick-gif,
+  .wisp-avatar.yesterday-spirit-gif {
     width: clamp(132px, 39vw, 170px);
     height: clamp(132px, 39vw, 170px);
   }

@@ -1135,6 +1135,8 @@ const TIME_DUST_IMAGE_PATH = "assets/characters/timedust-transparent-clean-optim
 const TIME_DUST_FALLBACK_IMAGE_PATH = assetPath("enemies/time-dust.png");
 const ECHO_TRICK_IMAGE_PATH = "assets/characters/echo-trick-transparent-clean-optimized.webp";
 const ECHO_TRICK_FALLBACK_IMAGE_PATH = assetPath("enemies/echo-tick.png");
+const YESTERDAY_SPIRIT_IMAGE_PATH = "assets/characters/yesterday-spirit-transparent.gif";
+const YESTERDAY_SPIRIT_FALLBACK_IMAGE_PATH = assetPath("memory-shade.png");
 
 const mobilePerformanceQuery = window.matchMedia("(max-width: 768px)");
 const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -1223,7 +1225,7 @@ const enemySpriteMap = {
   "Time Dust": TIME_DUST_IMAGE_PATH,
   "Echo Tick": ECHO_TRICK_IMAGE_PATH,
   "Rewind Slime": assetPath("enemies/rewind-slime.png"),
-  "Yesterday Sprite": assetPath("memory-shade.png"),
+  "Yesterday Sprite": YESTERDAY_SPIRIT_IMAGE_PATH,
   "Memory Bat": assetPath("memory-shade.png"),
   "The -ed Forger": assetPath("enemies/ed-forger.png"),
   "ช่างหลอม -ed": assetPath("enemies/ed-forger.png"),
@@ -8012,15 +8014,21 @@ function updateBattleEnemyVisual(stage = null) {
   const sprite = enemySpriteMap[enemyName] || assetPath("memory-shade.png");
   const isTimeDust = enemyName === "Time Dust";
   const isEchoTrick = enemyName === "Echo Tick";
+  const isYesterdaySpirit = enemyName === "Yesterday Sprite";
 
   if (els.battleEnemySprite) {
     els.battleEnemySprite.onerror = null;
     els.battleEnemySprite.classList.toggle("timedust-gif", isTimeDust);
     els.battleEnemySprite.classList.toggle("echo-trick-gif", isEchoTrick);
-    if (isTimeDust || isEchoTrick) {
-      const specialEnemyClass = isTimeDust ? "timedust-gif" : "echo-trick-gif";
-      const fallbackSprite = isTimeDust ? TIME_DUST_FALLBACK_IMAGE_PATH : ECHO_TRICK_FALLBACK_IMAGE_PATH;
-      const warnLabel = isTimeDust ? "TimeDust" : "EchoTrick";
+    els.battleEnemySprite.classList.toggle("yesterday-spirit-gif", isYesterdaySpirit);
+    if (isTimeDust || isEchoTrick || isYesterdaySpirit) {
+      const specialEnemyClass = isTimeDust ? "timedust-gif" : (isEchoTrick ? "echo-trick-gif" : "yesterday-spirit-gif");
+      const fallbackSprite = isTimeDust
+        ? TIME_DUST_FALLBACK_IMAGE_PATH
+        : isEchoTrick
+          ? ECHO_TRICK_FALLBACK_IMAGE_PATH
+          : YESTERDAY_SPIRIT_FALLBACK_IMAGE_PATH;
+      const warnLabel = isTimeDust ? "TimeDust" : (isEchoTrick ? "EchoTrick" : "YesterdaySpirit");
       els.battleEnemySprite.onerror = error => {
         console.warn(`[${warnLabel}] transparent GIF failed to load`, error);
         els.battleEnemySprite.onerror = null;
@@ -9123,7 +9131,14 @@ function renderBattleSelect() {
     card.className = "skip-enemy-card";
     const isTimeDust = enemy.name === "Time Dust";
     const isEchoTrick = enemy.name === "Echo Tick";
-    const specialEnemyClass = isTimeDust ? "timedust-gif" : (isEchoTrick ? "echo-trick-gif" : "");
+    const isYesterdaySpirit = enemy.name === "Yesterday Sprite";
+    const specialEnemyClass = isTimeDust
+      ? "timedust-gif"
+      : isEchoTrick
+        ? "echo-trick-gif"
+        : isYesterdaySpirit
+          ? "yesterday-spirit-gif"
+          : "";
     card.innerHTML = `
       <img class="${specialEnemyClass}" src="${enemySpriteMap[enemy.name] || assetPath("memory-shade.png")}" alt="${enemy.name}">
       <div>
@@ -9132,10 +9147,14 @@ function renderBattleSelect() {
         <p>${enemy.lesson}</p>
       </div>
     `;
-    if (isTimeDust || isEchoTrick) {
+    if (isTimeDust || isEchoTrick || isYesterdaySpirit) {
       const specialEnemyImage = card.querySelector("img");
-      const fallbackSprite = isTimeDust ? TIME_DUST_FALLBACK_IMAGE_PATH : ECHO_TRICK_FALLBACK_IMAGE_PATH;
-      const warnLabel = isTimeDust ? "TimeDust" : "EchoTrick";
+      const fallbackSprite = isTimeDust
+        ? TIME_DUST_FALLBACK_IMAGE_PATH
+        : isEchoTrick
+          ? ECHO_TRICK_FALLBACK_IMAGE_PATH
+          : YESTERDAY_SPIRIT_FALLBACK_IMAGE_PATH;
+      const warnLabel = isTimeDust ? "TimeDust" : (isEchoTrick ? "EchoTrick" : "YesterdaySpirit");
       specialEnemyImage.addEventListener("error", error => {
         console.warn(`[${warnLabel}] transparent GIF failed to load`, error);
         specialEnemyImage.classList.remove(specialEnemyClass);
