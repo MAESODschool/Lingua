@@ -1445,6 +1445,12 @@ const GRAMMARIA_POINTS = {
   charge: 5
 };
 
+const GRAMMARIA_CHARGE_CONFIG = {
+  speedPerSecond: 80,
+  min: 0,
+  max: 100
+};
+
 const CONFIGURED_MAX_GRAMMARIA = 750;
 
 const state = {
@@ -1640,6 +1646,8 @@ const els = {
   chargeBar: document.getElementById("chargeBar"),
   perfectZone: document.getElementById("perfectZone"),
   chargeMarker: document.getElementById("chargeMarker"),
+  chargePercentText: document.getElementById("chargePercentText"),
+  chargeFeedbackText: document.getElementById("chargeFeedbackText"),
   stopChargeButton: document.getElementById("stopChargeButton"),
   parryPanel: document.getElementById("parryPanel"),
   enemyAttackName: document.getElementById("enemyAttackName"),
@@ -4183,6 +4191,7 @@ function createBattleStats(boss) {
     wrongAnswers: 0,
     parryCount: 0,
     grammariaChargeCount: 0,
+    grammariaChargePercents: [],
     parryEvents: {},
     startedAt: Date.now()
   };
@@ -4216,10 +4225,14 @@ function recordParryForGrammaria(result, eventKey = "") {
   stats.parryCount += 1;
 }
 
-function recordGrammariaChargeUse() {
+function recordGrammariaChargeUse(percent = 0) {
   const stats = getCurrentBattleStats();
   if (stats) {
     stats.grammariaChargeCount += 1;
+    if (!Array.isArray(stats.grammariaChargePercents)) {
+      stats.grammariaChargePercents = [];
+    }
+    stats.grammariaChargePercents.push(Math.round(percent));
   }
 }
 
@@ -4264,7 +4277,8 @@ function awardBossGrammaria(stage, stats = getCurrentBattleStats()) {
     correctAnswers: stats?.correctAnswers || 0,
     wrongAnswers: stats?.wrongAnswers || 0,
     parryCount: stats?.parryCount || 0,
-    grammariaChargeCount: stats?.grammariaChargeCount || 0
+    grammariaChargeCount: stats?.grammariaChargeCount || 0,
+    grammariaChargePercents: Array.isArray(stats?.grammariaChargePercents) ? [...stats.grammariaChargePercents] : []
   };
   const points = calculateBossGrammaria(cleanStats);
   const completedAt = new Date().toISOString();
@@ -6836,13 +6850,20 @@ function chooseActCharmV2(charm) {
 }
 
 function startActGrammarCharge(charm) {
-  const zoneWidth = charm.rank === "S" || charm.rank === "SS" ? 16 : 20;
-  const zoneStart = (100 - zoneWidth) / 2;
-  els.perfectZone.style.width = `${zoneWidth}%`;
-  els.perfectZone.style.left = `${zoneStart}%`;
-  els.battleMessage.textContent = `เลือก ${charm.name} แล้ว หยุดชาร์จในจังหวะที่ดีที่สุด`;
+  els.battleMessage.textContent = `เลือก ${charm.name} แล้ว กดค้างเพื่อชาร์จ Grammaria`;
   showOnlyBattlePanel(els.chargePanel);
-  state.charge = createTimer(els.chargeMarker, 1180);
+  setupGrammariaCharge({
+    label: charm.name,
+    onComplete: chargePercent => {
+      const battle = state.actBattle;
+      if (!battle || !battle.awaitingGrammarCharge) {
+        return;
+      }
+      battle.awaitingGrammarCharge = false;
+      battle.pendingGrammarCharge = null;
+      resolveActCharmAttack(charm, chargePercent);
+    }
+  });
 }
 
 function stopActGrammarCharge() {
@@ -6851,37 +6872,37 @@ function stopActGrammarCharge() {
     return;
   }
 
-  const progress = state.charge.progress;
-  const charm = battle.pendingGrammarCharge?.charm;
-  const zoneWidth = charm && (charm.rank === "S" || charm.rank === "SS") ? 16 : 20;
-  const result = timingResult(progress, zoneWidth);
-  stopTimer("charge");
-  battle.awaitingGrammarCharge = false;
-  battle.pendingGrammarCharge = null;
-  resolveActCharmAttack(charm, result);
+  finishGrammariaCharge();
 }
 
-function actChargeMultiplier(result) {
-  if (result === "PERFECT") {
-    return 1.1;
-  }
-  if (result === "GREAT") {
-    return 1;
-  }
-  if (result === "GOOD") {
-    return 0.8;
-  }
-  return 0.8;
+function calculateChargeDamage(baseDamage, chargePercent) {
+  const percent = clamp(Math.round(Number(chargePercent) || 0), 0, 100);
+  const bonusDamage = Math.round(baseDamage * (percent / 100));
+  return {
+    percent,
+    bonusDamage,
+    finalDamage: baseDamage + bonusDamage
+  };
 }
 
-function resolveActCharmAttack(charm, chargeResult) {
+function buildChargeFeedback(percent, baseDamage, bonusDamage, finalDamage) {
+  const prefix = percent >= 100
+    ? "Perfect Charge! "
+    : percent <= 20
+      ? "Charge ต่ำ "
+      : "";
+  return `${prefix}พลัง Grammaria เพิ่มดาเมจ +${percent}%\nดาเมจพื้นฐาน ${baseDamage} + โบนัส ${bonusDamage} = ${finalDamage}`;
+}
+
+function resolveActCharmAttack(charm, chargePercent = 0) {
   const battle = state.actBattle;
   if (!battle || !battle.pendingPlayerAttack || !charm) {
     return;
   }
 
   const rankLabel = charmRankMeta[charm.rank]?.label || `[${charm.rank}]`;
-  const bonusLines = [`เลือก ${rankLabel} ${charm.name}`, `Grammar Charge: ${thaiTimingName(chargeResult)}`];
+  const normalizedChargePercent = clamp(Math.round(Number(chargePercent) || 0), 0, 100);
+  const bonusLines = [`เลือก ${rankLabel} ${charm.name}`, `Grammaria Charge: ${normalizedChargePercent}%`];
   const effects = state.battleActiveEffects || {};
   const focusBuff = battle.focusBuff || null;
   if (focusBuff?.critBonus) {
@@ -6898,7 +6919,9 @@ function resolveActCharmAttack(charm, chargeResult) {
   const isCrit = damageResult.isCrit;
   const stunChance = damageResult.stunChance;
 
-  totalDamage = Math.round(totalDamage * actChargeMultiplier(chargeResult));
+  const chargeDamage = calculateChargeDamage(totalDamage, normalizedChargePercent);
+  totalDamage = chargeDamage.finalDamage;
+  bonusLines.push(buildChargeFeedback(chargeDamage.percent, totalDamage - chargeDamage.bonusDamage, chargeDamage.bonusDamage, chargeDamage.finalDamage));
   if (focusBuff?.damageMultiplier) {
     totalDamage = Math.round(totalDamage * focusBuff.damageMultiplier);
     bonusLines.push("Focus Buff เพิ่มพลังโจมตี");
@@ -6917,6 +6940,7 @@ function resolveActCharmAttack(charm, chargeResult) {
   if (isCrit) {
     gainActAP(1);
   }
+  recordGrammariaChargeUse(normalizedChargePercent);
   battle.pendingPlayerAttack = null;
   battle.focusBuff = null;
   battle.criticalCounterReady = false;
@@ -8087,59 +8111,165 @@ function showCharmChoices() {
 
 function chooseCharm(charm) {
   state.selectedCharm = charm;
-  els.battleMessage.textContent = `เลือก ${charm.name} แล้ว หยุดชาร์จให้ถูกจังหวะ`;
+  els.battleMessage.textContent = `เลือก ${charm.name} แล้ว กดค้างเพื่อชาร์จ Grammaria`;
   startCharge();
 }
 
 function startCharge() {
-  const widerPerfect = state.selectedCharm && state.selectedCharm.id === "focusGlyph";
-  const zoneWidth = widerPerfect ? 30 : 18;
-  const zoneStart = (100 - zoneWidth) / 2;
-
-  els.perfectZone.style.width = `${zoneWidth}%`;
-  els.perfectZone.style.left = `${zoneStart}%`;
   showOnlyBattlePanel(els.chargePanel);
-  state.charge = createTimer(els.chargeMarker, 1050);
+  setupGrammariaCharge({
+    label: state.selectedCharm?.name || "Grammaria",
+    onComplete: chargePercent => resolvePlayerAttack(chargePercent)
+  });
 }
 
-function createTimer(marker, duration) {
-  const timer = {
-    marker,
-    duration,
+function setupGrammariaCharge({ label = "Grammaria", onComplete } = {}) {
+  cleanupGrammariaCharge({ resetUi: false });
+  state.charge = {
+    label,
+    onComplete,
+    isCharging: false,
+    completed: false,
+    value: GRAMMARIA_CHARGE_CONFIG.min,
     direction: 1,
-    progress: 0,
     lastTime: null,
-    frame: null
+    frame: null,
+    lastPointerFinishAt: 0
   };
+  updateChargeBarUI(0, `กดค้างเพื่อชาร์จ ${label}`);
+  if (els.stopChargeButton) {
+    els.stopChargeButton.textContent = "กดค้างเพื่อชาร์จ";
+    els.stopChargeButton.disabled = false;
+  }
+}
+
+function updateChargeBarUI(value = 0, feedback = "") {
+  const percent = clamp(Math.round(Number(value) || 0), GRAMMARIA_CHARGE_CONFIG.min, GRAMMARIA_CHARGE_CONFIG.max);
+  if (els.perfectZone) {
+    els.perfectZone.style.width = `${percent}%`;
+    els.perfectZone.style.left = "0";
+  }
+  if (els.chargeMarker) {
+    els.chargeMarker.style.left = `calc(${percent}% - 4px)`;
+  }
+  if (els.chargePercentText) {
+    els.chargePercentText.textContent = `Charge ${percent}%`;
+  }
+  if (els.chargeFeedbackText && feedback) {
+    els.chargeFeedbackText.textContent = feedback;
+  }
+}
+
+function startGrammariaChargeHold(event = null) {
+  if (event) {
+    event.preventDefault();
+  }
+
+  const charge = state.charge;
+  if (!charge || charge.completed || charge.isCharging) {
+    return;
+  }
+
+  charge.isCharging = true;
+  charge.lastTime = null;
+  if (els.stopChargeButton) {
+    els.stopChargeButton.textContent = "ปล่อยเพื่อหยุด";
+  }
+  updateChargeBarUI(charge.value, "ปล่อยเพื่อหยุดค่า Charge");
 
   const step = timestamp => {
-    if (!timer.lastTime) {
-      timer.lastTime = timestamp;
+    const current = state.charge;
+    if (!current || !current.isCharging || current.completed) {
+      return;
     }
 
-    const elapsed = timestamp - timer.lastTime;
-    timer.lastTime = timestamp;
-    timer.progress += (elapsed / timer.duration) * 100 * timer.direction;
-
-    if (timer.progress >= 100) {
-      timer.progress = 100;
-      timer.direction = -1;
+    if (!current.lastTime) {
+      current.lastTime = timestamp;
     }
 
-    if (timer.progress <= 0) {
-      timer.progress = 0;
-      timer.direction = 1;
+    const elapsed = Math.min(timestamp - current.lastTime, 80);
+    current.lastTime = timestamp;
+    current.value += (elapsed / 1000) * GRAMMARIA_CHARGE_CONFIG.speedPerSecond * current.direction;
+
+    if (current.value >= GRAMMARIA_CHARGE_CONFIG.max) {
+      current.value = GRAMMARIA_CHARGE_CONFIG.max;
+      current.direction = -1;
     }
 
-    marker.style.left = `calc(${timer.progress}% - 4px)`;
-    timer.frame = requestAnimationFrame(step);
+    if (current.value <= GRAMMARIA_CHARGE_CONFIG.min) {
+      current.value = GRAMMARIA_CHARGE_CONFIG.min;
+      current.direction = 1;
+    }
+
+    updateChargeBarUI(current.value, "ปล่อยเพื่อหยุดค่า Charge");
+    current.frame = requestAnimationFrame(step);
   };
 
-  timer.frame = requestAnimationFrame(step);
-  return timer;
+  charge.frame = requestAnimationFrame(step);
+}
+
+function finishGrammariaCharge(event = null, { cancel = false } = {}) {
+  if (event) {
+    event.preventDefault();
+  }
+
+  const charge = state.charge;
+  if (!charge || charge.completed) {
+    return;
+  }
+
+  if (!charge.isCharging && !cancel) {
+    return;
+  }
+
+  if (charge.frame) {
+    cancelAnimationFrame(charge.frame);
+  }
+  charge.frame = null;
+  charge.isCharging = false;
+
+  if (cancel) {
+    cleanupGrammariaCharge();
+    return;
+  }
+
+  charge.completed = true;
+  charge.lastPointerFinishAt = Date.now();
+  const percent = clamp(Math.round(charge.value), GRAMMARIA_CHARGE_CONFIG.min, GRAMMARIA_CHARGE_CONFIG.max);
+  updateChargeBarUI(percent, `Grammaria Charge: ${percent}% - พลังโจมตีรอบนี้เพิ่มขึ้น ${percent}%`);
+  if (els.stopChargeButton) {
+    els.stopChargeButton.textContent = `Charge ${percent}%`;
+    els.stopChargeButton.disabled = true;
+  }
+
+  const onComplete = charge.onComplete;
+  state.charge = null;
+  if (typeof onComplete === "function") {
+    onComplete(percent);
+  }
+}
+
+function cleanupGrammariaCharge({ resetUi = true } = {}) {
+  const charge = state.charge;
+  if (charge?.frame) {
+    cancelAnimationFrame(charge.frame);
+  }
+  state.charge = null;
+  if (resetUi) {
+    updateChargeBarUI(0, "กดค้างเพื่อชาร์จ แล้วปล่อยเพื่อหยุดค่า");
+    if (els.stopChargeButton) {
+      els.stopChargeButton.textContent = "กดค้างเพื่อชาร์จ";
+      els.stopChargeButton.disabled = false;
+    }
+  }
 }
 
 function stopTimer(type) {
+  if (type === "charge") {
+    cleanupGrammariaCharge();
+    return;
+  }
+
   const timer = state[type];
   if (timer && timer.frame) {
     cancelAnimationFrame(timer.frame);
@@ -8207,22 +8337,11 @@ function stopCharge() {
     return;
   }
 
-  const progress = state.charge.progress;
-  const perfectWidth = state.selectedCharm && state.selectedCharm.id === "focusGlyph" ? 30 : 18;
-  const result = timingResult(progress, perfectWidth);
-  stopTimer("charge");
-  recordGrammariaChargeUse();
-  resolvePlayerAttack(result);
+  finishGrammariaCharge();
 }
 
-function resolvePlayerAttack(chargeResult) {
-  const chargeModifiers = {
-    PERFECT: 1.5,
-    GREAT: 1.25,
-    GOOD: 1,
-    MISS: 0.75
-  };
-
+function resolvePlayerAttack(chargePercent = 0) {
+  const normalizedChargePercent = clamp(Math.round(Number(chargePercent) || 0), 0, 100);
   let damage = 0;
   let message = "";
 
@@ -8238,10 +8357,13 @@ function resolvePlayerAttack(chargeResult) {
       damage *= 1.25;
     }
 
-    damage = Math.round(damage * chargeModifiers[chargeResult]);
+    const baseDamage = Math.round(damage);
+    const chargeDamage = calculateChargeDamage(baseDamage, normalizedChargePercent);
+    damage = chargeDamage.finalDamage;
     state.enemyHp = clamp(state.enemyHp - damage, 0, 80);
     triggerEnemyHitFeedback(damage);
     state.grammaria += 20;
+    recordGrammariaChargeUse(normalizedChargePercent);
 
     if (state.selectedCharm.id === "tinyHeal") {
       state.playerHp = clamp(state.playerHp + 8, 0, 100);
@@ -8251,13 +8373,13 @@ function resolvePlayerAttack(chargeResult) {
       state.sparkBonus += 5;
     }
 
-    message = `ผู้พเนจรร่ายแกรมมาเรีย! ชาร์จระดับ ${thaiTimingName(chargeResult)} สร้างดาเมจ ${damage}`;
+    message = `ผู้พเนจรร่ายแกรมมาเรีย!\n${buildChargeFeedback(chargeDamage.percent, baseDamage, chargeDamage.bonusDamage, chargeDamage.finalDamage)}`;
   } else {
     if (state.selectedCharm.id === "guardWord") {
       state.guardShield = 0.3;
     }
 
-    message = `แกรมมาเรียเลือนหาย ความหมายยังไม่ชัดเจน ชาร์จระดับ ${thaiTimingName(chargeResult)} จึงโจมตีไม่ได้`;
+    message = `แกรมมาเรียเลือนหาย ความหมายยังไม่ชัดเจน Charge ${normalizedChargePercent}% จึงโจมตีไม่ได้`;
   }
 
   updateBattleStats();
@@ -9143,12 +9265,30 @@ els.focusButton.addEventListener("click", () => {
   }
   focusTurn();
 });
-els.stopChargeButton.addEventListener("click", () => {
-  if (state.actBattle?.awaitingGrammarCharge) {
-    stopActGrammarCharge();
-    return;
+els.stopChargeButton.addEventListener("pointerdown", event => {
+  startGrammariaChargeHold(event);
+});
+els.stopChargeButton.addEventListener("pointerup", event => {
+  finishGrammariaCharge(event);
+});
+els.stopChargeButton.addEventListener("pointercancel", event => {
+  finishGrammariaCharge(event, { cancel: true });
+});
+els.stopChargeButton.addEventListener("pointerleave", event => {
+  finishGrammariaCharge(event);
+});
+els.stopChargeButton.addEventListener("click", event => {
+  event.preventDefault();
+});
+els.stopChargeButton.addEventListener("keydown", event => {
+  if (event.key === "Enter" || event.key === " ") {
+    startGrammariaChargeHold(event);
   }
-  stopCharge();
+});
+els.stopChargeButton.addEventListener("keyup", event => {
+  if (event.key === "Enter" || event.key === " ") {
+    finishGrammariaCharge(event);
+  }
 });
 els.parryButton.addEventListener("pointerdown", stopParry);
 els.parryButton.addEventListener("keydown", event => {
