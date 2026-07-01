@@ -1126,20 +1126,75 @@ function assetPath(fileName) {
   return `${ASSET_BASE_URL}${fileName.replace(/^\/+/, "")}`;
 }
 
+function isMobileDevice() {
+  return window.matchMedia("(max-width: 768px)").matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+function isLowPowerDevice() {
+  if (isMobileDevice()) {
+    return true;
+  }
+
+  const memory = typeof navigator.deviceMemory === "number" ? navigator.deviceMemory : 8;
+  const cores = typeof navigator.hardwareConcurrency === "number" ? navigator.hardwareConcurrency : 8;
+  return isMobileDevice() || memory <= 4 || cores <= 4;
+}
+
+const PERFORMANCE_CONFIG = {
+  mobileMode: isLowPowerDevice(),
+  useMobileCharacterAssets: isLowPowerDevice(),
+  useStaticBackgroundOnMobile: true,
+  reduceCssEffectsOnMobile: true,
+  typewriterCharsPerSecondDesktop: 42,
+  typewriterCharsPerSecondMobile: 48
+};
+
+console.log("[Performance] mobileMode =", PERFORMANCE_CONFIG.mobileMode);
+
 const MAIN_CHARACTER_IMAGE_PATH = "assets/characters/main-character-idle-transparent-clean-optimized.webp";
+const MAIN_CHARACTER_MOBILE_IMAGE_PATH = "assets/characters/main-character-mobile.webp";
 const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
 const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-new-transparent.webp";
+const TEACHER_CHARACTER_MOBILE_IMAGE_PATH = "assets/characters/master-verion-mobile.webp";
 const TEACHER_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("master-verion.png");
 const GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-animated.gif";
+const GRAMMAR_HALL_STATIC_MOBILE_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-static-mobile.webp";
 const TIME_DUST_IMAGE_PATH = "assets/characters/timedust-transparent-clean-optimized.webp";
+const TIME_DUST_MOBILE_IMAGE_PATH = "assets/characters/timedust-mobile.webp";
 const TIME_DUST_FALLBACK_IMAGE_PATH = assetPath("enemies/time-dust.png");
 const ECHO_TRICK_IMAGE_PATH = "assets/characters/echo-trick-transparent-clean-optimized.webp";
+const ECHO_TRICK_MOBILE_IMAGE_PATH = "assets/characters/echo-tick-mobile.webp";
 const ECHO_TRICK_FALLBACK_IMAGE_PATH = assetPath("enemies/echo-tick.png");
 const YESTERDAY_SPIRIT_IMAGE_PATH = "assets/characters/yesterday-spirit-transparent.gif";
+const YESTERDAY_SPIRIT_MOBILE_IMAGE_PATH = "assets/characters/yesterday-spirit-mobile.webp";
 const YESTERDAY_SPIRIT_FALLBACK_IMAGE_PATH = assetPath("memory-shade.png");
 
 const mobilePerformanceQuery = window.matchMedia("(max-width: 768px)");
 const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+function pickCharacterAsset(desktopSrc, mobileSrc) {
+  if (PERFORMANCE_CONFIG.useMobileCharacterAssets && mobileSrc) {
+    return mobileSrc;
+  }
+
+  return desktopSrc;
+}
+
+function pickGrammarHallBackgroundAsset() {
+  if (PERFORMANCE_CONFIG.useStaticBackgroundOnMobile && (PERFORMANCE_CONFIG.mobileMode || isPerformanceStaticBackgroundMode())) {
+    return GRAMMAR_HALL_STATIC_MOBILE_BACKGROUND_PATH;
+  }
+
+  return GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH;
+}
+
+function getMainCharacterImagePath() {
+  return pickCharacterAsset(MAIN_CHARACTER_IMAGE_PATH, MAIN_CHARACTER_MOBILE_IMAGE_PATH);
+}
+
+function getTeacherCharacterImagePath() {
+  return pickCharacterAsset(TEACHER_CHARACTER_IMAGE_PATH, TEACHER_CHARACTER_MOBILE_IMAGE_PATH);
+}
 
 function isPerformanceStaticBackgroundMode() {
   return mobilePerformanceQuery.matches || reducedMotionQuery.matches;
@@ -1147,18 +1202,26 @@ function isPerformanceStaticBackgroundMode() {
 
 function updatePerformanceMode() {
   document.documentElement.classList.toggle("performance-static-bg", isPerformanceStaticBackgroundMode());
+  document.documentElement.style.setProperty("--grammar-hall-bg", `url("${pickGrammarHallBackgroundAsset()}")`);
 }
 
 function createMainCharacterElement(className = "") {
   const img = document.createElement("img");
   img.className = `main-character-gif ${className}`.trim();
-  img.src = MAIN_CHARACTER_IMAGE_PATH;
+  img.src = getMainCharacterImagePath();
   img.alt = "Main Character";
   img.draggable = false;
   return img;
 }
 
 function handleMainCharacterGifError(img) {
+  if (img.dataset.mobileFallbackApplied !== "true" && img.getAttribute("src") === MAIN_CHARACTER_MOBILE_IMAGE_PATH) {
+    console.warn("[Performance] mobile main character asset failed; using desktop asset.");
+    img.dataset.mobileFallbackApplied = "true";
+    img.src = MAIN_CHARACTER_IMAGE_PATH;
+    return;
+  }
+
   console.warn("[Character] main-character-idle-transparent-clean-optimized.webp failed to load");
   if (img.dataset.fallbackApplied === "true") {
     return;
@@ -1179,13 +1242,20 @@ function handleMainCharacterGifError(img) {
 
 function setupMainCharacterGifs() {
   document.querySelectorAll(".main-character-gif").forEach(img => {
-    img.src = MAIN_CHARACTER_IMAGE_PATH;
+    img.src = getMainCharacterImagePath();
     img.draggable = false;
     img.addEventListener("error", () => handleMainCharacterGifError(img), { once: true });
   });
 }
 
 function handleTeacherCharacterGifError(img) {
+  if (img.dataset.mobileFallbackApplied !== "true" && img.getAttribute("src") === TEACHER_CHARACTER_MOBILE_IMAGE_PATH) {
+    console.warn("[Performance] mobile teacher asset failed; using desktop asset.");
+    img.dataset.mobileFallbackApplied = "true";
+    img.src = TEACHER_CHARACTER_IMAGE_PATH;
+    return;
+  }
+
   console.warn("[Character] master-verion-new-transparent.webp failed to load");
   if (img.dataset.fallbackApplied === "true") {
     return;
@@ -1197,9 +1267,21 @@ function handleTeacherCharacterGifError(img) {
 
 function setupTeacherCharacterGifs() {
   document.querySelectorAll(".teacher-character-gif").forEach(img => {
-    img.src = TEACHER_CHARACTER_IMAGE_PATH;
+    img.src = getTeacherCharacterImagePath();
     img.draggable = false;
     img.addEventListener("error", () => handleTeacherCharacterGifError(img), { once: true });
+  });
+}
+
+function preloadImage(src) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.addEventListener("load", resolve, { once: true });
+    img.addEventListener("error", error => {
+      console.warn("[Performance] asset preload failed", src, error);
+      resolve();
+    }, { once: true });
+    img.src = src;
   });
 }
 
@@ -1213,19 +1295,25 @@ function setupAnimatedGrammarHallBackground() {
     }
   });
 
+  const activeBackground = pickGrammarHallBackgroundAsset();
+  if (activeBackground !== GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH) {
+    preloadImage(activeBackground);
+    return;
+  }
+
   const backgroundProbe = new Image();
   backgroundProbe.addEventListener("error", error => {
     console.warn("[Background] animated GIF failed to load", error);
   }, { once: true });
-  backgroundProbe.src = GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH;
+  backgroundProbe.src = activeBackground;
 }
 
 const enemySpriteMap = {
   "Memory Shade": assetPath("memory-shade.png"),
-  "Time Dust": TIME_DUST_IMAGE_PATH,
-  "Echo Tick": ECHO_TRICK_IMAGE_PATH,
+  "Time Dust": pickCharacterAsset(TIME_DUST_IMAGE_PATH, TIME_DUST_MOBILE_IMAGE_PATH),
+  "Echo Tick": pickCharacterAsset(ECHO_TRICK_IMAGE_PATH, ECHO_TRICK_MOBILE_IMAGE_PATH),
   "Rewind Slime": assetPath("enemies/rewind-slime.png"),
-  "Yesterday Sprite": YESTERDAY_SPIRIT_IMAGE_PATH,
+  "Yesterday Sprite": pickCharacterAsset(YESTERDAY_SPIRIT_IMAGE_PATH, YESTERDAY_SPIRIT_MOBILE_IMAGE_PATH),
   "Memory Bat": assetPath("memory-shade.png"),
   "The -ed Forger": assetPath("enemies/ed-forger.png"),
   "ช่างหลอม -ed": assetPath("enemies/ed-forger.png"),
@@ -1467,6 +1555,9 @@ const state = {
   currentUser: null,
   dialogueIndex: 0,
   typewriterTimer: null,
+  typewriterFrame: null,
+  typewriterStartedAt: 0,
+  typewriterCharsPerSecond: PERFORMANCE_CONFIG.typewriterCharsPerSecondDesktop,
   typewriterText: "",
   typewriterIndex: 0,
   isTypingDialogue: false,
@@ -4142,29 +4233,39 @@ function startTypewriter(text) {
   stopTypewriter();
   state.typewriterText = text;
   state.typewriterIndex = 0;
+  state.typewriterStartedAt = performance.now();
+  state.typewriterCharsPerSecond = getTypewriterCharsPerSecond();
   state.isTypingDialogue = true;
   state.lastDialogueTypeSfxAt = 0;
   els.dialogueText.textContent = "";
   setDialogueButtonReady(false);
-  typeNextCharacter();
+  state.typewriterFrame = requestAnimationFrame(typeNextCharacter);
 }
 
-function typeNextCharacter() {
+function typeNextCharacter(timestamp = performance.now()) {
   if (!state.isTypingDialogue) {
     return;
   }
 
-  state.typewriterIndex += 1;
-  els.dialogueText.textContent = state.typewriterText.slice(0, state.typewriterIndex);
-  const revealedCharacter = state.typewriterText[state.typewriterIndex - 1] || "";
+  const elapsedSeconds = Math.max(0, (timestamp - state.typewriterStartedAt) / 1000);
+  const nextIndex = Math.min(
+    state.typewriterText.length,
+    Math.max(1, Math.floor(elapsedSeconds * state.typewriterCharsPerSecond))
+  );
+
+  if (nextIndex > state.typewriterIndex) {
+    state.typewriterIndex = nextIndex;
+    els.dialogueText.textContent = state.typewriterText.slice(0, state.typewriterIndex);
+    const revealedCharacter = state.typewriterText[state.typewriterIndex - 1] || "";
+    playDialogueTypeSfxTick(revealedCharacter);
+  }
 
   if (state.typewriterIndex >= state.typewriterText.length) {
     finishTypewriter();
     return;
   }
 
-  playDialogueTypeSfxTick(revealedCharacter);
-  state.typewriterTimer = setTimeout(typeNextCharacter, getTypewriterDelay());
+  state.typewriterFrame = requestAnimationFrame(typeNextCharacter);
 }
 
 function getTypewriterDelay() {
@@ -4175,6 +4276,12 @@ function getTypewriterDelay() {
     : DIALOGUE_SPEED;
 
   return baseSpeed + (DIALOGUE_PUNCTUATION_PAUSE[currentCharacter] || 0);
+}
+
+function getTypewriterCharsPerSecond() {
+  return PERFORMANCE_CONFIG.mobileMode
+    ? PERFORMANCE_CONFIG.typewriterCharsPerSecondMobile
+    : PERFORMANCE_CONFIG.typewriterCharsPerSecondDesktop;
 }
 
 function finishTypewriter() {
@@ -4314,7 +4421,12 @@ function stopTypewriter() {
     clearTimeout(state.typewriterTimer);
   }
 
+  if (state.typewriterFrame) {
+    cancelAnimationFrame(state.typewriterFrame);
+  }
+
   state.typewriterTimer = null;
+  state.typewriterFrame = null;
   stopDialogueTypeSfx();
 }
 
@@ -8647,7 +8759,7 @@ function updateBattleEnemyVisual(stage = null) {
           : YESTERDAY_SPIRIT_FALLBACK_IMAGE_PATH;
       const warnLabel = isTimeDust ? "TimeDust" : (isEchoTrick ? "EchoTrick" : "YesterdaySpirit");
       els.battleEnemySprite.onerror = error => {
-        console.warn(`[${warnLabel}] transparent GIF failed to load`, error);
+        console.warn(`[Performance] ${warnLabel} sprite failed to load; using fallback sprite.`, error);
         els.battleEnemySprite.onerror = null;
         els.battleEnemySprite.classList.remove(specialEnemyClass);
         els.battleEnemySprite.src = fallbackSprite;
@@ -9781,7 +9893,7 @@ function renderBattleSelect() {
           : YESTERDAY_SPIRIT_FALLBACK_IMAGE_PATH;
       const warnLabel = isTimeDust ? "TimeDust" : (isEchoTrick ? "EchoTrick" : "YesterdaySpirit");
       specialEnemyImage.addEventListener("error", error => {
-        console.warn(`[${warnLabel}] transparent GIF failed to load`, error);
+        console.warn(`[Performance] ${warnLabel} sprite failed to load; using fallback sprite.`, error);
         specialEnemyImage.classList.remove(specialEnemyClass);
         specialEnemyImage.src = fallbackSprite;
       }, { once: true });
