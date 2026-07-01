@@ -1128,7 +1128,7 @@ function assetPath(fileName) {
 
 const MAIN_CHARACTER_IMAGE_PATH = "assets/characters/main-character-idle-transparent-clean-optimized.webp";
 const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
-const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-idle-transparent-clean-optimized.webp";
+const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-new-transparent.webp";
 const TEACHER_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("master-verion.png");
 const GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-animated.gif";
 const TIME_DUST_IMAGE_PATH = "assets/characters/timedust-transparent-clean-optimized.webp";
@@ -1186,7 +1186,7 @@ function setupMainCharacterGifs() {
 }
 
 function handleTeacherCharacterGifError(img) {
-  console.warn("[Character] master-verion-idle-transparent-clean-optimized.webp failed to load");
+  console.warn("[Character] master-verion-new-transparent.webp failed to load");
   if (img.dataset.fallbackApplied === "true") {
     return;
   }
@@ -4593,6 +4593,12 @@ function createBattleStats(boss) {
     parryCount: 0,
     grammariaChargeCount: 0,
     grammariaChargePercents: [],
+    playerDamageDealt: 0,
+    bossDamageDealt: 0,
+    parryCounterDamage: 0,
+    chargeBonusDamageTotal: 0,
+    highestDamage: 0,
+    damageEvents: [],
     parryEvents: {},
     startedAt: Date.now()
   };
@@ -4637,6 +4643,75 @@ function recordGrammariaChargeUse(percent = 0) {
   }
 }
 
+function pushBattleDamageEvent(stats, event) {
+  if (!stats) {
+    return;
+  }
+  if (!Array.isArray(stats.damageEvents)) {
+    stats.damageEvents = [];
+  }
+  stats.damageEvents.push(event);
+  if (stats.damageEvents.length > 40) {
+    stats.damageEvents = stats.damageEvents.slice(-40);
+  }
+}
+
+function recordPlayerDamage(amount, source = "attack", extra = {}) {
+  const stats = getCurrentBattleStats();
+  const damage = Math.max(0, Math.round(Number(amount) || 0));
+  if (!stats || damage <= 0) {
+    return;
+  }
+
+  stats.playerDamageDealt = (stats.playerDamageDealt || 0) + damage;
+  stats.highestDamage = Math.max(stats.highestDamage || 0, damage);
+  pushBattleDamageEvent(stats, {
+    type: "player",
+    source,
+    amount: damage,
+    at: Date.now(),
+    ...extra
+  });
+}
+
+function recordBossDamage(amount, source = "bossAttack", extra = {}) {
+  const stats = getCurrentBattleStats();
+  const damage = Math.max(0, Math.round(Number(amount) || 0));
+  if (!stats || damage <= 0) {
+    return;
+  }
+
+  stats.bossDamageDealt = (stats.bossDamageDealt || 0) + damage;
+  pushBattleDamageEvent(stats, {
+    type: "boss",
+    source,
+    amount: damage,
+    at: Date.now(),
+    ...extra
+  });
+}
+
+function recordParryCounterDamage(amount, source = "pointParryCounter") {
+  const stats = getCurrentBattleStats();
+  const damage = Math.max(0, Math.round(Number(amount) || 0));
+  if (!stats || damage <= 0) {
+    return;
+  }
+
+  stats.parryCounterDamage = (stats.parryCounterDamage || 0) + damage;
+  recordPlayerDamage(damage, source);
+}
+
+function recordChargeBonusDamage(amount) {
+  const stats = getCurrentBattleStats();
+  const damage = Math.max(0, Math.round(Number(amount) || 0));
+  if (!stats || damage <= 0) {
+    return;
+  }
+
+  stats.chargeBonusDamageTotal = (stats.chargeBonusDamageTotal || 0) + damage;
+}
+
 function calculateBossGrammaria(stats) {
   const correctPoints = (stats?.correctAnswers || 0) * GRAMMARIA_POINTS.correctAnswer;
   const parryPoints = (stats?.parryCount || 0) * GRAMMARIA_POINTS.parry;
@@ -4666,7 +4741,21 @@ function awardBossGrammaria(stage, stats = getCurrentBattleStats()) {
       bossName,
       duplicate: true,
       earned: saved.earned || 0,
-      totalAfter: progressState.total
+      totalAfter: progressState.total,
+      correctAnswers: stats?.correctAnswers || saved.correctAnswers || 0,
+      wrongAnswers: stats?.wrongAnswers || saved.wrongAnswers || 0,
+      parryCount: stats?.parryCount || saved.parryCount || 0,
+      grammariaChargeCount: stats?.grammariaChargeCount || saved.grammariaChargeCount || 0,
+      playerDamageDealt: stats?.playerDamageDealt || saved.playerDamageDealt || 0,
+      bossDamageDealt: stats?.bossDamageDealt || saved.bossDamageDealt || 0,
+      parryCounterDamage: stats?.parryCounterDamage || saved.parryCounterDamage || 0,
+      chargeBonusDamageTotal: stats?.chargeBonusDamageTotal || saved.chargeBonusDamageTotal || 0,
+      highestDamage: stats?.highestDamage || saved.highestDamage || 0,
+      damageEvents: Array.isArray(stats?.damageEvents)
+        ? stats.damageEvents.slice(-20)
+        : (Array.isArray(saved.damageEvents) ? saved.damageEvents.slice(-20) : []),
+      rewardFragment: stage?.reward?.fragment || saved.rewardFragment || "",
+      rewardBadge: stage?.reward?.badge || saved.rewardBadge || ""
     };
     state.lastGrammariaResult = duplicateResult;
     return duplicateResult;
@@ -4679,7 +4768,15 @@ function awardBossGrammaria(stage, stats = getCurrentBattleStats()) {
     wrongAnswers: stats?.wrongAnswers || 0,
     parryCount: stats?.parryCount || 0,
     grammariaChargeCount: stats?.grammariaChargeCount || 0,
-    grammariaChargePercents: Array.isArray(stats?.grammariaChargePercents) ? [...stats.grammariaChargePercents] : []
+    grammariaChargePercents: Array.isArray(stats?.grammariaChargePercents) ? [...stats.grammariaChargePercents] : [],
+    playerDamageDealt: stats?.playerDamageDealt || 0,
+    bossDamageDealt: stats?.bossDamageDealt || 0,
+    parryCounterDamage: stats?.parryCounterDamage || 0,
+    chargeBonusDamageTotal: stats?.chargeBonusDamageTotal || 0,
+    highestDamage: stats?.highestDamage || 0,
+    damageEvents: Array.isArray(stats?.damageEvents) ? stats.damageEvents.slice(-20) : [],
+    rewardFragment: stage?.reward?.fragment || "",
+    rewardBadge: stage?.reward?.badge || ""
   };
   const points = calculateBossGrammaria(cleanStats);
   const completedAt = new Date().toISOString();
@@ -4709,6 +4806,36 @@ function awardBossGrammaria(stage, stats = getCurrentBattleStats()) {
   return result;
 }
 
+function createBossResultSnapshot(stage, stats = getCurrentBattleStats()) {
+  const bossId = stats?.bossId || getBossProgressId(stage) || stage?.id || "unknown-boss";
+  const cleanStats = {
+    bossId,
+    bossName: stats?.bossName || stage?.thaiEnemy || stage?.enemy || stage?.title || "บอสแห่ง Lingua",
+    correctAnswers: stats?.correctAnswers || 0,
+    wrongAnswers: stats?.wrongAnswers || 0,
+    parryCount: stats?.parryCount || 0,
+    grammariaChargeCount: stats?.grammariaChargeCount || 0,
+    playerDamageDealt: stats?.playerDamageDealt || 0,
+    bossDamageDealt: stats?.bossDamageDealt || 0,
+    parryCounterDamage: stats?.parryCounterDamage || 0,
+    chargeBonusDamageTotal: stats?.chargeBonusDamageTotal || 0,
+    highestDamage: stats?.highestDamage || 0,
+    damageEvents: Array.isArray(stats?.damageEvents) ? stats.damageEvents.slice(-20) : [],
+    rewardFragment: stage?.reward?.fragment || "",
+    rewardBadge: stage?.reward?.badge || ""
+  };
+  const points = calculateBossGrammaria(cleanStats);
+  return {
+    ...cleanStats,
+    correctPoints: points.correctPoints,
+    parryPoints: points.parryPoints,
+    chargePoints: points.chargePoints,
+    earned: points.total,
+    totalAfter: playerData?.progress?.grammaria?.total ?? playerData?.grammaria ?? state.grammaria ?? 0,
+    duplicate: false
+  };
+}
+
 function renderBossGrammariaResult(result, onContinue) {
   if (!result) {
     if (typeof onContinue === "function") {
@@ -4723,18 +4850,44 @@ function renderBossGrammariaResult(result, onContinue) {
   panel.className = "grammaria-result";
   panel.innerHTML = `
     <div class="grammaria-breakdown">
+      <h3>สรุปการต่อสู้</h3>
+      <div class="grammaria-breakdown-row"><span>ตอบถูก</span><strong>${result.correctAnswers || 0} ข้อ</strong></div>
+      <div class="grammaria-breakdown-row"><span>ตอบผิด</span><strong>${result.wrongAnswers || 0} ข้อ</strong></div>
+      <div class="grammaria-breakdown-row"><span>ดาเมจที่ทำกับบอส</span><strong>${result.playerDamageDealt || 0}</strong></div>
+      <div class="grammaria-breakdown-row"><span>ดาเมจที่ได้รับจากบอส</span><strong>${result.bossDamageDealt || 0}</strong></div>
+      <div class="grammaria-breakdown-row"><span>ดาเมจสูงสุดต่อครั้ง</span><strong>${result.highestDamage || 0}</strong></div>
+
+      <h3>เทคนิคพิเศษ</h3>
+      <div class="grammaria-breakdown-row"><span>Point Parry</span><strong>${result.parryCount || 0} ครั้ง</strong></div>
+      <div class="grammaria-breakdown-row"><span>Counter Damage จาก Parry</span><strong>${result.parryCounterDamage || 0}</strong></div>
+      <div class="grammaria-breakdown-row"><span>Grammaria Charge</span><strong>${result.grammariaChargeCount || 0} ครั้ง</strong></div>
+      <div class="grammaria-breakdown-row"><span>โบนัส Damage จาก Charge</span><strong>${result.chargeBonusDamageTotal || 0}</strong></div>
+
+      <h3>สรุป Grammaria</h3>
       <div class="grammaria-breakdown-row"><span>ตอบถูก ${result.correctAnswers || 0} ข้อ × ${GRAMMARIA_POINTS.correctAnswer}</span><strong>${result.correctPoints || 0}</strong></div>
       <div class="grammaria-breakdown-row"><span>Point Parry ${result.parryCount || 0} ครั้ง × ${GRAMMARIA_POINTS.parry}</span><strong>${result.parryPoints || 0}</strong></div>
       <div class="grammaria-breakdown-row"><span>Grammaria Charge ${result.grammariaChargeCount || 0} ครั้ง × ${GRAMMARIA_POINTS.charge}</span><strong>${result.chargePoints || 0}</strong></div>
       <div class="grammaria-total-row"><span>ได้รับจากบอสนี้</span><strong>${result.earned || 0} Grammaria</strong></div>
       <div class="grammaria-total-row"><span>Grammaria สะสมทั้งหมด</span><strong>${result.totalAfter || 0}</strong></div>
+
+      <h3>Fragment / Reward</h3>
+      <div class="grammaria-breakdown-row"><span>Fragment ที่ได้รับ</span><strong>${result.rewardFragment || "ไม่มี"}</strong></div>
+      ${result.rewardBadge ? `<div class="grammaria-breakdown-row"><span>Badge ที่ได้รับ</span><strong>${result.rewardBadge}</strong></div>` : ""}
     </div>
-    ${result.duplicate ? "<p class=\"grammaria-result-note\">บอสนี้เคยให้คะแนนแล้ว จึงไม่เพิ่มคะแนนซ้ำ</p>" : ""}
+    ${result.duplicate ? "<p class=\"grammaria-result-note\">บอสนี้เคยให้ Grammaria แล้ว จึงไม่เพิ่มคะแนนซ้ำ แต่ยังแสดงผลการต่อสู้ให้ดูได้</p>" : ""}
   `;
+
+  console.log("[BossResult] finalizing", {
+    stageId: result.bossId,
+    bossId: result.bossId,
+    earned: result.earned,
+    playerDamageDealt: result.playerDamageDealt,
+    bossDamageDealt: result.bossDamageDealt
+  });
 
   openGameModal({
     title: `ชัยชนะเหนือ ${result.bossName || "บอสแห่ง Lingua"}`,
-    body: "แต้ม Grammaria ที่ได้รับ",
+    body: "สรุปผลการต่อสู้และรางวัลที่ได้รับ",
     content: panel,
     actions: [
       {
@@ -6629,6 +6782,7 @@ function showActBattleQuestion() {
     const echoDamage = state.battleActiveEffects.echoDamageNextTurn;
     state.battleActiveEffects.echoDamageNextTurn = 0;
     state.enemyHp = clamp(state.enemyHp - echoDamage, 0, state.enemyMaxHp);
+    recordPlayerDamage(echoDamage, "echoDamage");
     triggerEnemyHitFeedback(echoDamage);
     updateBattleStats();
     els.battleMessage.textContent += ` | เสียงสะท้อนสร้างดาเมจ ${echoDamage}`;
@@ -6693,6 +6847,7 @@ function chooseActAnswer(option) {
     setBattleTurnOwner("enemy");
     recordWrongAnswerForGrammaria();
     state.playerHp = clamp(state.playerHp - 12, 0, 100);
+    recordBossDamage(12, "wrongAnswerPenalty");
     playAttackSfx();
     triggerMotion(els.battleEnemy, "enemy-attack-motion");
     feedback.innerHTML = `<strong>ยังไม่ถูกต้อง</strong><br>คำตอบที่ถูกคือ <strong>${question.correctAnswer || question.answer}</strong><br>${question.explanation}`;
@@ -7245,6 +7400,7 @@ function chooseActCharmV2(charm) {
 
   triggerMotion(els.battlePlayer, "player-attack-motion");
   state.enemyHp = clamp(state.enemyHp - totalDamage, 0, state.enemyMaxHp);
+  recordPlayerDamage(totalDamage, "grammariaCharge");
   triggerEnemyHitFeedback(totalDamage, isCrit ? "CRIT" : "");
   state.grammaria += grammariaGain;
   battle.pendingPlayerAttack = null;
@@ -7358,6 +7514,10 @@ function resolveActCharmAttack(charm, chargePercent = 0) {
 
   triggerMotion(els.battlePlayer, "player-attack-motion");
   state.enemyHp = clamp(state.enemyHp - totalDamage, 0, state.enemyMaxHp);
+  recordPlayerDamage(totalDamage, "grammariaCharge", {
+    chargePercent: normalizedChargePercent
+  });
+  recordChargeBonusDamage(chargeDamage.bonusDamage);
   triggerEnemyHitFeedback(totalDamage, isCrit ? "CRIT" : "");
   state.grammaria += grammariaGain;
   gainActAP(1);
@@ -7474,6 +7634,7 @@ function chooseActCharm(charm) {
 
   triggerMotion(els.battlePlayer, "player-attack-motion");
   state.enemyHp = clamp(state.enemyHp - damage, 0, state.enemyMaxHp);
+  recordPlayerDamage(damage, "charmAttack");
   triggerEnemyHitFeedback(damage);
   state.grammaria += grammariaGain;
   battle.pendingPlayerAttack = null;
@@ -7736,6 +7897,8 @@ function resolvePointParry(result) {
 
   state.playerHp = clamp(state.playerHp - damage, 0, 100);
   state.enemyHp = clamp(state.enemyHp - counterDamage, 0, state.enemyMaxHp);
+  recordBossDamage(damage, "pointParryDamage", { result });
+  recordParryCounterDamage(counterDamage, "pointParryCounter");
   if (damage > 0) {
     playAttackSfx();
   }
@@ -7869,6 +8032,7 @@ function chooseBossQuestionAnswer(option, question) {
     battle.pendingBossAction.damage += 6;
     const chipDamage = battle.stage.type === "final-boss" ? 10 : 7;
     state.playerHp = clamp(state.playerHp - chipDamage, 0, 100);
+    recordBossDamage(chipDamage, "bossChipDamage");
     playAttackSfx();
     triggerMotion(els.battleEnemy, "enemy-attack-motion");
     feedback.innerHTML = `<strong>ยังไม่ถูกต้อง!</strong><br>บอสโจมตีแรงขึ้น คำตอบที่ถูกคือ <strong>${question.correctAnswer || question.answer}</strong><br>${question.explanation}`;
@@ -8096,6 +8260,8 @@ function stopActParry(forcedResult = null) {
 
   state.playerHp = clamp(state.playerHp - damage, 0, 100);
   state.enemyHp = clamp(state.enemyHp - counterDamage, 0, state.enemyMaxHp);
+  recordBossDamage(damage, "bossAttack", { result: parryResult });
+  recordParryCounterDamage(counterDamage, "parryCounter");
   if (damage > 0) {
     playAttackSfx();
   }
@@ -8230,7 +8396,10 @@ function grantActReward(stage, options = {}) {
 
 function handleTimeDustDefeated(stage) {
   console.log("[TimeDust] handleTimeDustDefeated called");
-  transitionToRegularEdLessonAfterTimeDust(stage);
+  finalizeBossVictoryWithResult(stage, () => {
+    console.log("[BossResult] Time Dust result shown before transition");
+    transitionToRegularEdLessonAfterTimeDust(stage);
+  });
   return;
 
   const nextStageId = "regular-rule-1";
@@ -8257,6 +8426,23 @@ function handleTimeDustDefeated(stage) {
   console.log("[UI] Exiting battle and rendering lesson");
   runSceneTransition("ไทม์ดัสต์สลายไปแล้ว... กฎของ Regular Verbs กำลังเปิดออก", () => {
     showStageLesson(nextIndex, { lessonStepIndex: 0, dialogueIndex: 0 });
+  });
+}
+
+function finalizeBossVictoryWithResult(stage, onContinue) {
+  if (!stage) {
+    return;
+  }
+
+  const grammariaResult = grantActReward(stage) || createBossResultSnapshot(stage);
+  state.actBattle = null;
+  state.grammaria = playerData ? playerData.grammaria || state.grammaria : state.grammaria;
+
+  renderBossGrammariaResult(grammariaResult, () => {
+    console.log("[BossResult] continue to next stage", stage.id);
+    if (typeof onContinue === "function") {
+      onContinue();
+    }
   });
 }
 
@@ -8297,22 +8483,23 @@ function handleActEnemyDefeated(source = "damage") {
 
   if (normalizedEnemyId === "timeDust") {
     const defeatedStage = battle.stage;
-    const grammariaResult = grantActReward(defeatedStage);
-    state.grammaria = playerData ? playerData.grammaria || state.grammaria : state.grammaria;
-    state.actBattle = null;
-    renderBossGrammariaResult(grammariaResult, () => {
-      showTimeDustNextLessonFallback(defeatedStage);
-      setTimeout(() => {
-        console.log("[TimeDust] Transition after Grammaria result fired");
-        transitionToRegularEdLessonAfterTimeDust(defeatedStage);
-      }, 400);
+    finalizeBossVictoryWithResult(defeatedStage, () => {
+      console.log("[BossResult] Time Dust result shown before transition");
+      transitionToRegularEdLessonAfterTimeDust(defeatedStage);
     });
     return true;
   }
 
-  els.continueBattleButton.textContent = "รับรางวัล";
-  els.continueBattleButton.onclick = completeActStage;
-  els.continueBattleButton.classList.remove("hidden");
+  if (battle.stage.type === "final-boss") {
+    finalizeBossVictoryWithResult(battle.stage, () => {
+      runSceneTransition("ความทรงจำสุดท้ายกำลังกลับคืน...", () => startPostBossDialogue(battle.stage));
+    });
+    return true;
+  }
+
+  finalizeBossVictoryWithResult(battle.stage, () => {
+    runSceneTransition(`ได้รับ ${battle.stage.reward.fragment}`, () => startPostBossDialogue(battle.stage));
+  });
   return true;
 }
 
@@ -8326,23 +8513,23 @@ function completeActStage() {
     correctAnswers: battle.correctAnswers,
     totalQuestions: stage.questions.length
   };
-  const grammariaResult = grantActReward(stage);
-  state.actBattle = null;
-  state.grammaria = playerData ? playerData.grammaria || state.grammaria : state.grammaria;
 
   if (stage.id === "what-is-past") {
-    handleTimeDustDefeated(stage);
+    finalizeBossVictoryWithResult(stage, () => {
+      console.log("[BossResult] Time Dust result shown before transition");
+      transitionToRegularEdLessonAfterTimeDust(stage);
+    });
     return;
   }
 
   if (stage.type === "final-boss") {
-    renderBossGrammariaResult(grammariaResult, () => {
+    finalizeBossVictoryWithResult(stage, () => {
       runSceneTransition("ความทรงจำสุดท้ายกำลังกลับคืน...", () => startPostBossDialogue(stage));
     });
     return;
   }
 
-  renderBossGrammariaResult(grammariaResult, () => {
+  finalizeBossVictoryWithResult(stage, () => {
     runSceneTransition(`ได้รับ ${stage.reward.fragment}`, () => startPostBossDialogue(stage));
   });
 }
@@ -8800,6 +8987,10 @@ function resolvePlayerAttack(chargePercent = 0) {
     const chargeDamage = calculateChargeDamage(baseDamage, normalizedChargePercent);
     damage = chargeDamage.finalDamage;
     state.enemyHp = clamp(state.enemyHp - damage, 0, 80);
+    recordPlayerDamage(damage, "grammariaCharge", {
+      chargePercent: normalizedChargePercent
+    });
+    recordChargeBonusDamage(chargeDamage.bonusDamage);
     triggerEnemyHitFeedback(damage);
     state.grammaria += 20;
     recordGrammariaChargeUse(normalizedChargePercent);
@@ -9243,6 +9434,8 @@ function finishEnemyAttackSequence() {
   totalDamage = Math.round(totalDamage);
   state.playerHp = clamp(state.playerHp - totalDamage, 0, 100);
   state.enemyHp = clamp(state.enemyHp - totalCounterDamage, 0, 80);
+  recordBossDamage(totalDamage, "legacyEnemyAttack");
+  recordParryCounterDamage(totalCounterDamage, "legacyParryCounter");
   if (totalDamage > 0) {
     playAttackSfx();
   }
