@@ -163,6 +163,46 @@ const PARRY_BALANCE_CONFIG = {
 };
 const PARRY_BAR_ARM_DELAY_MS = 120;
 
+const EARLY_BOSS_BALANCE = {
+  timeDust: {
+    minMaxHp: 120,
+    hpMultiplier: 1.35
+  },
+  echoTick: {
+    minMaxHp: 140,
+    hpMultiplier: 1.35
+  },
+  echoTrick: {
+    minMaxHp: 140,
+    hpMultiplier: 1.35
+  },
+  edForger: {
+    minMaxHp: 180,
+    hpMultiplier: 1.4
+  },
+  yesterdaySprite: {
+    minMaxHp: 190,
+    hpMultiplier: 1.4
+  },
+  yesterdaySpirit: {
+    minMaxHp: 190,
+    hpMultiplier: 1.4
+  }
+};
+
+const FOCUS_BALANCE_CONFIG = {
+  correctApGain: 1,
+  wrongApGain: 0,
+  focusDamageBonusPercent: 15,
+  maxFocusStacks: 1,
+  refreshBuffInsteadOfStacking: true,
+  buffAppliesToNextAttackOnly: true,
+  allowFocusStackingWithGrammariaCharge: true,
+  maxCombinedBonusPercent: 60,
+  consecutiveFocusPenaltyEnabled: true,
+  maxUsefulConsecutiveFocusUses: 1
+};
+
 const BOSS_POINT_PARRY_CONFIGS = {
   edForger: {
     counterDamage: 4,
@@ -2712,6 +2752,141 @@ function transitionToRegularEdLessonAfterTimeDust(stage) {
 }
 
 const ACT_MAX_AP = 5;
+
+function normalizeBossBalanceKey(stage) {
+  const raw = [
+    stage?.id,
+    stage?.enemy,
+    stage?.enemyId,
+    stage?.bossId,
+    stage?.title,
+    stage?.thaiEnemy
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (raw.includes("time") && raw.includes("dust")) {
+    return "timeDust";
+  }
+  if (raw.includes("echo") && raw.includes("tick")) {
+    return "echoTick";
+  }
+  if (raw.includes("echo") && raw.includes("trick")) {
+    return "echoTrick";
+  }
+  if (raw.includes("forger") || raw.includes("ed-forger") || raw.includes("-ed")) {
+    return "edForger";
+  }
+  if (raw.includes("yesterday") && raw.includes("sprite")) {
+    return "yesterdaySprite";
+  }
+  if (raw.includes("yesterday") && raw.includes("spirit")) {
+    return "yesterdaySpirit";
+  }
+  if (raw.includes("ภูติเมื่อวาน") || raw.includes("ภูตเมื่อวาน")) {
+    return "yesterdaySprite";
+  }
+
+  return "";
+}
+
+function getBalancedBossMaxHp(stage, baseHp = 100) {
+  if (isFinalBossStage(stage)) {
+    return baseHp;
+  }
+
+  const normalizedBaseHp = Math.max(1, Number(stage?.enemyMaxHp || stage?.maxHp || stage?.hp || baseHp) || baseHp);
+  const bossKey = normalizeBossBalanceKey(stage);
+  const balance = EARLY_BOSS_BALANCE[bossKey];
+  if (!balance) {
+    return normalizedBaseHp;
+  }
+
+  const multipliedHp = Math.round(normalizedBaseHp * (balance.hpMultiplier || 1));
+  const minHp = Number(balance.minMaxHp || normalizedBaseHp);
+  const balancedMaxHp = Math.max(normalizedBaseHp, minHp, multipliedHp);
+  console.log("[Balance] boss hp", {
+    stageId: stage?.id,
+    enemy: stage?.enemy,
+    baseHp: normalizedBaseHp,
+    balancedMaxHp
+  });
+  return balancedMaxHp;
+}
+
+function applyFocusBuffFromMeditation() {
+  const battle = state.actBattle;
+  if (!battle) {
+    return null;
+  }
+
+  const hadActiveBuff = Boolean(battle.focusBuff?.active);
+  battle.focusBuff = {
+    active: true,
+    bonusPercent: FOCUS_BALANCE_CONFIG.focusDamageBonusPercent,
+    stacks: FOCUS_BALANCE_CONFIG.maxFocusStacks,
+    source: "meditation",
+    appliesToNextAttackOnly: FOCUS_BALANCE_CONFIG.buffAppliesToNextAttackOnly,
+    improveCharmRoll: true
+  };
+  battle.consecutiveFocusUses = (battle.consecutiveFocusUses || 0) + 1;
+  return { hadActiveBuff, focusBuff: battle.focusBuff };
+}
+
+function applyFocusBonusToDamage(baseDamage, focusBuff = null) {
+  if (!focusBuff?.active) {
+    return {
+      damage: baseDamage,
+      focusBonusDamage: 0,
+      focusBonusPercent: 0
+    };
+  }
+
+  const focusBonusPercent = Math.min(
+    Number(focusBuff.bonusPercent || 0),
+    FOCUS_BALANCE_CONFIG.focusDamageBonusPercent
+  );
+  const focusBonusDamage = Math.round(baseDamage * (focusBonusPercent / 100));
+  const damage = baseDamage + focusBonusDamage;
+  console.log("[FocusBalance] applied to damage", {
+    baseDamage,
+    focusBonusPercent,
+    focusBonusDamage,
+    finalDamage: damage
+  });
+  return {
+    damage,
+    focusBonusDamage,
+    focusBonusPercent
+  };
+}
+
+function capCombinedDamageBonus(baseDamage, bonuses = {}) {
+  const focusPercent = Number(bonuses.focusPercent || 0);
+  const chargePercent = Number(bonuses.chargePercent || 0);
+  const totalPercent = Math.min(
+    focusPercent + chargePercent,
+    FOCUS_BALANCE_CONFIG.maxCombinedBonusPercent
+  );
+  const bonusDamage = Math.round(baseDamage * (totalPercent / 100));
+  return {
+    totalPercent,
+    bonusDamage,
+    finalDamage: baseDamage + bonusDamage
+  };
+}
+
+function clearFocusBuffAfterAttack(battle) {
+  if (!battle?.focusBuff) {
+    return;
+  }
+  battle.focusBuff.active = false;
+  battle.focusBuff.stacks = 0;
+  battle.focusBuff.bonusPercent = 0;
+  battle.focusBuff = null;
+  battle.consecutiveFocusUses = 0;
+}
 
 function getActBattle() {
   return state.actBattle;
@@ -6841,14 +7016,15 @@ function startActBattle(stageIndex) {
     return;
   }
   resetVictorySceneMusicForBattle();
-  const enemyMaxHp = isFinalBossStage(stage) ? 140 : 100;
+  const baseEnemyMaxHp = isFinalBossStage(stage) ? 140 : 100;
+  const enemyMaxHp = getBalancedBossMaxHp(stage, baseEnemyMaxHp);
   state.timeDustTransitionComplete = false;
   state.actStageIndex = stageIndex;
   state.actBattle = {
     stage,
     questionIndex: 0,
     correctAnswers: 0,
-    damagePerCorrect: Math.ceil(enemyMaxHp / questionCount),
+    damagePerCorrect: Math.ceil(baseEnemyMaxHp / questionCount),
     turnNumber: 1,
     awaitingParry: false,
     awaitingPrepare: false,
@@ -7000,19 +7176,34 @@ function chooseActFocusAnswer(option, question) {
   feedback.className = "answer-feedback";
   if (isCorrect) {
     recordCorrectAnswerForGrammaria();
-    gainActAP(2);
-    battle.focusBuff = {
-      damageMultiplier: 1.25,
-      critBonus: 0.05,
-      improveCharmRoll: true
-    };
-    feedback.innerHTML = `<strong>ตั้งสมาธิสำเร็จ!</strong><br>ฟื้น AP +2 และการโจมตีครั้งถัดไปทรงพลังขึ้น<br>${question.explanation || ""}`;
-    els.battleMessage.textContent = "Grammaria นิ่งขึ้น การโจมตีครั้งถัดไปได้รับ Focus Buff";
+    const apGain = FOCUS_BALANCE_CONFIG.correctApGain;
+    gainActAP(apGain);
+    const focusResult = applyFocusBuffFromMeditation();
+    const focusBonusPercent = focusResult?.focusBuff?.bonusPercent || FOCUS_BALANCE_CONFIG.focusDamageBonusPercent;
+    feedback.innerHTML = focusResult?.hadActiveBuff
+      ? `<strong>ตั้งสมาธิสำเร็จ!</strong><br>สมาธิของเจ้ายังคงมั่นคง โบนัสเดิมถูกรีเฟรช แต่จะไม่ซ้อนทับ<br>${question.explanation || ""}`
+      : `<strong>ตั้งสมาธิสำเร็จ!</strong><br>ได้รับ AP +${apGain} และพลังโจมตีครั้งถัดไปเพิ่มขึ้น ${focusBonusPercent}%<br>${question.explanation || ""}`;
+    els.battleMessage.textContent = focusResult?.hadActiveBuff
+      ? "สมาธิของเจ้ายังคงมั่นคง โบนัสเดิมถูกรีเฟรช แต่จะไม่ซ้อนทับ"
+      : `สมาธิของเจ้าสงบลง ได้รับ AP +${apGain} และพลังโจมตีครั้งถัดไปเพิ่มขึ้น ${focusBonusPercent}%`;
+    console.log("[FocusBalance] meditation result", {
+      correct: true,
+      apGain,
+      focusBonusPercent: battle.focusBuff?.bonusPercent || 0,
+      stacks: battle.focusBuff?.stacks || 0
+    });
   } else {
     recordWrongAnswerForGrammaria();
-    gainActAP(1);
-    feedback.innerHTML = `<strong>สมาธิยังไม่นิ่ง</strong><br>ฟื้น AP +1 คำตอบที่ถูกคือ <strong>${correctAnswer}</strong><br>${question.explanation || ""}`;
-    els.battleMessage.textContent = "ยังรวบรวมสมาธิได้บางส่วน ฟื้น AP +1";
+    const apGain = FOCUS_BALANCE_CONFIG.wrongApGain;
+    gainActAP(apGain);
+    feedback.innerHTML = `<strong>สมาธิยังไม่นิ่งพอ</strong><br>รอบนี้ไม่ได้รับโบนัส คำตอบที่ถูกคือ <strong>${correctAnswer}</strong><br>${question.explanation || ""}`;
+    els.battleMessage.textContent = "สมาธิยังไม่นิ่งพอ รอบนี้ไม่ได้รับโบนัส";
+    console.log("[FocusBalance] meditation result", {
+      correct: false,
+      apGain,
+      focusBonusPercent: battle.focusBuff?.bonusPercent || 0,
+      stacks: battle.focusBuff?.stacks || 0
+    });
   }
 
   els.answerOptions.appendChild(feedback);
@@ -7840,9 +8031,6 @@ function resolveActCharmAttack(charm, chargePercent = 0) {
   const bonusLines = [`เลือก ${rankLabel} ${charm.name}`, `Grammaria Charge: ${normalizedChargePercent}%`];
   const effects = state.battleActiveEffects || {};
   const focusBuff = battle.focusBuff || null;
-  if (focusBuff?.critBonus) {
-    effects.criticalChanceBonus += focusBuff.critBonus;
-  }
   if (battle.criticalCounterReady) {
     effects.forceCriticalNextAttack += 1;
     bonusLines.push("Critical Counter ทำงานจาก Perfect Point Parry");
@@ -7854,13 +8042,33 @@ function resolveActCharmAttack(charm, chargePercent = 0) {
   const isCrit = damageResult.isCrit;
   const stunChance = damageResult.stunChance;
 
-  const chargeDamage = calculateChargeDamage(totalDamage, normalizedChargePercent);
-  totalDamage = chargeDamage.finalDamage;
-  bonusLines.push(buildChargeFeedback(chargeDamage.percent, totalDamage - chargeDamage.bonusDamage, chargeDamage.bonusDamage, chargeDamage.finalDamage));
-  if (focusBuff?.damageMultiplier) {
-    totalDamage = Math.round(totalDamage * focusBuff.damageMultiplier);
-    bonusLines.push("Focus Buff เพิ่มพลังโจมตี");
+  let chargeDamage = calculateChargeDamage(totalDamage, normalizedChargePercent);
+  if (focusBuff?.active) {
+    const focusPercent = Math.min(
+      Number(focusBuff.bonusPercent || 0),
+      FOCUS_BALANCE_CONFIG.focusDamageBonusPercent
+    );
+    const combinedDamage = capCombinedDamageBonus(totalDamage, {
+      focusPercent,
+      chargePercent: normalizedChargePercent
+    });
+    chargeDamage = {
+      percent: combinedDamage.totalPercent,
+      bonusDamage: combinedDamage.bonusDamage,
+      finalDamage: combinedDamage.finalDamage
+    };
+    console.log("[FocusBalance] applied to damage", {
+      baseDamage: totalDamage,
+      focusBonusPercent: focusPercent,
+      focusBonusDamage: Math.round(totalDamage * (focusPercent / 100)),
+      finalDamage: chargeDamage.finalDamage
+    });
+    totalDamage = chargeDamage.finalDamage;
+    bonusLines.push(`พลังสมาธิช่วยเสริมการโจมตี +${focusPercent}%`);
+  } else {
+    totalDamage = chargeDamage.finalDamage;
   }
+  bonusLines.push(buildChargeFeedback(chargeDamage.percent, totalDamage - chargeDamage.bonusDamage, chargeDamage.bonusDamage, chargeDamage.finalDamage));
   if (battle.criticalCounterReady) {
     totalDamage = Math.round(totalDamage * 1.15);
   }
@@ -7881,7 +8089,7 @@ function resolveActCharmAttack(charm, chargePercent = 0) {
   }
   recordGrammariaChargeUse(normalizedChargePercent);
   battle.pendingPlayerAttack = null;
-  battle.focusBuff = null;
+  clearFocusBuffAfterAttack(battle);
   battle.criticalCounterReady = false;
 
   tryStunBoss(stunChance, bonusLines);
