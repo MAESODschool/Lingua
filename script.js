@@ -1128,7 +1128,7 @@ function assetPath(fileName) {
 
 const MAIN_CHARACTER_IMAGE_PATH = "assets/characters/main-character-idle-transparent-clean-optimized.webp";
 const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
-const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-new-transparent.webp";
+const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-v2-transparent.webp";
 const TEACHER_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("master-verion.png");
 const GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-animated.gif";
 const TIME_DUST_IMAGE_PATH = "assets/characters/timedust-transparent-clean-optimized.webp";
@@ -1175,7 +1175,7 @@ function setupMainCharacterGifs() {
 }
 
 function handleTeacherCharacterGifError(img) {
-  console.warn("[Character] master-verion-new-transparent.webp failed to load");
+  console.warn("[Character] master-verion-v2-transparent.webp failed to load");
   if (img.dataset.fallbackApplied === "true") {
     return;
   }
