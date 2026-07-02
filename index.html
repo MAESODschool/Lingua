@@ -10,6 +10,11 @@
       const isMobile = window.matchMedia("(max-width: 768px)").matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       if (params.has("lite") || isMobile) {
         document.documentElement.classList.add("mobile-lite");
+        if (params.has("noanim")) {
+          document.documentElement.classList.add("mobile-no-animation");
+        } else {
+          document.documentElement.classList.add("mobile-balanced");
+        }
         document.documentElement.style.setProperty("--grammar-hall-bg", "url(\"assets/backgrounds/grammar-hall-mobile-static.webp\")");
       }
     })();

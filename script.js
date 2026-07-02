@@ -1138,6 +1138,10 @@ function isPerfDebugMode() {
   return new URLSearchParams(window.location.search).has("perf");
 }
 
+function isNoAnimationDebugMode() {
+  return new URLSearchParams(window.location.search).has("noanim");
+}
+
 function isLowPowerDevice() {
   if (isMobileDevice()) {
     return true;
@@ -1163,6 +1167,11 @@ const PERFORMANCE_CONFIG = {
   disableTypewriterSfxOnMobile: true,
   disableNonEssentialParticlesOnMobile: true,
   preloadOnlyCurrentSceneOnMobile: true,
+  mobileBalancedAnimation: true,
+  allowMobileCharacterIdle: true,
+  allowMobileSceneMotion: true,
+  disableAnimatedGifOnMobile: true,
+  maxMobileAnimatedCharacters: 2,
   useMobileCharacterAssets: isMobileLiteMode(),
   useStaticBackgroundOnMobile: true,
   reduceCssEffectsOnMobile: true,
@@ -1171,6 +1180,8 @@ const PERFORMANCE_CONFIG = {
 };
 
 document.documentElement.classList.toggle("mobile-lite", PERFORMANCE_CONFIG.mobileLiteMode);
+document.documentElement.classList.toggle("mobile-balanced", PERFORMANCE_CONFIG.mobileLiteMode && PERFORMANCE_CONFIG.mobileBalancedAnimation && !isNoAnimationDebugMode());
+document.documentElement.classList.toggle("mobile-no-animation", isNoAnimationDebugMode());
 console.log("[Performance] mobileMode =", PERFORMANCE_CONFIG.mobileMode);
 console.log("[Performance] mobileLiteMode =", PERFORMANCE_CONFIG.mobileLiteMode);
 window.PERFORMANCE_CONFIG = PERFORMANCE_CONFIG;
@@ -1219,6 +1230,17 @@ function warnIfAnimatedAssetUsed(src, label = "asset") {
   }
 }
 
+function warnIfAnimatedAssetOnMobile(src) {
+  if (!PERFORMANCE_CONFIG.mobileLiteMode || !src) {
+    return;
+  }
+
+  const lower = String(src).toLowerCase();
+  if (lower.endsWith(".gif") || lower.includes("animated")) {
+    console.warn("[Performance] Animated asset used on mobile:", src);
+  }
+}
+
 function pickCharacterAsset(desktopSrc, mobileStaticSrc) {
   const src = PERFORMANCE_CONFIG.mobileLiteMode && mobileStaticSrc
     ? mobileStaticSrc
@@ -1229,6 +1251,7 @@ function pickCharacterAsset(desktopSrc, mobileStaticSrc) {
   }
 
   perfLog("[Perf] character asset used:", src);
+  warnIfAnimatedAssetOnMobile(src);
   return src;
 }
 
@@ -1237,6 +1260,7 @@ function pickBackgroundAsset(desktopSrc, mobileStaticSrc) {
     ? mobileStaticSrc
     : desktopSrc;
   warnIfAnimatedAssetUsed(src, "background");
+  warnIfAnimatedAssetOnMobile(src);
   perfLog("[Perf] background asset used:", src);
   return src;
 }
@@ -1290,7 +1314,44 @@ function isPerformanceStaticBackgroundMode() {
 function updatePerformanceMode() {
   document.documentElement.classList.toggle("performance-static-bg", isPerformanceStaticBackgroundMode());
   document.documentElement.classList.toggle("mobile-lite", PERFORMANCE_CONFIG.mobileLiteMode);
+  document.documentElement.classList.toggle("mobile-balanced", PERFORMANCE_CONFIG.mobileLiteMode && PERFORMANCE_CONFIG.mobileBalancedAnimation && !isNoAnimationDebugMode());
+  document.documentElement.classList.toggle("mobile-no-animation", isNoAnimationDebugMode());
   document.documentElement.style.setProperty("--grammar-hall-bg", `url("${pickGrammarHallBackgroundAsset()}")`);
+}
+
+function clearMobileActiveCharacters() {
+  [
+    els?.storyWanderer,
+    els?.storyVerion,
+    els?.battlePlayer,
+    els?.battleEnemy,
+    els?.battleEnemySprite
+  ].forEach(element => {
+    if (!element) {
+      return;
+    }
+    element.classList.remove("is-active-character", "is-active-enemy", "is-active-teacher");
+  });
+}
+
+function updateMobileBalancedActiveCharacters(sceneName) {
+  clearMobileActiveCharacters();
+
+  if (!PERFORMANCE_CONFIG.mobileLiteMode || !PERFORMANCE_CONFIG.mobileBalancedAnimation || isNoAnimationDebugMode()) {
+    return;
+  }
+
+  if (sceneName === "story") {
+    els.storyWanderer?.classList.add("is-active-character");
+    els.storyVerion?.classList.add("is-active-character", "is-active-teacher");
+    return;
+  }
+
+  if (sceneName === "battle") {
+    els.battlePlayer?.classList.add("is-active-character");
+    els.battleEnemy?.classList.add("is-active-enemy");
+    els.battleEnemySprite?.classList.add("is-active-enemy");
+  }
 }
 
 function createMainCharacterElement(className = "") {
@@ -1969,6 +2030,7 @@ function showScene(name) {
   }
   Object.values(scenes).forEach(scene => scene.classList.remove("active"));
   scenes[name].classList.add("active");
+  updateMobileBalancedActiveCharacters(name);
   playBgmForScene(name);
 }
 
@@ -8979,8 +9041,10 @@ function updateBattleEnemyVisual(stage = null) {
         els.battleEnemySprite.src = fallbackSprite;
       };
     }
+    warnIfAnimatedAssetOnMobile(sprite);
     els.battleEnemySprite.src = sprite;
     els.battleEnemySprite.alt = enemyName;
+    els.battleEnemySprite.classList.toggle("is-active-enemy", PERFORMANCE_CONFIG.mobileLiteMode && PERFORMANCE_CONFIG.mobileBalancedAnimation && !isNoAnimationDebugMode());
   }
 
   if (els.battleEnemyName) {

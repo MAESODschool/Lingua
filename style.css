@@ -2006,15 +2006,6 @@ html.mobile-lite {
   --grammar-hall-bg: url("assets/backgrounds/grammar-hall-mobile-static.webp");
 }
 
-html.mobile-lite *,
-html.mobile-lite *::before,
-html.mobile-lite *::after {
-  animation-duration: 0.001ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.001ms !important;
-  scroll-behavior: auto !important;
-}
-
 html.mobile-lite .lesson-screen,
 html.mobile-lite .lesson-bg-magic,
 html.mobile-lite #battleScene,
@@ -2062,7 +2053,6 @@ html.mobile-lite img {
   box-shadow: none !important;
   text-shadow: none !important;
   will-change: auto !important;
-  transform: translateZ(0);
 }
 
 html.mobile-lite .lesson-scene,
@@ -2078,6 +2068,102 @@ html.mobile-lite .card {
   backdrop-filter: none !important;
   filter: none !important;
   box-shadow: none !important;
+}
+
+@keyframes mobileCharacterIdle {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -6px, 0) scale(1.015);
+  }
+}
+
+@keyframes mobileTeacherIdle {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -5px, 0) scale(1.012);
+  }
+}
+
+@keyframes mobileBossIdle {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -4px, 0) scale(1.01);
+  }
+}
+
+@keyframes mobileSceneBreath {
+  0%, 100% {
+    transform: scale(1) translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.015) translate3d(0, -3px, 0);
+    opacity: 0.98;
+  }
+}
+
+html.mobile-balanced .vn-character,
+html.mobile-balanced .combatant .character-avatar,
+html.mobile-balanced .enemy-sprite {
+  animation: none;
+}
+
+html.mobile-balanced .vn-character.is-active-character:not(.is-active-teacher),
+html.mobile-balanced #battlePlayer.is-active-character:not(.player-attack-motion) .character-avatar {
+  animation: mobileCharacterIdle 4.8s ease-in-out infinite !important;
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+html.mobile-balanced .vn-character.is-active-teacher {
+  animation: mobileTeacherIdle 5.4s ease-in-out infinite !important;
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+html.mobile-balanced #battleEnemy:not(.enemy-attack-motion):not(.enemy-hit) .enemy-sprite.is-active-enemy {
+  animation: mobileBossIdle 4.2s ease-in-out infinite !important;
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+html.mobile-balanced .lesson-bg-magic::before {
+  content: "";
+  display: block !important;
+  position: absolute;
+  inset: -2%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(10, 8, 32, 0.08), rgba(16, 8, 42, 0.14)),
+    var(--grammar-hall-bg);
+  background-size: cover;
+  background-position: center;
+  animation: mobileSceneBreath 12s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+html.mobile-balanced .lesson-bg-magic > * {
+  position: relative;
+  z-index: 1;
+}
+
+html.mobile-no-animation .vn-character,
+html.mobile-no-animation .combatant .character-avatar,
+html.mobile-no-animation .enemy-sprite,
+html.mobile-no-animation .character-sprite,
+html.mobile-no-animation .teacher-sprite,
+html.mobile-no-animation .boss-sprite,
+html.mobile-no-animation .npc-sprite,
+html.mobile-no-animation .dialogue-character,
+html.mobile-no-animation .battle-character {
+  animation: none !important;
 }
 
 .hero-card,
@@ -2425,33 +2511,33 @@ html.mobile-lite .card {
 }
 
 /* Animated character files already contain motion; prevent extra CSS zoom/breathing. */
-.vn-character:has(.main-character-gif),
-.vn-character:has(.main-character-gif-fallback),
-.vn-character:has(.teacher-character-gif),
-.character-static-holder {
+html:not(.mobile-balanced) .vn-character:has(.main-character-gif),
+html:not(.mobile-balanced) .vn-character:has(.main-character-gif-fallback),
+html:not(.mobile-balanced) .vn-character:has(.teacher-character-gif),
+html:not(.mobile-balanced) .character-static-holder {
   animation: none !important;
   transform: none !important;
 }
 
-.main-character-gif,
-.main-character-gif-fallback,
-.teacher-character-gif,
-.timedust-gif,
-.echo-trick-gif,
-.yesterday-spirit-gif,
-.wisp-avatar.timedust-gif,
-.wisp-avatar.echo-trick-gif,
-.wisp-avatar.yesterday-spirit-gif,
-.character-static-holder .character-avatar,
-.vn-character.is-speaking .main-character-gif,
-.vn-character.is-speaking .main-character-gif-fallback,
-.vn-character.is-speaking .teacher-character-gif,
-.combatant .main-character-gif,
-.combatant .main-character-gif-fallback,
-.combatant.is-speaking .main-character-gif,
-.combatant.is-speaking .main-character-gif-fallback,
-.combatant.is-active-turn .main-character-gif,
-.combatant.is-active-turn .main-character-gif-fallback {
+html:not(.mobile-balanced) .main-character-gif,
+html:not(.mobile-balanced) .main-character-gif-fallback,
+html:not(.mobile-balanced) .teacher-character-gif,
+html:not(.mobile-balanced) .timedust-gif,
+html:not(.mobile-balanced) .echo-trick-gif,
+html:not(.mobile-balanced) .yesterday-spirit-gif,
+html:not(.mobile-balanced) .wisp-avatar.timedust-gif,
+html:not(.mobile-balanced) .wisp-avatar.echo-trick-gif,
+html:not(.mobile-balanced) .wisp-avatar.yesterday-spirit-gif,
+html:not(.mobile-balanced) .character-static-holder .character-avatar,
+html:not(.mobile-balanced) .vn-character.is-speaking .main-character-gif,
+html:not(.mobile-balanced) .vn-character.is-speaking .main-character-gif-fallback,
+html:not(.mobile-balanced) .vn-character.is-speaking .teacher-character-gif,
+html:not(.mobile-balanced) .combatant .main-character-gif,
+html:not(.mobile-balanced) .combatant .main-character-gif-fallback,
+html:not(.mobile-balanced) .combatant.is-speaking .main-character-gif,
+html:not(.mobile-balanced) .combatant.is-speaking .main-character-gif-fallback,
+html:not(.mobile-balanced) .combatant.is-active-turn .main-character-gif,
+html:not(.mobile-balanced) .combatant.is-active-turn .main-character-gif-fallback {
   animation: none !important;
   transform: translateZ(0) !important;
   backface-visibility: hidden;
