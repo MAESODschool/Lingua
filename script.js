@@ -2184,6 +2184,40 @@ function showOnlyBattlePanel(panelToShow) {
   }
 }
 
+function enableBattleButton(button) {
+  if (!button) {
+    return;
+  }
+
+  button.disabled = false;
+  button.removeAttribute("disabled");
+  button.setAttribute("aria-disabled", "false");
+  button.classList.remove("disabled", "is-disabled", "is-locked");
+  button.style.pointerEvents = "";
+}
+
+function disableBattleButton(button) {
+  if (!button) {
+    return;
+  }
+
+  button.disabled = true;
+  button.setAttribute("aria-disabled", "true");
+  button.classList.add("disabled");
+}
+
+function resetBattleContinueControls() {
+  enableBattleButton(els.continueBattleButton);
+  enableBattleButton(els.bossIntentReadyButton);
+}
+
+function showBattleContinueButton(label, onClick) {
+  enableBattleButton(els.continueBattleButton);
+  els.continueBattleButton.textContent = label;
+  els.continueBattleButton.onclick = onClick;
+  els.continueBattleButton.classList.remove("hidden");
+}
+
 function setBattleTurnOwner(owner) {
   els.battlePlayer.classList.toggle("is-active-turn", owner === "player");
   els.battleEnemy.classList.toggle("is-active-turn", owner === "enemy");
@@ -2211,7 +2245,7 @@ function disableBattleInputsForDefeat() {
     els.bossIntentReadyButton
   ].filter(Boolean).forEach(container => {
     if (container.tagName === "BUTTON") {
-      container.disabled = true;
+      disableBattleButton(container);
       return;
     }
     container.querySelectorAll("button").forEach(button => {
@@ -2480,13 +2514,10 @@ function showTimeDustNextLessonFallback(stage) {
     return;
   }
 
-  els.continueBattleButton.textContent = "ไปบทเรียนถัดไป";
-  els.continueBattleButton.disabled = false;
-  els.continueBattleButton.classList.remove("hidden", "disabled");
-  els.continueBattleButton.onclick = () => {
+  showBattleContinueButton("ไปบทเรียนถัดไป", () => {
     console.log("[TimeDust] Fallback button clicked");
     transitionToRegularEdLessonAfterTimeDust(stage);
-  };
+  });
 }
 
 function transitionToRegularEdLessonAfterTimeDust(stage) {
@@ -2637,9 +2668,12 @@ function beginActPlayerTurn(message = "") {
   battle.pendingPlayerAttack = null;
   battle.pendingBossAction = null;
   battle.pendingBossTurn = null;
+  battle.bossIntentReadyConsumed = false;
   battle.awaitingParry = false;
   battle.awaitingPrepare = false;
   showOnlyBattlePanel(els.actionMenu);
+  resetBattleContinueControls();
+  els.continueBattleButton.classList.add("hidden");
   els.battleMessage.textContent = message || (getActAP() <= 0
     ? "AP หมดชั่วคราว ใช้ตั้งสมาธิเพื่อฟื้น AP"
     : `${battle.stage.title} - เลือกการกระทำ`);
@@ -6585,6 +6619,7 @@ function startActBattle(stageIndex) {
     awaitingPrepare: false,
     pendingBossAction: null,
     pendingBossTurn: null,
+    bossIntentReadyConsumed: false,
     bossQuestionIndex: 0,
     pendingPlayerAttack: null,
     recentCharmIds: [],
@@ -6638,6 +6673,9 @@ function startActBattle(stageIndex) {
   els.battleTitle.textContent = stage.type === "final-boss" ? "Final Boss: The Memory Breaker" : stage.title;
   updateBattleEnemyVisual(stage);
   updateBattleStats();
+  resetBattleContinueControls();
+  els.continueBattleButton.classList.add("hidden");
+  els.bossIntentReadyButton?.classList.remove("hidden");
   setActionButtonsEnabled(false);
   showScene("battle");
   beginActPlayerTurn("เลือกการกระทำเพื่อเริ่มเทิร์นของผู้พเนจร");
@@ -7500,9 +7538,10 @@ function chooseActCharmV2(charm) {
 
   if (charm.effectType === "extraTurnChance" && Math.random() < (charm.value || 0)) {
     els.battleMessage.textContent += "\nTime Skip ทำงาน! ได้เล่นต่อทันที";
-    els.continueBattleButton.textContent = battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "คำถามถัดไป";
-    els.continueBattleButton.onclick = continueActBattle;
-    els.continueBattleButton.classList.remove("hidden");
+    showBattleContinueButton(
+      battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "คำถามถัดไป",
+      continueActBattle
+    );
     return;
   }
 
@@ -7624,9 +7663,10 @@ function resolveActCharmAttack(charm, chargePercent = 0) {
 
   if (charm.effectType === "extraTurnChance" && Math.random() < (charm.value || 0)) {
     els.battleMessage.textContent += "\nTime Skip ทำงาน! ได้เล่นต่อทันที";
-    els.continueBattleButton.textContent = battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "เทิร์นถัดไป";
-    els.continueBattleButton.onclick = continueActBattle;
-    els.continueBattleButton.classList.remove("hidden");
+    showBattleContinueButton(
+      battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "เทิร์นถัดไป",
+      continueActBattle
+    );
     return;
   }
 
@@ -7797,7 +7837,39 @@ function showBossIntentPanel(turn) {
   els.bossIntentName.textContent = enemyName;
   els.bossIntentText.textContent = battle.pendingBossAction?.warning || "ศัตรูกำลังเตรียมโจมตี";
   els.bossIntentType.textContent = `รูปแบบถัดไป: ${bossIntentLabel(turn)}`;
+  battle.bossIntentReadyConsumed = false;
+  enableBattleButton(els.bossIntentReadyButton);
+  els.bossIntentReadyButton.textContent = "เตรียมพร้อม";
+  els.bossIntentReadyButton.classList.remove("hidden");
+  els.bossIntentReadyButton.onclick = handleBossIntentReady;
   els.battleMessage.textContent = "อ่านสัญญาณศัตรูก่อนเริ่มจังหวะป้องกัน";
+}
+
+function handleBossIntentReady(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  const battle = state.actBattle;
+  if (!battle || !battle.pendingBossTurn || !battle.pendingBossAction) {
+    console.warn("[BossIntent] ready ignored: missing pending boss turn/action");
+    return;
+  }
+
+  if (isActBattleEnded(battle)) {
+    console.warn("[BossIntent] ready ignored: battle already ended");
+    return;
+  }
+
+  if (battle.bossIntentReadyConsumed) {
+    console.warn("[BossIntent] ready ignored: already consumed");
+    return;
+  }
+
+  battle.bossIntentReadyConsumed = true;
+  disableBattleButton(els.bossIntentReadyButton);
+  runNextBossTurnStep();
 }
 
 function startActBossWarning() {
@@ -7819,9 +7891,10 @@ function startActBossWarning() {
     showOnlyBattlePanel(null);
     setBattleTurnOwner("player");
     els.battleMessage.textContent = "บอสติด Stun! การโจมตีครั้งถัดไปถูกหยุดไว้";
-    els.continueBattleButton.textContent = battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "คำถามถัดไป";
-    els.continueBattleButton.onclick = continueActBattle;
-    els.continueBattleButton.classList.remove("hidden");
+    showBattleContinueButton(
+      battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "คำถามถัดไป",
+      continueActBattle
+    );
     return;
   }
 
@@ -8017,9 +8090,10 @@ function resolvePointParry(result) {
     }
   }
 
-  els.continueBattleButton.textContent = hasMoreBossSteps ? "ดำเนินต่อ" : (battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "เทิร์นถัดไป");
-  els.continueBattleButton.onclick = hasMoreBossSteps ? runNextBossTurnStep : continueActBattle;
-  els.continueBattleButton.classList.remove("hidden");
+  showBattleContinueButton(
+    hasMoreBossSteps ? "ดำเนินต่อ" : (battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "เทิร์นถัดไป"),
+    hasMoreBossSteps ? runNextBossTurnStep : continueActBattle
+  );
   battle.justRevived = false;
 }
 
@@ -8047,9 +8121,7 @@ function showBossAttackStep() {
   showOnlyBattlePanel(null);
   setBattleTurnOwner("enemy");
   els.battleMessage.textContent = `${action.warning}${extraWarning}${bossLine}`;
-  els.continueBattleButton.textContent = "เตรียมพร้อม";
-  els.continueBattleButton.onclick = prepareActParry;
-  els.continueBattleButton.classList.remove("hidden");
+  showBattleContinueButton("เตรียมพร้อม", prepareActParry);
 }
 
 function showBossQuestionStep() {
@@ -8131,9 +8203,7 @@ function chooseBossQuestionAnswer(option, question) {
       : "ยังไม่ถูกต้อง! บอสสะสมพลังโจมตีเพิ่มขึ้น";
   }
   battle.justRevived = false;
-  els.continueBattleButton.textContent = "ดำเนินต่อ";
-  els.continueBattleButton.onclick = runNextBossTurnStep;
-  els.continueBattleButton.classList.remove("hidden");
+  showBattleContinueButton("ดำเนินต่อ", runNextBossTurnStep);
 }
 
 function finishBossTurn() {
@@ -8154,9 +8224,10 @@ function finishBossTurn() {
     return;
   }
 
-  els.continueBattleButton.textContent = battle.questionIndex >= battle.stage.questions.length - 1 || state.enemyHp <= 0 ? "รับรางวัล" : "คำถามถัดไป";
-  els.continueBattleButton.onclick = continueActBattle;
-  els.continueBattleButton.classList.remove("hidden");
+  showBattleContinueButton(
+    battle.questionIndex >= battle.stage.questions.length - 1 || state.enemyHp <= 0 ? "รับรางวัล" : "คำถามถัดไป",
+    continueActBattle
+  );
 }
 
 function finalizeBossTurnState() {
@@ -8376,9 +8447,10 @@ function stopActParry(forcedResult = null) {
       return;
     }
   }
-  els.continueBattleButton.textContent = hasMoreBossSteps ? "ดำเนินต่อ" : (battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "คำถามถัดไป");
-  els.continueBattleButton.onclick = hasMoreBossSteps ? runNextBossTurnStep : continueActBattle;
-  els.continueBattleButton.classList.remove("hidden");
+  showBattleContinueButton(
+    hasMoreBossSteps ? "ดำเนินต่อ" : (battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "คำถามถัดไป"),
+    hasMoreBossSteps ? runNextBossTurnStep : continueActBattle
+  );
   battle.justRevived = false;
 }
 
@@ -8403,9 +8475,7 @@ function continueActBattle() {
     battle.questionIndex = 0;
     battle.correctAnswers = 0;
     updateBattleStats();
-    els.continueBattleButton.textContent = "ลองต่อสู้อีกครั้ง";
-    els.continueBattleButton.onclick = () => beginActPlayerTurn("เลือกการกระทำเพื่อเริ่มรอบใหม่");
-    els.continueBattleButton.classList.remove("hidden");
+    showBattleContinueButton("ลองต่อสู้อีกครั้ง", () => beginActPlayerTurn("เลือกการกระทำเพื่อเริ่มรอบใหม่"));
     return;
   }
 
@@ -9151,13 +9221,11 @@ function startEnemyAttack(pattern) {
     ? `${pattern.announce}\nเตรียมปัดป้อง ${pattern.hits} hit ติดต่อกัน!`
     : pattern.announce;
 
-  els.continueBattleButton.textContent = "เตรียมพร้อม";
-  els.continueBattleButton.onclick = () => {
+  showBattleContinueButton("เตรียมพร้อม", () => {
     els.continueBattleButton.classList.add("hidden");
     els.battleMessage.textContent = "จับจังหวะเส้นสีขาวให้เข้าโซนเป้าหมาย ส้ม/เหลือง/เขียว...";
     setTimeout(beginNextParryHit, 420);
-  };
-  els.continueBattleButton.classList.remove("hidden");
+  });
 }
 
 function beginNextParryHit() {
@@ -9538,14 +9606,12 @@ function finishEnemyAttackSequence() {
     return;
   }
 
-  els.continueBattleButton.textContent = "ตาผู้เล่น";
-  els.continueBattleButton.onclick = () => {
+  showBattleContinueButton("ตาผู้เล่น", () => {
     els.battleMessage.textContent = "เลือกการกระทำของเจ้า";
     setActionButtonsEnabled(true);
     setBattleTurnOwner("player");
     showOnlyBattlePanel(els.actionMenu);
-  };
-  els.continueBattleButton.classList.remove("hidden");
+  });
 }
 
 function countParryResults(results) {
@@ -10023,7 +10089,13 @@ els.parryButton.addEventListener("keydown", event => {
 });
 els.gameModalClose.addEventListener("click", closeGameModal);
 els.returnTitleButton.addEventListener("click", () => showScene("login"));
-els.bossIntentReadyButton.addEventListener("click", runNextBossTurnStep);
+els.bossIntentReadyButton.addEventListener("click", handleBossIntentReady);
+els.bossIntentReadyButton.addEventListener("keydown", event => {
+  if (event.key === "Enter" || event.key === " ") {
+    handleBossIntentReady(event);
+  }
+});
+els.bossIntentReadyButton.addEventListener("pointerup", handleBossIntentReady);
 els.muteButton.addEventListener("click", toggleMute);
 
 document.addEventListener("pointerdown", handleButtonSfxPointer, true);
