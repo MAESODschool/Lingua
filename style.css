@@ -14,7 +14,6 @@
   --parchment-ink: #3a2417;
   --glow-blue: #55d7ff;
   --glow-violet: #8c62ff;
-  --grammar-hall-bg: url("assets/backgrounds/grammar-hall-animated.gif");
 }
 
 .ap-pips {
@@ -757,7 +756,7 @@ button {
 
 .main-character-gif {
   animation: none !important;
-  transition: transform 180ms ease, opacity 180ms ease, filter 180ms ease;
+  transition: none;
   transform-origin: center bottom;
   display: block;
   width: 100%;
@@ -797,7 +796,7 @@ button {
 
 .main-character-gif-fallback {
   animation: none !important;
-  transition: transform 180ms ease, opacity 180ms ease, filter 180ms ease;
+  transition: none;
   transform-origin: center bottom;
   display: block;
   object-fit: contain;
@@ -1315,7 +1314,7 @@ h3 {
   overflow: hidden;
   background-image:
     linear-gradient(180deg, rgba(7, 6, 28, 0.42), rgba(13, 8, 39, 0.54)),
-    var(--grammar-hall-bg),
+    url("assets/backgrounds/grammar-hall-animated.gif"),
     url("assets/unity-tower-background.png");
   background-size: cover, cover, cover;
   background-position: center center, center center, center center;
@@ -1463,7 +1462,7 @@ h3 {
   border-radius: 18px;
   background-image:
     linear-gradient(180deg, rgba(10, 8, 32, 0.1), rgba(16, 8, 42, 0.2)),
-    var(--grammar-hall-bg),
+    url("assets/backgrounds/grammar-hall-animated.gif"),
     url("assets/unity-tower-background.png");
   background-size: cover, cover, cover;
   background-position: center center, center center, center center;
@@ -1771,7 +1770,6 @@ h3 {
 .lesson-progress-track i {
   border-radius: inherit;
   background: linear-gradient(180deg, #ffd56a, #8c62ff);
-  transition: opacity 180ms ease, transform 180ms ease, background 180ms ease;
 }
 
 .lesson-main-action,
@@ -1853,7 +1851,7 @@ h3 {
 #battleScene {
   background-image:
     linear-gradient(180deg, rgba(8, 7, 28, 0.36), rgba(15, 9, 38, 0.5)),
-    var(--grammar-hall-bg),
+    url("assets/backgrounds/grammar-hall-animated.gif"),
     url("assets/unity-tower-background.png");
   background-size: cover, cover, cover;
   background-position: center center, center center, center center;
@@ -1944,226 +1942,6 @@ h3 {
   min-height: 0;
 }
 
-html.performance-static-bg .lesson-screen,
-html.performance-static-bg .lesson-bg-magic,
-html.performance-static-bg #battleScene {
-  --grammar-hall-bg: url("assets/backgrounds/grammar-hall-static-mobile.webp");
-  background-image:
-    linear-gradient(180deg, rgba(8, 7, 28, 0.36), rgba(15, 9, 38, 0.5)),
-    var(--grammar-hall-bg),
-    url("assets/unity-tower-background.png");
-}
-
-@media (max-width: 768px), (prefers-reduced-motion: reduce) {
-  :root {
-    --grammar-hall-bg: url("assets/backgrounds/grammar-hall-static-mobile.webp");
-  }
-
-  .lesson-screen,
-  .lesson-bg-magic,
-  #battleScene {
-    background-image:
-      linear-gradient(180deg, rgba(8, 7, 28, 0.36), rgba(15, 9, 38, 0.5)),
-      var(--grammar-hall-bg),
-      url("assets/unity-tower-background.png");
-  }
-
-  .dialogue-panel,
-  .activity-panel,
-  .battle-panel,
-  .game-modal-content {
-    backdrop-filter: none;
-  }
-
-  .main-character-gif,
-  .teacher-character-gif,
-  .timedust-gif,
-  .echo-trick-gif,
-  .yesterday-spirit-gif,
-  .wisp-avatar,
-  .verion-avatar,
-  .wanderer-avatar,
-  #battleScene .combatant {
-    filter: none !important;
-    will-change: auto;
-  }
-
-  .lesson-title-banner,
-  .lesson-controls,
-  .dialogue-panel,
-  .activity-panel,
-  .battle-panel,
-  .combatant,
-  .stat-pill {
-    box-shadow: none;
-  }
-}
-
-html.mobile-lite {
-  --grammar-hall-bg: url("assets/backgrounds/grammar-hall-mobile-static.webp");
-}
-
-html.mobile-lite .lesson-screen,
-html.mobile-lite .lesson-bg-magic,
-html.mobile-lite #battleScene,
-html.mobile-lite .game-scene {
-  background-image:
-    linear-gradient(180deg, rgba(8, 7, 28, 0.36), rgba(15, 9, 38, 0.5)),
-    url("assets/backgrounds/grammar-hall-mobile-static.webp") !important;
-  background-size: cover !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
-}
-
-html.mobile-lite .heavy-glow,
-html.mobile-lite .magic-pulse,
-html.mobile-lite .background-particles,
-html.mobile-lite .floating-runes,
-html.mobile-lite .animated-runes,
-html.mobile-lite .scene-particles,
-html.mobile-lite .sparkles,
-html.mobile-lite .fog,
-html.mobile-lite .mist,
-html.mobile-lite .orbital-runes,
-html.mobile-lite .sky-orbit,
-html.mobile-lite .floating-letter,
-html.mobile-lite .magic-circle,
-html.mobile-lite .library-arch,
-html.mobile-lite .tower-art {
-  display: none !important;
-  animation: none !important;
-  filter: none !important;
-}
-
-html.mobile-lite .character-sprite,
-html.mobile-lite .teacher-sprite,
-html.mobile-lite .boss-sprite,
-html.mobile-lite .npc-sprite,
-html.mobile-lite .dialogue-character,
-html.mobile-lite .battle-character,
-html.mobile-lite .character-avatar,
-html.mobile-lite .wisp-avatar,
-html.mobile-lite .wanderer-avatar,
-html.mobile-lite .verion-avatar,
-html.mobile-lite img {
-  filter: none !important;
-  box-shadow: none !important;
-  text-shadow: none !important;
-  will-change: auto !important;
-}
-
-html.mobile-lite .lesson-scene,
-html.mobile-lite .dialogue-scene,
-html.mobile-lite .battle-scene,
-html.mobile-lite .game-scene,
-html.mobile-lite .dialogue-panel,
-html.mobile-lite .activity-panel,
-html.mobile-lite .battle-panel,
-html.mobile-lite .game-modal-content,
-html.mobile-lite .panel,
-html.mobile-lite .card {
-  backdrop-filter: none !important;
-  filter: none !important;
-  box-shadow: none !important;
-}
-
-@keyframes mobileCharacterIdle {
-  0%, 100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(0, -6px, 0) scale(1.015);
-  }
-}
-
-@keyframes mobileTeacherIdle {
-  0%, 100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(0, -5px, 0) scale(1.012);
-  }
-}
-
-@keyframes mobileBossIdle {
-  0%, 100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(0, -4px, 0) scale(1.01);
-  }
-}
-
-@keyframes mobileSceneBreath {
-  0%, 100% {
-    transform: scale(1) translate3d(0, 0, 0);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.015) translate3d(0, -3px, 0);
-    opacity: 0.98;
-  }
-}
-
-html.mobile-balanced .vn-character,
-html.mobile-balanced .combatant .character-avatar,
-html.mobile-balanced .enemy-sprite {
-  animation: none;
-}
-
-html.mobile-balanced .vn-character.is-active-character:not(.is-active-teacher),
-html.mobile-balanced #battlePlayer.is-active-character:not(.player-attack-motion) .character-avatar {
-  animation: mobileCharacterIdle 4.8s ease-in-out infinite !important;
-  transform-origin: center bottom;
-  will-change: transform;
-}
-
-html.mobile-balanced .vn-character.is-active-teacher {
-  animation: mobileTeacherIdle 5.4s ease-in-out infinite !important;
-  transform-origin: center bottom;
-  will-change: transform;
-}
-
-html.mobile-balanced #battleEnemy:not(.enemy-attack-motion):not(.enemy-hit) .enemy-sprite.is-active-enemy {
-  animation: mobileBossIdle 4.2s ease-in-out infinite !important;
-  transform-origin: center bottom;
-  will-change: transform;
-}
-
-html.mobile-balanced .lesson-bg-magic::before {
-  content: "";
-  display: block !important;
-  position: absolute;
-  inset: -2%;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(10, 8, 32, 0.08), rgba(16, 8, 42, 0.14)),
-    var(--grammar-hall-bg);
-  background-size: cover;
-  background-position: center;
-  animation: mobileSceneBreath 12s ease-in-out infinite;
-  will-change: transform, opacity;
-}
-
-html.mobile-balanced .lesson-bg-magic > * {
-  position: relative;
-  z-index: 1;
-}
-
-html.mobile-no-animation .vn-character,
-html.mobile-no-animation .combatant .character-avatar,
-html.mobile-no-animation .enemy-sprite,
-html.mobile-no-animation .character-sprite,
-html.mobile-no-animation .teacher-sprite,
-html.mobile-no-animation .boss-sprite,
-html.mobile-no-animation .npc-sprite,
-html.mobile-no-animation .dialogue-character,
-html.mobile-no-animation .battle-character,
-html.mobile-no-animation .scene.active {
-  animation: none !important;
-}
-
 .hero-card,
 .combatant {
   padding: 14px;
@@ -2216,7 +1994,7 @@ html.mobile-no-animation .scene.active {
 
 .teacher-character-gif {
   animation: none !important;
-  transition: transform 180ms ease, opacity 180ms ease, filter 180ms ease;
+  transition: none;
   transform-origin: center bottom;
   display: block;
   width: 100%;
@@ -2509,33 +2287,33 @@ html.mobile-no-animation .scene.active {
 }
 
 /* Animated character files already contain motion; prevent extra CSS zoom/breathing. */
-html:not(.mobile-balanced) .vn-character:has(.main-character-gif),
-html:not(.mobile-balanced) .vn-character:has(.main-character-gif-fallback),
-html:not(.mobile-balanced) .vn-character:has(.teacher-character-gif),
-html:not(.mobile-balanced) .character-static-holder {
+.vn-character:has(.main-character-gif),
+.vn-character:has(.main-character-gif-fallback),
+.vn-character:has(.teacher-character-gif),
+.character-static-holder {
   animation: none !important;
   transform: none !important;
 }
 
-html:not(.mobile-balanced) .main-character-gif,
-html:not(.mobile-balanced) .main-character-gif-fallback,
-html:not(.mobile-balanced) .teacher-character-gif,
-html:not(.mobile-balanced) .timedust-gif,
-html:not(.mobile-balanced) .echo-trick-gif,
-html:not(.mobile-balanced) .yesterday-spirit-gif,
-html:not(.mobile-balanced) .wisp-avatar.timedust-gif,
-html:not(.mobile-balanced) .wisp-avatar.echo-trick-gif,
-html:not(.mobile-balanced) .wisp-avatar.yesterday-spirit-gif,
-html:not(.mobile-balanced) .character-static-holder .character-avatar,
-html:not(.mobile-balanced) .vn-character.is-speaking .main-character-gif,
-html:not(.mobile-balanced) .vn-character.is-speaking .main-character-gif-fallback,
-html:not(.mobile-balanced) .vn-character.is-speaking .teacher-character-gif,
-html:not(.mobile-balanced) .combatant .main-character-gif,
-html:not(.mobile-balanced) .combatant .main-character-gif-fallback,
-html:not(.mobile-balanced) .combatant.is-speaking .main-character-gif,
-html:not(.mobile-balanced) .combatant.is-speaking .main-character-gif-fallback,
-html:not(.mobile-balanced) .combatant.is-active-turn .main-character-gif,
-html:not(.mobile-balanced) .combatant.is-active-turn .main-character-gif-fallback {
+.main-character-gif,
+.main-character-gif-fallback,
+.teacher-character-gif,
+.timedust-gif,
+.echo-trick-gif,
+.yesterday-spirit-gif,
+.wisp-avatar.timedust-gif,
+.wisp-avatar.echo-trick-gif,
+.wisp-avatar.yesterday-spirit-gif,
+.character-static-holder .character-avatar,
+.vn-character.is-speaking .main-character-gif,
+.vn-character.is-speaking .main-character-gif-fallback,
+.vn-character.is-speaking .teacher-character-gif,
+.combatant .main-character-gif,
+.combatant .main-character-gif-fallback,
+.combatant.is-speaking .main-character-gif,
+.combatant.is-speaking .main-character-gif-fallback,
+.combatant.is-active-turn .main-character-gif,
+.combatant.is-active-turn .main-character-gif-fallback {
   animation: none !important;
   transform: translateZ(0) !important;
   backface-visibility: hidden;
@@ -2651,29 +2429,20 @@ html:not(.mobile-balanced) .combatant.is-active-turn .main-character-gif-fallbac
   filter: none;
 }
 
-html:not(.mobile-balanced) .combatant .timedust-gif,
-html:not(.mobile-balanced) .combatant .echo-trick-gif,
-html:not(.mobile-balanced) .combatant .yesterday-spirit-gif,
-html:not(.mobile-balanced) .combatant.is-active-turn .timedust-gif,
-html:not(.mobile-balanced) .combatant.is-active-turn .echo-trick-gif,
-html:not(.mobile-balanced) .combatant.is-active-turn .yesterday-spirit-gif,
-html:not(.mobile-balanced) #battleEnemy .timedust-gif,
-html:not(.mobile-balanced) #battleEnemy .echo-trick-gif,
-html:not(.mobile-balanced) #battleEnemy .yesterday-spirit-gif {
+.combatant .timedust-gif,
+.combatant .echo-trick-gif,
+.combatant .yesterday-spirit-gif,
+.combatant.is-active-turn .timedust-gif,
+.combatant.is-active-turn .echo-trick-gif,
+.combatant.is-active-turn .yesterday-spirit-gif,
+#battleEnemy .timedust-gif,
+#battleEnemy .echo-trick-gif,
+#battleEnemy .yesterday-spirit-gif {
   animation: none !important;
   transform: translateZ(0) !important;
   backface-visibility: hidden;
   will-change: transform;
   filter: none !important;
-}
-
-html.mobile-balanced .main-character-gif,
-html.mobile-balanced .main-character-gif-fallback,
-html.mobile-balanced .teacher-character-gif,
-html.mobile-balanced .timedust-gif,
-html.mobile-balanced .echo-trick-gif,
-html.mobile-balanced .yesterday-spirit-gif {
-  transition: transform 180ms ease, opacity 180ms ease;
 }
 
 .wisp-avatar span {
@@ -2699,7 +2468,7 @@ html.mobile-balanced .yesterday-spirit-gif {
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, #64f599, #e6ff8d);
-  transition: width 320ms cubic-bezier(0.22, 1, 0.36, 1), filter 180ms ease;
+  transition: width 260ms ease;
 }
 
 .hp-bar.enemy span {
@@ -2866,7 +2635,6 @@ html.mobile-balanced .yesterday-spirit-gif {
   border-radius: 999px;
   background: white;
   box-shadow: 0 0 16px rgba(255, 255, 255, 0.9);
-  transition: left 60ms linear, opacity 160ms ease;
 }
 
 .parry-countdown.pulse {
@@ -2909,7 +2677,7 @@ html.mobile-balanced .yesterday-spirit-gif {
 }
 
 #battleEnemy.enemy-hit {
-  animation: enemyHitBlink 420ms steps(2, end) !important;
+  animation: enemyHitBlink 420ms steps(2, end);
 }
 
 .damage-float {
@@ -2921,7 +2689,7 @@ html.mobile-balanced .yesterday-spirit-gif {
   font-size: clamp(1.2rem, 5vw, 2rem);
   font-weight: 900;
   text-shadow: 0 2px 0 #611, 0 0 8px rgba(255, 80, 80, 0.9);
-  animation: damageFloat 900ms ease-out forwards !important;
+  animation: damageFloat 900ms ease-out forwards;
   pointer-events: none;
 }
 
@@ -2932,19 +2700,19 @@ html.mobile-balanced .yesterday-spirit-gif {
 }
 
 .parry-gauge-zone.flash-perfect {
-  animation: zoneFlashPerfect 620ms ease-in-out !important;
+  animation: zoneFlashPerfect 620ms ease-in-out;
 }
 
 .parry-gauge-zone.flash-good {
-  animation: zoneFlashGood 620ms ease-in-out !important;
+  animation: zoneFlashGood 620ms ease-in-out;
 }
 
 .parry-gauge-zone.flash-weak {
-  animation: zoneFlashWeak 620ms ease-in-out !important;
+  animation: zoneFlashWeak 620ms ease-in-out;
 }
 
 .parry-gauge.flash-miss {
-  animation: parryMissShake 620ms ease-in-out !important;
+  animation: parryMissShake 620ms ease-in-out;
   outline: 3px solid rgba(255, 76, 76, 0.82);
 }
 
@@ -3071,19 +2839,6 @@ html.mobile-balanced .yesterday-spirit-gif {
     linear-gradient(180deg, rgba(255, 246, 220, 0.98), rgba(238, 210, 158, 0.98));
   box-shadow: 0 22px 44px rgba(0, 0, 0, 0.45);
   color: #3c2412;
-  animation: modalCardEnter 220ms cubic-bezier(0.22, 1, 0.36, 1);
-  transition: transform 180ms ease, opacity 180ms ease;
-}
-
-@keyframes modalCardEnter {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }
 
 .game-modal-close {
@@ -3169,7 +2924,6 @@ html.mobile-balanced .yesterday-spirit-gif {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.45);
   font-weight: 800;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
 }
 
 .grammaria-total-row {
@@ -3364,7 +3118,6 @@ html.mobile-balanced .yesterday-spirit-gif {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(115, 246, 255, 0.18));
-  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
 .charge-percent-text,
@@ -3404,7 +3157,7 @@ html.mobile-balanced .yesterday-spirit-gif {
   border-radius: inherit;
   background: linear-gradient(90deg, rgba(96, 229, 142, 0.72), rgba(115, 246, 255, 0.88), rgba(255, 213, 106, 0.9));
   box-shadow: 0 0 18px rgba(96, 229, 142, 0.38);
-  transition: width 80ms linear, opacity 160ms ease;
+  transition: width 80ms linear;
 }
 
 .timing-marker {
@@ -3416,18 +3169,6 @@ html.mobile-balanced .yesterday-spirit-gif {
   border-radius: 4px;
   background: white;
   box-shadow: 0 0 14px white;
-  transition: left 55ms linear, opacity 160ms ease;
-}
-
-#chargePanel:not(.hidden) .timing-bar {
-  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.24), 0 0 18px rgba(115, 246, 255, 0.18);
-}
-
-#chargePanel:not(.hidden) .charge-percent-text,
-#chargePanel:not(.hidden) .charge-feedback-text,
-.parry-hit-result,
-.point-parry-result {
-  transition: color 160ms ease, opacity 160ms ease, transform 160ms ease;
 }
 
 #stopChargeButton {

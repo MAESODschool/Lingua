@@ -1126,251 +1126,28 @@ function assetPath(fileName) {
   return `${ASSET_BASE_URL}${fileName.replace(/^\/+/, "")}`;
 }
 
-function isMobileDevice() {
-  return window.matchMedia("(max-width: 768px)").matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-}
-
-function isLiteModeForcedByUrl() {
-  return new URLSearchParams(window.location.search).has("lite");
-}
-
-function isPerfDebugMode() {
-  return new URLSearchParams(window.location.search).has("perf");
-}
-
-function isNoAnimationDebugMode() {
-  return new URLSearchParams(window.location.search).has("noanim");
-}
-
-function isLowPowerDevice() {
-  if (isMobileDevice()) {
-    return true;
-  }
-
-  const memory = typeof navigator.deviceMemory === "number" ? navigator.deviceMemory : 8;
-  const cores = typeof navigator.hardwareConcurrency === "number" ? navigator.hardwareConcurrency : 8;
-  return isMobileDevice() || memory <= 4 || cores <= 4;
-}
-
-function isMobileLiteMode() {
-  const memory = navigator.deviceMemory || 4;
-  const cores = navigator.hardwareConcurrency || 4;
-  return isLiteModeForcedByUrl() || isMobileDevice() || memory <= 4 || cores <= 4;
-}
-
-const PERFORMANCE_CONFIG = {
-  mobileMode: isMobileLiteMode(),
-  mobileLiteMode: isMobileLiteMode(),
-  disableAnimatedCharactersOnMobile: true,
-  disableAnimatedBackgroundOnMobile: true,
-  disableHeavyCssEffectsOnMobile: true,
-  disableTypewriterSfxOnMobile: true,
-  disableNonEssentialParticlesOnMobile: true,
-  preloadOnlyCurrentSceneOnMobile: true,
-  mobileBalancedAnimation: true,
-  allowMobileCharacterIdle: true,
-  allowMobileSceneMotion: true,
-  disableAnimatedGifOnMobile: true,
-  maxMobileAnimatedCharacters: 2,
-  useMobileCharacterAssets: isMobileLiteMode(),
-  useStaticBackgroundOnMobile: true,
-  reduceCssEffectsOnMobile: true,
-  typewriterCharsPerSecondDesktop: 42,
-  typewriterCharsPerSecondMobile: 70
-};
-
-document.documentElement.classList.toggle("mobile-lite", PERFORMANCE_CONFIG.mobileLiteMode);
-document.documentElement.classList.toggle("mobile-balanced", PERFORMANCE_CONFIG.mobileLiteMode && PERFORMANCE_CONFIG.mobileBalancedAnimation && !isNoAnimationDebugMode());
-document.documentElement.classList.toggle("mobile-no-animation", isNoAnimationDebugMode());
-console.log("[Performance] mobileMode =", PERFORMANCE_CONFIG.mobileMode);
-console.log("[Performance] mobileLiteMode =", PERFORMANCE_CONFIG.mobileLiteMode);
-window.PERFORMANCE_CONFIG = PERFORMANCE_CONFIG;
-
-function perfLog(...args) {
-  if (isPerfDebugMode()) {
-    console.log(...args);
-  }
-}
-
 const MAIN_CHARACTER_IMAGE_PATH = "assets/characters/main-character-idle-transparent-clean-optimized.webp";
-const MAIN_CHARACTER_MOBILE_IMAGE_PATH = "assets/characters/main-character-mobile.webp";
-const MAIN_CHARACTER_MOBILE_STATIC_IMAGE_PATH = "assets/characters/main-character-mobile-static.webp";
 const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
 const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-new-transparent.webp";
-const TEACHER_CHARACTER_MOBILE_IMAGE_PATH = "assets/characters/master-verion-mobile.webp";
-const TEACHER_CHARACTER_MOBILE_STATIC_IMAGE_PATH = "assets/characters/master-verion-mobile-static.webp";
 const TEACHER_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("master-verion.png");
 const GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-animated.gif";
-const GRAMMAR_HALL_STATIC_MOBILE_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-static-mobile.webp";
-const GRAMMAR_HALL_MOBILE_STATIC_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-mobile-static.webp";
 const TIME_DUST_IMAGE_PATH = "assets/characters/timedust-transparent-clean-optimized.webp";
-const TIME_DUST_MOBILE_IMAGE_PATH = "assets/characters/timedust-mobile.webp";
-const TIME_DUST_MOBILE_STATIC_IMAGE_PATH = "assets/characters/time-dust-mobile-static.webp";
 const TIME_DUST_FALLBACK_IMAGE_PATH = assetPath("enemies/time-dust.png");
 const ECHO_TRICK_IMAGE_PATH = "assets/characters/echo-trick-transparent-clean-optimized.webp";
-const ECHO_TRICK_MOBILE_IMAGE_PATH = "assets/characters/echo-tick-mobile.webp";
-const ECHO_TRICK_MOBILE_STATIC_IMAGE_PATH = "assets/characters/echo-tick-mobile-static.webp";
 const ECHO_TRICK_FALLBACK_IMAGE_PATH = assetPath("enemies/echo-tick.png");
 const YESTERDAY_SPIRIT_IMAGE_PATH = "assets/characters/yesterday-spirit-transparent.gif";
-const YESTERDAY_SPIRIT_MOBILE_IMAGE_PATH = "assets/characters/yesterday-spirit-mobile.webp";
-const YESTERDAY_SPIRIT_MOBILE_STATIC_IMAGE_PATH = "assets/characters/yesterday-spirit-mobile-static.webp";
 const YESTERDAY_SPIRIT_FALLBACK_IMAGE_PATH = assetPath("memory-shade.png");
-
-const mobilePerformanceQuery = window.matchMedia("(max-width: 768px)");
-const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-function isAnimatedAsset(src = "") {
-  const lower = String(src).toLowerCase();
-  return /\.gif(?:$|\?)/i.test(lower) || lower.includes("animated");
-}
-
-function warnIfAnimatedAssetUsed(src, label = "asset") {
-  if (PERFORMANCE_CONFIG.mobileLiteMode && isAnimatedAsset(src)) {
-    console.warn("[Perf] GIF used in mobile lite mode:", src, label);
-  }
-}
-
-function warnIfAnimatedAssetOnMobile(src) {
-  if (!PERFORMANCE_CONFIG.mobileLiteMode || !src) {
-    return;
-  }
-
-  const lower = String(src).toLowerCase();
-  if (lower.endsWith(".gif") || lower.includes("animated")) {
-    console.warn("[Performance] Animated asset used on mobile:", src);
-  }
-}
-
-function pickCharacterAsset(desktopSrc, mobileStaticSrc) {
-  const src = PERFORMANCE_CONFIG.mobileLiteMode && mobileStaticSrc
-    ? mobileStaticSrc
-    : desktopSrc;
-
-  if (PERFORMANCE_CONFIG.mobileLiteMode && isAnimatedAsset(src)) {
-    console.warn("[Performance] mobileStaticSrc should not be animated:", src);
-  }
-
-  perfLog("[Perf] character asset used:", src);
-  warnIfAnimatedAssetOnMobile(src);
-  return src;
-}
-
-function pickBackgroundAsset(desktopSrc, mobileStaticSrc) {
-  const src = PERFORMANCE_CONFIG.mobileLiteMode && mobileStaticSrc
-    ? mobileStaticSrc
-    : desktopSrc;
-  warnIfAnimatedAssetUsed(src, "background");
-  warnIfAnimatedAssetOnMobile(src);
-  perfLog("[Perf] background asset used:", src);
-  return src;
-}
-
-function filterAssetsForMobileLite(assets) {
-  if (!PERFORMANCE_CONFIG.mobileLiteMode) {
-    return assets;
-  }
-
-  const filtered = assets.filter(src => {
-    if (!src) {
-      return false;
-    }
-
-    const lower = String(src).toLowerCase();
-    if (lower.endsWith(".gif")) {
-      return false;
-    }
-    if (lower.includes("animated")) {
-      return false;
-    }
-    if (lower.includes("final-boss") && !lower.includes("mobile-static")) {
-      return false;
-    }
-    return true;
-  });
-  perfLog("[Performance] preload current scene only", filtered);
-  return filtered;
-}
-
-function pickGrammarHallBackgroundAsset() {
-  if (PERFORMANCE_CONFIG.useStaticBackgroundOnMobile && (PERFORMANCE_CONFIG.mobileMode || isPerformanceStaticBackgroundMode())) {
-    return pickBackgroundAsset(GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH, GRAMMAR_HALL_MOBILE_STATIC_BACKGROUND_PATH);
-  }
-
-  return pickBackgroundAsset(GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH, GRAMMAR_HALL_MOBILE_STATIC_BACKGROUND_PATH);
-}
-
-function getMainCharacterImagePath() {
-  return pickCharacterAsset(MAIN_CHARACTER_IMAGE_PATH, MAIN_CHARACTER_MOBILE_STATIC_IMAGE_PATH);
-}
-
-function getTeacherCharacterImagePath() {
-  return pickCharacterAsset(TEACHER_CHARACTER_IMAGE_PATH, TEACHER_CHARACTER_MOBILE_STATIC_IMAGE_PATH);
-}
-
-function isPerformanceStaticBackgroundMode() {
-  return mobilePerformanceQuery.matches || reducedMotionQuery.matches;
-}
-
-function updatePerformanceMode() {
-  document.documentElement.classList.toggle("performance-static-bg", isPerformanceStaticBackgroundMode());
-  document.documentElement.classList.toggle("mobile-lite", PERFORMANCE_CONFIG.mobileLiteMode);
-  document.documentElement.classList.toggle("mobile-balanced", PERFORMANCE_CONFIG.mobileLiteMode && PERFORMANCE_CONFIG.mobileBalancedAnimation && !isNoAnimationDebugMode());
-  document.documentElement.classList.toggle("mobile-no-animation", isNoAnimationDebugMode());
-  document.documentElement.style.setProperty("--grammar-hall-bg", `url("${pickGrammarHallBackgroundAsset()}")`);
-}
-
-function clearMobileActiveCharacters() {
-  [
-    els?.storyWanderer,
-    els?.storyVerion,
-    els?.battlePlayer,
-    els?.battleEnemy,
-    els?.battleEnemySprite
-  ].forEach(element => {
-    if (!element) {
-      return;
-    }
-    element.classList.remove("is-active-character", "is-active-enemy", "is-active-teacher");
-  });
-}
-
-function updateMobileBalancedActiveCharacters(sceneName) {
-  clearMobileActiveCharacters();
-
-  if (!PERFORMANCE_CONFIG.mobileLiteMode || !PERFORMANCE_CONFIG.mobileBalancedAnimation || isNoAnimationDebugMode()) {
-    return;
-  }
-
-  if (sceneName === "story") {
-    els.storyWanderer?.classList.add("is-active-character");
-    els.storyVerion?.classList.add("is-active-character", "is-active-teacher");
-    return;
-  }
-
-  if (sceneName === "battle") {
-    els.battlePlayer?.classList.add("is-active-character");
-    els.battleEnemy?.classList.add("is-active-enemy");
-    els.battleEnemySprite?.classList.add("is-active-enemy");
-  }
-}
 
 function createMainCharacterElement(className = "") {
   const img = document.createElement("img");
   img.className = `main-character-gif ${className}`.trim();
-  img.src = getMainCharacterImagePath();
+  img.src = MAIN_CHARACTER_IMAGE_PATH;
   img.alt = "Main Character";
   img.draggable = false;
   return img;
 }
 
 function handleMainCharacterGifError(img) {
-  if (img.dataset.mobileFallbackApplied !== "true" && img.getAttribute("src") === MAIN_CHARACTER_MOBILE_STATIC_IMAGE_PATH) {
-    console.warn("[Performance] mobile main character asset failed; using desktop asset.");
-    img.dataset.mobileFallbackApplied = "true";
-    img.src = MAIN_CHARACTER_IMAGE_PATH;
-    return;
-  }
-
   console.warn("[Character] main-character-idle-transparent-clean-optimized.webp failed to load");
   if (img.dataset.fallbackApplied === "true") {
     return;
@@ -1391,20 +1168,13 @@ function handleMainCharacterGifError(img) {
 
 function setupMainCharacterGifs() {
   document.querySelectorAll(".main-character-gif").forEach(img => {
-    img.src = getMainCharacterImagePath();
+    img.src = MAIN_CHARACTER_IMAGE_PATH;
     img.draggable = false;
     img.addEventListener("error", () => handleMainCharacterGifError(img), { once: true });
   });
 }
 
 function handleTeacherCharacterGifError(img) {
-  if (img.dataset.mobileFallbackApplied !== "true" && img.getAttribute("src") === TEACHER_CHARACTER_MOBILE_STATIC_IMAGE_PATH) {
-    console.warn("[Performance] mobile teacher asset failed; using desktop asset.");
-    img.dataset.mobileFallbackApplied = "true";
-    img.src = TEACHER_CHARACTER_IMAGE_PATH;
-    return;
-  }
-
   console.warn("[Character] master-verion-new-transparent.webp failed to load");
   if (img.dataset.fallbackApplied === "true") {
     return;
@@ -1416,60 +1186,26 @@ function handleTeacherCharacterGifError(img) {
 
 function setupTeacherCharacterGifs() {
   document.querySelectorAll(".teacher-character-gif").forEach(img => {
-    img.src = getTeacherCharacterImagePath();
+    img.src = TEACHER_CHARACTER_IMAGE_PATH;
     img.draggable = false;
     img.addEventListener("error", () => handleTeacherCharacterGifError(img), { once: true });
   });
 }
 
-function preloadImage(src) {
-  return new Promise(resolve => {
-    const [safeSrc] = filterAssetsForMobileLite([src]);
-    if (!safeSrc) {
-      perfLog("[Performance] preload skipped in mobile lite", src);
-      resolve();
-      return;
-    }
-
-    const img = new Image();
-    img.addEventListener("load", resolve, { once: true });
-    img.addEventListener("error", error => {
-      console.warn("[Performance] asset preload failed", safeSrc, error);
-      resolve();
-    }, { once: true });
-    img.src = safeSrc;
-  });
-}
-
 function setupAnimatedGrammarHallBackground() {
-  updatePerformanceMode();
-  [mobilePerformanceQuery, reducedMotionQuery].forEach(query => {
-    if (typeof query.addEventListener === "function") {
-      query.addEventListener("change", updatePerformanceMode);
-    } else if (typeof query.addListener === "function") {
-      query.addListener(updatePerformanceMode);
-    }
-  });
-
-  const activeBackground = pickGrammarHallBackgroundAsset();
-  if (activeBackground !== GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH) {
-    preloadImage(activeBackground);
-    return;
-  }
-
   const backgroundProbe = new Image();
   backgroundProbe.addEventListener("error", error => {
     console.warn("[Background] animated GIF failed to load", error);
   }, { once: true });
-  backgroundProbe.src = activeBackground;
+  backgroundProbe.src = GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH;
 }
 
 const enemySpriteMap = {
   "Memory Shade": assetPath("memory-shade.png"),
-  "Time Dust": pickCharacterAsset(TIME_DUST_IMAGE_PATH, TIME_DUST_MOBILE_STATIC_IMAGE_PATH),
-  "Echo Tick": pickCharacterAsset(ECHO_TRICK_IMAGE_PATH, ECHO_TRICK_MOBILE_STATIC_IMAGE_PATH),
+  "Time Dust": TIME_DUST_IMAGE_PATH,
+  "Echo Tick": ECHO_TRICK_IMAGE_PATH,
   "Rewind Slime": assetPath("enemies/rewind-slime.png"),
-  "Yesterday Sprite": pickCharacterAsset(YESTERDAY_SPIRIT_IMAGE_PATH, YESTERDAY_SPIRIT_MOBILE_STATIC_IMAGE_PATH),
+  "Yesterday Sprite": YESTERDAY_SPIRIT_IMAGE_PATH,
   "Memory Bat": assetPath("memory-shade.png"),
   "The -ed Forger": assetPath("enemies/ed-forger.png"),
   "ช่างหลอม -ed": assetPath("enemies/ed-forger.png"),
@@ -1711,9 +1447,6 @@ const state = {
   currentUser: null,
   dialogueIndex: 0,
   typewriterTimer: null,
-  typewriterFrame: null,
-  typewriterStartedAt: 0,
-  typewriterCharsPerSecond: PERFORMANCE_CONFIG.typewriterCharsPerSecondDesktop,
   typewriterText: "",
   typewriterIndex: 0,
   isTypingDialogue: false,
@@ -1789,29 +1522,13 @@ const BGM_LOOP = {
   victoryScene: false
 };
 
-function createManagedAudio(path) {
-  const track = PERFORMANCE_CONFIG.mobileLiteMode ? new Audio() : new Audio(path);
-  track.linguaSrc = path;
-  return track;
-}
-
-function ensureAudioSource(track, path = track?.linguaSrc) {
-  if (!track || !path) {
-    return;
-  }
-
-  if (!track.getAttribute("src")) {
-    track.src = path;
-  }
-}
-
 const bgmTracks = Object.fromEntries(
-  Object.entries(BGM_PATHS).map(([key, path]) => [key, createManagedAudio(path)])
+  Object.entries(BGM_PATHS).map(([key, path]) => [key, new Audio(path)])
 );
 
 Object.entries(bgmTracks).forEach(([key, track]) => {
   track.loop = Boolean(BGM_LOOP[key]);
-  track.preload = PERFORMANCE_CONFIG.mobileLiteMode ? "none" : "auto";
+  track.preload = "auto";
   track.volume = 0.45;
 });
 
@@ -1829,12 +1546,12 @@ const SFX_VOLUME = {
   button: 0.45
 };
 const SFX_POOL_SIZE = 3;
-const dialogueTypeSfx = createManagedAudio(DIALOGUE_TYPE_SFX_PATH);
-dialogueTypeSfx.preload = PERFORMANCE_CONFIG.mobileLiteMode ? "none" : "auto";
+const dialogueTypeSfx = new Audio(DIALOGUE_TYPE_SFX_PATH);
+dialogueTypeSfx.preload = "auto";
 dialogueTypeSfx.volume = DIALOGUE_TYPE_SFX_VOLUME;
 const dialogueTypeSfxPool = Array.from({ length: 4 }, () => {
-  const track = createManagedAudio(DIALOGUE_TYPE_SFX_PATH);
-  track.preload = PERFORMANCE_CONFIG.mobileLiteMode ? "none" : "auto";
+  const track = new Audio(DIALOGUE_TYPE_SFX_PATH);
+  track.preload = "auto";
   track.volume = DIALOGUE_TYPE_SFX_VOLUME;
   return track;
 });
@@ -1843,16 +1560,14 @@ dialogueTypeSfxPool.forEach(track => {
     console.warn("[Audio] typewriter file failed to load", error);
   }, { once: true });
 });
-if (!PERFORMANCE_CONFIG.mobileLiteMode) {
-  dialogueTypeSfxPool.forEach(track => track.load());
-}
+dialogueTypeSfxPool.forEach(track => track.load());
 
 const sfxPools = Object.fromEntries(
   Object.entries(SFX_PATHS).map(([key, path]) => [
     key,
     Array.from({ length: SFX_POOL_SIZE }, () => {
-      const track = createManagedAudio(path);
-      track.preload = PERFORMANCE_CONFIG.mobileLiteMode ? "none" : "auto";
+      const track = new Audio(path);
+      track.preload = "auto";
       track.volume = SFX_VOLUME[key] || 0.5;
       track.addEventListener("error", error => {
         console.warn(`[Audio] ${key} SFX failed to load`, error);
@@ -1862,10 +1577,8 @@ const sfxPools = Object.fromEntries(
   ])
 );
 const sfxPoolIndexes = Object.fromEntries(Object.keys(SFX_PATHS).map(key => [key, 0]));
-if (!PERFORMANCE_CONFIG.mobileLiteMode) {
-  sfxPools.attack.forEach(track => track.load());
-  sfxPools.button.forEach(track => track.load());
-}
+sfxPools.attack.forEach(track => track.load());
+sfxPools.button.forEach(track => track.load());
 
 let dialogueTypeSfxLoadedLogged = false;
 
@@ -1878,16 +1591,14 @@ function logDialogueTypeSfxLoaded() {
   console.log("[Audio] Loaded assets/sfx/dialogue-type.mp3");
 }
 
-if (!PERFORMANCE_CONFIG.mobileLiteMode) {
-  dialogueTypeSfx.addEventListener("loadeddata", logDialogueTypeSfxLoaded, { once: true });
-  dialogueTypeSfx.addEventListener("canplaythrough", logDialogueTypeSfxLoaded, { once: true });
+dialogueTypeSfx.addEventListener("loadeddata", logDialogueTypeSfxLoaded, { once: true });
+dialogueTypeSfx.addEventListener("canplaythrough", logDialogueTypeSfxLoaded, { once: true });
 
-  dialogueTypeSfx.addEventListener("error", error => {
-    console.warn("[Audio] typewriter file failed to load", error);
-  }, { once: true });
+dialogueTypeSfx.addEventListener("error", error => {
+  console.warn("[Audio] typewriter file failed to load", error);
+}, { once: true });
 
-  dialogueTypeSfx.load();
-}
+dialogueTypeSfx.load();
 
 const els = {
   muteButton: document.getElementById("muteButton"),
@@ -2021,7 +1732,7 @@ const els = {
 };
 
 function showScene(name) {
-  if (name !== "story" || name === "login" || name === "createCharacter") {
+  if (name === "login" || name === "createCharacter") {
     stopTypewriter();
     state.isTypingDialogue = false;
   }
@@ -2030,7 +1741,6 @@ function showScene(name) {
   }
   Object.values(scenes).forEach(scene => scene.classList.remove("active"));
   scenes[name].classList.add("active");
-  updateMobileBalancedActiveCharacters(name);
   playBgmForScene(name);
 }
 
@@ -2066,14 +1776,11 @@ function playBgm(key, options = {}) {
   Object.entries(bgmTracks).forEach(([trackKey, track]) => {
     if (trackKey !== key) {
       track.pause();
-      if (track.getAttribute("src")) {
-        track.currentTime = 0;
-      }
+      track.currentTime = 0;
     }
   });
 
   state.currentBgmKey = key;
-  ensureAudioSource(bgmTracks[key], BGM_PATHS[key]);
   bgmTracks[key].loop = Boolean(BGM_LOOP[key]);
   bgmTracks[key].muted = state.isMuted;
   if (shouldRestart) {
@@ -2122,10 +1829,6 @@ function resetVictorySceneMusicForBattle() {
 }
 
 function shouldPlayDialogueTypeSfx() {
-  if (PERFORMANCE_CONFIG.mobileLiteMode && PERFORMANCE_CONFIG.disableTypewriterSfxOnMobile) {
-    return false;
-  }
-
   if (!canPlayTypewriterSfx()) {
     return false;
   }
@@ -2151,12 +1854,8 @@ function canPlayTypewriterSfx() {
 }
 
 function prepareDialogueTypeSfxTrack(track, volume = DIALOGUE_TYPE_SFX_VOLUME) {
-  if (PERFORMANCE_CONFIG.mobileLiteMode && PERFORMANCE_CONFIG.disableTypewriterSfxOnMobile) {
-    return;
-  }
-
   track.preload = "auto";
-  ensureAudioSource(track, DIALOGUE_TYPE_SFX_PATH);
+  track.src = DIALOGUE_TYPE_SFX_PATH;
   track.volume = volume;
   track.muted = state.isMuted;
   try {
@@ -2193,7 +1892,6 @@ function getDialogueTypeSfxTrack() {
 
 function prepareSfxTrack(track, key) {
   track.preload = "auto";
-  ensureAudioSource(track, SFX_PATHS[key]);
   track.volume = SFX_VOLUME[key] || 0.5;
   track.muted = state.isMuted;
   try {
@@ -2223,9 +1921,6 @@ function playSfx(key) {
     return;
   }
 
-  if (PERFORMANCE_CONFIG.mobileLiteMode && !track.getAttribute("src")) {
-    prepareSfxTrack(track, key);
-  }
   track.pause();
   track.currentTime = 0;
   track.volume = SFX_VOLUME[key] || 0.5;
@@ -2271,10 +1966,6 @@ function handleButtonSfxKey(event) {
 }
 
 function playDialogueTypeSfxTick(character) {
-  if (!shouldPlayTypewriterSfx()) {
-    return;
-  }
-
   if (!shouldPlayDialogueTypeSfx() || /\s/.test(character)) {
     return;
   }
@@ -2357,12 +2048,10 @@ function unlockGameAudio() {
     return;
   }
 
-  if (!PERFORMANCE_CONFIG.mobileLiteMode) {
-    [dialogueTypeSfx, ...dialogueTypeSfxPool].forEach(track => prepareDialogueTypeSfxTrack(track, DIALOGUE_TYPE_SFX_VOLUME));
-    Object.entries(sfxPools).forEach(([key, pool]) => {
-      pool.forEach(track => prepareSfxTrack(track, key));
-    });
-  }
+  [dialogueTypeSfx, ...dialogueTypeSfxPool].forEach(track => prepareDialogueTypeSfxTrack(track, DIALOGUE_TYPE_SFX_VOLUME));
+  Object.entries(sfxPools).forEach(([key, pool]) => {
+    pool.forEach(track => prepareSfxTrack(track, key));
+  });
   state.typewriterAudioUnlocked = true;
   state.audioLocked = false;
 }
@@ -3891,10 +3580,6 @@ function markPrologueSeenForCurrentUser() {
 }
 
 function playPrologueTypeSfx() {
-  if (!shouldPlayTypewriterSfx()) {
-    return;
-  }
-
   if (!canPlayTypewriterSfx() || state.isMuted || !state.audioUnlocked || !state.typewriterAudioUnlocked) {
     return;
   }
@@ -4433,108 +4118,33 @@ function updateDialogueSpeakerTone(speaker = "") {
   els.dialoguePanel.classList.add(getSpeakerToneClass(speaker));
 }
 
-let activeTypewriterController = null;
-
-function shouldPlayTypewriterSfx() {
-  if (PERFORMANCE_CONFIG.mobileLiteMode && PERFORMANCE_CONFIG.disableTypewriterSfxOnMobile) {
-    return false;
-  }
-
-  return true;
-}
-
-function cancelActiveTypewriter({ complete = false } = {}) {
-  if (activeTypewriterController && typeof activeTypewriterController.cancel === "function") {
-    activeTypewriterController.cancel({ complete });
-  }
-  activeTypewriterController = null;
-}
-
-function startStableTypewriter(text, targetEl, options = {}) {
-  cancelActiveTypewriter({ complete: false });
-
-  const safeText = String(text || "");
-  const charsPerSecond = options.charsPerSecond || getTypewriterCharsPerSecond();
-  const startedAt = performance.now();
-  let rafId = null;
-  let cancelled = false;
-  let lastCount = -1;
-  let lastSfxAt = 0;
-
-  targetEl.textContent = "";
-  perfLog("[Perf] typewriter start", safeText.length);
-
-  function tick(now) {
-    if (cancelled) {
-      return;
-    }
-
-    const elapsed = Math.max(0, (now - startedAt) / 1000);
-    const nextCount = Math.min(safeText.length, Math.floor(elapsed * charsPerSecond));
-
-    if (nextCount !== lastCount) {
-      targetEl.textContent = safeText.slice(0, nextCount);
-      lastCount = nextCount;
-      state.typewriterIndex = nextCount;
-
-      if (shouldPlayTypewriterSfx() && nextCount > 0 && now - lastSfxAt > 80) {
-        lastSfxAt = now;
-        playDialogueTypeSfxTick(safeText[nextCount - 1] || "");
-      }
-    }
-
-    if (nextCount < safeText.length) {
-      rafId = requestAnimationFrame(tick);
-      return;
-    }
-
-    rafId = null;
-    activeTypewriterController = null;
-    stopDialogueTypeSfx();
-    perfLog("[Perf] typewriter complete");
-    if (typeof options.onComplete === "function") {
-      options.onComplete();
-    }
-  }
-
-  rafId = requestAnimationFrame(tick);
-
-  const controller = {
-    cancel({ complete = true } = {}) {
-      cancelled = true;
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
-      }
-      if (complete) {
-        targetEl.textContent = safeText;
-        state.typewriterIndex = safeText.length;
-      }
-      stopDialogueTypeSfx();
-      perfLog("[Perf] typewriter cancel");
-    },
-    isRunning() {
-      return !cancelled && rafId !== null;
-    }
-  };
-
-  activeTypewriterController = controller;
-  return controller;
-}
-
 function startTypewriter(text) {
   stopTypewriter();
-  state.typewriterText = String(text || "");
+  state.typewriterText = text;
   state.typewriterIndex = 0;
-  state.typewriterStartedAt = performance.now();
-  state.typewriterCharsPerSecond = getTypewriterCharsPerSecond();
   state.isTypingDialogue = true;
   state.lastDialogueTypeSfxAt = 0;
+  els.dialogueText.textContent = "";
   setDialogueButtonReady(false);
-  startStableTypewriter(state.typewriterText, els.dialogueText, {
-    charsPerSecond: state.typewriterCharsPerSecond,
-    onComplete: completeTypewriter
-  });
+  typeNextCharacter();
+}
+
+function typeNextCharacter() {
+  if (!state.isTypingDialogue) {
+    return;
+  }
+
+  state.typewriterIndex += 1;
+  els.dialogueText.textContent = state.typewriterText.slice(0, state.typewriterIndex);
+  const revealedCharacter = state.typewriterText[state.typewriterIndex - 1] || "";
+
+  if (state.typewriterIndex >= state.typewriterText.length) {
+    finishTypewriter();
+    return;
+  }
+
+  playDialogueTypeSfxTick(revealedCharacter);
+  state.typewriterTimer = setTimeout(typeNextCharacter, getTypewriterDelay());
 }
 
 function getTypewriterDelay() {
@@ -4547,13 +4157,9 @@ function getTypewriterDelay() {
   return baseSpeed + (DIALOGUE_PUNCTUATION_PAUSE[currentCharacter] || 0);
 }
 
-function getTypewriterCharsPerSecond() {
-  return PERFORMANCE_CONFIG.mobileLiteMode
-    ? PERFORMANCE_CONFIG.typewriterCharsPerSecondMobile
-    : PERFORMANCE_CONFIG.typewriterCharsPerSecondDesktop;
-}
-
-function completeTypewriter() {
+function finishTypewriter() {
+  stopTypewriter();
+  els.dialogueText.textContent = state.typewriterText;
   state.isTypingDialogue = false;
 
   const line = state.activeDialogue[state.dialogueIndex];
@@ -4573,12 +4179,6 @@ function completeTypewriter() {
   if (line && line.requiresName && !getCharacterName()) {
     showNamePrompt();
   }
-}
-
-function finishTypewriter() {
-  cancelActiveTypewriter({ complete: true });
-  els.dialogueText.textContent = state.typewriterText;
-  completeTypewriter();
 }
 
 function handleNextDialogueClick(event) {
@@ -4690,19 +4290,11 @@ function chooseDialogueResponse(choice) {
 }
 
 function stopTypewriter() {
-  cancelActiveTypewriter({ complete: false });
-
   if (state.typewriterTimer) {
     clearTimeout(state.typewriterTimer);
   }
 
-  if (state.typewriterFrame) {
-    cancelAnimationFrame(state.typewriterFrame);
-  }
-
   state.typewriterTimer = null;
-  state.typewriterFrame = null;
-  state.isTypingDialogue = false;
   stopDialogueTypeSfx();
 }
 
@@ -9035,16 +8627,14 @@ function updateBattleEnemyVisual(stage = null) {
           : YESTERDAY_SPIRIT_FALLBACK_IMAGE_PATH;
       const warnLabel = isTimeDust ? "TimeDust" : (isEchoTrick ? "EchoTrick" : "YesterdaySpirit");
       els.battleEnemySprite.onerror = error => {
-        console.warn(`[Performance] ${warnLabel} sprite failed to load; using fallback sprite.`, error);
+        console.warn(`[${warnLabel}] transparent GIF failed to load`, error);
         els.battleEnemySprite.onerror = null;
         els.battleEnemySprite.classList.remove(specialEnemyClass);
         els.battleEnemySprite.src = fallbackSprite;
       };
     }
-    warnIfAnimatedAssetOnMobile(sprite);
     els.battleEnemySprite.src = sprite;
     els.battleEnemySprite.alt = enemyName;
-    els.battleEnemySprite.classList.toggle("is-active-enemy", PERFORMANCE_CONFIG.mobileLiteMode && PERFORMANCE_CONFIG.mobileBalancedAnimation && !isNoAnimationDebugMode());
   }
 
   if (els.battleEnemyName) {
@@ -10171,7 +9761,7 @@ function renderBattleSelect() {
           : YESTERDAY_SPIRIT_FALLBACK_IMAGE_PATH;
       const warnLabel = isTimeDust ? "TimeDust" : (isEchoTrick ? "EchoTrick" : "YesterdaySpirit");
       specialEnemyImage.addEventListener("error", error => {
-        console.warn(`[Performance] ${warnLabel} sprite failed to load; using fallback sprite.`, error);
+        console.warn(`[${warnLabel}] transparent GIF failed to load`, error);
         specialEnemyImage.classList.remove(specialEnemyClass);
         specialEnemyImage.src = fallbackSprite;
       }, { once: true });
