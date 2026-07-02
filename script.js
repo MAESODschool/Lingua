@@ -131,7 +131,7 @@ const BOSS_ACTIONS = [
 
 const DEFAULT_POINT_PARRY_CONFIG = {
   enabled: true,
-  counterDamage: 8,
+  counterDamage: 4,
   preventDamage: true,
   chance: 0.25,
   ultimateChanceBonus: 0.1,
@@ -141,23 +141,44 @@ const DEFAULT_POINT_PARRY_CONFIG = {
   messageTemplate: "Perfect Parry - รับดาเมจ 0 และสวนกลับ {damage}"
 };
 
+const PARRY_BALANCE_CONFIG = {
+  pointParry: {
+    enabled: true,
+    durationMs: 1100,
+    targetScale: 1,
+    startScale: 2.4,
+    perfectWindow: 0.08,
+    goodWindow: 0.16,
+    preventDamageOnPerfect: true,
+    preventDamageOnGood: true,
+    counterDamagePerfect: 4,
+    counterDamageGood: 2,
+    counterDamageMiss: 0
+  },
+  parryBar: {
+    counterDamagePerfect: 4,
+    counterDamageGood: 2,
+    counterDamageMiss: 0
+  }
+};
+
 const BOSS_POINT_PARRY_CONFIGS = {
   edForger: {
-    counterDamage: 10,
+    counterDamage: 4,
     chance: 0.35,
     targetCount: 2,
     duration: 2600,
     size: 66
   },
   irregularWraith: {
-    counterDamage: 10,
+    counterDamage: 4,
     chance: 0.45,
     targetCount: 2,
     duration: 2400,
     size: 62
   },
   memoryBreaker: {
-    counterDamage: 10,
+    counterDamage: 4,
     chance: 0.45,
     lowHpChance: 0.6,
     targetCount: 2,
@@ -2373,10 +2394,7 @@ function disableBattleInputsForDefeat() {
 function cleanupBattleInputState() {
   stopTimer("charge");
   stopParryCountdown();
-  if (state.pointParry?.timeout) {
-    clearTimeout(state.pointParry.timeout);
-  }
-  state.pointParry = null;
+  cleanupPointParryRingUI();
   state.parryAttack = null;
   state.shield = 0;
   state.guardShield = 0;
@@ -2575,10 +2593,7 @@ function hideBattleUICompletely() {
   setActionButtonsEnabled(false);
   stopTimer("charge");
   stopParryCountdown();
-  if (state.pointParry?.timeout) {
-    clearTimeout(state.pointParry.timeout);
-  }
-  state.pointParry = null;
+  cleanupPointParryRingUI();
   state.parryAttack = null;
   showOnlyBattlePanel(null);
   document.body.classList.remove("battle-mode", "combat-mode", "modal-open");
@@ -8109,10 +8124,118 @@ function getPointParryDifficulty() {
   const battle = state.actBattle;
   const config = getParryConfigForBoss(battle?.stage, battle?.pendingBossAction);
   return {
-    targetCount: config.targetCount,
-    duration: config.duration,
+    durationMs: PARRY_BALANCE_CONFIG.pointParry.durationMs,
+    targetScale: PARRY_BALANCE_CONFIG.pointParry.targetScale,
+    startScale: PARRY_BALANCE_CONFIG.pointParry.startScale,
+    perfectWindow: PARRY_BALANCE_CONFIG.pointParry.perfectWindow,
+    goodWindow: PARRY_BALANCE_CONFIG.pointParry.goodWindow,
     size: config.size
   };
+}
+
+function cancelPointParryRingChallenge() {
+  if (state.pointParry?.rafId) {
+    cancelAnimationFrame(state.pointParry.rafId);
+  }
+  if (state.pointParry?.timeout) {
+    clearTimeout(state.pointParry.timeout);
+  }
+}
+
+function cleanupPointParryRingUI() {
+  cancelPointParryRingChallenge();
+  state.pointParry = null;
+  if (els.pointParryArena) {
+    els.pointParryArena.innerHTML = "";
+  }
+}
+
+function updatePointParryRingScale(scale) {
+  const ring = els.pointParryArena?.querySelector(".point-parry-shrinking-ring");
+  if (!ring) {
+    return;
+  }
+  ring.style.transform = `scale(${scale})`;
+}
+
+function startPointParryRingChallenge(options = {}) {
+  cancelPointParryRingChallenge();
+  const config = {
+    ...PARRY_BALANCE_CONFIG.pointParry,
+    ...options
+  };
+  const startedAt = performance.now();
+  state.pointParry = {
+    active: true,
+    startedAt,
+    durationMs: config.durationMs,
+    startScale: config.startScale,
+    targetScale: config.targetScale,
+    perfectWindow: config.perfectWindow,
+    goodWindow: config.goodWindow,
+    resolved: false,
+    rafId: null,
+    timeout: null,
+    currentScale: config.startScale
+  };
+
+  console.log("[PointParryRing] start", {
+    durationMs: config.durationMs,
+    startScale: config.startScale,
+    targetScale: config.targetScale
+  });
+
+  function tick(now) {
+    if (!state.pointParry?.active || state.pointParry.resolved) {
+      return;
+    }
+
+    const elapsed = now - state.pointParry.startedAt;
+    const progress = Math.min(1, elapsed / state.pointParry.durationMs);
+    const scale = state.pointParry.startScale -
+      (state.pointParry.startScale - state.pointParry.targetScale) * progress;
+
+    state.pointParry.currentScale = scale;
+    updatePointParryRingScale(scale);
+
+    if (progress >= 1) {
+      resolvePointParryRing("timeout");
+      return;
+    }
+
+    state.pointParry.rafId = requestAnimationFrame(tick);
+  }
+
+  updatePointParryRingScale(config.startScale);
+  state.pointParry.rafId = requestAnimationFrame(tick);
+}
+
+function resolvePointParryRing(reason = "tap") {
+  const challenge = state.pointParry;
+  if (!challenge || challenge.resolved) {
+    return;
+  }
+
+  challenge.resolved = true;
+  if (challenge.rafId) {
+    cancelAnimationFrame(challenge.rafId);
+  }
+
+  const scaleDelta = Math.abs(challenge.currentScale - challenge.targetScale);
+  let result = "MISS";
+  if (reason !== "timeout") {
+    if (scaleDelta <= challenge.perfectWindow) {
+      result = "PERFECT";
+    } else if (scaleDelta <= challenge.goodWindow) {
+      result = "GOOD";
+    }
+  }
+
+  console.log("[PointParryRing] result", {
+    grade: result.toLowerCase(),
+    scaleDelta
+  });
+  resolvePointParry(result, { scaleDelta, reason });
 }
 
 function showPointParryStep() {
@@ -8128,60 +8251,36 @@ function showPointParryStep() {
   }
 
   const difficulty = getPointParryDifficulty();
-  state.pointParry = {
-    active: true,
-    hits: 0,
-    targetCount: difficulty.targetCount,
-    timeout: null
-  };
-
   setBattleTurnOwner("enemy");
   showOnlyBattlePanel(els.pointParryPanel);
   els.pointParryTitle.textContent = battle.pendingBossAction.label || "Memory Fracture";
-  els.pointParryInstruction.textContent = "แตะวงเวทที่ปรากฏให้ครบก่อนเวลาหมด";
+  els.pointParryInstruction.textContent = "กดเมื่อวงกลมประสานกัน!";
   els.pointParryResult.textContent = "";
   els.pointParryArena.innerHTML = "";
 
-  for (let index = 0; index < difficulty.targetCount; index += 1) {
-    const target = document.createElement("button");
-    target.className = "point-parry-target";
-    target.type = "button";
-    target.style.width = `${difficulty.size}px`;
-    target.style.height = `${difficulty.size}px`;
-    target.style.left = `${12 + Math.random() * 68}%`;
-    target.style.top = `${14 + Math.random() * 62}%`;
-    target.textContent = "✦";
-    target.addEventListener("pointerdown", event => {
-      event.preventDefault();
-      if (!state.pointParry?.active || target.classList.contains("is-hit")) {
-        return;
-      }
-      target.classList.add("is-hit");
-      state.pointParry.hits += 1;
-      if (state.pointParry.hits >= state.pointParry.targetCount) {
-        resolvePointParry("PERFECT");
-      }
-    });
-    els.pointParryArena.appendChild(target);
-  }
-
-  state.pointParry.timeout = setTimeout(() => {
-    if (!state.pointParry?.active) {
-      return;
-    }
-    resolvePointParry(state.pointParry.hits > 0 ? "GOOD" : "MISS");
-  }, difficulty.duration);
+  const ringGame = document.createElement("div");
+  ringGame.className = "point-parry-ring-game";
+  ringGame.innerHTML = `
+    <div class="point-parry-target-ring" aria-hidden="true"></div>
+    <div class="point-parry-shrinking-ring" aria-hidden="true"></div>
+    <button class="point-parry-hit-button" type="button" aria-label="ปัดจังหวะ">ปัดจังหวะ!</button>
+  `;
+  const hitButton = ringGame.querySelector(".point-parry-hit-button");
+  hitButton.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    resolvePointParryRing("tap");
+  }, { passive: false });
+  els.pointParryArena.appendChild(ringGame);
+  startPointParryRingChallenge(difficulty);
 }
 
-function resolvePointParry(result) {
+function resolvePointParry(result, meta = {}) {
   const battle = state.actBattle;
   if (!battle || !battle.pendingBossAction || !state.pointParry?.active) {
     return;
   }
 
-  if (state.pointParry.timeout) {
-    clearTimeout(state.pointParry.timeout);
-  }
+  cancelPointParryRingChallenge();
   state.pointParry.active = false;
 
   const action = battle.pendingBossAction;
@@ -8191,13 +8290,20 @@ function resolvePointParry(result) {
   let counterDamage = 0;
 
   if (result === "PERFECT") {
-    damage = parryConfig.preventDamage ? 0 : damage;
-    counterDamage = parryConfig.counterDamage;
+    damage = PARRY_BALANCE_CONFIG.pointParry.preventDamageOnPerfect ? 0 : damage;
+    counterDamage = Math.min(parryConfig.counterDamage, PARRY_BALANCE_CONFIG.pointParry.counterDamagePerfect);
     battle.criticalCounterReady = true;
     gainActAP(1);
   } else if (result === "GOOD") {
-    damage = Math.round(action.damage * 0.5);
+    damage = PARRY_BALANCE_CONFIG.pointParry.preventDamageOnGood ? 0 : Math.round(action.damage * 0.5);
+    counterDamage = PARRY_BALANCE_CONFIG.pointParry.counterDamageGood;
   }
+  console.log("[ParryBalance] counter damage", {
+    type: "point",
+    grade: result.toLowerCase(),
+    counterDamage,
+    scaleDelta: meta.scaleDelta
+  });
   recordParryForGrammaria(result, `point:${battle.turnNumber}:${battle.pendingBossTurn?.stepIndex || 0}`);
 
   if (state.shield > 0) {
@@ -8229,13 +8335,14 @@ function resolvePointParry(result) {
 
   updateBattleStats();
   syncBattleStateToPlayerData();
+  cleanupPointParryRingUI();
   showOnlyBattlePanel(null);
   setBattleTurnOwner("player");
   els.battleMessage.textContent = result === "PERFECT"
-    ? `${buildPointParryMessage(parryConfig, counterDamage, result)} และได้รับ Critical Counter`
+    ? `Perfect Parry! ปัดการโจมตีสำเร็จ และสวนกลับ ${counterDamage} ดาเมจ และได้รับ Critical Counter`
     : result === "GOOD"
-      ? `POINT GUARD! ลดดาเมจ เหลือรับ ${damage}`
-      : `MISS! รับดาเมจ ${damage}`;
+      ? `Parry สำเร็จ! ปัดการโจมตี และสวนกลับ ${counterDamage} ดาเมจ`
+      : `พลาดจังหวะ! การโจมตีผ่านเข้ามา รับดาเมจ ${damage}`;
 
   if (state.enemyHp <= 0) {
     handleActEnemyDefeated("pointParryCounter");
@@ -8518,10 +8625,11 @@ function stopActParry(forcedResult = null) {
 
   if (parryResult === "PERFECT") {
     damage = 0;
-    counterDamage = 8;
+    counterDamage = PARRY_BALANCE_CONFIG.parryBar.counterDamagePerfect;
     gainActAP(1);
   } else if (parryResult === "GOOD") {
     damage = Math.round(action.damage * 0.4);
+    counterDamage = PARRY_BALANCE_CONFIG.parryBar.counterDamageGood;
   } else if (parryResult === "WEAK") {
     damage = Math.round(action.damage * 0.6);
   }
@@ -8562,6 +8670,11 @@ function stopActParry(forcedResult = null) {
     counterDamage += reflectedDamage;
     effects.reflectNextBossAttack = 0;
   }
+  console.log("[ParryBalance] counter damage", {
+    type: "bar",
+    grade: parryResult.toLowerCase(),
+    counterDamage
+  });
 
   if (state.shield > 0) {
     damage = Math.round(damage * (1 - state.shield));
@@ -9711,11 +9824,11 @@ function resolveEnemyHit(parryResult, hitNumber) {
 
 function calculateParryHit(parryResult, baseDamage) {
   if (parryResult === "PERFECT") {
-    return { damage: 0, counterDamage: 5 };
+    return { damage: 0, counterDamage: PARRY_BALANCE_CONFIG.parryBar.counterDamagePerfect };
   }
 
   if (parryResult === "GOOD") {
-    return { damage: Math.round(baseDamage * 0.4), counterDamage: 0 };
+    return { damage: Math.round(baseDamage * 0.4), counterDamage: PARRY_BALANCE_CONFIG.parryBar.counterDamageGood };
   }
 
   if (parryResult === "WEAK") {
