@@ -1775,6 +1775,7 @@ const els = {
   speakerName: document.getElementById("speakerName"),
   dialogueText: document.getElementById("dialogueText"),
   dialogueChoices: document.getElementById("dialogueChoices"),
+  previousDialogueButton: document.getElementById("previousDialogueButton"),
   nextDialogueButton: document.getElementById("nextDialogueButton"),
   lessonGrammariaDisplay: document.getElementById("lessonGrammariaDisplay"),
   dialoguePanel: document.getElementById("dialoguePanel"),
@@ -4292,6 +4293,7 @@ function updateDialogue() {
   updateSpeakingCharacter(line.speaker);
   updateDialogueSpeakerTone(line.speaker);
   hideDialogueChoices();
+  updatePreviousDialogueButton();
   startTypewriter(resolveDialogueText(line));
 }
 
@@ -4309,6 +4311,56 @@ function startTypewriter(text) {
   els.dialogueText.textContent = "";
   setDialogueButtonReady(false);
   typeNextCharacter();
+}
+
+function canGoPreviousLessonDialogue() {
+  return Boolean(
+    state.lessonStoryMode &&
+    !state.actBattle &&
+    Array.isArray(state.lessonStorySteps) &&
+    state.lessonStorySteps.length > 0 &&
+    state.lessonStoryStepIndex > 0 &&
+    !state.awaitingDialogueChoice &&
+    !state.awaitingName
+  );
+}
+
+function updatePreviousDialogueButton() {
+  if (!els.previousDialogueButton) {
+    return;
+  }
+
+  const canGoPrevious = canGoPreviousLessonDialogue();
+  els.previousDialogueButton.disabled = !canGoPrevious;
+  els.previousDialogueButton.setAttribute("aria-disabled", canGoPrevious ? "false" : "true");
+  els.previousDialogueButton.classList.toggle("hidden", !state.lessonStoryMode || Boolean(state.actBattle));
+}
+
+function goPreviousLessonDialogueLine(event = null) {
+  if (event) {
+    event.preventDefault();
+  }
+
+  if (!state.lessonStoryMode || state.actBattle) {
+    return;
+  }
+
+  if (state.isTypingDialogue) {
+    finishTypewriter();
+    updatePreviousDialogueButton();
+    return;
+  }
+
+  if (!canGoPreviousLessonDialogue()) {
+    updatePreviousDialogueButton();
+    return;
+  }
+
+  stopTypewriter();
+  cancelNextDialogueHold();
+  hideDialogueChoices();
+  state.lessonStoryStepIndex = Math.max(0, state.lessonStoryStepIndex - 1);
+  renderLessonStoryStep({ direction: "backward", suppressProgressSave: true });
 }
 
 function typeNextCharacter() {
@@ -4358,6 +4410,7 @@ function finishTypewriter() {
   }
 
   setDialogueButtonReady(true);
+  updatePreviousDialogueButton();
   if (line && line.requiresName && !getCharacterName()) {
     showNamePrompt();
   }
@@ -6246,14 +6299,14 @@ function startLessonDialogueSequence(stage, steps, resumeDialogueIndex = 0) {
   renderLessonStoryStep();
 }
 
-function renderLessonStoryStep() {
+function renderLessonStoryStep(options = {}) {
   const step = state.lessonStorySteps[state.lessonStoryStepIndex];
   if (!step) {
     finishPastDialogueLesson();
     return;
   }
 
-  if (state.currentLessonStage) {
+  if (state.currentLessonStage && !options.suppressProgressSave) {
     saveProgress({
       currentStageId: state.currentLessonStage.id,
       currentLessonId: state.currentLessonStage.id,
@@ -6275,6 +6328,7 @@ function renderLessonStoryStep() {
     ? (state.currentLessonStage.type && state.currentLessonStage.type.includes("boss") ? "เริ่มต่อสู้" : "เริ่มฝึก")
     : "ไปต่อ";
   els.nextDialogueButton.textContent = state.lessonStoryStepIndex >= state.lessonStorySteps.length - 1 ? finalButtonText : "ถัดไป";
+  updatePreviousDialogueButton();
   startTypewriter(step.text);
 }
 
@@ -6339,6 +6393,7 @@ function finishPastDialogueLesson() {
   state.lessonStoryMode = false;
   state.lessonStorySteps = [];
   state.lessonStoryStepIndex = 0;
+  updatePreviousDialogueButton();
   els.lessonStoryVisual.classList.add("hidden");
   els.lessonStoryVisual.innerHTML = "";
   clearSpeakingCharacters();
@@ -6562,6 +6617,7 @@ function renderLessonStep() {
   if (!stage || !step) {
     return;
   }
+  updatePreviousDialogueButton();
 
   saveProgress({
     currentStageId: stage.id,
@@ -10285,6 +10341,7 @@ function skipCurrentLessonToBattleIntro(stage) {
   state.actStageIndex = stageIndex;
   state.currentLessonStage = stage;
   state.lessonStoryMode = false;
+  updatePreviousDialogueButton();
   state.lessonSteps = [];
   state.lessonStepIndex = 0;
   updateLessonChrome(stage, stageIndex, "lesson");
@@ -10405,6 +10462,7 @@ function startBattleByEnemy(enemyId) {
   state.actStageIndex = stageIndex;
   state.currentLessonStage = stage;
   state.lessonStoryMode = false;
+  updatePreviousDialogueButton();
   state.lessonStorySteps = [];
   state.lessonStoryStepIndex = 0;
   state.postBossDialogueStage = null;
@@ -10494,6 +10552,7 @@ els.lessonReviewButton.addEventListener("click", () => {
 });
 els.skipBattleButton.addEventListener("click", openSkipBattleModal);
 els.skipLessonButton.addEventListener("click", openSkipLessonModal);
+els.previousDialogueButton.addEventListener("click", goPreviousLessonDialogueLine);
 els.attackButton.addEventListener("click", () => {
   if (state.actBattle) {
     startActAttackAction();

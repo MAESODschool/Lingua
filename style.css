@@ -1357,6 +1357,45 @@ h3 {
   width: 100%;
 }
 
+.dialogue-nav-actions {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.dialogue-nav-actions .primary-button {
+  flex: 1 1 0;
+}
+
+.dialogue-prev-button {
+  min-width: 120px;
+  background: linear-gradient(180deg, #7555ce, #3d2798 52%, #221261);
+  box-shadow: 0 7px 0 #4a2a7a, 0 0 18px rgba(140, 98, 255, 0.38), inset 0 0 18px rgba(255, 255, 255, 0.18);
+}
+
+.dialogue-prev-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.35);
+}
+
+@media (max-width: 520px) {
+  .dialogue-nav-actions {
+    gap: 8px;
+  }
+
+  .dialogue-prev-button {
+    min-width: 96px;
+  }
+
+  .lesson-main-action .dialogue-prev-button,
+  .dialogue-nav-actions .primary-button {
+    font-size: clamp(0.94rem, 4.4vw, 1.15rem);
+  }
+}
+
 .story-lower .activity-panel {
   width: 100%;
   padding: 0;
@@ -1853,6 +1892,12 @@ h3 {
   background: linear-gradient(180deg, #39a7ff, #1557d9 52%, #08309b);
   box-shadow: 0 7px 0 #7b4918, 0 0 18px rgba(55, 167, 255, 0.48), inset 0 0 18px rgba(255, 255, 255, 0.2);
   font-size: clamp(1.28rem, 6vw, 1.9rem);
+}
+
+.lesson-main-action .dialogue-prev-button {
+  background: linear-gradient(180deg, #7555ce, #3d2798 52%, #221261);
+  box-shadow: 0 7px 0 #4a2a7a, 0 0 18px rgba(140, 98, 255, 0.38), inset 0 0 18px rgba(255, 255, 255, 0.18);
+  font-size: clamp(1.02rem, 4.6vw, 1.42rem);
 }
 
 .lesson-grammaria-display {
