@@ -4397,6 +4397,20 @@ function restoreSavedProgress() {
     return false;
   }
 
+  const restoredStage = getStageById(progress.currentStageId);
+  if (
+    progress.currentScreen === "lesson" &&
+    progress.lessonPhase === "postBossDialogue" &&
+    isFinalBossStage(restoredStage)
+  ) {
+    console.log("[FinalBoss] restoring post boss dialogue", {
+      stageId: restoredStage.id,
+      dialogueIndex: progress.currentDialogueIndex || 0
+    });
+    startPostBossDialogue(restoredStage, progress.currentDialogueIndex || 0);
+    return true;
+  }
+
   if (progress.finalBossDefeated || progress.currentScreen === "victory") {
     completeActVictoryScene();
     return true;
@@ -5057,6 +5071,21 @@ function normalizeEnemyId(enemy) {
   return raw || "";
 }
 
+function isFinalBossStage(stage) {
+  if (!stage) {
+    return false;
+  }
+
+  const normalizedEnemy = normalizeEnemyId(stage);
+  const compactEnemy = String(stage.enemy || stage.name || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
+  return stage.id === "final-boss" ||
+    stage.type === "final-boss" ||
+    stage.enemy === "The Memory Breaker" ||
+    normalizedEnemy === "memoryBreaker" ||
+    compactEnemy === "thememorybreaker" ||
+    compactEnemy === "memorybreaker";
+}
+
 function getBossProgressId(stage) {
   if (!stage) {
     return "";
@@ -5083,7 +5112,7 @@ function getBossProgressId(stage) {
   if (stage.id === "irregular-mini-boss") {
     return "irregularWraith";
   }
-  if (stage.id === "final-boss") {
+  if (isFinalBossStage(stage)) {
     return "memoryBreaker";
   }
   return "";
@@ -6187,7 +6216,14 @@ function finishPastDialogueLesson() {
   if (stage?.isPostBossDialogue) {
     const completedStage = state.postBossDialogueStage || stage;
     state.postBossDialogueStage = null;
-    if (completedStage.type === "final-boss") {
+    console.log("[PostBossDialogue] finished", {
+      stageId: completedStage.id,
+      type: completedStage.type,
+      enemy: completedStage.enemy,
+      isFinalBoss: isFinalBossStage(completedStage)
+    });
+    if (isFinalBossStage(completedStage)) {
+      console.log("[FinalBoss] showActEnding");
       showActEnding();
       return;
     }
@@ -6203,7 +6239,7 @@ function finishPastDialogueLesson() {
   }
 }
 
-function startPostBossDialogue(stage) {
+function startPostBossDialogue(stage, dialogueIndex = 0) {
   const postBossStage = {
     ...stage,
     questions: [],
@@ -6211,8 +6247,19 @@ function startPostBossDialogue(stage) {
   };
   state.postBossDialogueStage = stage;
   state.currentLessonStage = postBossStage;
+  const stageIndex = getStageIndexById(stage.id);
+  state.actStageIndex = stageIndex >= 0 ? stageIndex : state.actStageIndex;
+  saveProgress({
+    currentStageId: stage.id,
+    currentLessonId: stage.id,
+    currentScreen: "lesson",
+    lastSafeScreen: isFinalBossStage(stage) ? "victory" : "lesson",
+    lessonPhase: "postBossDialogue",
+    currentDialogueIndex: dialogueIndex,
+    currentLessonStepIndex: 0
+  });
   console.log("[Lesson Start]", `${stage.id}:postBoss`, ["postBossDialogue"]);
-  startLessonDialogueSequence(postBossStage, buildPostBossDialogue(stage), 0);
+  startLessonDialogueSequence(postBossStage, buildPostBossDialogue(stage), dialogueIndex);
 }
 
 function buildRegularEdLessonSteps(stage) {
@@ -6279,7 +6326,7 @@ function createBattleIntroStep(stage) {
   return {
     type: "battle-intro",
     speaker: "ระบบ",
-    text: stage.type === "final-boss"
+    text: isFinalBossStage(stage)
       ? `${stage.enemy} ปรากฏตัวแล้ว ใช้สิ่งที่เรียนทั้งหมดเพื่อฟื้นคืน Past Fragment`
       : `${stage.enemy || stage.thaiEnemy || "เงาความทรงจำ"} กำลังรออยู่ เริ่มฝึกเมื่อพร้อม`
   };
@@ -6297,7 +6344,7 @@ function buildGuidedLessonSteps(stage) {
   steps.push({
     type: "dialogue",
     speaker: "มาสเตอร์เวรีออน",
-    text: stage.type === "final-boss"
+    text: isFinalBossStage(stage)
       ? `${stage.enemy} กำลังทดสอบทุกความทรงจำของอดีต เตรียมทบทวนให้ชัดก่อนต่อสู้`
       : `วันนี้เราจะเรียนเรื่อง ${stage.thaiTitle || stage.title} ทีละขั้น`
   });
@@ -6359,7 +6406,7 @@ function buildGuidedLessonSteps(stage) {
     steps.push({
       type: "battle-intro",
       speaker: "ระบบ",
-      text: stage.type === "final-boss"
+      text: isFinalBossStage(stage)
         ? `${stage.enemy} ปรากฏตัวแล้ว ใช้สิ่งที่เรียนทั้งหมดเพื่อฟื้นคืน Past Fragment`
         : `${stage.enemy || stage.thaiEnemy || "เงาความทรงจำ"} กำลังรออยู่ เริ่มฝึกเมื่อพร้อม`
     });
@@ -6606,7 +6653,7 @@ function startActBattle(stageIndex) {
     return;
   }
   resetVictorySceneMusicForBattle();
-  const enemyMaxHp = stage.type === "final-boss" ? 140 : 100;
+  const enemyMaxHp = isFinalBossStage(stage) ? 140 : 100;
   state.timeDustTransitionComplete = false;
   state.actStageIndex = stageIndex;
   state.actBattle = {
@@ -6670,7 +6717,7 @@ function startActBattle(stageIndex) {
     currentLessonStepIndex: state.lessonStepIndex || 0,
     currentDialogueIndex: state.lessonStoryStepIndex || 0
   });
-  els.battleTitle.textContent = stage.type === "final-boss" ? "Final Boss: The Memory Breaker" : stage.title;
+  els.battleTitle.textContent = isFinalBossStage(stage) ? "Final Boss: The Memory Breaker" : stage.title;
   updateBattleEnemyVisual(stage);
   updateBattleStats();
   resetBattleContinueControls();
@@ -6954,7 +7001,7 @@ function getBossKey(stage) {
   if (stage.id === "irregular-mini-boss" || stage.enemy === "The Irregular Wraith") {
     return "irregularWraith";
   }
-  if (stage.id === "final-boss" || stage.enemy === "The Memory Breaker") {
+  if (isFinalBossStage(stage)) {
     return "memoryBreaker";
   }
   return null;
@@ -7780,7 +7827,7 @@ function chooseActBossAction(battle) {
   const patterns = bossKey ? bossActionPatterns[bossKey] : null;
   let baseAction = BOSS_ACTIONS[0];
 
-  if (battle.stage.type === "final-boss" && (hpPercent <= 0.35 || battle.turnNumber % 5 === 0)) {
+  if (isFinalBossStage(battle.stage) && (hpPercent <= 0.35 || battle.turnNumber % 5 === 0)) {
     baseAction = BOSS_ACTIONS.find(action => action.type === "ultimate");
   } else if (battle.stage.type.includes("boss") && battle.turnNumber % 5 === 0) {
     baseAction = BOSS_ACTIONS.find(action => action.type === "ultimate");
@@ -8183,7 +8230,7 @@ function chooseBossQuestionAnswer(option, question) {
     battle.pendingBossTurn.wrongQuestions += 1;
     recordWrongAnswerForGrammaria();
     battle.pendingBossAction.damage += 6;
-    const chipDamage = battle.stage.type === "final-boss" ? 10 : 7;
+    const chipDamage = isFinalBossStage(battle.stage) ? 10 : 7;
     state.playerHp = clamp(state.playerHp - chipDamage, 0, 100);
     recordBossDamage(chipDamage, "bossChipDamage");
     playAttackSfx();
@@ -8468,7 +8515,7 @@ function continueActBattle() {
     battle.advanceQuestionOnContinue = true;
   }
 
-  if (battle.questionIndex >= battle.stage.questions.length && battle.stage.type === "final-boss" && state.enemyHp > 0) {
+  if (battle.questionIndex >= battle.stage.questions.length && isFinalBossStage(battle.stage) && state.enemyHp > 0) {
     els.battleMessage.textContent = "The Memory Breaker ยังไม่สลาย ความทรงจำต้องการคำตอบที่ถูกต้องมากกว่านี้";
     state.playerHp = 100;
     state.enemyHp = state.enemyMaxHp;
@@ -8531,14 +8578,15 @@ function grantActReward(stage, options = {}) {
 
   const currentIndex = getStageIndexById(stage.id);
   const nextStage = getPlayableStages()[currentIndex + 1] || null;
+  const finalBoss = isFinalBossStage(stage);
   if (nextStage) {
     unlockStage(nextStage.id);
   }
   saveProgress({
-    currentStageId: stage.id === "final-boss" ? stage.id : (nextStage ? nextStage.id : stage.id),
-    currentLessonId: stage.id === "final-boss" ? stage.id : (nextStage ? nextStage.id : stage.id),
-    currentScreen: stage.id === "final-boss" ? "victory" : "lesson",
-    lastSafeScreen: stage.id === "final-boss" ? "victory" : "lesson",
+    currentStageId: finalBoss ? stage.id : (nextStage ? nextStage.id : stage.id),
+    currentLessonId: finalBoss ? stage.id : (nextStage ? nextStage.id : stage.id),
+    currentScreen: finalBoss ? "victory" : "lesson",
+    lastSafeScreen: finalBoss ? "victory" : "lesson",
     currentDialogueIndex: 0,
     currentLessonStepIndex: 0
   });
@@ -8597,6 +8645,16 @@ function finalizeBossVictoryWithResult(stage, onContinue) {
   });
 }
 
+function continueFinalBossVictory(stage) {
+  console.log("[FinalBoss] showing Grammaria result");
+  finalizeBossVictoryWithResult(stage, () => {
+    console.log("[FinalBoss] starting post boss dialogue");
+    runSceneTransition("ความทรงจำสุดท้ายกำลังกลับคืน...", () => {
+      startPostBossDialogue(stage);
+    });
+  });
+}
+
 function handleActEnemyDefeated(source = "damage") {
   const battle = state.actBattle;
   if (!battle || battle.victoryHandled) {
@@ -8641,10 +8699,8 @@ function handleActEnemyDefeated(source = "damage") {
     return true;
   }
 
-  if (battle.stage.type === "final-boss") {
-    finalizeBossVictoryWithResult(battle.stage, () => {
-      runSceneTransition("ความทรงจำสุดท้ายกำลังกลับคืน...", () => startPostBossDialogue(battle.stage));
-    });
+  if (isFinalBossStage(battle.stage)) {
+    continueFinalBossVictory(battle.stage);
     return true;
   }
 
@@ -8660,6 +8716,12 @@ function completeActStage() {
     return;
   }
   const stage = battle.stage;
+  console.log("[BattleComplete] stage", {
+    stageId: stage.id,
+    type: stage.type,
+    enemy: stage.enemy,
+    isFinalBoss: isFinalBossStage(stage)
+  });
   state.lastStageResult = {
     correctAnswers: battle.correctAnswers,
     totalQuestions: stage.questions.length
@@ -8673,10 +8735,8 @@ function completeActStage() {
     return;
   }
 
-  if (stage.type === "final-boss") {
-    finalizeBossVictoryWithResult(stage, () => {
-      runSceneTransition("ความทรงจำสุดท้ายกำลังกลับคืน...", () => startPostBossDialogue(stage));
-    });
+  if (isFinalBossStage(stage)) {
+    continueFinalBossVictory(stage);
     return;
   }
 
@@ -8704,6 +8764,12 @@ function restoreLessonUIAfterBattle() {
 }
 
 function showStageReward(stage) {
+  if (isFinalBossStage(stage)) {
+    console.warn("[FinalBoss] showStageReward called for final boss; redirecting to post boss dialogue");
+    startPostBossDialogue(stage);
+    return;
+  }
+
   const nextIndex = state.actStageIndex + 1;
   const grammariaEarned = state.lastGrammariaResult?.bossId === (getBossProgressId(stage) || stage.id)
     ? state.lastGrammariaResult.earned || 0
@@ -9962,13 +10028,39 @@ function startBattleByEnemy(enemyId) {
     return;
   }
 
-  const stageIndex = getPlayableStages().findIndex(stage => stage.id === enemy.stageId);
+  const stages = getPlayableStages();
+  const stageIndex = stages.findIndex(stage => stage.id === enemy.stageId);
   if (stageIndex < 0) {
     return;
   }
 
+  const stage = stages[stageIndex];
+  state.actStageIndex = stageIndex;
+  state.currentLessonStage = stage;
+  state.lessonStoryMode = false;
+  state.lessonStorySteps = [];
+  state.lessonStoryStepIndex = 0;
+  state.postBossDialogueStage = null;
+
+  saveProgress({
+    currentStageId: stage.id,
+    currentLessonId: stage.id,
+    currentScreen: "battle",
+    lastSafeScreen: "lesson",
+    lessonPhase: "battle",
+    currentDialogueIndex: 0,
+    currentLessonStepIndex: 0
+  });
+
+  console.log("[SkipBattle] start", {
+    enemyId,
+    stageId: stage.id,
+    stageIndex,
+    type: stage.type,
+    enemy: stage.enemy
+  });
+
   closeGameModal();
-  state.currentLessonStage = getPlayableStages()[stageIndex];
   runSceneTransition(`${enemy.name} ปรากฏตัว!`, () => startActBattle(stageIndex));
 }
 
