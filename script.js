@@ -587,9 +587,10 @@ function inferRuleIdFromQuestion(question) {
 }
 
 function normalizeQuestionMeta(questions, fallbackLessonId = "", fallbackRuleId = "") {
-  questions.forEach(question => {
+  questions.forEach((question, index) => {
     question.lessonId = question.lessonId || fallbackLessonId;
     question.ruleId = question.ruleId || inferRuleIdFromQuestion(question) || fallbackRuleId;
+    question.id = question.id || getQuestionId(question, index, fallbackLessonId || "question");
   });
   return questions;
 }
@@ -2678,8 +2679,23 @@ function shuffleArray(array) {
   return copy;
 }
 
-function getQuestionId(question, index = 0) {
-  return question.id || `${question.baseVerb || "q"}-${question.prompt || question.sentence || index}`;
+function getQuestionId(question, index = 0, prefix = "q") {
+  if (question?.id) {
+    return question.id;
+  }
+
+  const text = question?.prompt || question?.sentence || question?.baseVerb || "question";
+  const answer = question?.answer || question?.correctAnswer || question?.correct || "answer";
+  const ruleId = question?.ruleId || "rule";
+  const lessonId = question?.lessonId || "lesson";
+  return [
+    prefix,
+    lessonId,
+    ruleId,
+    index,
+    String(text).slice(0, 40),
+    String(answer).slice(0, 24)
+  ].join("-");
 }
 
 function prepareQuestion(rawQuestion, index = 0) {
@@ -6577,6 +6593,11 @@ function startActBattle(stageIndex) {
     currentQuestion: null,
     usedBossQuestionIds: new Set(),
     lastBossQuestionBaseVerb: "",
+    usedFocusQuestionIds: new Set(),
+    lastFocusQuestionId: "",
+    lastFocusQuestionBaseVerb: "",
+    focusQuestionIndex: 0,
+    recentFocusQuestionIds: [],
     simpleIrregularStreak: 0,
     bossStunned: false,
     bossWasStunnedLastTurn: false,
@@ -6659,7 +6680,14 @@ function startActFocusAction() {
     return;
   }
 
-  const focusQuestion = prepareQuestion(getBossQuestion(battle.stage) || battle.stage.questions[battle.questionIndex]);
+  const rawFocusQuestion = getFocusQuestion(battle.stage);
+  if (!rawFocusQuestion) {
+    els.battleMessage.textContent = "สมาธิยังไม่ก่อรูป ไม่มีคำถามสำหรับรวบรวม Grammaria ในตอนนี้";
+    beginActPlayerTurn("ไม่มีคำถามสำหรับนั่งสมาธิ ลองเลือกการกระทำอื่น");
+    return;
+  }
+
+  const focusQuestion = prepareQuestion(rawFocusQuestion, battle.focusQuestionIndex || 0);
   battle.currentFocusQuestion = focusQuestion;
   battle.advanceQuestionOnContinue = false;
   showOnlyBattlePanel(els.questionPanel);
@@ -6945,6 +6973,79 @@ function buildPointParryMessage(config, damage, result) {
     return (config.messageTemplate || DEFAULT_POINT_PARRY_CONFIG.messageTemplate).replace("{damage}", damage);
   }
   return null;
+}
+
+function getFocusQuestion(stage) {
+  const battle = state.actBattle;
+  if (!battle || !stage) {
+    return null;
+  }
+
+  const stageQuestions = Array.isArray(stage.questions) ? stage.questions : [];
+  const bossKey = getBossKey(stage);
+  const bossBank = bossKey && bossQuestionBanks[bossKey]
+    ? filterQuestionsForStage(bossQuestionBanks[bossKey], stage)
+    : [];
+  const rawPool = [...stageQuestions, ...bossBank].filter(Boolean);
+
+  if (!rawPool.length) {
+    return null;
+  }
+
+  const seenIds = new Set();
+  const normalizedPool = rawPool.map((question, index) => {
+    const baseId = getQuestionId(question, index, `focus-${stage.id || "stage"}`);
+    const id = seenIds.has(baseId) ? `${baseId}-${index}` : baseId;
+    seenIds.add(id);
+    return { ...question, id };
+  });
+
+  if (!battle.usedFocusQuestionIds) {
+    battle.usedFocusQuestionIds = new Set();
+  }
+  if (!Array.isArray(battle.recentFocusQuestionIds)) {
+    battle.recentFocusQuestionIds = [];
+  }
+
+  const lastId = battle.lastFocusQuestionId || "";
+  const lastBaseVerb = battle.lastFocusQuestionBaseVerb || "";
+  let pool = normalizedPool.filter(question =>
+    !battle.usedFocusQuestionIds.has(question.id) &&
+    question.id !== lastId &&
+    (!getQuestionBaseWord(question) || getQuestionBaseWord(question) !== lastBaseVerb)
+  );
+
+  if (!pool.length) {
+    pool = normalizedPool.filter(question =>
+      !battle.usedFocusQuestionIds.has(question.id) &&
+      question.id !== lastId
+    );
+  }
+
+  if (!pool.length) {
+    battle.usedFocusQuestionIds.clear();
+    pool = normalizedPool.filter(question => question.id !== lastId);
+  }
+
+  if (!pool.length) {
+    pool = normalizedPool;
+  }
+
+  const question = sample(pool, 1)[0];
+  if (!question) {
+    return null;
+  }
+
+  battle.usedFocusQuestionIds.add(question.id);
+  battle.lastFocusQuestionId = question.id;
+  battle.lastFocusQuestionBaseVerb = getQuestionBaseWord(question);
+  battle.focusQuestionIndex = (battle.focusQuestionIndex || 0) + 1;
+  battle.recentFocusQuestionIds = [
+    ...(battle.recentFocusQuestionIds || []),
+    question.id
+  ].slice(-5);
+
+  return question;
 }
 
 function getBossQuestion(stage) {
