@@ -2002,6 +2002,84 @@ html.performance-static-bg #battleScene {
   }
 }
 
+html.mobile-lite {
+  --grammar-hall-bg: url("assets/backgrounds/grammar-hall-mobile-static.webp");
+}
+
+html.mobile-lite *,
+html.mobile-lite *::before,
+html.mobile-lite *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+html.mobile-lite .lesson-screen,
+html.mobile-lite .lesson-bg-magic,
+html.mobile-lite #battleScene,
+html.mobile-lite .game-scene {
+  background-image:
+    linear-gradient(180deg, rgba(8, 7, 28, 0.36), rgba(15, 9, 38, 0.5)),
+    url("assets/backgrounds/grammar-hall-mobile-static.webp") !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+html.mobile-lite .heavy-glow,
+html.mobile-lite .magic-pulse,
+html.mobile-lite .background-particles,
+html.mobile-lite .floating-runes,
+html.mobile-lite .animated-runes,
+html.mobile-lite .scene-particles,
+html.mobile-lite .sparkles,
+html.mobile-lite .fog,
+html.mobile-lite .mist,
+html.mobile-lite .orbital-runes,
+html.mobile-lite .sky-orbit,
+html.mobile-lite .floating-letter,
+html.mobile-lite .magic-circle,
+html.mobile-lite .library-arch,
+html.mobile-lite .tower-art {
+  display: none !important;
+  animation: none !important;
+  filter: none !important;
+}
+
+html.mobile-lite .character-sprite,
+html.mobile-lite .teacher-sprite,
+html.mobile-lite .boss-sprite,
+html.mobile-lite .npc-sprite,
+html.mobile-lite .dialogue-character,
+html.mobile-lite .battle-character,
+html.mobile-lite .character-avatar,
+html.mobile-lite .wisp-avatar,
+html.mobile-lite .wanderer-avatar,
+html.mobile-lite .verion-avatar,
+html.mobile-lite img {
+  filter: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  will-change: auto !important;
+  transform: translateZ(0);
+}
+
+html.mobile-lite .lesson-scene,
+html.mobile-lite .dialogue-scene,
+html.mobile-lite .battle-scene,
+html.mobile-lite .game-scene,
+html.mobile-lite .dialogue-panel,
+html.mobile-lite .activity-panel,
+html.mobile-lite .battle-panel,
+html.mobile-lite .game-modal-content,
+html.mobile-lite .panel,
+html.mobile-lite .card {
+  backdrop-filter: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
 .hero-card,
 .combatant {
   padding: 14px;

@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lingua - RPG แห่งแกรมมาเรีย</title>
+  <script>
+    (() => {
+      const params = new URLSearchParams(window.location.search);
+      const isMobile = window.matchMedia("(max-width: 768px)").matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (params.has("lite") || isMobile) {
+        document.documentElement.classList.add("mobile-lite");
+        document.documentElement.style.setProperty("--grammar-hall-bg", "url(\"assets/backgrounds/grammar-hall-mobile-static.webp\")");
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -142,7 +152,7 @@
             </label>
           </fieldset>
           <div class="avatar-preview-panel">
-            <img id="avatarPreview" class="avatar-preview main-character-gif main-character-preview-gif avatar-gender-other avatar-body-normal" src="assets/characters/main-character-mobile.webp" alt="ตัวอย่างตัวละครหลัก" draggable="false">
+            <img id="avatarPreview" class="avatar-preview main-character-gif main-character-preview-gif avatar-gender-other avatar-body-normal" src="assets/characters/main-character-mobile-static.webp" alt="ตัวอย่างตัวละครหลัก" draggable="false">
             <p id="avatarPreviewText">ตัวอย่าง: ไม่ระบุ / ปกติ</p>
           </div>
           <button id="createCharacterButton" class="primary-button">เริ่มการเดินทาง</button>
@@ -191,12 +201,12 @@
           </div>
 
           <div id="storyWanderer" class="vn-character wanderer-in-scene character-static-holder">
-            <img class="character-avatar wanderer-avatar main-character-gif" src="assets/characters/main-character-mobile.webp" alt="ผู้พเนจร" draggable="false">
+            <img class="character-avatar wanderer-avatar main-character-gif" src="assets/characters/main-character-mobile-static.webp" alt="ผู้พเนจร" draggable="false">
             <strong>ผู้พเนจร</strong>
           </div>
 
           <div id="storyVerion" class="vn-character verion-in-scene character-static-holder">
-            <img class="character-avatar verion-avatar lesson-character-teacher teacher-character-gif" src="assets/characters/master-verion-mobile.webp" alt="มาสเตอร์เวรีออน" draggable="false">
+            <img class="character-avatar verion-avatar lesson-character-teacher teacher-character-gif" src="assets/characters/master-verion-mobile-static.webp" alt="มาสเตอร์เวรีออน" draggable="false">
             <strong>อาจารย์เวเรียน</strong>
           </div>
 
@@ -276,7 +286,7 @@
 
       <div class="battle-stage">
         <article id="battlePlayer" class="combatant player-side">
-          <img class="character-avatar wanderer-avatar main-character-gif small" src="assets/characters/main-character-mobile.webp" alt="ผู้พเนจร" draggable="false">
+          <img class="character-avatar wanderer-avatar main-character-gif small" src="assets/characters/main-character-mobile-static.webp" alt="ผู้พเนจร" draggable="false">
           <div class="combat-text">
             <h3>ผู้พเนจร</h3>
             <div class="hp-bar" aria-label="Player HP">
