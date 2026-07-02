@@ -264,8 +264,24 @@ function buildEdForgerQuestions() {
     ["ed_032", "boss", "mixed-rule", "study", "Which answer is correct?", ["She studied the rune.", "She studyed the rune.", "She studyied the rune.", "She studed the rune."], "She studied the rune.", "study ต้องเป็น studied"],
     ["ed_033", "boss", "mixed-rule", "open", "Which answer is correct?", ["They opened the gate.", "They openned the gate.", "They openied the gate.", "They opend the gate."], "They opened the gate.", "open เติม -ed ปกติ"],
     ["ed_034", "boss", "mixed-rule", "prefer", "Which answer is correct?", ["He preferred the blue crystal.", "He prefered the blue crystal.", "He preferrd the blue crystal.", "He preferied the blue crystal."], "He preferred the blue crystal.", "prefer ต้องเป็น preferred"],
-    ["ed_035", "boss", "mixed-rule", "arrive ->", ["arrived", "arriveed", "arrivied", "arrivd"], "arrived", "arrive ลงท้าย e เติม -d"],
-    ["ed_036", "boss", "mixed-rule", "carry ->", ["carried", "carryed", "carryied", "carryd"], "carried", "พยัญชนะ + y เปลี่ยน y เป็น i แล้วเติม -ed"]
+    ["ed_035", "boss", "mixed-rule", "arrive", "arrive ->", ["arrived", "arriveed", "arrivied", "arrivd"], "arrived", "arrive ลงท้าย e เติม -d"],
+    ["ed_036", "boss", "mixed-rule", "carry", "carry ->", ["carried", "carryed", "carryied", "carryd"], "carried", "พยัญชนะ + y เปลี่ยน y เป็น i แล้วเติม -ed"],
+    ["ed_037", "medium", "regular-ed", "work", "work ->", ["worked", "workd", "workked", "workied"], "worked", "คำทั่วไปเติม -ed เป็น worked"],
+    ["ed_038", "medium", "regular-ed", "look", "look ->", ["looked", "lookd", "lookked", "lookied"], "looked", "คำทั่วไปเติม -ed เป็น looked"],
+    ["ed_039", "medium", "ending-e", "use", "use ->", ["used", "useed", "usied", "usd"], "used", "ลงท้าย e เติม -d เป็น used"],
+    ["ed_040", "medium", "ending-e", "smile", "smile ->", ["smiled", "smileed", "smilied", "smild"], "smiled", "ลงท้าย e เติม -d เป็น smiled"],
+    ["ed_041", "medium", "vowel-y", "pray", "pray ->", ["prayed", "praied", "prayd", "prayied"], "prayed", "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
+    ["ed_042", "medium", "vowel-y", "employ", "employ ->", ["employed", "emploied", "employd", "employied"], "employed", "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
+    ["ed_043", "medium", "consonant-y", "apply", "apply ->", ["applied", "applyed", "applyied", "appled"], "applied", "พยัญชนะ + y เปลี่ยน y เป็น i แล้วเติม -ed"],
+    ["ed_044", "medium", "consonant-y", "marry", "marry ->", ["married", "marryed", "marryied", "marred"], "married", "พยัญชนะ + y เปลี่ยน y เป็น i แล้วเติม -ed"],
+    ["ed_045", "hard", "cvc-double", "wrap", "wrap ->", ["wrapped", "wraped", "wrapd", "wrapied"], "wrapped", "คำสั้น CVC ต้องเพิ่ม p ก่อนเติม -ed"],
+    ["ed_046", "hard", "cvc-double", "trim", "trim ->", ["trimmed", "trimed", "trimd", "trimied"], "trimmed", "คำสั้น CVC ต้องเพิ่ม m ก่อนเติม -ed"],
+    ["ed_047", "hard", "cvc-double", "control", "control ->", ["controlled", "controled", "controld", "controlied"], "controlled", "control เน้นเสียงท้าย จึงเพิ่ม l ก่อนเติม -ed"],
+    ["ed_048", "hard", "cvc-double", "permit", "permit ->", ["permitted", "permited", "permitd", "permitied"], "permitted", "permit เน้นเสียงท้าย จึงเพิ่ม t ก่อนเติม -ed"],
+    ["ed_049", "boss", "sentence", "watch", "Yesterday, I ____ a movie with my family.", ["watched", "watch", "watches", "watching"], "watched", "Yesterday บอกอดีต และ watch เติม -ed เป็น watched"],
+    ["ed_050", "boss", "sentence", "dance", "She ____ at the school show last night.", ["danced", "dance", "dances", "danceed"], "danced", "dance ลงท้าย e จึงเติมแค่ -d"],
+    ["ed_051", "boss", "sentence", "study", "She ____ English last night.", ["studied", "studyed", "study", "studying"], "studied", "study มีพยัญชนะหน้า y จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
+    ["ed_052", "boss", "sentence", "stop", "The cart ____ near the old tower.", ["stopped", "stoped", "stop", "stopping"], "stopped", "stop เป็น CVC จึงเพิ่ม p แล้วเติม -ed"]
   ];
 
   return items.map(item => bossQuestion({
@@ -274,7 +290,8 @@ function buildEdForgerQuestions() {
     difficulty: item[1],
     type: item[2],
     baseVerb: item[3],
-    prompt: item[4],
+    prompt: item[4].includes("____") ? undefined : item[4],
+    sentence: item[4].includes("____") ? item[4] : undefined,
     options: item[5],
     answer: item[6],
     explanation: item[7]
@@ -430,7 +447,12 @@ const regularVerbBanks = {
     ["explain", "explained", ["explaind", "explainned", "explainied"]],
     ["return", "returned", ["returnd", "returnned", "returnied"]],
     ["repair", "repaired", ["repaird", "repairred", "repairied"]],
-    ["remember", "remembered", ["rememberd", "rememberred", "rememberied"]]
+    ["remember", "remembered", ["rememberd", "rememberred", "rememberied"]],
+    ["call", "called", ["calld", "callled", "callied"]],
+    ["ask", "asked", ["askd", "askked", "askied"]],
+    ["work", "worked", ["workd", "workked", "workied"]],
+    ["look", "looked", ["lookd", "lookked", "lookied"]],
+    ["start", "started", ["startd", "startted", "startied"]]
   ],
   endingE: [
     ["like", "liked", ["likeed", "likied", "likd"]],
@@ -448,7 +470,11 @@ const regularVerbBanks = {
     ["save", "saved", ["saveed", "savied", "savd"]],
     ["use", "used", ["useed", "usied", "usd"]],
     ["change", "changed", ["changeed", "changied", "changd"]],
-    ["smile", "smiled", ["smileed", "smilied", "smild"]]
+    ["smile", "smiled", ["smileed", "smilied", "smild"]],
+    ["bake", "baked", ["bakeed", "bakied", "bakd"]],
+    ["invite", "invited", ["inviteed", "invitied", "invitd"]],
+    ["agree", "agreed", ["agreeed", "agried", "agred"]],
+    ["believe", "believed", ["believeed", "believied", "believd"]]
   ],
   endingY: [
     ["play", "played", ["playied", "plaied", "playd"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
@@ -456,6 +482,9 @@ const regularVerbBanks = {
     ["stay", "stayed", ["staied", "stayd", "stayied"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
     ["obey", "obeyed", ["obeied", "obeyd", "obeyied"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
     ["delay", "delayed", ["delaied", "delayd", "delayied"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
+    ["pray", "prayed", ["praied", "prayd", "prayied"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
+    ["destroy", "destroyed", ["destroied", "destroyd", "destroyied"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
+    ["employ", "employed", ["emploied", "employd", "employied"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
     ["study", "studied", ["studyed", "studyied", "studed"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
     ["cry", "cried", ["cryed", "cryied", "cryd"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
     ["try", "tried", ["tryed", "tryied", "tryd"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
@@ -464,7 +493,10 @@ const regularVerbBanks = {
     ["hurry", "hurried", ["hurryed", "hurryied", "hurred"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
     ["worry", "worried", ["worryed", "worryied", "worred"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
     ["reply", "replied", ["replyed", "replyied", "repled"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
-    ["apply", "applied", ["applyed", "applyied", "appled"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"]
+    ["apply", "applied", ["applyed", "applyied", "appled"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
+    ["dry", "dried", ["dryed", "dryied", "dryd"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
+    ["fry", "fried", ["fryed", "fryied", "fryd"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
+    ["marry", "married", ["marryed", "marryied", "marred"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"]
   ],
   doubleCvc: [
     ["stop", "stopped", ["stoped", "stopied", "stopd"]],
@@ -473,15 +505,20 @@ const regularVerbBanks = {
     ["clap", "clapped", ["claped", "clapd", "clapied"]],
     ["grab", "grabbed", ["grabed", "grabd", "grabied"]],
     ["hug", "hugged", ["huged", "hugd", "hugied"]],
-    ["travel", "traveled", ["traveleded", "travelled", "travelied"]],
-    ["prefer", "preferred", ["prefered", "preferd", "preferied"]],
-    ["admit", "admitted", ["admited", "admitd", "admitied"]],
-    ["occur", "occurred", ["occured", "occurd", "occuried"]],
     ["beg", "begged", ["beged", "begd", "begied"]],
     ["fit", "fitted", ["fited", "fitd", "fitied"]],
     ["rub", "rubbed", ["rubed", "rubd", "rubied"]],
     ["nod", "nodded", ["noded", "nodd", "nodied"]],
-    ["permit", "permitted", ["permited", "permitd", "permitied"]]
+    ["skip", "skipped", ["skiped", "skipd", "skipied"]],
+    ["shop", "shopped", ["shoped", "shopd", "shopied"]],
+    ["wrap", "wrapped", ["wraped", "wrapd", "wrapied"]],
+    ["trim", "trimmed", ["trimed", "trimd", "trimied"]],
+    ["drag", "dragged", ["draged", "dragd", "dragied"]],
+    ["admit", "admitted", ["admited", "admitd", "admitied"]],
+    ["permit", "permitted", ["permited", "permitd", "permitied"]],
+    ["prefer", "preferred", ["prefered", "preferd", "preferied"]],
+    ["occur", "occurred", ["occured", "occurd", "occuried"]],
+    ["control", "controlled", ["controled", "controld", "controlied"]]
   ]
 };
 
@@ -518,12 +555,63 @@ const regularRuleFourQuestions = regularVerbBanks.doubleCvc
   .filter(([verb]) => !["stop", "plan", "drop", "clap", "grab", "hug"].includes(verb))
   .map(item => makeRegularQuestion(item, "คำสั้นบางคำเพิ่มพยัญชนะท้ายก่อนเติม -ed"));
 
+const sentenceQuestionBanks = {
+  regularEd: [
+    { id: "regular_ed_watch_sentence_01", type: "sentence-fill", lessonId: "regular-rule-1", ruleId: "regular_ed", baseVerb: "watch", sentence: "Yesterday, I ____ a movie with my family.", options: ["watched", "watch", "watches", "watching"], answer: "watched", explanation: "Yesterday บอกอดีต และ watch เป็น Regular Verb จึงเติม -ed เป็น watched" },
+    { id: "regular_ed_visit_sentence_02", type: "sentence-fill", lessonId: "regular-rule-1", ruleId: "regular_ed", baseVerb: "visit", sentence: "Last week, we ____ our grandmother.", options: ["visited", "visit", "visits", "visiting"], answer: "visited", explanation: "Last week บอกอดีต จึงใช้ visited" },
+    { id: "regular_ed_clean_sentence_03", type: "sentence-fill", lessonId: "regular-rule-1", ruleId: "regular_ed", baseVerb: "clean", sentence: "She ____ her room yesterday.", options: ["cleaned", "clean", "cleans", "cleaning"], answer: "cleaned", explanation: "clean เป็นคำกริยาทั่วไป เติม -ed เป็น cleaned" },
+    { id: "regular_ed_open_sentence_04", type: "sentence-fill", lessonId: "regular-rule-1", ruleId: "regular_ed", baseVerb: "open", sentence: "He ____ the door a minute ago.", options: ["opened", "open", "opens", "opening"], answer: "opened", explanation: "a minute ago บอกอดีต จึงใช้ opened" },
+    { id: "regular_ed_work_sentence_05", type: "sentence-fill", lessonId: "regular-rule-1", ruleId: "regular_ed", baseVerb: "work", sentence: "They ____ hard yesterday.", options: ["worked", "work", "works", "working"], answer: "worked", explanation: "work เป็น Regular Verb เติม -ed เป็น worked" }
+  ],
+  endingE: [
+    { id: "ending_e_like_sentence_01", type: "sentence-fill", lessonId: "regular-rule-2", ruleId: "ending_e_add_d", baseVerb: "like", sentence: "I ____ the story yesterday.", options: ["liked", "like", "likes", "likeed"], answer: "liked", explanation: "like ลงท้ายด้วย e อยู่แล้ว จึงเติมแค่ -d เป็น liked" },
+    { id: "ending_e_dance_sentence_02", type: "sentence-fill", lessonId: "regular-rule-2", ruleId: "ending_e_add_d", baseVerb: "dance", sentence: "She ____ at the school show last night.", options: ["danced", "dance", "dances", "danceed"], answer: "danced", explanation: "dance ลงท้ายด้วย e จึงเติมแค่ -d เป็น danced" },
+    { id: "ending_e_arrive_sentence_03", type: "sentence-fill", lessonId: "regular-rule-2", ruleId: "ending_e_add_d", baseVerb: "arrive", sentence: "The bus ____ late yesterday.", options: ["arrived", "arrive", "arrives", "arriveed"], answer: "arrived", explanation: "arrive ลงท้ายด้วย e จึงเติมแค่ -d เป็น arrived" },
+    { id: "ending_e_use_sentence_04", type: "sentence-fill", lessonId: "regular-rule-2", ruleId: "ending_e_add_d", baseVerb: "use", sentence: "We ____ the new computer last Monday.", options: ["used", "use", "uses", "useed"], answer: "used", explanation: "use ลงท้ายด้วย e จึงเติมแค่ -d เป็น used" },
+    { id: "ending_e_close_sentence_05", type: "sentence-fill", lessonId: "regular-rule-2", ruleId: "ending_e_add_d", baseVerb: "close", sentence: "He ____ the window before the rain came.", options: ["closed", "close", "closes", "closeed"], answer: "closed", explanation: "close ลงท้ายด้วย e จึงเติมแค่ -d เป็น closed" }
+  ],
+  endingY: [
+    { id: "y_rule_play_sentence_01", type: "sentence-fill", lessonId: "regular-rule-3", ruleId: "y_rule", baseVerb: "play", sentence: "They ____ football yesterday.", options: ["played", "play", "plays", "playied"], answer: "played", explanation: "play มีสระหน้า y จึงเติม -ed เป็น played" },
+    { id: "y_rule_study_sentence_02", type: "sentence-fill", lessonId: "regular-rule-3", ruleId: "y_rule", baseVerb: "study", sentence: "She ____ English last night.", options: ["studied", "studyed", "study", "studying"], answer: "studied", explanation: "study มีพยัญชนะหน้า y จึงเปลี่ยน y เป็น i แล้วเติม -ed เป็น studied" },
+    { id: "y_rule_try_sentence_03", type: "sentence-fill", lessonId: "regular-rule-3", ruleId: "y_rule", baseVerb: "try", sentence: "He ____ to open the old gate.", options: ["tried", "tryed", "try", "trying"], answer: "tried", explanation: "try เปลี่ยน y เป็น i แล้วเติม -ed เป็น tried" },
+    { id: "y_rule_enjoy_sentence_04", type: "sentence-fill", lessonId: "regular-rule-3", ruleId: "y_rule", baseVerb: "enjoy", sentence: "We ____ the magic lesson yesterday.", options: ["enjoyed", "enjoied", "enjoy", "enjoying"], answer: "enjoyed", explanation: "enjoy มีสระหน้า y จึงเติม -ed เป็น enjoyed" },
+    { id: "y_rule_carry_sentence_05", type: "sentence-fill", lessonId: "regular-rule-3", ruleId: "y_rule", baseVerb: "carry", sentence: "The boy ____ a small lantern last night.", options: ["carried", "carryed", "carry", "carrying"], answer: "carried", explanation: "carry มีพยัญชนะหน้า y จึงเปลี่ยน y เป็น i แล้วเติม -ed เป็น carried" }
+  ],
+  doubleCvc: [
+    { id: "cvc_stop_sentence_01", type: "sentence-fill", lessonId: "regular-rule-4", ruleId: "cvc_double", baseVerb: "stop", sentence: "The cart ____ near the old tower.", options: ["stopped", "stoped", "stop", "stopping"], answer: "stopped", explanation: "stop เป็นคำสั้นแบบ CVC จึงเพิ่ม p แล้วเติม -ed เป็น stopped" },
+    { id: "cvc_plan_sentence_02", type: "sentence-fill", lessonId: "regular-rule-4", ruleId: "cvc_double", baseVerb: "plan", sentence: "We ____ the journey yesterday.", options: ["planned", "planed", "plan", "planning"], answer: "planned", explanation: "plan เพิ่ม n แล้วเติม -ed เป็น planned" },
+    { id: "cvc_drop_sentence_03", type: "sentence-fill", lessonId: "regular-rule-4", ruleId: "cvc_double", baseVerb: "drop", sentence: "He ____ the crystal on the floor.", options: ["dropped", "droped", "drop", "dropping"], answer: "dropped", explanation: "drop เพิ่ม p แล้วเติม -ed เป็น dropped" },
+    { id: "cvc_clap_sentence_04", type: "sentence-fill", lessonId: "regular-rule-4", ruleId: "cvc_double", baseVerb: "clap", sentence: "The students ____ after the spell worked.", options: ["clapped", "claped", "clap", "clapping"], answer: "clapped", explanation: "clap เพิ่ม p แล้วเติม -ed เป็น clapped" },
+    { id: "cvc_hug_sentence_05", type: "sentence-fill", lessonId: "regular-rule-4", ruleId: "cvc_double", baseVerb: "hug", sentence: "The child ____ the little dragon.", options: ["hugged", "huged", "hug", "hugging"], answer: "hugged", explanation: "hug เพิ่ม g แล้วเติม -ed เป็น hugged" }
+  ],
+  irregular: [
+    { id: "irregular_go_sentence_01", type: "sentence-fill", lessonId: "irregular-lesson", ruleId: "irregular_v2", baseVerb: "go", sentence: "Yesterday, I ____ to school.", options: ["went", "go", "goes", "going"], answer: "went", explanation: "go เป็น Irregular Verb รูป V2 คือ went" },
+    { id: "irregular_eat_sentence_02", type: "sentence-fill", lessonId: "irregular-lesson", ruleId: "irregular_v2", baseVerb: "eat", sentence: "Last night, we ____ dinner together.", options: ["ate", "eat", "eats", "eating"], answer: "ate", explanation: "eat เป็น Irregular Verb รูป V2 คือ ate" },
+    { id: "irregular_see_sentence_03", type: "sentence-fill", lessonId: "irregular-lesson", ruleId: "irregular_v2", baseVerb: "see", sentence: "She ____ a bright star yesterday.", options: ["saw", "see", "sees", "seeing"], answer: "saw", explanation: "see เป็น Irregular Verb รูป V2 คือ saw" },
+    { id: "irregular_buy_sentence_04", type: "sentence-fill", lessonId: "irregular-lesson", ruleId: "irregular_v2", baseVerb: "buy", sentence: "He ____ a new book last week.", options: ["bought", "buy", "buys", "buying"], answer: "bought", explanation: "buy เป็น Irregular Verb รูป V2 คือ bought" },
+    { id: "irregular_take_sentence_05", type: "sentence-fill", lessonId: "irregular-lesson", ruleId: "irregular_v2", baseVerb: "take", sentence: "They ____ the key from the old chest.", options: ["took", "take", "takes", "taking"], answer: "took", explanation: "take เป็น Irregular Verb รูป V2 คือ took" }
+  ]
+};
+
+function copyQuestionBank(questions, prefix) {
+  return questions.map((question, index) => ({
+    ...question,
+    id: `${prefix}_${question.id || index + 1}`
+  }));
+}
+
 const edForgerQuestions = [
   ...regularVerbBanks.addEd.filter(([verb]) => !["walk", "jump", "clean", "watch", "help", "open"].includes(verb)).slice(0, 8),
   ...regularVerbBanks.endingE.filter(([verb]) => !["like", "love", "dance", "close", "live", "move"].includes(verb)).slice(0, 8),
   ...regularVerbBanks.endingY.filter(([verb]) => !["play", "enjoy", "stay", "obey", "study", "cry"].includes(verb)).slice(0, 8),
   ...regularVerbBanks.doubleCvc.filter(([verb]) => !["stop", "plan", "drop", "clap", "grab", "hug"].includes(verb)).slice(0, 8)
-].map(item => makeRegularQuestion(item, "เลือกการสะกดรูปอดีตที่ถูกต้อง"));
+].map(item => makeRegularQuestion(item, "เลือกการสะกดรูปอดีตที่ถูกต้อง"))
+  .concat(
+    copyQuestionBank(sentenceQuestionBanks.regularEd, "ed_forger"),
+    copyQuestionBank(sentenceQuestionBanks.endingE, "ed_forger"),
+    copyQuestionBank(sentenceQuestionBanks.endingY, "ed_forger"),
+    copyQuestionBank(sentenceQuestionBanks.doubleCvc, "ed_forger")
+  );
 
 const regularRuleMetaByVerb = {};
 
@@ -629,7 +717,19 @@ const irregularVerbBank = [
   ["lose", "lost", ["losed", "loosed", "loset"]],
   ["send", "sent", ["sended", "sendted", "sendeded"]],
   ["spend", "spent", ["spended", "spendted", "spendeded"]],
-  ["build", "built", ["builded", "buildted", "buildied"]]
+  ["build", "built", ["builded", "buildted", "buildied"]],
+  ["sit", "sat", ["sitted", "sited", "sits"]],
+  ["run", "ran", ["runned", "runed", "runs"]],
+  ["swim", "swam", ["swimmed", "swimed", "swims"]],
+  ["sing", "sang", ["singed", "sung", "sings"]],
+  ["drink", "drank", ["drinked", "drunk", "drinks"]],
+  ["begin", "began", ["beginned", "begined", "begins"]],
+  ["fall", "fell", ["falled", "fallen", "falls"]],
+  ["fly", "flew", ["flyed", "flied", "flies"]],
+  ["grow", "grew", ["growed", "grown", "grows"]],
+  ["know", "knew", ["knowed", "known", "knows"]],
+  ["throw", "threw", ["throwed", "thrown", "throws"]],
+  ["wear", "wore", ["weared", "worn", "wears"]]
 ];
 
 function makeIrregularQuestion([verb, answer, distractors]) {
@@ -646,12 +746,14 @@ function makeIrregularQuestion([verb, answer, distractors]) {
 
 const irregularPracticeQuestions = [
   ...irregularVerbBank.slice(6, 14).map(makeIrregularQuestion),
-  { ruleId: "irregular_v2", lessonId: "irregular-lesson", baseVerb: "speak", sentence: "Yesterday, I ____ to the old book.", options: ["spoke", "speaked", "speaks", "speaking"], answer: "spoke", explanation: "speak เป็น Irregular Verb รูป V2 คือ spoke" }
+  { id: "irregular_speak_sentence_00", type: "sentence-fill", ruleId: "irregular_v2", lessonId: "irregular-lesson", baseVerb: "speak", sentence: "Yesterday, I ____ to the old book.", options: ["spoke", "speaked", "speaks", "speaking"], answer: "spoke", explanation: "speak เป็น Irregular Verb รูป V2 คือ spoke" },
+  ...copyQuestionBank(sentenceQuestionBanks.irregular, "irregular_practice")
 ];
 
 const irregularWraithQuestions = irregularVerbBank
   .slice(14)
-  .map(makeIrregularQuestion);
+  .map(makeIrregularQuestion)
+  .concat(copyQuestionBank(sentenceQuestionBanks.irregular, "irregular_wraith"));
 
 const finalBossQuestions = [
   makeRegularQuestion(regularVerbBanks.addEd[8], "คำกริยาทั่วไปเติม -ed"),
@@ -673,8 +775,22 @@ const finalBossQuestions = [
   { type: "correct-sentence", prompt: "เลือกประโยคที่ถูกต้อง", options: ["Last night, she saw a bird.", "Last night, she see a bird.", "Last night, she sees a bird.", "Last night, she seeing a bird."], answer: "Last night, she saw a bird.", explanation: "see ในรูป V2 คือ saw" },
   { type: "correct-sentence", prompt: "เลือกประโยคที่ถูกต้อง", options: ["We watched TV yesterday.", "We watch TV yesterday.", "We watches TV yesterday.", "We watching TV yesterday."], answer: "We watched TV yesterday.", explanation: "watch ใช้ในอดีตเป็น watched" },
   { type: "correct-sentence", prompt: "เลือกประโยคที่ถูกต้อง", options: ["I studied English last night.", "I studyed English last night.", "I studying English last night.", "I studies English last night."], answer: "I studied English last night.", explanation: "study ต้องเปลี่ยน y เป็น i แล้วเติม -ed เป็น studied" },
-  { type: "sentence-fill", sentence: "She ____ her old friend yesterday.", options: ["met", "meet", "meets", "meeting"], answer: "met", explanation: "meet เป็น Irregular Verb รูป V2 คือ met" }
+  { type: "sentence-fill", sentence: "She ____ her old friend yesterday.", options: ["met", "meet", "meets", "meeting"], answer: "met", explanation: "meet เป็น Irregular Verb รูป V2 คือ met" },
+  ...copyQuestionBank(sentenceQuestionBanks.regularEd, "final_boss"),
+  ...copyQuestionBank(sentenceQuestionBanks.endingE, "final_boss"),
+  ...copyQuestionBank(sentenceQuestionBanks.endingY, "final_boss"),
+  ...copyQuestionBank(sentenceQuestionBanks.doubleCvc, "final_boss"),
+  ...copyQuestionBank(sentenceQuestionBanks.irregular, "final_boss")
 ];
+
+normalizeQuestionMeta(regularRuleOneQuestions, "regular-rule-1", "regular_ed");
+normalizeQuestionMeta(regularRuleTwoQuestions, "regular-rule-2", "ending_e_add_d");
+normalizeQuestionMeta(regularRuleThreeQuestions, "regular-rule-3", "y_rule");
+normalizeQuestionMeta(regularRuleFourQuestions, "regular-rule-4", "cvc_double");
+normalizeQuestionMeta(edForgerQuestions, "ed-mini-boss");
+normalizeQuestionMeta(irregularPracticeQuestions, "irregular-lesson", "irregular_v2");
+normalizeQuestionMeta(irregularWraithQuestions, "irregular-mini-boss", "irregular_v2");
+normalizeQuestionMeta(finalBossQuestions, "final-boss");
 
 const PAST_FRAGMENT_ACT = {
   id: "past-fragment",
