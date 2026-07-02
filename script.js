@@ -161,6 +161,7 @@ const PARRY_BALANCE_CONFIG = {
     counterDamageMiss: 0
   }
 };
+const PARRY_BAR_ARM_DELAY_MS = 120;
 
 const BOSS_POINT_PARRY_CONFIGS = {
   edForger: {
@@ -8567,11 +8568,19 @@ function beginActParryPhase() {
   effects.parrySlowMultiplier = 1;
   effects.parryWideBonus = 0;
   const adjustedZoneWidth = clamp(action.zoneWidth + wideBonus - difficulty.widthPenalty, action.minZoneWidth, 46);
+  const durationMs = Math.max(1500, action.parryDuration * difficulty.durationMultiplier);
+  const challenge = createParryBarChallenge({ durationMs });
   battle.awaitingParry = true;
   setBattleTurnOwner("enemy");
   state.parry = {
+    challengeId: challenge.id,
     active: true,
+    resolved: false,
+    inputArmed: false,
     inputLocked: false,
+    startedAt: challenge.startedAt,
+    durationMs: challenge.durationMs,
+    armedTimeout: null,
     gaugeProgress: 0,
     gaugeDirection: 1,
     gaugeLastTime: null,
@@ -8595,15 +8604,33 @@ function beginActParryPhase() {
   els.parryHitResult.textContent = "";
   els.parryGaugeZone.style.width = `${adjustedZoneWidth}%`;
   els.parryGaugeZone.style.left = `${state.parry.gaugeZoneStart}%`;
-  els.parryButton.disabled = false;
+  els.parryButton.disabled = true;
   showOnlyBattlePanel(els.parryPanel);
-  startParryGauge();
-  state.parry.resolveTimeout = setTimeout(() => stopActParry("MISS"), Math.max(1500, action.parryDuration * difficulty.durationMultiplier));
+  console.log("[ParryBar] start", {
+    challengeId: challenge.id,
+    durationMs
+  });
+  scheduleParryBarArming(challenge.id);
+  startParryGauge(challenge.id);
+  state.parry.resolveTimeout = setTimeout(() => {
+    if (!isCurrentParryBarChallenge(challenge.id)) {
+      return;
+    }
+    console.log("[ParryBar] timeout = miss", {
+      challengeId: challenge.id,
+      progress: state.parry.gaugeProgress
+    });
+    stopActParry("MISS", { source: "timeout", challengeId: challenge.id });
+  }, durationMs);
 }
 
-function stopActParry(forcedResult = null) {
+function stopActParry(forcedResult = null, meta = {}) {
   const battle = state.actBattle;
   if (!battle || !battle.awaitingParry || !state.parry) {
+    return;
+  }
+  if (meta.challengeId && !isCurrentParryBarChallenge(meta.challengeId)) {
+    console.warn("[ParryBar] ignored stale result", meta);
     return;
   }
 
@@ -8612,12 +8639,13 @@ function stopActParry(forcedResult = null) {
   let damage = action.damage;
   let counterDamage = 0;
   const effects = state.battleActiveEffects || {};
+  const isTimeoutResult = meta.source === "timeout";
 
-  if (parryResult === "MISS" && useBattleEffect("secondChance")) {
+  if (!isTimeoutResult && parryResult === "MISS" && useBattleEffect("secondChance")) {
     parryResult = "WEAK";
   }
 
-  if (effects.upgradeNextParry) {
+  if (!isTimeoutResult && effects.upgradeNextParry) {
     const upgradeMap = { MISS: "WEAK", WEAK: "GOOD", GOOD: "PERFECT", PERFECT: "PERFECT" };
     parryResult = upgradeMap[parryResult] || parryResult;
     effects.upgradeNextParry -= 1;
@@ -8673,7 +8701,14 @@ function stopActParry(forcedResult = null) {
   console.log("[ParryBalance] counter damage", {
     type: "bar",
     grade: parryResult.toLowerCase(),
-    counterDamage
+    counterDamage,
+    source: meta.source || "player",
+    challengeId: meta.challengeId || state.parry.challengeId
+  });
+  console.log("[ParryBar] result", {
+    grade: parryResult.toLowerCase(),
+    source: meta.source || "player",
+    challengeId: meta.challengeId || state.parry.challengeId
   });
 
   if (state.shield > 0) {
@@ -8686,6 +8721,7 @@ function stopActParry(forcedResult = null) {
     state.guardShield = 0;
   }
 
+  state.parry.resolved = true;
   state.playerHp = clamp(state.playerHp - damage, 0, 100);
   state.enemyHp = clamp(state.enemyHp - counterDamage, 0, state.enemyMaxHp);
   recordBossDamage(damage, "bossAttack", { result: parryResult });
@@ -9354,6 +9390,10 @@ function stopParryCountdown() {
     return;
   }
 
+  if (state.parry.armedTimeout) {
+    clearTimeout(state.parry.armedTimeout);
+  }
+
   if (state.parry.tickTimeout) {
     clearTimeout(state.parry.tickTimeout);
   }
@@ -9368,6 +9408,37 @@ function stopParryCountdown() {
 
   state.parry = null;
   els.parryButton.disabled = false;
+}
+
+function createParryBarChallenge(config = {}) {
+  return {
+    id: `parry-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    startedAt: performance.now(),
+    durationMs: config.durationMs || 1200,
+    resolved: false,
+    inputArmed: false,
+    armedTimeout: null
+  };
+}
+
+function isCurrentParryBarChallenge(challengeId) {
+  return Boolean(state.parry && state.parry.challengeId === challengeId && !state.parry.resolved);
+}
+
+function armParryBarChallenge(challengeId) {
+  if (!isCurrentParryBarChallenge(challengeId)) {
+    return;
+  }
+  state.parry.inputArmed = true;
+  els.parryButton.disabled = false;
+  console.log("[ParryBar] armed", { challengeId });
+}
+
+function scheduleParryBarArming(challengeId) {
+  if (!state.parry) {
+    return;
+  }
+  state.parry.armedTimeout = setTimeout(() => armParryBarChallenge(challengeId), PARRY_BAR_ARM_DELAY_MS);
 }
 
 function timingResult(progress, perfectWidth) {
@@ -9540,9 +9611,17 @@ function beginNextParryHit() {
   const gaugeZoneWidth = Math.max(12, pattern.gaugeZoneWidth - ((hitNumber - 1) * pattern.gaugeZoneShrinkPerHit));
   const gaugeSpeed = Math.max(720, pattern.gaugeSpeed - ((hitNumber - 1) * pattern.gaugeSpeedUpPerHit));
 
+  const durationMs = Math.max(2600, 3800 - (hitNumber * 250));
+  const challenge = createParryBarChallenge({ durationMs });
   state.parry = {
+    challengeId: challenge.id,
     active: true,
+    resolved: false,
+    inputArmed: false,
     inputLocked: false,
+    startedAt: challenge.startedAt,
+    durationMs: challenge.durationMs,
+    armedTimeout: null,
     hitNumber,
     totalHits: pattern.hits,
     tickTimeout: null,
@@ -9569,17 +9648,29 @@ function beginNextParryHit() {
     : "";
   els.parryGaugeZone.style.width = `${gaugeZoneWidth}%`;
   els.parryGaugeZone.style.left = `${state.parry.gaugeZoneStart}%`;
-  els.parryButton.disabled = false;
+  els.parryButton.disabled = true;
   showOnlyBattlePanel(els.parryPanel);
-  startParryGauge();
+  console.log("[ParryBar] start", {
+    challengeId: challenge.id,
+    durationMs
+  });
+  scheduleParryBarArming(challenge.id);
+  startParryGauge(challenge.id);
   state.parry.resolveTimeout = setTimeout(() => {
-    resolveCountdownParry("MISS");
-  }, Math.max(2600, 3800 - (hitNumber * 250)));
+    if (!isCurrentParryBarChallenge(challenge.id)) {
+      return;
+    }
+    console.log("[ParryBar] timeout = miss", {
+      challengeId: challenge.id,
+      progress: state.parry.gaugeProgress
+    });
+    resolveCountdownParry("MISS", { source: "timeout", challengeId: challenge.id });
+  }, durationMs);
 }
 
-function startParryGauge() {
+function startParryGauge(challengeId = state.parry?.challengeId) {
   const step = timestamp => {
-    if (!state.parry || !state.parry.active) {
+    if (!isCurrentParryBarChallenge(challengeId) || !state.parry.active) {
       return;
     }
 
@@ -9644,9 +9735,13 @@ function scheduleParryCount(count) {
   if (!state.parry || !state.parry.active) {
     return;
   }
+  const challengeId = state.parry.challengeId;
 
   if (count > 1) {
     state.parry.tickTimeout = setTimeout(() => {
+      if (!isCurrentParryBarChallenge(challengeId)) {
+        return;
+      }
       showParryCount(count - 1);
       scheduleParryCount(count - 1);
     }, state.parry.stepDuration);
@@ -9654,16 +9749,37 @@ function scheduleParryCount(count) {
   }
 
   state.parry.resolveTimeout = setTimeout(() => {
-    resolveCountdownParry("MISS");
+    if (!isCurrentParryBarChallenge(challengeId)) {
+      return;
+    }
+    console.log("[ParryBar] timeout = miss", {
+      challengeId,
+      progress: state.parry.gaugeProgress
+    });
+    resolveCountdownParry("MISS", { source: "timeout", challengeId });
   }, state.parry.stepDuration + 650);
 }
 
 function stopParry(event = null) {
+  if (!event) {
+    console.warn("[ParryBar] ignored input without player event");
+    return;
+  }
+  if (event.isTrusted === false) {
+    console.warn("[ParryBar] ignored synthetic event");
+    return;
+  }
   if (event) {
     event.preventDefault();
+    event.stopPropagation();
   }
 
   if (!state.parry || !state.parry.active || state.parry.inputLocked) {
+    return;
+  }
+  const challengeId = state.parry.challengeId;
+  if (!state.parry.inputArmed) {
+    console.warn("[ParryBar] ignored early input", { challengeId });
     return;
   }
 
@@ -9672,21 +9788,30 @@ function stopParry(event = null) {
   els.parryGaugeMarker.style.left = `calc(${frozenProgress}% - 5px)`;
   const frozenResult = parryGaugeResult(frozenProgress, HIT_TOLERANCE);
   els.parryButton.disabled = true;
+  console.log("[ParryBar] input", {
+    challengeId,
+    isTrusted: event.isTrusted,
+    progress: frozenProgress,
+    grade: frozenResult.toLowerCase()
+  });
 
   if (state.actBattle && state.actBattle.awaitingParry) {
-    freezeParryFeedback(frozenResult, () => stopActParry(frozenResult));
+    freezeParryFeedback(frozenResult, () => stopActParry(frozenResult, { source: "player", challengeId }), challengeId);
     return;
   }
 
   const result = state.parry.targetTime
     ? countdownParryResult(performance.now(), frozenResult)
     : frozenResult;
-  freezeParryFeedback(result, () => resolveCountdownParry(result));
+  freezeParryFeedback(result, () => resolveCountdownParry(result, { source: "player", challengeId }), challengeId);
 }
 
-function freezeParryFeedback(result, onDone) {
+function freezeParryFeedback(result, onDone, challengeId = state.parry?.challengeId) {
   if (!state.parry) {
     onDone();
+    return;
+  }
+  if (!isCurrentParryBarChallenge(challengeId)) {
     return;
   }
 
@@ -9723,6 +9848,9 @@ function freezeParryFeedback(result, onDone) {
 
   els.parryHitResult.textContent = `${thaiParryName(result)}!`;
   setTimeout(() => {
+    if (!isCurrentParryBarChallenge(challengeId)) {
+      return;
+    }
     els.parryGaugeZone.classList.remove("flash-perfect", "flash-good", "flash-weak");
     if (gauge) {
       gauge.classList.remove("flash-miss");
@@ -9781,25 +9909,35 @@ function parryGaugeResult(progress, tolerance = 0) {
   return "MISS";
 }
 
-function resolveCountdownParry(result) {
+function resolveCountdownParry(result, meta = {}) {
   if (!state.parry || !state.parry.active) {
+    return;
+  }
+  if (meta.challengeId && !isCurrentParryBarChallenge(meta.challengeId)) {
+    console.warn("[ParryBar] ignored stale result", meta);
     return;
   }
 
   const hitNumber = state.parry.hitNumber;
+  state.parry.resolved = true;
   state.parry.active = false;
   els.parryButton.disabled = true;
+  console.log("[ParryBar] result", {
+    grade: result.toLowerCase(),
+    source: meta.source || "player",
+    challengeId: meta.challengeId || state.parry.challengeId
+  });
   stopParryCountdown();
-  resolveEnemyHit(result, hitNumber);
+  resolveEnemyHit(result, hitNumber, meta);
 }
 
-function resolveEnemyHit(parryResult, hitNumber) {
+function resolveEnemyHit(parryResult, hitNumber, meta = {}) {
   const attack = state.parryAttack;
   if (!attack) {
     return;
   }
 
-  const hit = calculateParryHit(parryResult, attack.pattern.baseDamage);
+  const hit = calculateParryHit(parryResult, attack.pattern.baseDamage, meta);
   attack.results.push({ hit: hitNumber, result: parryResult, damage: hit.damage, counterDamage: hit.counterDamage });
   attack.totalDamage += hit.damage;
   attack.totalCounterDamage += hit.counterDamage;
@@ -9822,7 +9960,7 @@ function resolveEnemyHit(parryResult, hitNumber) {
   setTimeout(beginNextParryHit, 700);
 }
 
-function calculateParryHit(parryResult, baseDamage) {
+function calculateParryHit(parryResult, baseDamage, meta = {}) {
   if (parryResult === "PERFECT") {
     return { damage: 0, counterDamage: PARRY_BALANCE_CONFIG.parryBar.counterDamagePerfect };
   }
@@ -9835,7 +9973,7 @@ function calculateParryHit(parryResult, baseDamage) {
     return { damage: Math.round(baseDamage * 0.7), counterDamage: 0 };
   }
 
-  if (parryResult === "MISS" && useBattleEffect("secondChance")) {
+  if (parryResult === "MISS" && meta.source !== "timeout" && useBattleEffect("secondChance")) {
     return { damage: Math.round(baseDamage * 0.5), counterDamage: 0 };
   }
 
