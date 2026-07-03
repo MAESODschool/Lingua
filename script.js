@@ -203,6 +203,108 @@ const FOCUS_BALANCE_CONFIG = {
   maxUsefulConsecutiveFocusUses: 1
 };
 
+const BATTLE_FLOW_V2_CONFIG = {
+  enabled: true,
+  requireSkillSelection: true,
+  requireCharmSelection: true,
+  requireChargeBeforeAttack: true,
+  allowNoCharmOption: true,
+  allowAttackWithoutCharge: true,
+  wrongAnswerCanStillAttack: true,
+  wrongAnswerDamageMultiplier: 0.45,
+  maxChargePercent: 100,
+  debug: true
+};
+
+const PLAYER_SKILLS_V2 = [
+  {
+    id: "coreSpark",
+    name: "Core Spark",
+    thaiName: "ประกายแกนไวยากรณ์",
+    apCost: 1,
+    damageMultiplier: 1,
+    description: "ปล่อยประกายพลังเล็ก ๆ จากเศษ Grammar Core ใช้โจมตีพื้นฐาน",
+    effectText: "โจมตีพื้นฐาน ใช้ AP น้อย เหมาะสำหรับเก็บจังหวะ",
+    correctAnswerBonusPercent: 0,
+    chargeEfficiencyBonusPercent: 0,
+    applyBossWeakenPercent: 0,
+    enabled: true
+  },
+  {
+    id: "syntaxBlade",
+    name: "Syntax Blade",
+    thaiName: "คมวากยสัมพันธ์",
+    apCost: 2,
+    damageMultiplier: 1.35,
+    description: "หลอมโครงสร้างภาษาให้กลายเป็นคมดาบเวทจาก Grammar Core",
+    effectText: "ถ้าตอบถูก ดาเมจเพิ่มอีก 10%",
+    correctAnswerBonusPercent: 10,
+    chargeEfficiencyBonusPercent: 0,
+    applyBossWeakenPercent: 0,
+    enabled: true
+  },
+  {
+    id: "grammariaSurge",
+    name: "Grammaria Surge",
+    thaiName: "คลื่นแกรมมาเรีย",
+    apCost: 3,
+    damageMultiplier: 1.7,
+    description: "ปลดคลื่นพลังเข้มข้นจากเศษ Grammar Core โจมตีอย่างรุนแรง",
+    effectText: "ถ้าตอบถูก ดาเมจเพิ่ม 12% เพิ่มประสิทธิภาพการชาร์จ และทำให้บอสอ่อนแรงเล็กน้อย",
+    correctAnswerBonusPercent: 12,
+    chargeEfficiencyBonusPercent: 10,
+    applyBossWeakenPercent: 10,
+    enabled: true
+  }
+];
+
+const PLAYER_CHARMS_V2 = [
+  {
+    id: "none",
+    name: "No Charm",
+    thaiName: "ไม่ใช้ชาร์ม",
+    description: "โจมตีด้วยพลังของสกิลตามปกติ",
+    damageBonusPercent: 0,
+    chargeBonusPercent: 0,
+    correctAnswerDamageBonusPercent: 0,
+    nextDamageReductionPercent: 0,
+    enabled: true
+  },
+  {
+    id: "grammarFlame",
+    name: "Grammar Flame",
+    thaiName: "ชาร์มเปลวไวยากรณ์",
+    description: "เพิ่มดาเมจเล็กน้อย",
+    damageBonusPercent: 8,
+    chargeBonusPercent: 0,
+    correctAnswerDamageBonusPercent: 0,
+    nextDamageReductionPercent: 0,
+    enabled: true
+  },
+  {
+    id: "coreFocus",
+    name: "Core Focus",
+    thaiName: "ชาร์มรวมแกน",
+    description: "ช่วยให้พลังชาร์จส่งผลดีขึ้นเล็กน้อย",
+    damageBonusPercent: 0,
+    chargeBonusPercent: 8,
+    correctAnswerDamageBonusPercent: 0,
+    nextDamageReductionPercent: 0,
+    enabled: true
+  },
+  {
+    id: "wisdomRune",
+    name: "Wisdom Rune",
+    thaiName: "รูนปัญญา",
+    description: "ถ้าตอบถูก ดาเมจเพิ่มขึ้นเล็กน้อย",
+    damageBonusPercent: 0,
+    chargeBonusPercent: 0,
+    correctAnswerDamageBonusPercent: 10,
+    nextDamageReductionPercent: 0,
+    enabled: true
+  }
+];
+
 const BOSS_POINT_PARRY_CONFIGS = {
   edForger: {
     counterDamage: 4,
@@ -2974,6 +3076,9 @@ function beginActPlayerTurn(message = "") {
 
   setBattleTurnOwner("player");
   battle.pendingPlayerAttack = null;
+  if (BATTLE_FLOW_V2_CONFIG.enabled) {
+    resetBattleFlowV2Selection({ phase: "question", cleanupCharge: true });
+  }
   battle.pendingBossAction = null;
   battle.pendingBossTurn = null;
   battle.bossIntentReadyConsumed = false;
@@ -7033,6 +7138,13 @@ function startActBattle(stageIndex) {
     bossIntentReadyConsumed: false,
     bossQuestionIndex: 0,
     pendingPlayerAttack: null,
+    playerActionPhase: "question",
+    pendingPlayerAnswer: null,
+    selectedSkillId: "",
+    selectedCharmId: "",
+    selectedChargePercent: 0,
+    pendingAttackData: null,
+    skillFlowLocked: false,
     recentCharmIds: [],
     usedQuestionIds: new Set(),
     lastQuestionBaseVerb: "",
@@ -7095,6 +7207,18 @@ function startActBattle(stageIndex) {
 function startActAttackAction() {
   const battle = state.actBattle;
   if (!battle) {
+    return;
+  }
+
+  if (BATTLE_FLOW_V2_CONFIG.enabled) {
+    battle.playerActionPhase = "question";
+    battle.pendingPlayerAnswer = null;
+    battle.selectedSkillId = "";
+    battle.selectedCharmId = "";
+    battle.selectedChargePercent = 0;
+    battle.pendingAttackData = null;
+    battle.skillFlowLocked = false;
+    showActBattleQuestion();
     return;
   }
 
@@ -7331,6 +7455,12 @@ function chooseActAnswer(option) {
   if (!isCorrect && resolvePlayerDefeat("HP เหลือ 0")) {
     return;
   }
+
+  if (BATTLE_FLOW_V2_CONFIG.enabled && (isCorrect || BATTLE_FLOW_V2_CONFIG.wrongAnswerCanStillAttack)) {
+    handleBattleFlowV2AnswerResolved(question, option, isCorrect);
+    return;
+  }
+
   battle.pendingBossAction = chooseActBossAction(battle);
 
   if (isCorrect) {
@@ -7344,12 +7474,511 @@ function chooseActAnswer(option) {
   setTimeout(startActBossWarning, 1100);
 }
 
+function battleFlowV2Log(label, payload = {}) {
+  if (BATTLE_FLOW_V2_CONFIG.debug) {
+    console.log(`[BattleFlowV2] ${label}`, payload);
+  }
+}
+
+function getBattlePlayerAp() {
+  const battle = state.actBattle;
+  if (!battle) {
+    return 0;
+  }
+  return Number(battle.playerAp ?? battle.ap ?? 0);
+}
+
+function spendBattlePlayerAp(amount) {
+  const battle = state.actBattle;
+  if (!battle) {
+    return false;
+  }
+
+  const cost = Math.max(0, Number(amount || 0));
+  const currentAp = getBattlePlayerAp();
+  if (currentAp < cost) {
+    return false;
+  }
+
+  if (typeof battle.playerAp === "number") {
+    battle.playerAp = Math.max(0, battle.playerAp - cost);
+  } else if (typeof battle.ap === "number") {
+    battle.ap = Math.max(0, battle.ap - cost);
+  } else {
+    battle.playerAp = Math.max(0, currentAp - cost);
+  }
+  return true;
+}
+
+function getBattleFlowV2Skill(skillId) {
+  return PLAYER_SKILLS_V2.find(skill => skill.id === skillId && skill.enabled);
+}
+
+function getBattleFlowV2Charm(charmId) {
+  return PLAYER_CHARMS_V2.find(charm => charm.id === charmId && charm.enabled);
+}
+
+function handleBattleFlowV2AnswerResolved(question, selectedAnswer, isCorrect) {
+  const battle = state.actBattle;
+  if (!battle) {
+    return;
+  }
+
+  battle.pendingPlayerAnswer = {
+    questionId: question?.id || "",
+    isCorrect: Boolean(isCorrect),
+    selectedAnswer,
+    correctAnswer: question?.answer || question?.correctAnswer || "",
+    baseVerb: question?.baseVerb || "",
+    ruleId: question?.ruleId || "",
+    answeredAt: Date.now()
+  };
+  battle.pendingPlayerAttack = {
+    baseDamage: battle.pendingPlayerAttack?.baseDamage || battle.damagePerCorrect,
+    grammariaGain: isCorrect ? (battle.pendingPlayerAttack?.grammariaGain || 10) : 0
+  };
+  battle.playerActionPhase = "skillSelect";
+  battle.selectedSkillId = "";
+  battle.selectedCharmId = "";
+  battle.selectedChargePercent = 0;
+  battle.pendingAttackData = null;
+  battle.skillFlowLocked = false;
+  setBattleTurnOwner("player");
+  battleFlowV2Log("answer resolved", battle.pendingPlayerAnswer);
+  setTimeout(renderBattleSkillSelectionPanel, 450);
+}
+
+function renderBattleSkillSelectionPanel() {
+  const battle = state.actBattle;
+  if (!battle) {
+    return;
+  }
+
+  battle.playerActionPhase = "skillSelect";
+  cleanupGrammariaCharge();
+  const currentAp = getBattlePlayerAp();
+  els.battleMessage.textContent = "เลือกพลังจากเศษ Grammar Core เพื่อโจมตี";
+  els.charmPanel.querySelector("h3").textContent = "เลือกสกิลโจมตี";
+  els.charmOptions.innerHTML = "";
+
+  const panel = document.createElement("div");
+  panel.className = "battle-flow-v2-panel battle-skill-panel";
+  panel.innerHTML = `
+    <div class="battle-flow-v2-header">
+      <span>เลือกสกิลโจมตี</span>
+      <strong>AP ${currentAp} / ${ACT_MAX_AP}</strong>
+    </div>
+    <p class="battle-flow-v2-hint">เลือกพลังจากเศษ Grammar Core เพื่อโจมตี</p>
+  `;
+
+  PLAYER_SKILLS_V2.filter(skill => skill.enabled).forEach(skill => {
+    const canUse = currentAp >= skill.apCost;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `skill-card${canUse ? "" : " is-disabled"}`;
+    button.disabled = !canUse;
+    button.innerHTML = `
+      <span class="skill-card-topline">
+        <strong>${skill.thaiName}</strong>
+        <em>ใช้ ${skill.apCost} AP</em>
+      </span>
+      <span>${skill.description}</span>
+      <small>${skill.effectText}</small>
+    `;
+    button.addEventListener("click", () => selectBattleSkill(skill.id));
+    panel.appendChild(button);
+  });
+
+  els.charmOptions.appendChild(panel);
+  showOnlyBattlePanel(els.charmPanel);
+}
+
+function selectBattleSkill(skillId) {
+  const battle = state.actBattle;
+  if (!battle || battle.playerActionPhase !== "skillSelect") {
+    return;
+  }
+
+  const skill = getBattleFlowV2Skill(skillId);
+  if (!skill) {
+    console.warn("[BattleFlowV2] skill not found", skillId);
+    return;
+  }
+
+  const currentAp = getBattlePlayerAp();
+  if (currentAp < skill.apCost) {
+    els.battleMessage.textContent = `AP ไม่พอสำหรับ ${skill.thaiName}`;
+    renderBattleSkillSelectionPanel();
+    return;
+  }
+
+  battle.selectedSkillId = skill.id;
+  battle.playerActionPhase = "charmSelect";
+  battleFlowV2Log("skill selected", { skillId: skill.id, apCost: skill.apCost, currentAp });
+  renderBattleCharmSelectionPanel();
+}
+
+function renderBattleCharmSelectionPanel() {
+  const battle = state.actBattle;
+  if (!battle) {
+    return;
+  }
+
+  const skill = getBattleFlowV2Skill(battle.selectedSkillId);
+  if (!skill) {
+    renderBattleSkillSelectionPanel();
+    return;
+  }
+
+  battle.playerActionPhase = "charmSelect";
+  els.battleMessage.textContent = `เลือกชาร์มเสริมพลังสำหรับ ${skill.thaiName}`;
+  els.charmPanel.querySelector("h3").textContent = "เลือกชาร์มเสริมพลัง";
+  els.charmOptions.innerHTML = "";
+
+  const panel = document.createElement("div");
+  panel.className = "battle-flow-v2-panel battle-charm-panel";
+  panel.innerHTML = `
+    <div class="battle-flow-v2-header">
+      <span>เลือกชาร์มเสริมพลัง</span>
+      <strong>${skill.thaiName} · ${skill.apCost} AP</strong>
+    </div>
+  `;
+
+  PLAYER_CHARMS_V2.filter(charm => charm.enabled).forEach(charm => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `charm-card battle-flow-v2-charm${charm.id === "none" ? " is-no-charm" : ""}`;
+    button.innerHTML = `
+      <strong>${charm.thaiName}</strong>
+      <span class="charm-description">${charm.description}</span>
+    `;
+    button.addEventListener("click", () => selectBattleCharm(charm.id));
+    panel.appendChild(button);
+  });
+
+  const backButton = document.createElement("button");
+  backButton.type = "button";
+  backButton.className = "secondary-button battle-flow-v2-back";
+  backButton.textContent = "กลับไปเลือกสกิล";
+  backButton.addEventListener("click", renderBattleSkillSelectionPanel);
+  panel.appendChild(backButton);
+
+  els.charmOptions.appendChild(panel);
+  showOnlyBattlePanel(els.charmPanel);
+}
+
+function selectBattleCharm(charmId) {
+  const battle = state.actBattle;
+  if (!battle || battle.playerActionPhase !== "charmSelect") {
+    return;
+  }
+
+  const charm = getBattleFlowV2Charm(charmId);
+  if (!charm) {
+    console.warn("[BattleFlowV2] charm not found", charmId);
+    return;
+  }
+
+  battle.selectedCharmId = charm.id;
+  battle.playerActionPhase = "charge";
+  battleFlowV2Log("charm selected", { charmId: charm.id });
+  renderBattleChargePanel();
+}
+
+function ensureBattleFlowV2ChargeControls() {
+  let controls = document.getElementById("battleFlowV2ChargeControls");
+  if (!controls) {
+    controls = document.createElement("div");
+    controls.id = "battleFlowV2ChargeControls";
+    controls.className = "battle-flow-v2-charge-controls";
+    els.chargePanel.appendChild(controls);
+  }
+  return controls;
+}
+
+function renderBattleChargePanel() {
+  const battle = state.actBattle;
+  if (!battle) {
+    return;
+  }
+
+  const skill = getBattleFlowV2Skill(battle.selectedSkillId);
+  const charm = getBattleFlowV2Charm(battle.selectedCharmId);
+  if (!skill) {
+    renderBattleSkillSelectionPanel();
+    return;
+  }
+  if (!charm) {
+    renderBattleCharmSelectionPanel();
+    return;
+  }
+
+  battle.playerActionPhase = "charge";
+  battle.selectedChargePercent = 0;
+  els.battleMessage.textContent = `ชาร์จพลัง ${skill.thaiName} แล้วกดโจมตี`;
+
+  const controls = ensureBattleFlowV2ChargeControls();
+  controls.innerHTML = `
+    <div class="battle-flow-v2-panel battle-charge-panel">
+      <div class="battle-flow-v2-header">
+        <span>ชาร์จพลังโจมตี</span>
+        <strong>${skill.thaiName}</strong>
+      </div>
+      <p class="battle-flow-v2-hint">ชาร์ม: ${charm.thaiName}</p>
+      <div class="battle-flow-v2-actions">
+        <button type="button" class="secondary-button" id="battleFlowV2BackToCharm">กลับไปเลือกชาร์ม</button>
+        <button type="button" class="primary-button" id="battleFlowV2ConfirmAttack">โจมตี</button>
+      </div>
+    </div>
+  `;
+  controls.querySelector("#battleFlowV2BackToCharm")?.addEventListener("click", () => {
+    cleanupGrammariaCharge();
+    renderBattleCharmSelectionPanel();
+  });
+  controls.querySelector("#battleFlowV2ConfirmAttack")?.addEventListener("click", confirmBattleFlowV2Attack);
+
+  showOnlyBattlePanel(els.chargePanel);
+  setupGrammariaCharge({
+    label: skill.thaiName,
+    onComplete: chargePercent => {
+      const currentBattle = state.actBattle;
+      if (!currentBattle || currentBattle.playerActionPhase !== "charge") {
+        return;
+      }
+      currentBattle.selectedChargePercent = clamp(Math.round(Number(chargePercent) || 0), 0, BATTLE_FLOW_V2_CONFIG.maxChargePercent);
+      battleFlowV2Log("charge selected", { chargePercent: currentBattle.selectedChargePercent });
+    }
+  });
+}
+
+function confirmBattleFlowV2Attack() {
+  const battle = state.actBattle;
+  if (!battle || battle.playerActionPhase !== "charge") {
+    return;
+  }
+
+  const skill = getBattleFlowV2Skill(battle.selectedSkillId);
+  const charm = getBattleFlowV2Charm(battle.selectedCharmId);
+  if (!skill) {
+    els.battleMessage.textContent = "ยังไม่ได้เลือกสกิล";
+    renderBattleSkillSelectionPanel();
+    return;
+  }
+  if (!charm) {
+    els.battleMessage.textContent = "ยังไม่ได้เลือกชาร์ม";
+    renderBattleCharmSelectionPanel();
+    return;
+  }
+  if (getBattlePlayerAp() < skill.apCost) {
+    els.battleMessage.textContent = `AP ไม่พอสำหรับ ${skill.thaiName}`;
+    renderBattleSkillSelectionPanel();
+    return;
+  }
+
+  resolveBattleFlowV2PlayerAttack({
+    skill,
+    charm,
+    chargePercent: battle.selectedChargePercent || 0
+  });
+}
+
+function getBattleFlowV2BaseDamage(answerResult) {
+  const battle = state.actBattle;
+  if (battle?.pendingPlayerAttack?.baseDamage) {
+    return battle.pendingPlayerAttack.baseDamage;
+  }
+  return answerResult?.isCorrect ? 16 : 8;
+}
+
+function calculateBattleFlowV2Damage({ baseDamage, answerResult, skill, charm, chargePercent }) {
+  const isCorrect = Boolean(answerResult?.isCorrect);
+  let workingDamage = Number(baseDamage || 0);
+  if (!Number.isFinite(workingDamage) || workingDamage <= 0) {
+    workingDamage = 1;
+  }
+
+  if (!isCorrect) {
+    workingDamage *= BATTLE_FLOW_V2_CONFIG.wrongAnswerDamageMultiplier;
+  }
+  workingDamage *= Number(skill?.damageMultiplier || 1);
+  if (isCorrect && skill?.correctAnswerBonusPercent) {
+    workingDamage *= 1 + Number(skill.correctAnswerBonusPercent || 0) / 100;
+  }
+  if (charm?.damageBonusPercent) {
+    workingDamage *= 1 + Number(charm.damageBonusPercent || 0) / 100;
+  }
+  if (isCorrect && charm?.correctAnswerDamageBonusPercent) {
+    workingDamage *= 1 + Number(charm.correctAnswerDamageBonusPercent || 0) / 100;
+  }
+
+  const effectiveChargePercent = Math.min(
+    BATTLE_FLOW_V2_CONFIG.maxChargePercent,
+    Math.max(
+      0,
+      Number(chargePercent || 0) +
+        Number(skill?.chargeEfficiencyBonusPercent || 0) +
+        Number(charm?.chargeBonusPercent || 0)
+    )
+  );
+  workingDamage *= 1 + effectiveChargePercent / 100;
+
+  return {
+    finalDamage: Math.max(1, Math.round(workingDamage)),
+    isCorrect,
+    skillId: skill?.id || "",
+    charmId: charm?.id || "",
+    chargePercent: effectiveChargePercent,
+    answerMultiplier: isCorrect ? 1 : BATTLE_FLOW_V2_CONFIG.wrongAnswerDamageMultiplier
+  };
+}
+
+function applyBattleFlowV2SkillEffects({ skill, charm }) {
+  const battle = state.actBattle;
+  if (!battle) {
+    return;
+  }
+
+  if (skill?.applyBossWeakenPercent) {
+    battle.bossWeakenedPercent = Math.max(
+      Number(battle.bossWeakenedPercent || 0),
+      Number(skill.applyBossWeakenPercent || 0)
+    );
+  }
+  if (charm?.nextDamageReductionPercent) {
+    battle.playerNextDamageReductionPercent = Math.max(
+      Number(battle.playerNextDamageReductionPercent || 0),
+      Number(charm.nextDamageReductionPercent || 0)
+    );
+  }
+}
+
+function showBattleFlowV2AttackFeedback({ skill, charm, damageResult }) {
+  const skillLines = {
+    coreSpark: "เศษพลังจาก Grammar Core สว่างขึ้น — ประกายแกนไวยากรณ์พุ่งเข้าใส่ศัตรู!",
+    syntaxBlade: "โครงสร้างภาษาเรียงตัวเป็นคมดาบ — คมวากยสัมพันธ์ฟาดผ่านศัตรู!",
+    grammariaSurge: "เศษแกนแกรมมาเรียปลดคลื่นพลัง — คลื่นแกรมมาเรียซัดเข้าใส่ศัตรูอย่างรุนแรง!"
+  };
+  const lines = [
+    skillLines[skill.id] || `${skill.thaiName} พุ่งเข้าใส่ศัตรู!`,
+    `ชาร์ม: ${charm.thaiName}`,
+    `สร้างความเสียหาย ${damageResult.finalDamage} หน่วย`
+  ];
+  if (!damageResult.isCorrect) {
+    lines.push("คำตอบยังไม่มั่นคง พลังโจมตีจึงลดลง");
+  }
+  if (damageResult.chargePercent > 0) {
+    lines.push(`พลังชาร์จ ${damageResult.chargePercent}% เสริมการโจมตี`);
+  }
+  els.battleMessage.textContent = lines.join("\n");
+}
+
+function resetBattleFlowV2Selection({ phase = "bossTurn", cleanupCharge = true } = {}) {
+  const battle = state.actBattle;
+  if (!battle) {
+    return;
+  }
+
+  battle.pendingPlayerAnswer = null;
+  battle.pendingPlayerAttack = null;
+  battle.selectedSkillId = "";
+  battle.selectedCharmId = "";
+  battle.selectedChargePercent = 0;
+  battle.pendingAttackData = null;
+  battle.skillFlowLocked = false;
+  battle.playerActionPhase = phase;
+  if (cleanupCharge) {
+    cleanupGrammariaCharge();
+  }
+}
+
+function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) {
+  const battle = state.actBattle;
+  if (!battle || battle.skillFlowLocked) {
+    return;
+  }
+
+  battle.skillFlowLocked = true;
+  battle.playerActionPhase = "attackResolve";
+  const answerResult = battle.pendingPlayerAnswer;
+  if (!answerResult) {
+    console.warn("[BattleFlowV2] missing pending answer");
+    battle.skillFlowLocked = false;
+    beginActPlayerTurn("เกิดข้อผิดพลาดในการโจมตี ลองตอบคำถามใหม่อีกครั้ง");
+    return;
+  }
+
+  if (!spendBattlePlayerAp(skill.apCost)) {
+    battle.skillFlowLocked = false;
+    els.battleMessage.textContent = `AP ไม่พอสำหรับ ${skill.thaiName}`;
+    renderBattleSkillSelectionPanel();
+    return;
+  }
+
+  const baseDamage = getBattleFlowV2BaseDamage(answerResult);
+  const damageResult = calculateBattleFlowV2Damage({
+    baseDamage,
+    answerResult,
+    skill,
+    charm,
+    chargePercent
+  });
+
+  applyBattleFlowV2SkillEffects({ skill, charm, answerResult, damageResult });
+  triggerMotion(els.battlePlayer, "player-attack-motion");
+  state.enemyHp = clamp(state.enemyHp - damageResult.finalDamage, 0, state.enemyMaxHp);
+  recordPlayerDamage(damageResult.finalDamage, "battleFlowV2Skill", {
+    skillId: skill.id,
+    charmId: charm.id,
+    chargePercent: damageResult.chargePercent
+  });
+  const rawChargePercent = clamp(Math.round(Number(chargePercent) || 0), 0, BATTLE_FLOW_V2_CONFIG.maxChargePercent);
+  if (rawChargePercent > 0) {
+    recordGrammariaChargeUse(rawChargePercent);
+    recordChargeBonusDamage(Math.round(baseDamage * (rawChargePercent / 100)));
+  }
+  triggerEnemyHitFeedback(damageResult.finalDamage);
+
+  const grammariaGain = battle.pendingPlayerAttack?.grammariaGain || 0;
+  if (grammariaGain > 0) {
+    state.grammaria += grammariaGain;
+  }
+  clearFocusBuffAfterAttack(battle);
+  resetBattleFlowV2Selection({ phase: "bossTurn", cleanupCharge: true });
+  updateBattleStats();
+  syncBattleStateToPlayerData();
+  showOnlyBattlePanel(null);
+  showBattleFlowV2AttackFeedback({ skill, charm, damageResult });
+  if (grammariaGain > 0) {
+    els.battleMessage.textContent += `\nได้รับ Grammaria +${grammariaGain}`;
+  }
+
+  battleFlowV2Log("attack resolved", {
+    skillId: skill.id,
+    charmId: charm.id,
+    apCost: skill.apCost,
+    finalDamage: damageResult.finalDamage,
+    enemyHp: state.enemyHp
+  });
+
+  if (state.enemyHp <= 0) {
+    battle.skillFlowLocked = false;
+    handleActEnemyDefeated("battleFlowV2Skill");
+    return;
+  }
+
+  battle.skillFlowLocked = false;
+  els.continueBattleButton.classList.add("hidden");
+  battle.pendingBossAction = chooseActBossAction(battle);
+  setTimeout(startActBossWarning, 900);
+}
+
 function showActCharmChoices() {
   const battle = state.actBattle;
   if (!battle || !battle.pendingPlayerAttack) {
     return;
   }
 
+  els.charmPanel.querySelector("h3").textContent = "เลือกเครื่องรางเวท 1 ชิ้น";
   els.charmOptions.innerHTML = "";
   selectRandomActCharms().forEach(charm => {
     const button = document.createElement("button");

@@ -3253,6 +3253,121 @@ h3 {
   -webkit-user-select: none;
 }
 
+.battle-flow-v2-panel {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
+.battle-flow-v2-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #fff7d8;
+  font-weight: 900;
+}
+
+.battle-flow-v2-header strong {
+  color: var(--aqua);
+  font-size: 0.94rem;
+  text-align: right;
+}
+
+.battle-flow-v2-hint {
+  margin: 0;
+  color: rgba(255, 246, 220, 0.86);
+  line-height: 1.4;
+}
+
+.skill-card {
+  min-height: 88px;
+  padding: 14px;
+  border: 1px solid rgba(115, 246, 255, 0.42);
+  border-radius: 8px;
+  background: rgba(7, 18, 34, 0.8);
+  color: #fff;
+  text-align: left;
+}
+
+.skill-card-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.skill-card strong {
+  color: var(--aqua);
+}
+
+.skill-card em {
+  color: #fff1b5;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.skill-card span,
+.skill-card small {
+  display: block;
+  line-height: 1.35;
+}
+
+.skill-card small {
+  margin-top: 6px;
+  color: rgba(255, 246, 220, 0.82);
+}
+
+.skill-card.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  filter: grayscale(0.45);
+}
+
+.battle-flow-v2-charm {
+  min-height: 76px;
+}
+
+.battle-flow-v2-charm.is-no-charm {
+  border-style: dashed;
+}
+
+.battle-flow-v2-back {
+  min-height: 44px;
+}
+
+.battle-flow-v2-charge-controls {
+  margin-top: 14px;
+}
+
+.battle-flow-v2-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.battle-flow-v2-actions button {
+  min-height: 44px;
+}
+
+@media (max-width: 640px) {
+  .battle-flow-v2-header,
+  .skill-card-topline {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .battle-flow-v2-header strong {
+    text-align: left;
+  }
+
+  .battle-flow-v2-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 .timing-bar.danger {
   background: linear-gradient(90deg, rgba(255, 101, 119, 0.12), rgba(155, 124, 255, 0.18));
 }
