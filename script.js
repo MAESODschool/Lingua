@@ -163,6 +163,23 @@ const PARRY_BALANCE_CONFIG = {
 };
 const PARRY_BAR_ARM_DELAY_MS = 120;
 
+const BOSS_HEAVY_ATTACK_CONFIG = {
+  enabled: true,
+  chance: 0.28,
+  minChainCount: 2,
+  maxChainCount: 3,
+  allowedParryTypes: ["bar", "point"],
+  damageMultiplier: 1.45,
+  damageReductionPerSuccess: 0.32,
+  perfectChainExtraReduction: 0.18,
+  minimumDamageRatio: 0.18,
+  counterDamagePerSuccess: 1,
+  counterDamagePerfectChain: 3,
+  gapBetweenParriesMs: 180,
+  minTurnsBetweenHeavyAttacks: 2,
+  debug: true
+};
+
 const EARLY_BOSS_BALANCE = {
   timeDust: {
     minMaxHp: 120,
@@ -2539,9 +2556,21 @@ function cleanupBattleInputState() {
   stopTimer("charge");
   stopParryCountdown();
   cleanupPointParryRingUI();
+  cleanupBossHeavyAttackChain({ clearParryUi: false });
   state.parryAttack = null;
   state.shield = 0;
   state.guardShield = 0;
+}
+
+function cleanupBossHeavyAttackChain({ clearParryUi = true } = {}) {
+  const battle = state.actBattle;
+  if (battle) {
+    battle.heavyAttackState = null;
+  }
+  if (clearParryUi) {
+    stopParryCountdown();
+    cleanupPointParryRingUI();
+  }
 }
 
 function getRevivedHp(percent = REVIVE_CONFIG.hpPercentAfterRevive) {
@@ -7107,6 +7136,7 @@ function getQuestionText(question) {
 }
 
 function startActBattle(stageIndex) {
+  cleanupBossHeavyAttackChain({ clearParryUi: true });
   const stageConfig = getPlayableStages()[stageIndex];
   const allowedRuleIds = getAllowedRuleIdsForStage(stageConfig);
   const stage = {
@@ -7145,6 +7175,9 @@ function startActBattle(stageIndex) {
     selectedChargePercent: 0,
     pendingAttackData: null,
     skillFlowLocked: false,
+    heavyAttackState: null,
+    lastHeavyAttackTurn: -999,
+    bossTurnCount: 0,
     recentCharmIds: [],
     usedQuestionIds: new Set(),
     lastQuestionBaseVerb: "",
@@ -8846,6 +8879,113 @@ function chooseActCharm(charm) {
   setTimeout(startActBossWarning, 900);
 }
 
+function heavyAttackLog(label, payload = {}) {
+  if (BOSS_HEAVY_ATTACK_CONFIG.debug) {
+    console.log(`[HeavyAttack] ${label}`, payload);
+  }
+}
+
+function randomInt(min, max) {
+  const lo = Math.ceil(Number(min) || 0);
+  const hi = Math.floor(Number(max) || lo);
+  return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+}
+
+function canBossUseHeavyAttack(stage) {
+  if (!stage) {
+    return false;
+  }
+  const normalized = normalizeEnemyId(stage);
+  const compactEnemy = String(stage.enemy || stage.name || stage.id || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+  return [
+    "edForger",
+    "yesterdaySprite",
+    "yesterdaySpirit",
+    "memoryBreaker"
+  ].includes(normalized) ||
+    compactEnemy === "yesterdaysprite" ||
+    compactEnemy === "yesterdayspirit" ||
+    compactEnemy === "regularrule3" ||
+    stage.id === "regular-rule-3";
+}
+
+function shouldBossUseHeavyAttack(stage, battle) {
+  if (!BOSS_HEAVY_ATTACK_CONFIG.enabled || !stage || !battle) {
+    return false;
+  }
+  if (isActBattleEnded(battle) || state.playerHp <= 0 || state.enemyHp <= 0) {
+    return false;
+  }
+  if (!canBossUseHeavyAttack(stage) || battle.heavyAttackState?.active || state.parry || state.pointParry?.active) {
+    heavyAttackLog("roll", {
+      enemy: stage?.enemy,
+      canUse: canBossUseHeavyAttack(stage),
+      chance: BOSS_HEAVY_ATTACK_CONFIG.chance,
+      result: false
+    });
+    return false;
+  }
+
+  const currentTurn = Number(battle.bossTurnCount || 0);
+  const lastTurn = Number(battle.lastHeavyAttackTurn ?? -999);
+  if (currentTurn - lastTurn < BOSS_HEAVY_ATTACK_CONFIG.minTurnsBetweenHeavyAttacks) {
+    heavyAttackLog("roll", {
+      enemy: stage?.enemy,
+      canUse: true,
+      chance: BOSS_HEAVY_ATTACK_CONFIG.chance,
+      result: false,
+      reason: "cooldown"
+    });
+    return false;
+  }
+
+  const useHeavy = Math.random() < BOSS_HEAVY_ATTACK_CONFIG.chance;
+  heavyAttackLog("roll", {
+    enemy: stage?.enemy,
+    canUse: true,
+    chance: BOSS_HEAVY_ATTACK_CONFIG.chance,
+    result: useHeavy
+  });
+  return useHeavy;
+}
+
+function getBossHeavyAttackBaseDamage(stage, battle) {
+  const actionDamage = Number(battle?.pendingBossAction?.damage || 0);
+  const normalDamage = actionDamage || Number(stage?.enemyDamage || stage?.bossDamage || 12);
+  return Math.max(8, Math.round(normalDamage * BOSS_HEAVY_ATTACK_CONFIG.damageMultiplier));
+}
+
+function createBossHeavyAttackAction(stage, battle) {
+  const templateAction = battle?.pendingBossAction || BOSS_ACTIONS.find(action => action.type === "skill") || BOSS_ACTIONS[0];
+  const chainCount = randomInt(
+    BOSS_HEAVY_ATTACK_CONFIG.minChainCount,
+    BOSS_HEAVY_ATTACK_CONFIG.maxChainCount
+  );
+  const allowedTypes = BOSS_HEAVY_ATTACK_CONFIG.allowedParryTypes.length
+    ? BOSS_HEAVY_ATTACK_CONFIG.allowedParryTypes
+    : ["bar"];
+  const parryTypes = Array.from({ length: chainCount }, () => sample(allowedTypes, 1)[0] || "bar");
+  const action = {
+    ...templateAction,
+    type: "heavyAttack",
+    label: "ท่าโจมตีรุนแรง",
+    warning: `${stage?.thaiEnemy || stage?.enemy || "บอส"} กำลังรวบรวมพลังโจมตีรุนแรง!`,
+    description: "บอสกำลังรวบรวมพลังโจมตีหนัก ต้องปัดป้องต่อเนื่อง!",
+    chainCount,
+    parryTypes,
+    baseDamage: getBossHeavyAttackBaseDamage(stage, battle),
+    damage: getBossHeavyAttackBaseDamage(stage, battle),
+    sequence: ["heavy"],
+    bossKey: getBossKey(stage),
+    createdAt: Date.now()
+  };
+  heavyAttackLog("action created", action);
+  return action;
+}
+
 function chooseActBossAction(battle) {
   const hpPercent = state.enemyHp / state.enemyMaxHp;
   const bossKey = getBossKey(battle.stage);
@@ -8888,6 +9028,9 @@ function bossIntentLabel(turn) {
     return "เตรียมป้องกัน";
   }
   const remaining = turn.sequence.slice(turn.stepIndex);
+  if (remaining.includes("heavy")) {
+    return "Parry Chain";
+  }
   if (remaining.includes("question")) {
     return "โจทย์บอส";
   }
@@ -8906,8 +9049,11 @@ function showBossIntentPanel(turn) {
   setBattleTurnOwner("enemy");
   showOnlyBattlePanel(els.bossIntentPanel);
   const enemyName = battle.stage.thaiEnemy || battle.stage.enemy || "Memory Shade";
+  const action = battle.pendingBossAction;
   els.bossIntentName.textContent = enemyName;
-  els.bossIntentText.textContent = battle.pendingBossAction?.warning || "ศัตรูกำลังเตรียมโจมตี";
+  els.bossIntentText.textContent = action?.type === "heavyAttack"
+    ? `${enemyName} กำลังรวบรวมพลังโจมตีรุนแรง! เตรียมปัดป้องต่อเนื่อง ${action.chainCount} ครั้ง`
+    : action?.warning || "ศัตรูกำลังเตรียมโจมตี";
   els.bossIntentType.textContent = `รูปแบบถัดไป: ${bossIntentLabel(turn)}`;
   battle.bossIntentReadyConsumed = false;
   enableBattleButton(els.bossIntentReadyButton);
@@ -8970,6 +9116,12 @@ function startActBossWarning() {
     return;
   }
 
+  battle.bossTurnCount = (battle.bossTurnCount || 0) + 1;
+  if (shouldBossUseHeavyAttack(battle.stage, battle)) {
+    battle.pendingBossAction = createBossHeavyAttackAction(battle.stage, battle);
+    battle.lastHeavyAttackTurn = battle.bossTurnCount;
+  }
+
   const action = battle.pendingBossAction;
   battle.pendingBossTurn = {
     action,
@@ -9011,7 +9163,330 @@ function runNextBossTurnStep() {
     return;
   }
 
+  if (step === "heavy") {
+    startBossHeavyAttackParryChain(battle.pendingBossAction);
+    return;
+  }
+
   showBossAttackStep();
+}
+
+function showHeavyAttackChainMessage(action) {
+  const battle = state.actBattle;
+  if (!battle || !action) {
+    return;
+  }
+  setBattleTurnOwner("enemy");
+  showOnlyBattlePanel(null);
+  els.continueBattleButton.classList.add("hidden");
+  els.battleMessage.textContent = `${action.warning}\nปัดป้องต่อเนื่อง ${action.chainCount} ครั้ง`;
+}
+
+function startBossHeavyAttackParryChain(action) {
+  const battle = state.actBattle;
+  if (!battle || !action || isActBattleEnded(battle) || state.playerHp <= 0 || state.enemyHp <= 0) {
+    return;
+  }
+  if (battle.heavyAttackState?.active) {
+    return;
+  }
+
+  stopParryCountdown();
+  cleanupPointParryRingUI();
+  els.continueBattleButton.classList.add("hidden");
+  battle.awaitingPrepare = false;
+  battle.awaitingParry = false;
+  battle.heavyAttackState = {
+    active: true,
+    action,
+    currentIndex: 0,
+    chainCount: action.chainCount,
+    parryTypes: action.parryTypes,
+    results: [],
+    baseDamage: action.baseDamage,
+    startedAt: Date.now(),
+    resolved: false
+  };
+
+  heavyAttackLog("chain start", {
+    enemy: battle.stage?.enemy,
+    chainCount: action.chainCount,
+    parryTypes: action.parryTypes,
+    baseDamage: action.baseDamage
+  });
+
+  showHeavyAttackChainMessage(action);
+  window.setTimeout(startNextHeavyAttackParry, BOSS_HEAVY_ATTACK_CONFIG.gapBetweenParriesMs);
+}
+
+function startNextHeavyAttackParry() {
+  const battle = state.actBattle;
+  const chain = battle?.heavyAttackState;
+  if (!battle || !chain || !chain.active || chain.resolved || isActBattleEnded(battle)) {
+    return;
+  }
+
+  if (chain.currentIndex >= chain.chainCount) {
+    resolveBossHeavyAttackChain();
+    return;
+  }
+
+  const parryType = chain.parryTypes[chain.currentIndex] || "bar";
+  const displayIndex = chain.currentIndex + 1;
+  els.continueBattleButton.classList.add("hidden");
+  els.battleMessage.textContent = `ปัดป้องต่อเนื่อง ${displayIndex}/${chain.chainCount}`;
+  heavyAttackLog("parry start", {
+    index: displayIndex,
+    total: chain.chainCount,
+    type: parryType
+  });
+
+  if (parryType === "point") {
+    startHeavyAttackPointParry({
+      index: chain.currentIndex,
+      total: chain.chainCount,
+      onComplete: handleHeavyAttackParryResult
+    });
+    return;
+  }
+
+  startHeavyAttackParryBar({
+    index: chain.currentIndex,
+    total: chain.chainCount,
+    onComplete: handleHeavyAttackParryResult
+  });
+}
+
+function handleHeavyAttackParryResult(result) {
+  const battle = state.actBattle;
+  const chain = battle?.heavyAttackState;
+  if (!battle || !chain || !chain.active || chain.resolved) {
+    return;
+  }
+
+  const normalizedResult = {
+    index: chain.currentIndex,
+    type: chain.parryTypes[chain.currentIndex] || "bar",
+    grade: result?.grade || "miss",
+    success: result?.success === true || result?.grade === "perfect" || result?.grade === "good",
+    meta: result || {},
+    at: Date.now()
+  };
+
+  chain.results.push(normalizedResult);
+  chain.currentIndex += 1;
+  heavyAttackLog("parry result", normalizedResult);
+
+  if (chain.currentIndex >= chain.chainCount) {
+    resolveBossHeavyAttackChain();
+    return;
+  }
+
+  window.setTimeout(startNextHeavyAttackParry, BOSS_HEAVY_ATTACK_CONFIG.gapBetweenParriesMs);
+}
+
+function startHeavyAttackParryBar({ index, total, onComplete }) {
+  const battle = state.actBattle;
+  const action = battle?.pendingBossAction;
+  if (!battle || !action) {
+    return;
+  }
+
+  const difficulty = getActParryDifficulty(action);
+  const adjustedZoneWidth = clamp(action.zoneWidth - difficulty.widthPenalty, action.minZoneWidth, 46);
+  const durationMs = Math.max(1500, action.parryDuration * difficulty.durationMultiplier);
+  const challenge = createParryBarChallenge({ durationMs });
+  battle.awaitingParry = true;
+  setBattleTurnOwner("enemy");
+  state.parry = {
+    challengeId: challenge.id,
+    active: true,
+    resolved: false,
+    inputArmed: false,
+    inputLocked: false,
+    chainMode: true,
+    onComplete,
+    startedAt: challenge.startedAt,
+    durationMs: challenge.durationMs,
+    armedTimeout: null,
+    gaugeProgress: 0,
+    gaugeDirection: 1,
+    gaugeLastTime: null,
+    gaugeFrame: null,
+    gaugeSpeed: Math.max(520, action.speed * difficulty.speedMultiplier),
+    zoneMoves: true,
+    gaugeZoneInitialWidth: adjustedZoneWidth,
+    gaugeZoneWidth: adjustedZoneWidth,
+    gaugeZoneMinWidth: action.minZoneWidth,
+    gaugeZoneShrinkPerSecond: action.shrinkPerSecond,
+    gaugeZoneStart: Math.random() * (100 - adjustedZoneWidth),
+    gaugeZoneDirection: Math.random() < 0.5 ? -1 : 1,
+    gaugeZoneSpeed: action.zoneSpeed,
+    tickTimeout: null,
+    resolveTimeout: null
+  };
+
+  els.enemyAttackName.textContent = action.label;
+  els.parryHitText.textContent = `Chain ${index + 1} / ${total}`;
+  els.parryCountdown.textContent = "TAP";
+  els.parryHitResult.textContent = "";
+  els.parryGaugeZone.style.width = `${adjustedZoneWidth}%`;
+  els.parryGaugeZone.style.left = `${state.parry.gaugeZoneStart}%`;
+  els.parryButton.disabled = true;
+  showOnlyBattlePanel(els.parryPanel);
+  scheduleParryBarArming(challenge.id);
+  startParryGauge(challenge.id);
+  state.parry.resolveTimeout = setTimeout(() => {
+    if (!isCurrentParryBarChallenge(challenge.id)) {
+      return;
+    }
+    stopActParry("MISS", { source: "timeout", challengeId: challenge.id });
+  }, durationMs);
+}
+
+function startHeavyAttackPointParry({ index, total, onComplete }) {
+  const battle = state.actBattle;
+  if (!battle || !battle.pendingBossAction) {
+    return;
+  }
+
+  const difficulty = getPointParryDifficulty();
+  setBattleTurnOwner("enemy");
+  showOnlyBattlePanel(els.pointParryPanel);
+  els.pointParryTitle.textContent = `Point Parry ${index + 1}/${total}`;
+  els.pointParryInstruction.textContent = "กดเมื่อวงกลมประสานกัน!";
+  els.pointParryResult.textContent = "";
+  els.pointParryArena.innerHTML = "";
+
+  const ringGame = document.createElement("div");
+  ringGame.className = "point-parry-ring-game";
+  ringGame.innerHTML = `
+    <div class="point-parry-target-ring" aria-hidden="true"></div>
+    <div class="point-parry-shrinking-ring" aria-hidden="true"></div>
+    <button class="point-parry-hit-button" type="button" aria-label="ปัดจังหวะ">ปัดจังหวะ!</button>
+  `;
+  const hitButton = ringGame.querySelector(".point-parry-hit-button");
+  hitButton.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    resolvePointParryRing("tap");
+  }, { passive: false });
+  els.pointParryArena.appendChild(ringGame);
+  startPointParryRingChallenge({
+    ...difficulty,
+    chainMode: true,
+    onComplete
+  });
+}
+
+function resolveBossHeavyAttackChain() {
+  const battle = state.actBattle;
+  const chain = battle?.heavyAttackState;
+  if (!battle || !chain || chain.resolved) {
+    return;
+  }
+
+  chain.resolved = true;
+  const total = chain.chainCount;
+  const successCount = chain.results.filter(item => item.success).length;
+  const missCount = total - successCount;
+  const perfectChain = successCount === total;
+  let damageRatio = 1 - (successCount * BOSS_HEAVY_ATTACK_CONFIG.damageReductionPerSuccess);
+  if (perfectChain) {
+    damageRatio -= BOSS_HEAVY_ATTACK_CONFIG.perfectChainExtraReduction;
+  }
+  damageRatio = Math.max(
+    perfectChain ? 0 : BOSS_HEAVY_ATTACK_CONFIG.minimumDamageRatio,
+    damageRatio
+  );
+  const finalDamage = Math.max(0, Math.round(chain.baseDamage * damageRatio));
+  let counterDamage = successCount * BOSS_HEAVY_ATTACK_CONFIG.counterDamagePerSuccess;
+  if (perfectChain) {
+    counterDamage += BOSS_HEAVY_ATTACK_CONFIG.counterDamagePerfectChain;
+  }
+
+  const summary = {
+    total,
+    successCount,
+    missCount,
+    perfectChain,
+    baseDamage: chain.baseDamage,
+    finalDamage,
+    counterDamage,
+    results: chain.results
+  };
+  heavyAttackLog("complete", summary);
+  applyBossHeavyAttackChainResult(summary);
+}
+
+function showBossHeavyAttackChainSummary(summary) {
+  if (summary.perfectChain) {
+    els.battleMessage.textContent = `ปัดป้องสมบูรณ์! เจ้าป้องกันท่าโจมตีรุนแรงได้ทั้งหมด และสวนกลับ ${summary.counterDamage} ดาเมจ`;
+    return;
+  }
+  if (summary.successCount > 0) {
+    els.battleMessage.textContent = `เจ้าปัดป้องได้ ${summary.successCount}/${summary.total} ครั้ง รับความเสียหายลดลง เหลือ ${summary.finalDamage} ดาเมจ`;
+    return;
+  }
+  els.battleMessage.textContent = `เจ้าพลาดจังหวะทั้งหมด! รับความเสียหาย ${summary.finalDamage} ดาเมจ`;
+}
+
+function finishBossTurnAfterHeavyAttack() {
+  const battle = state.actBattle;
+  if (!battle || isActBattleEnded(battle)) {
+    return;
+  }
+  const hasMoreBossSteps = battle.pendingBossTurn && battle.pendingBossTurn.stepIndex < battle.pendingBossTurn.sequence.length;
+  if (!hasMoreBossSteps) {
+    finalizeBossTurnState();
+  }
+  showBattleContinueButton(
+    hasMoreBossSteps ? "ดำเนินต่อ" : (battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "เทิร์นถัดไป"),
+    hasMoreBossSteps ? runNextBossTurnStep : continueActBattle
+  );
+}
+
+function applyBossHeavyAttackChainResult(summary) {
+  const battle = state.actBattle;
+  if (!battle) {
+    return;
+  }
+
+  stopParryCountdown();
+  cleanupPointParryRingUI();
+  showOnlyBattlePanel(null);
+  setBattleTurnOwner("player");
+
+  if (summary.counterDamage > 0) {
+    state.enemyHp = clamp(state.enemyHp - summary.counterDamage, 0, state.enemyMaxHp);
+    recordParryCounterDamage(summary.counterDamage, "bossHeavyAttackChainCounter");
+    triggerMotion(els.battlePlayer, "player-attack-motion");
+    triggerEnemyHitFeedback(summary.counterDamage, "COUNTER");
+  } else if (summary.finalDamage > 0) {
+    triggerMotion(els.battleEnemy, "enemy-attack-motion");
+  }
+
+  if (summary.finalDamage > 0) {
+    state.playerHp = clamp(state.playerHp - summary.finalDamage, 0, 100);
+    recordBossDamage(summary.finalDamage, "bossHeavyAttackChain", summary);
+    playAttackSfx();
+  }
+
+  updateBattleStats();
+  syncBattleStateToPlayerData();
+  showBossHeavyAttackChainSummary(summary);
+  battle.heavyAttackState = null;
+  battle.awaitingParry = false;
+  battle.awaitingPrepare = false;
+
+  if (state.enemyHp <= 0) {
+    handleActEnemyDefeated("bossHeavyAttackChainCounter");
+    return;
+  }
+  if (resolvePlayerDefeat("HP เหลือ 0")) {
+    return;
+  }
+
+  finishBossTurnAfterHeavyAttack();
 }
 
 function getPointParryDifficulty() {
@@ -9067,6 +9542,8 @@ function startPointParryRingChallenge(options = {}) {
     targetScale: config.targetScale,
     perfectWindow: config.perfectWindow,
     goodWindow: config.goodWindow,
+    chainMode: Boolean(config.chainMode),
+    onComplete: typeof config.onComplete === "function" ? config.onComplete : null,
     resolved: false,
     rafId: null,
     timeout: null,
@@ -9176,6 +9653,24 @@ function resolvePointParry(result, meta = {}) {
 
   cancelPointParryRingChallenge();
   state.pointParry.active = false;
+
+  if (state.pointParry.chainMode) {
+    const grade = String(result || "MISS").toLowerCase();
+    const onComplete = state.pointParry.onComplete;
+    recordParryForGrammaria(result, `heavy-point:${battle.turnNumber}:${battle.heavyAttackState?.currentIndex || 0}`);
+    cleanupPointParryRingUI();
+    showOnlyBattlePanel(null);
+    if (typeof onComplete === "function") {
+      onComplete({
+        type: "point",
+        grade,
+        success: result === "PERFECT" || result === "GOOD",
+        source: meta.reason || "tap",
+        scaleDelta: meta.scaleDelta
+      });
+    }
+    return;
+  }
 
   const action = battle.pendingBossAction;
   const effects = state.battleActiveEffects || {};
@@ -9544,6 +10039,30 @@ function stopActParry(forcedResult = null, meta = {}) {
     effects.upgradeNextParry -= 1;
   }
 
+  if (state.parry.chainMode) {
+    const onComplete = state.parry.onComplete;
+    const challengeId = meta.challengeId || state.parry.challengeId;
+    recordParryForGrammaria(parryResult, `heavy-bar:${battle.turnNumber}:${battle.heavyAttackState?.currentIndex || 0}`);
+    console.log("[ParryBar] chain result", {
+      grade: parryResult.toLowerCase(),
+      source: meta.source || "player",
+      challengeId
+    });
+    battle.awaitingParry = false;
+    state.parry.resolved = true;
+    stopParryCountdown();
+    showOnlyBattlePanel(null);
+    if (typeof onComplete === "function") {
+      onComplete({
+        type: "bar",
+        grade: parryResult.toLowerCase(),
+        success: parryResult === "PERFECT" || parryResult === "GOOD",
+        source: meta.source || "player"
+      });
+    }
+    return;
+  }
+
   if (parryResult === "PERFECT") {
     damage = 0;
     counterDamage = PARRY_BALANCE_CONFIG.parryBar.counterDamagePerfect;
@@ -9829,6 +10348,7 @@ function handleActEnemyDefeated(source = "damage") {
   setActionButtonsEnabled(false);
   stopTimer("charge");
   stopParryCountdown();
+  cleanupBossHeavyAttackChain({ clearParryUi: true });
   showOnlyBattlePanel(null);
   updateBattleStats();
   syncBattleStateToPlayerData();
@@ -9973,6 +10493,7 @@ function resetBattle() {
   clearEnemyTurnTimer();
   stopTimer("charge");
   stopParryCountdown();
+  cleanupBossHeavyAttackChain({ clearParryUi: true });
 
   state.playerHp = 100;
   state.enemyHp = 80;
