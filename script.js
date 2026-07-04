@@ -7144,6 +7144,7 @@ function startActBattle(stageIndex) {
     questions: filterQuestionsForStage(stageConfig.questions || [], stageConfig)
   };
   console.log("[Battle Start]", stage.id, "Allowed Rules:", allowedRuleIds);
+  console.log("[BattleFlowV2] enabled =", BATTLE_FLOW_V2_CONFIG?.enabled);
   const questionCount = stage.questions.length;
   if (!questionCount) {
     console.error("[Battle Start] No valid questions for stage:", stage.id);
@@ -7489,7 +7490,7 @@ function chooseActAnswer(option) {
     return;
   }
 
-  if (BATTLE_FLOW_V2_CONFIG.enabled && (isCorrect || BATTLE_FLOW_V2_CONFIG.wrongAnswerCanStillAttack)) {
+  if (BATTLE_FLOW_V2_CONFIG?.enabled) {
     handleBattleFlowV2AnswerResolved(question, option, isCorrect);
     return;
   }
@@ -7577,8 +7578,8 @@ function handleBattleFlowV2AnswerResolved(question, selectedAnswer, isCorrect) {
   battle.pendingAttackData = null;
   battle.skillFlowLocked = false;
   setBattleTurnOwner("player");
-  battleFlowV2Log("answer resolved", battle.pendingPlayerAnswer);
-  setTimeout(renderBattleSkillSelectionPanel, 450);
+  battleFlowV2Log("answer resolved, showing skill panel", battle.pendingPlayerAnswer);
+  renderBattleSkillSelectionPanel();
 }
 
 function renderBattleSkillSelectionPanel() {
@@ -7593,6 +7594,7 @@ function renderBattleSkillSelectionPanel() {
   els.battleMessage.textContent = "เลือกพลังจากเศษ Grammar Core เพื่อโจมตี";
   els.charmPanel.querySelector("h3").textContent = "เลือกสกิลโจมตี";
   els.charmOptions.innerHTML = "";
+  els.continueBattleButton.classList.add("hidden");
 
   const panel = document.createElement("div");
   panel.className = "battle-flow-v2-panel battle-skill-panel";
@@ -7624,6 +7626,11 @@ function renderBattleSkillSelectionPanel() {
 
   els.charmOptions.appendChild(panel);
   showOnlyBattlePanel(els.charmPanel);
+  battleFlowV2Log("skill panel rendered", {
+    currentAp,
+    skillCount: PLAYER_SKILLS_V2.length,
+    phase: battle.playerActionPhase
+  });
 }
 
 function selectBattleSkill(skillId) {
