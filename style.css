@@ -3280,6 +3280,11 @@ h3 {
   line-height: 1.4;
 }
 
+.battle-skill-panel,
+.battle-charm-panel {
+  gap: 10px;
+}
+
 .skill-card {
   min-height: 88px;
   padding: 14px;
@@ -3326,6 +3331,16 @@ h3 {
   filter: grayscale(0.45);
 }
 
+.battle-flow-v3-skill-card {
+  min-height: 74px;
+  padding: 11px 12px;
+}
+
+.battle-flow-v3-skill-card small {
+  margin-top: 4px;
+  font-size: 0.82rem;
+}
+
 .battle-flow-v2-charm {
   min-height: 76px;
 }
@@ -3365,6 +3380,12 @@ h3 {
 
   .battle-flow-v2-actions {
     grid-template-columns: 1fr;
+  }
+
+  .battle-flow-v3-skill-card,
+  .battle-flow-v2-charm {
+    min-height: 0;
+    padding: 10px;
   }
 }
 

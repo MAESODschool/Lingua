@@ -124,9 +124,9 @@ const interactiveStoryDialogue = [
 
 
 const BOSS_ACTIONS = [
-  { type: "normal", label: "โจมตีปกติ", damage: 12, warning: "บอสกำลังโจมตี!", zoneWidth: 34, minZoneWidth: 18, speed: 920, zoneSpeed: 2200, shrinkPerSecond: 4, parryDuration: 3800 },
-  { type: "skill", label: "สกิลแรง", damage: 22, warning: "บอสกำลังใช้สกิลแรง!", zoneWidth: 28, minZoneWidth: 13, speed: 780, zoneSpeed: 1700, shrinkPerSecond: 5.5, parryDuration: 3400 },
-  { type: "ultimate", label: "อัลติ", damage: 35, warning: "บอสกำลังใช้อัลติ! เตรียมปัดป้อง!", zoneWidth: 24, minZoneWidth: 8, speed: 650, zoneSpeed: 1250, shrinkPerSecond: 7, parryDuration: 3100 }
+  { type: "normal", label: "โจมตีปกติ", damage: 12, hitCount: 1, warning: "บอสกำลังโจมตี!", zoneWidth: 34, minZoneWidth: 18, speed: 920, zoneSpeed: 2200, shrinkPerSecond: 4, parryDuration: 3800 },
+  { type: "skill", label: "สกิลแรง", damage: 22, hitCount: 2, warning: "บอสกำลังใช้สกิลแรง!", zoneWidth: 28, minZoneWidth: 13, speed: 780, zoneSpeed: 1700, shrinkPerSecond: 5.5, parryDuration: 3400 },
+  { type: "ultimate", label: "อัลติ", damage: 35, hitCount: 3, warning: "บอสกำลังใช้อัลติ! เตรียมปัดป้อง!", zoneWidth: 24, minZoneWidth: 8, speed: 650, zoneSpeed: 1250, shrinkPerSecond: 7, parryDuration: 3100 }
 ];
 
 const DEFAULT_POINT_PARRY_CONFIG = {
@@ -7549,7 +7549,32 @@ function getBattleFlowV2Skill(skillId) {
 }
 
 function getBattleFlowV2Charm(charmId) {
-  return PLAYER_CHARMS_V2.find(charm => charm.id === charmId && charm.enabled);
+  return actAttackCharms.find(charm => charm.id === charmId) ||
+    PLAYER_CHARMS_V2.find(charm => charm.id === charmId && charm.enabled);
+}
+
+function getAllGrammariaBowls() {
+  return Array.isArray(actAttackCharms) && actAttackCharms.length
+    ? actAttackCharms
+    : PLAYER_CHARMS_V2.filter(charm => charm.enabled);
+}
+
+function selectRandomGrammariaBowls(count = 3) {
+  const battle = state.actBattle;
+  const allBowls = getAllGrammariaBowls();
+  const recentIds = new Set([...(battle?.recentCharmIds || []), ...(state.lastCharmSet || [])]);
+  const freshPool = allBowls.filter(bowl => !recentIds.has(bowl.id));
+  const basePool = freshPool.length >= count ? freshPool : allBowls;
+  const choices = sample(basePool, Math.min(count, basePool.length));
+  state.lastCharmSet = choices.map(bowl => bowl.id);
+  if (battle) {
+    battle.recentCharmIds = [...(battle.recentCharmIds || []), ...state.lastCharmSet].slice(-6);
+  }
+  battleFlowV2Log("bowl roll", {
+    totalBowls: allBowls.length,
+    choices: choices.map(bowl => `${bowl.rank || "-"}:${bowl.name || bowl.thaiName}`)
+  });
+  return choices;
 }
 
 function handleBattleFlowV2AnswerResolved(question, selectedAnswer, isCorrect) {
@@ -7610,7 +7635,7 @@ function renderBattleSkillSelectionPanel() {
     const canUse = currentAp >= skill.apCost;
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `skill-card${canUse ? "" : " is-disabled"}`;
+    button.className = `skill-card battle-flow-v3-skill-card${canUse ? "" : " is-disabled"}`;
     button.disabled = !canUse;
     button.innerHTML = `
       <span class="skill-card-topline">
@@ -7671,26 +7696,31 @@ function renderBattleCharmSelectionPanel() {
   }
 
   battle.playerActionPhase = "charmSelect";
-  els.battleMessage.textContent = `เลือกชาร์มเสริมพลังสำหรับ ${skill.thaiName}`;
-  els.charmPanel.querySelector("h3").textContent = "เลือกชาร์มเสริมพลัง";
+  els.battleMessage.textContent = `เลือกชาม Grammaria สำหรับ ${skill.thaiName}`;
+  els.charmPanel.querySelector("h3").textContent = "เลือกชาม Grammaria";
   els.charmOptions.innerHTML = "";
 
   const panel = document.createElement("div");
   panel.className = "battle-flow-v2-panel battle-charm-panel";
   panel.innerHTML = `
     <div class="battle-flow-v2-header">
-      <span>เลือกชาร์มเสริมพลัง</span>
+      <span>เลือกชาม Grammaria</span>
       <strong>${skill.thaiName} · ${skill.apCost} AP</strong>
     </div>
   `;
 
-  PLAYER_CHARMS_V2.filter(charm => charm.enabled).forEach(charm => {
+  selectRandomGrammariaBowls(3).forEach(charm => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `charm-card battle-flow-v2-charm${charm.id === "none" ? " is-no-charm" : ""}`;
+    button.className = `charm-card battle-flow-v2-charm rank-${String(charm.rank || "c").toLowerCase()}`;
+    const rankLabel = charmRankMeta[charm.rank] || charmRankMeta.C;
     button.innerHTML = `
-      <strong>${charm.thaiName}</strong>
-      <span class="charm-description">${charm.description}</span>
+      <span class="charm-topline">
+        <span class="charm-icon" aria-hidden="true">${charm.icon || rankLabel.icon || "✦"}</span>
+        <span class="charm-rank">${rankLabel.label || "Bowl"}</span>
+      </span>
+      <strong>${charm.thaiName || charm.name}</strong>
+      <span class="charm-description">${charm.description || charm.effect}</span>
     `;
     button.addEventListener("click", () => selectBattleCharm(charm.id));
     panel.appendChild(button);
@@ -7720,8 +7750,9 @@ function selectBattleCharm(charmId) {
   }
 
   battle.selectedCharmId = charm.id;
+  battle.selectedChargePercent = 0;
   battle.playerActionPhase = "charge";
-  battleFlowV2Log("charm selected", { charmId: charm.id });
+  battleFlowV2Log("bowl selected", { bowlId: charm.id, name: charm.name || charm.thaiName });
   renderBattleChargePanel();
 }
 
@@ -7755,7 +7786,10 @@ function renderBattleChargePanel() {
 
   battle.playerActionPhase = "charge";
   battle.selectedChargePercent = 0;
-  els.battleMessage.textContent = `ชาร์จพลัง ${skill.thaiName} แล้วกดโจมตี`;
+  battle.isCharging = false;
+  battle.isAttacking = false;
+  battle.isResolvingTurn = false;
+  els.battleMessage.textContent = `ชาร์จพลัง ${skill.thaiName} แล้วปล่อยเพื่อโจมตีอัตโนมัติ`;
 
   const controls = ensureBattleFlowV2ChargeControls();
   controls.innerHTML = `
@@ -7764,10 +7798,9 @@ function renderBattleChargePanel() {
         <span>ชาร์จพลังโจมตี</span>
         <strong>${skill.thaiName}</strong>
       </div>
-      <p class="battle-flow-v2-hint">ชาร์ม: ${charm.thaiName}</p>
+      <p class="battle-flow-v2-hint">ชาม: ${charm.thaiName || charm.name}</p>
       <div class="battle-flow-v2-actions">
-        <button type="button" class="secondary-button" id="battleFlowV2BackToCharm">กลับไปเลือกชาร์ม</button>
-        <button type="button" class="primary-button" id="battleFlowV2ConfirmAttack">โจมตี</button>
+        <button type="button" class="secondary-button" id="battleFlowV2BackToCharm">กลับไปเลือกชาม</button>
       </div>
     </div>
   `;
@@ -7775,18 +7808,18 @@ function renderBattleChargePanel() {
     cleanupGrammariaCharge();
     renderBattleCharmSelectionPanel();
   });
-  controls.querySelector("#battleFlowV2ConfirmAttack")?.addEventListener("click", confirmBattleFlowV2Attack);
 
   showOnlyBattlePanel(els.chargePanel);
   setupGrammariaCharge({
     label: skill.thaiName,
     onComplete: chargePercent => {
       const currentBattle = state.actBattle;
-      if (!currentBattle || currentBattle.playerActionPhase !== "charge") {
+      if (!currentBattle || currentBattle.playerActionPhase !== "charge" || currentBattle.isResolvingTurn) {
         return;
       }
       currentBattle.selectedChargePercent = clamp(Math.round(Number(chargePercent) || 0), 0, BATTLE_FLOW_V2_CONFIG.maxChargePercent);
       battleFlowV2Log("charge selected", { chargePercent: currentBattle.selectedChargePercent });
+      confirmBattleFlowV2Attack();
     }
   });
 }
@@ -7805,7 +7838,7 @@ function confirmBattleFlowV2Attack() {
     return;
   }
   if (!charm) {
-    els.battleMessage.textContent = "ยังไม่ได้เลือกชาร์ม";
+    els.battleMessage.textContent = "ยังไม่ได้เลือกชาม";
     renderBattleCharmSelectionPanel();
     return;
   }
@@ -7844,6 +7877,18 @@ function calculateBattleFlowV2Damage({ baseDamage, answerResult, skill, charm, c
   if (isCorrect && skill?.correctAnswerBonusPercent) {
     workingDamage *= 1 + Number(skill.correctAnswerBonusPercent || 0) / 100;
   }
+
+  let bowlBonus = { totalDamage: Math.round(workingDamage), grammariaBonus: 0, isCrit: false, stunChance: 0, bonusLines: [] };
+  if (charm?.effectType) {
+    const bonusLines = [`ชาม ${charm.name || charm.thaiName}`];
+    const charmDamage = calculateCharmDamage(charm, Math.max(1, Math.round(workingDamage)), bonusLines);
+    bowlBonus = {
+      ...charmDamage,
+      bonusLines
+    };
+    workingDamage = charmDamage.totalDamage;
+  }
+
   if (charm?.damageBonusPercent) {
     workingDamage *= 1 + Number(charm.damageBonusPercent || 0) / 100;
   }
@@ -7868,7 +7913,11 @@ function calculateBattleFlowV2Damage({ baseDamage, answerResult, skill, charm, c
     skillId: skill?.id || "",
     charmId: charm?.id || "",
     chargePercent: effectiveChargePercent,
-    answerMultiplier: isCorrect ? 1 : BATTLE_FLOW_V2_CONFIG.wrongAnswerDamageMultiplier
+    answerMultiplier: isCorrect ? 1 : BATTLE_FLOW_V2_CONFIG.wrongAnswerDamageMultiplier,
+    grammariaBonus: bowlBonus.grammariaBonus || 0,
+    isCrit: Boolean(bowlBonus.isCrit),
+    stunChance: bowlBonus.stunChance || 0,
+    bonusLines: bowlBonus.bonusLines || []
   };
 }
 
@@ -7900,7 +7949,7 @@ function showBattleFlowV2AttackFeedback({ skill, charm, damageResult }) {
   };
   const lines = [
     skillLines[skill.id] || `${skill.thaiName} พุ่งเข้าใส่ศัตรู!`,
-    `ชาร์ม: ${charm.thaiName}`,
+    `ชาม: ${charm.thaiName || charm.name}`,
     `สร้างความเสียหาย ${damageResult.finalDamage} หน่วย`
   ];
   if (!damageResult.isCorrect) {
@@ -7925,6 +7974,9 @@ function resetBattleFlowV2Selection({ phase = "bossTurn", cleanupCharge = true }
   battle.selectedChargePercent = 0;
   battle.pendingAttackData = null;
   battle.skillFlowLocked = false;
+  battle.isCharging = false;
+  battle.isAttacking = false;
+  battle.isResolvingTurn = false;
   battle.playerActionPhase = phase;
   if (cleanupCharge) {
     cleanupGrammariaCharge();
@@ -7933,22 +7985,28 @@ function resetBattleFlowV2Selection({ phase = "bossTurn", cleanupCharge = true }
 
 function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) {
   const battle = state.actBattle;
-  if (!battle || battle.skillFlowLocked) {
+  if (!battle || battle.skillFlowLocked || battle.isResolvingTurn) {
     return;
   }
 
   battle.skillFlowLocked = true;
+  battle.isResolvingTurn = true;
+  battle.isAttacking = true;
   battle.playerActionPhase = "attackResolve";
   const answerResult = battle.pendingPlayerAnswer;
   if (!answerResult) {
     console.warn("[BattleFlowV2] missing pending answer");
     battle.skillFlowLocked = false;
+    battle.isResolvingTurn = false;
+    battle.isAttacking = false;
     beginActPlayerTurn("เกิดข้อผิดพลาดในการโจมตี ลองตอบคำถามใหม่อีกครั้ง");
     return;
   }
 
   if (!spendBattlePlayerAp(skill.apCost)) {
     battle.skillFlowLocked = false;
+    battle.isResolvingTurn = false;
+    battle.isAttacking = false;
     els.battleMessage.textContent = `AP ไม่พอสำหรับ ${skill.thaiName}`;
     renderBattleSkillSelectionPanel();
     return;
@@ -7978,7 +8036,9 @@ function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) {
   }
   triggerEnemyHitFeedback(damageResult.finalDamage);
 
-  const grammariaGain = battle.pendingPlayerAttack?.grammariaGain || 0;
+  tryStunBoss(damageResult.stunChance || 0, damageResult.bonusLines || []);
+
+  const grammariaGain = (battle.pendingPlayerAttack?.grammariaGain || 0) + (damageResult.grammariaBonus || 0);
   if (grammariaGain > 0) {
     state.grammaria += grammariaGain;
   }
@@ -8002,11 +8062,15 @@ function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) {
 
   if (state.enemyHp <= 0) {
     battle.skillFlowLocked = false;
+    battle.isResolvingTurn = false;
+    battle.isAttacking = false;
     handleActEnemyDefeated("battleFlowV2Skill");
     return;
   }
 
   battle.skillFlowLocked = false;
+  battle.isResolvingTurn = false;
+  battle.isAttacking = false;
   els.continueBattleButton.classList.add("hidden");
   battle.pendingBossAction = chooseActBossAction(battle);
   setTimeout(startActBossWarning, 900);
@@ -8965,12 +9029,26 @@ function getBossHeavyAttackBaseDamage(stage, battle) {
   return Math.max(8, Math.round(normalDamage * BOSS_HEAVY_ATTACK_CONFIG.damageMultiplier));
 }
 
+function getBossActionHitCount(action) {
+  const explicitHitCount = Number(action?.hitCount || 0);
+  if (Number.isFinite(explicitHitCount) && explicitHitCount > 0) {
+    return clamp(Math.round(explicitHitCount), 1, 3);
+  }
+  if (action?.type === "ultimate") {
+    return 3;
+  }
+  if (action?.type === "skill") {
+    return 2;
+  }
+  return 1;
+}
+
 function createBossHeavyAttackAction(stage, battle) {
   const templateAction = battle?.pendingBossAction || BOSS_ACTIONS.find(action => action.type === "skill") || BOSS_ACTIONS[0];
-  const chainCount = randomInt(
-    BOSS_HEAVY_ATTACK_CONFIG.minChainCount,
-    BOSS_HEAVY_ATTACK_CONFIG.maxChainCount
-  );
+  const actionHitCount = getBossActionHitCount(templateAction);
+  const chainCount = actionHitCount > 1
+    ? actionHitCount
+    : randomInt(BOSS_HEAVY_ATTACK_CONFIG.minChainCount, BOSS_HEAVY_ATTACK_CONFIG.maxChainCount);
   const allowedTypes = BOSS_HEAVY_ATTACK_CONFIG.allowedParryTypes.length
     ? BOSS_HEAVY_ATTACK_CONFIG.allowedParryTypes
     : ["bar"];
@@ -8990,6 +9068,44 @@ function createBossHeavyAttackAction(stage, battle) {
     createdAt: Date.now()
   };
   heavyAttackLog("action created", action);
+  return action;
+}
+
+function createBossComboAttackAction(stage, battle, templateAction) {
+  const chainCount = getBossActionHitCount(templateAction);
+  const allowedTypes = BOSS_HEAVY_ATTACK_CONFIG.allowedParryTypes.length
+    ? BOSS_HEAVY_ATTACK_CONFIG.allowedParryTypes
+    : ["bar"];
+  const parryTypes = Array.from({ length: chainCount }, () => sample(allowedTypes, 1)[0] || "bar");
+  let insertedComboStep = false;
+  const sourceSequence = templateAction.sequence?.length ? templateAction.sequence : ["attack"];
+  const sequence = sourceSequence.flatMap(step => {
+    if (step !== "attack" && step !== "point") {
+      return [step];
+    }
+    if (insertedComboStep) {
+      return [];
+    }
+    insertedComboStep = true;
+    return ["heavy"];
+  });
+  if (!sequence.includes("heavy")) {
+    sequence.push("heavy");
+  }
+
+  const action = {
+    ...templateAction,
+    warning: templateAction.warning || `${stage?.thaiEnemy || stage?.enemy || "บอส"} กำลังโจมตีต่อเนื่อง!`,
+    description: "บอสกำลังใช้ combo attack ต้องปัดป้องต่อเนื่อง!",
+    chainCount,
+    parryTypes,
+    baseDamage: Number(templateAction.damage || stage?.enemyDamage || stage?.bossDamage || 12),
+    damage: Number(templateAction.damage || stage?.enemyDamage || stage?.bossDamage || 12),
+    sequence,
+    bossKey: getBossKey(stage),
+    createdAt: Date.now()
+  };
+  heavyAttackLog("combo action created", action);
   return action;
 }
 
@@ -9058,8 +9174,8 @@ function showBossIntentPanel(turn) {
   const enemyName = battle.stage.thaiEnemy || battle.stage.enemy || "Memory Shade";
   const action = battle.pendingBossAction;
   els.bossIntentName.textContent = enemyName;
-  els.bossIntentText.textContent = action?.type === "heavyAttack"
-    ? `${enemyName} กำลังรวบรวมพลังโจมตีรุนแรง! เตรียมปัดป้องต่อเนื่อง ${action.chainCount} ครั้ง`
+  els.bossIntentText.textContent = action?.type === "heavyAttack" || action?.chainCount > 1
+    ? `${enemyName} กำลังรวบรวมพลังโจมตีต่อเนื่อง! เตรียมปัดป้อง ${action.chainCount} ครั้ง`
     : action?.warning || "ศัตรูกำลังเตรียมโจมตี";
   els.bossIntentType.textContent = `รูปแบบถัดไป: ${bossIntentLabel(turn)}`;
   battle.bossIntentReadyConsumed = false;
@@ -9127,6 +9243,8 @@ function startActBossWarning() {
   if (shouldBossUseHeavyAttack(battle.stage, battle)) {
     battle.pendingBossAction = createBossHeavyAttackAction(battle.stage, battle);
     battle.lastHeavyAttackTurn = battle.bossTurnCount;
+  } else if (getBossActionHitCount(battle.pendingBossAction) > 1) {
+    battle.pendingBossAction = createBossComboAttackAction(battle.stage, battle, battle.pendingBossAction);
   }
 
   const action = battle.pendingBossAction;
@@ -9282,6 +9400,9 @@ function handleHeavyAttackParryResult(result) {
 
   chain.results.push(normalizedResult);
   chain.currentIndex += 1;
+  if (normalizedResult.meta?.apGain) {
+    els.battleMessage.textContent = `Perfect Parry! +${normalizedResult.meta.apGain} AP`;
+  }
   heavyAttackLog("parry result", normalizedResult);
 
   if (chain.currentIndex >= chain.chainCount) {
@@ -9397,15 +9518,20 @@ function resolveBossHeavyAttackChain() {
   const successCount = chain.results.filter(item => item.success).length;
   const missCount = total - successCount;
   const perfectChain = successCount === total;
-  let damageRatio = 1 - (successCount * BOSS_HEAVY_ATTACK_CONFIG.damageReductionPerSuccess);
-  if (perfectChain) {
-    damageRatio -= BOSS_HEAVY_ATTACK_CONFIG.perfectChainExtraReduction;
-  }
-  damageRatio = Math.max(
-    perfectChain ? 0 : BOSS_HEAVY_ATTACK_CONFIG.minimumDamageRatio,
-    damageRatio
-  );
-  const finalDamage = Math.max(0, Math.round(chain.baseDamage * damageRatio));
+  const apGainCount = chain.results.reduce((sum, item) => sum + Number(item.meta?.apGain || 0), 0);
+  const damagePerHit = Math.max(1, Math.round(chain.baseDamage / Math.max(1, total)));
+  const finalDamage = chain.results.reduce((sum, item) => {
+    if (item.grade === "perfect") {
+      return sum;
+    }
+    if (item.grade === "good") {
+      return sum + Math.round(damagePerHit * 0.4);
+    }
+    if (item.grade === "weak") {
+      return sum + Math.round(damagePerHit * 0.6);
+    }
+    return sum + damagePerHit;
+  }, 0);
   let counterDamage = successCount * BOSS_HEAVY_ATTACK_CONFIG.counterDamagePerSuccess;
   if (perfectChain) {
     counterDamage += BOSS_HEAVY_ATTACK_CONFIG.counterDamagePerfectChain;
@@ -9419,6 +9545,7 @@ function resolveBossHeavyAttackChain() {
     baseDamage: chain.baseDamage,
     finalDamage,
     counterDamage,
+    apGainCount,
     results: chain.results
   };
   heavyAttackLog("complete", summary);
@@ -9426,15 +9553,16 @@ function resolveBossHeavyAttackChain() {
 }
 
 function showBossHeavyAttackChainSummary(summary) {
+  const apLine = summary.apGainCount ? `\nPerfect Parry! ได้รับ AP +${summary.apGainCount}` : "";
   if (summary.perfectChain) {
-    els.battleMessage.textContent = `ปัดป้องสมบูรณ์! เจ้าป้องกันท่าโจมตีรุนแรงได้ทั้งหมด และสวนกลับ ${summary.counterDamage} ดาเมจ`;
+    els.battleMessage.textContent = `ปัดป้องสมบูรณ์! เจ้าป้องกันท่าโจมตีรุนแรงได้ทั้งหมด และสวนกลับ ${summary.counterDamage} ดาเมจ${apLine}`;
     return;
   }
   if (summary.successCount > 0) {
-    els.battleMessage.textContent = `เจ้าปัดป้องได้ ${summary.successCount}/${summary.total} ครั้ง รับความเสียหายลดลง เหลือ ${summary.finalDamage} ดาเมจ`;
+    els.battleMessage.textContent = `เจ้าปัดป้องได้ ${summary.successCount}/${summary.total} ครั้ง รับความเสียหายลดลง เหลือ ${summary.finalDamage} ดาเมจ${apLine}`;
     return;
   }
-  els.battleMessage.textContent = `เจ้าพลาดจังหวะทั้งหมด! รับความเสียหาย ${summary.finalDamage} ดาเมจ`;
+  els.battleMessage.textContent = `เจ้าพลาดจังหวะทั้งหมด! รับความเสียหาย ${summary.finalDamage} ดาเมจ${apLine}`;
 }
 
 function finishBossTurnAfterHeavyAttack() {
@@ -9664,6 +9792,11 @@ function resolvePointParry(result, meta = {}) {
   if (state.pointParry.chainMode) {
     const grade = String(result || "MISS").toLowerCase();
     const onComplete = state.pointParry.onComplete;
+    const apGain = result === "PERFECT" ? 1 : 0;
+    if (apGain) {
+      gainActAP(apGain);
+      updateBattleStats();
+    }
     recordParryForGrammaria(result, `heavy-point:${battle.turnNumber}:${battle.heavyAttackState?.currentIndex || 0}`);
     cleanupPointParryRingUI();
     showOnlyBattlePanel(null);
@@ -9673,7 +9806,8 @@ function resolvePointParry(result, meta = {}) {
         grade,
         success: result === "PERFECT" || result === "GOOD",
         source: meta.reason || "tap",
-        scaleDelta: meta.scaleDelta
+        scaleDelta: meta.scaleDelta,
+        apGain
       });
     }
     return;
@@ -10049,6 +10183,11 @@ function stopActParry(forcedResult = null, meta = {}) {
   if (state.parry.chainMode) {
     const onComplete = state.parry.onComplete;
     const challengeId = meta.challengeId || state.parry.challengeId;
+    const apGain = parryResult === "PERFECT" ? 1 : 0;
+    if (apGain) {
+      gainActAP(apGain);
+      updateBattleStats();
+    }
     recordParryForGrammaria(parryResult, `heavy-bar:${battle.turnNumber}:${battle.heavyAttackState?.currentIndex || 0}`);
     console.log("[ParryBar] chain result", {
       grade: parryResult.toLowerCase(),
@@ -10064,7 +10203,8 @@ function stopActParry(forcedResult = null, meta = {}) {
         type: "bar",
         grade: parryResult.toLowerCase(),
         success: parryResult === "PERFECT" || parryResult === "GOOD",
-        source: meta.source || "player"
+        source: meta.source || "player",
+        apGain
       });
     }
     return;
