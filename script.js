@@ -125,8 +125,8 @@ const interactiveStoryDialogue = [
 
 const BOSS_ACTIONS = [
   { type: "normal", label: "โจมตีปกติ", damage: 12, hitCount: 1, warning: "บอสกำลังโจมตี!", zoneWidth: 34, minZoneWidth: 18, speed: 920, zoneSpeed: 2200, shrinkPerSecond: 4, parryDuration: 3800 },
-  { type: "skill", label: "สกิลแรง", damage: 22, hitCount: 2, warning: "บอสกำลังใช้สกิลแรง!", zoneWidth: 28, minZoneWidth: 13, speed: 780, zoneSpeed: 1700, shrinkPerSecond: 5.5, parryDuration: 3400 },
-  { type: "ultimate", label: "อัลติ", damage: 35, hitCount: 3, warning: "บอสกำลังใช้อัลติ! เตรียมปัดป้อง!", zoneWidth: 24, minZoneWidth: 8, speed: 650, zoneSpeed: 1250, shrinkPerSecond: 7, parryDuration: 3100 }
+  { type: "skill", label: "สกิลแรง", damage: 22, hitCount: 2, markChance: 0.18, markDamageBonus: 0.2, markHits: 1, warning: "บอสกำลังใช้สกิลแรง!", zoneWidth: 28, minZoneWidth: 13, speed: 780, zoneSpeed: 1700, shrinkPerSecond: 5.5, parryDuration: 3400 },
+  { type: "ultimate", label: "อัลติ", damage: 35, hitCount: 3, markChance: 0.28, markDamageBonus: 0.25, markHits: 2, warning: "บอสกำลังใช้อัลติ! เตรียมปัดป้อง!", zoneWidth: 24, minZoneWidth: 8, speed: 650, zoneSpeed: 1250, shrinkPerSecond: 7, parryDuration: 3100 }
 ];
 
 const DEFAULT_POINT_PARRY_CONFIG = {
@@ -178,6 +178,33 @@ const BOSS_HEAVY_ATTACK_CONFIG = {
   gapBetweenParriesMs: 180,
   minTurnsBetweenHeavyAttacks: 2,
   debug: true
+};
+
+const STATUS_BALANCE_CONFIG = {
+  stun: {
+    defaultThreshold: 100,
+    bossStunTurns: 1,
+    playerAttackBaseBuild: {
+      coreSpark: 18,
+      syntaxBlade: 30,
+      grammariaSurge: 45
+    },
+    counterBuild: {
+      good: 12,
+      perfect: 25
+    },
+    criticalExtraBuild: 10,
+    repeatedStunResistanceMultiplier: 0.6
+  },
+  mark: {
+    defaultDamageBonus: 0.25,
+    defaultHits: 1,
+    defaultTurns: 1
+  },
+  shield: {
+    maxHitShieldStacks: 5,
+    maxDefenseShieldPercent: 0.75
+  }
 };
 
 const EARLY_BOSS_BALANCE = {
@@ -1347,8 +1374,11 @@ const actAttackCharms = [
   makeCharm("b_past_flame", "เปลวไฟแห่งอดีต", "B", "attack", "pastDamageBonus", 1.25, "ถ้าคำถามเกี่ยวกับ V2 หรือ Past Simple เพิ่มดาเมจ 25%"),
   makeCharm("b_critical_charm", "เครื่องรางคริติคอล", "B", "critical", "criticalChanceBonus", 0.15, "เพิ่มโอกาส Critical +15% ในการโจมตีครั้งนี้", { duration: 1 }),
   makeCharm("b_stun_hammer", "ค้อนสะกดจังหวะ", "B", "stun", "stunChance", 0.25, "โจมตีครั้งนี้มีโอกาส 25% ทำให้บอสติด Stun 1 เทิร์น", { duration: 1 }),
+  makeCharm("b_stun_sigil", "ตราสะกดจังหวะ", "B", "stun", "stunBuild", 25, "โจมตีครั้งนี้สะสม Stun ให้บอส +25"),
   makeCharm("b_heal_on_correct", "ฟื้นพลังจากคำตอบ", "B", "heal", "healOnCorrect", 12, "ถ้าตอบถูก ฟื้น HP 12", { duration: 1 }),
-  makeCharm("b_mark", "รอยประทับ Mark", "B", "status", "applyMark", 0.15, "ติด Mark ให้บอส บอสโดนดาเมจเพิ่ม 15% 1 เทิร์น", { duration: 1 }),
+  makeCharm("b_mark", "รอยประทับ Mark", "B", "status", "applyMarkStatus", 0.15, "ติด Mark ให้บอส บอสโดนดาเมจเพิ่ม 15% 1 hit", { hits: 1, duration: 1 }),
+  makeCharm("b_hit_shield", "เกราะหนึ่งจังหวะ", "B", "defense", "addHitShield", 1, "สร้างเกราะรับการโจมตี 1 hit"),
+  makeCharm("b_syntax_veil", "ม่านวากยสัมพันธ์", "B", "defense", "addDefenseShield", 0.30, "ลดดาเมจบอสครั้งถัดไป 30%", { hits: 1 }),
   makeCharm("b_counter_power", "พลังตอบโต้", "B", "counter", "counterOnGoodParry", 0.15, "ถ้า Good หรือ Perfect Parry สำเร็จ โจมตีสวน 15%", { duration: 1 }),
   makeCharm("b_opening_rune", "รูนเริ่มศึก", "B", "attack", "firstTurnDamageBonus", 1.35, "ถ้าเป็นเทิร์นแรกของการต่อสู้ ดาเมจเพิ่ม 35%"),
 
@@ -1369,7 +1399,7 @@ const actAttackCharms = [
 
   makeCharm("s_crystal_charge", "ชาร์จผลึก", "S", "charge", "crystalCharge", 1, "สะสม 1 ชาร์จ ครบ 3 ครั้ง ดาเมจถัดไป x2", { threshold: 3 }),
   makeCharm("s_time_echo", "เวทสะท้อนเวลา", "S", "attack", "delayedEchoDamage", 0.30, "ดาเมจที่ทำในเทิร์นนี้ 30% จะย้อนกลับไปโดนบอสอีกครั้งในเทิร์นถัดไป"),
-  makeCharm("s_grammaria_shield", "โล่แกรมมาเรีย", "S", "defense", "blockIfGoodParry", 1, "ป้องกันดาเมจบอส 1 ครั้ง ถ้า Parry ได้อย่างน้อย Good", { duration: 1 }),
+  makeCharm("s_grammaria_shield", "โล่แกรมมาเรีย", "S", "defense", "addHitShield", 2, "สร้างเกราะรับการโจมตี 2 hit"),
   makeCharm("s_verion_eye", "ดวงตาแห่งเวรีออน", "S", "support", "showHintBeforeQuestion", 1, "คำถามถัดไปแสดงคำใบ้ก่อนตอบ", { duration: 1 }),
   makeCharm("s_last_memory_crit", "Last Memory Critical", "S", "critical", "lowHpCriticalBonus", 0.50, "ถ้า HP ต่ำกว่า 30% เพิ่มโอกาส Critical +50%", { condition: "hpBelow30" }),
   makeCharm("s_stun_breaker", "Stun Breaker", "S", "stun", "damageOnStunned", 1.50, "ถ้าบอสติด Stun ดาเมจเพิ่ม 50%"),
@@ -3390,6 +3420,7 @@ function resetBattleActiveEffects() {
     criticalChanceBonus: 0,
     forceCriticalNextAttack: 0,
     stunChance: 0,
+    stunBuildBonus: 0,
     stunOnCriticalChance: 0,
     counterOnGoodParry: 0,
     blockIfGoodParry: 0,
@@ -3407,6 +3438,298 @@ function resetBattleActiveEffects() {
     stackingDamageBonus: 0,
     surviveFatalOnce: false
   };
+}
+
+function createBattleStatusBucket() {
+  return {
+    stunGauge: 0,
+    stunThreshold: STATUS_BALANCE_CONFIG.stun.defaultThreshold,
+    stunnedTurns: 0,
+    defenseShieldPercent: 0,
+    defenseShieldHits: 0,
+    hitShieldStacks: 0,
+    markedTurns: 0,
+    markedHits: 0,
+    markDamageBonus: 0
+  };
+}
+
+function resetBattleStatuses(battle = state.actBattle) {
+  if (!battle) {
+    return null;
+  }
+  battle.statuses = {
+    player: createBattleStatusBucket(),
+    boss: createBattleStatusBucket()
+  };
+  return battle.statuses;
+}
+
+function ensureBattleStatuses(battle = state.actBattle) {
+  if (!battle) {
+    return null;
+  }
+  if (!battle.statuses || typeof battle.statuses !== "object") {
+    resetBattleStatuses(battle);
+  }
+  ["player", "boss"].forEach(target => {
+    battle.statuses[target] = {
+      ...createBattleStatusBucket(),
+      ...(battle.statuses[target] || {})
+    };
+  });
+  if (battle.bossStunned) {
+    battle.statuses.boss.stunnedTurns = Math.max(battle.statuses.boss.stunnedTurns || 0, 1);
+    battle.bossStunned = false;
+  }
+  if (state.guardShield > 0) {
+    battle.statuses.player.defenseShieldPercent = Math.max(
+      battle.statuses.player.defenseShieldPercent || 0,
+      clamp(Number(state.guardShield) || 0, 0, STATUS_BALANCE_CONFIG.shield.maxDefenseShieldPercent)
+    );
+    battle.statuses.player.defenseShieldHits = Math.max(battle.statuses.player.defenseShieldHits || 0, 1);
+    state.guardShield = 0;
+  }
+  if (state.shield > 0) {
+    battle.statuses.player.defenseShieldPercent = Math.max(
+      battle.statuses.player.defenseShieldPercent || 0,
+      clamp(Number(state.shield) || 0, 0, STATUS_BALANCE_CONFIG.shield.maxDefenseShieldPercent)
+    );
+    battle.statuses.player.defenseShieldHits = Math.max(battle.statuses.player.defenseShieldHits || 0, 1);
+    state.shield = 0;
+  }
+  return battle.statuses;
+}
+
+function getBattleStatus(target, battle = state.actBattle) {
+  const statuses = ensureBattleStatuses(battle);
+  return statuses?.[target] || null;
+}
+
+function statusLog(label, payload = {}) {
+  console.log(`[StatusSystem] ${label}`, payload);
+}
+
+function addStunGauge(target, amount, source = "", lines = []) {
+  const status = getBattleStatus(target);
+  if (!status || !amount) {
+    return false;
+  }
+  const buildAmount = Math.max(0, Math.round(Number(amount) || 0));
+  if (!buildAmount) {
+    return false;
+  }
+  status.stunGauge = clamp((status.stunGauge || 0) + buildAmount, 0, status.stunThreshold || STATUS_BALANCE_CONFIG.stun.defaultThreshold);
+  addBattleMessageLine(lines, `${target === "boss" ? "บอส" : "ผู้เล่น"} สะสม Stun +${buildAmount}`);
+  statusLog("stun build", { target, amount: buildAmount, gauge: status.stunGauge, source });
+  return applyStunIfThresholdReached(target, lines);
+}
+
+function applyStunIfThresholdReached(target, lines = []) {
+  const status = getBattleStatus(target);
+  if (!status) {
+    return false;
+  }
+  const threshold = status.stunThreshold || STATUS_BALANCE_CONFIG.stun.defaultThreshold;
+  if ((status.stunGauge || 0) < threshold) {
+    return false;
+  }
+  const battle = state.actBattle;
+  const resistanceMultiplier = battle?.bossWasStunnedLastTurn && target === "boss"
+    ? STATUS_BALANCE_CONFIG.stun.repeatedStunResistanceMultiplier
+    : 1;
+  status.stunnedTurns = Math.max(
+    status.stunnedTurns || 0,
+    target === "boss" ? STATUS_BALANCE_CONFIG.stun.bossStunTurns : 1
+  );
+  status.stunGauge = Math.max(0, Math.round((status.stunGauge - threshold) * resistanceMultiplier));
+  if (target === "boss" && battle) {
+    battle.bossStunned = false;
+  }
+  addBattleMessageLine(lines, `${target === "boss" ? "บอส" : "ผู้เล่น"}ติด Stun!`);
+  statusLog("stun applied", { target, stunnedTurns: status.stunnedTurns, remainingGauge: status.stunGauge });
+  return true;
+}
+
+function consumeStunTurn(target) {
+  const status = getBattleStatus(target);
+  if (!status || !status.stunnedTurns) {
+    return false;
+  }
+  status.stunnedTurns = Math.max(0, status.stunnedTurns - 1);
+  return true;
+}
+
+function isTargetStunned(target) {
+  const status = getBattleStatus(target);
+  return Boolean(status?.stunnedTurns > 0);
+}
+
+function addDefenseShield(target, percent, hits = 1, source = "", options = {}) {
+  const status = getBattleStatus(target);
+  if (!status) {
+    return;
+  }
+  const shieldPercent = clamp(Number(percent) || 0, 0, STATUS_BALANCE_CONFIG.shield.maxDefenseShieldPercent);
+  const shieldHits = Math.max(1, Math.round(Number(hits) || 1));
+  status.defenseShieldPercent = Math.max(status.defenseShieldPercent || 0, shieldPercent);
+  status.defenseShieldHits = Math.max(status.defenseShieldHits || 0, shieldHits);
+  if (target === "player" && !options.skipLegacySync) {
+    state.guardShield = Math.max(state.guardShield || 0, status.defenseShieldPercent);
+  }
+  console.log("[Shield] defense", { target, percent: status.defenseShieldPercent, hits: status.defenseShieldHits, source });
+}
+
+function addHitShield(target, stacks = 1, source = "") {
+  const status = getBattleStatus(target);
+  if (!status) {
+    return;
+  }
+  status.hitShieldStacks = clamp(
+    (status.hitShieldStacks || 0) + Math.max(1, Math.round(Number(stacks) || 1)),
+    0,
+    STATUS_BALANCE_CONFIG.shield.maxHitShieldStacks
+  );
+  console.log("[Shield] hit", { target, stacks: status.hitShieldStacks, source });
+}
+
+function applyMark(target, bonus = STATUS_BALANCE_CONFIG.mark.defaultDamageBonus, hits = STATUS_BALANCE_CONFIG.mark.defaultHits, turns = STATUS_BALANCE_CONFIG.mark.defaultTurns, source = "") {
+  const status = getBattleStatus(target);
+  if (!status) {
+    return;
+  }
+  status.markDamageBonus = Math.max(status.markDamageBonus || 0, Number(bonus) || STATUS_BALANCE_CONFIG.mark.defaultDamageBonus);
+  status.markedHits = Math.max(status.markedHits || 0, Math.max(1, Math.round(Number(hits) || STATUS_BALANCE_CONFIG.mark.defaultHits)));
+  status.markedTurns = Math.max(status.markedTurns || 0, Math.max(1, Math.round(Number(turns) || STATUS_BALANCE_CONFIG.mark.defaultTurns)));
+  console.log("[Mark]", { target, bonus: status.markDamageBonus, hits: status.markedHits, turns: status.markedTurns, source });
+}
+
+function consumeMarkOnDamage(target) {
+  const status = getBattleStatus(target);
+  if (!status || !(status.markedHits > 0)) {
+    return;
+  }
+  status.markedHits = Math.max(0, status.markedHits - 1);
+  if (!status.markedHits) {
+    status.markDamageBonus = 0;
+    status.markedTurns = 0;
+  }
+}
+
+function applyIncomingDamageModifiers(target, rawDamage, context = {}) {
+  const status = getBattleStatus(target);
+  let finalDamage = Math.max(0, Math.round(Number(rawDamage) || 0));
+  const result = {
+    finalDamage,
+    absorbedByHitShield: false,
+    defenseReducedAmount: 0,
+    markBonusAmount: 0,
+    consumedHitShield: false,
+    consumedDefenseShield: false
+  };
+  if (!status || finalDamage <= 0) {
+    return result;
+  }
+
+  if (status.markedHits > 0 && status.markDamageBonus > 0) {
+    const beforeMark = finalDamage;
+    finalDamage = Math.max(0, Math.round(finalDamage * (1 + status.markDamageBonus)));
+    result.markBonusAmount = finalDamage - beforeMark;
+    consumeMarkOnDamage(target);
+  }
+
+  if (finalDamage > 0 && status.defenseShieldPercent > 0 && status.defenseShieldHits > 0) {
+    const beforeShield = finalDamage;
+    finalDamage = Math.max(0, Math.round(finalDamage * (1 - status.defenseShieldPercent)));
+    result.defenseReducedAmount = beforeShield - finalDamage;
+    status.defenseShieldHits = Math.max(0, status.defenseShieldHits - 1);
+    result.consumedDefenseShield = true;
+    if (!status.defenseShieldHits) {
+      status.defenseShieldPercent = 0;
+      if (target === "player") {
+        state.guardShield = 0;
+      }
+    }
+  }
+
+  if (finalDamage > 0 && status.hitShieldStacks > 0) {
+    status.hitShieldStacks = Math.max(0, status.hitShieldStacks - 1);
+    result.absorbedByHitShield = true;
+    result.consumedHitShield = true;
+    finalDamage = 0;
+  }
+
+  result.finalDamage = finalDamage;
+  console.log("[Shield] incoming damage", { target, rawDamage, ...result, source: context.source || "" });
+  return result;
+}
+
+function applyStatusDamageToTarget(target, rawDamage, source = "", context = {}) {
+  const damageResult = applyIncomingDamageModifiers(target, rawDamage, { source, ...context });
+  const damage = damageResult.finalDamage;
+  if (target === "boss") {
+    state.enemyHp = clamp(state.enemyHp - damage, 0, state.enemyMaxHp);
+    recordPlayerDamage(damage, source, { statusDamageResult: damageResult, ...context });
+  } else {
+    state.playerHp = clamp(state.playerHp - damage, 0, 100);
+    recordBossDamage(damage, source, { statusDamageResult: damageResult, ...context });
+  }
+  return damageResult;
+}
+
+function appendDamageModifierLines(lines, target, result) {
+  if (!Array.isArray(lines) || !result) {
+    return;
+  }
+  if (result.markBonusAmount > 0) {
+    addBattleMessageLine(lines, `Marked! ดาเมจเพิ่ม +${result.markBonusAmount}`);
+  }
+  if (result.defenseReducedAmount > 0) {
+    addBattleMessageLine(lines, `Defense Shield ลดดาเมจ ${result.defenseReducedAmount}`);
+  }
+  if (result.absorbedByHitShield) {
+    addBattleMessageLine(lines, `${target === "boss" ? "บอส" : "ผู้เล่น"}ใช้ Hit Shield กันดาเมจ`);
+  }
+}
+
+function applyBossMarkOnPlayerIfHit(action, finalDamage, lines = []) {
+  if (!action || finalDamage <= 0) {
+    return false;
+  }
+  const chance = Number(action.markChance || 0);
+  if (chance <= 0 || Math.random() >= chance) {
+    return false;
+  }
+  applyMark(
+    "player",
+    action.markDamageBonus || STATUS_BALANCE_CONFIG.mark.defaultDamageBonus,
+    action.markHits || STATUS_BALANCE_CONFIG.mark.defaultHits,
+    action.markTurns || STATUS_BALANCE_CONFIG.mark.defaultTurns,
+    action.type || "boss"
+  );
+  addBattleMessageLine(lines, "บอสประทับ Mark ใส่ผู้เล่น! การโจมตีครั้งถัดไปจะรุนแรงขึ้น");
+  return true;
+}
+
+function getSkillStunBuild(skill, damageResult = {}) {
+  const baseBuild = STATUS_BALANCE_CONFIG.stun.playerAttackBaseBuild[skill?.id] || 15;
+  const critBuild = damageResult.isCrit ? STATUS_BALANCE_CONFIG.stun.criticalExtraBuild : 0;
+  const effectBuild = Number(state.battleActiveEffects?.stunBuildBonus || 0);
+  if (state.battleActiveEffects) {
+    state.battleActiveEffects.stunBuildBonus = 0;
+  }
+  return baseBuild + critBuild + effectBuild;
+}
+
+function getCounterStunBuild(grade) {
+  const normalized = String(grade || "").toLowerCase();
+  if (normalized === "perfect") {
+    return STATUS_BALANCE_CONFIG.stun.counterBuild.perfect;
+  }
+  if (normalized === "good") {
+    return STATUS_BALANCE_CONFIG.stun.counterBuild.good;
+  }
+  return 0;
 }
 
 function useBattleEffect(effectId) {
@@ -7209,8 +7532,10 @@ function startActBattle(stageIndex) {
     reviewLessonStepIndex: state.lessonStepIndex || 0,
     reviewDialogueIndex: state.lessonStoryStepIndex || 0,
     victoryHandled: false,
-    grammariaStats: createBattleStats(stage)
+    grammariaStats: createBattleStats(stage),
+    statuses: null
   };
+  resetBattleStatuses(state.actBattle);
   state.currentBattleStats = state.actBattle.grammariaStats;
   console.log("[Grammaria] battle stats:", state.currentBattleStats);
   state.playerHp = 100;
@@ -7411,11 +7736,10 @@ function showActBattleQuestion() {
   if (state.battleActiveEffects.echoDamageNextTurn) {
     const echoDamage = state.battleActiveEffects.echoDamageNextTurn;
     state.battleActiveEffects.echoDamageNextTurn = 0;
-    state.enemyHp = clamp(state.enemyHp - echoDamage, 0, state.enemyMaxHp);
-    recordPlayerDamage(echoDamage, "echoDamage");
-    triggerEnemyHitFeedback(echoDamage);
+    const echoResult = applyStatusDamageToTarget("boss", echoDamage, "echoDamage");
+    triggerEnemyHitFeedback(echoResult.finalDamage);
     updateBattleStats();
-    els.battleMessage.textContent += ` | เสียงสะท้อนสร้างดาเมจ ${echoDamage}`;
+    els.battleMessage.textContent += ` | เสียงสะท้อนสร้างดาเมจ ${echoResult.finalDamage}`;
     if (state.enemyHp <= 0) {
       handleActEnemyDefeated("echoDamage");
       return;
@@ -7476,11 +7800,10 @@ function chooseActAnswer(option) {
 
     setBattleTurnOwner("enemy");
     recordWrongAnswerForGrammaria();
-    state.playerHp = clamp(state.playerHp - 12, 0, 100);
-    recordBossDamage(12, "wrongAnswerPenalty");
+    const penaltyResult = applyStatusDamageToTarget("player", 12, "wrongAnswerPenalty");
     playAttackSfx();
     triggerMotion(els.battleEnemy, "enemy-attack-motion");
-    feedback.innerHTML = `<strong>ยังไม่ถูกต้อง</strong><br>คำตอบที่ถูกคือ <strong>${question.correctAnswer || question.answer}</strong><br>${question.explanation}`;
+    feedback.innerHTML = `<strong>ยังไม่ถูกต้อง</strong><br>รับดาเมจ ${penaltyResult.finalDamage}<br>คำตอบที่ถูกคือ <strong>${question.correctAnswer || question.answer}</strong><br>${question.explanation}`;
   }
 
   els.answerOptions.appendChild(feedback);
@@ -7958,6 +8281,7 @@ function showBattleFlowV2AttackFeedback({ skill, charm, damageResult }) {
   if (damageResult.chargePercent > 0) {
     lines.push(`พลังชาร์จ ${damageResult.chargePercent}% เสริมการโจมตี`);
   }
+  (damageResult.bonusLines || []).forEach(line => lines.push(line));
   els.battleMessage.textContent = lines.join("\n");
 }
 
@@ -8023,12 +8347,18 @@ function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) {
 
   applyBattleFlowV2SkillEffects({ skill, charm, answerResult, damageResult });
   triggerMotion(els.battlePlayer, "player-attack-motion");
-  state.enemyHp = clamp(state.enemyHp - damageResult.finalDamage, 0, state.enemyMaxHp);
-  recordPlayerDamage(damageResult.finalDamage, "battleFlowV2Skill", {
+  const rawPlayerDamage = damageResult.finalDamage;
+  const bossDamageModifiers = applyStatusDamageToTarget("boss", rawPlayerDamage, "battleFlowV2Skill", {
     skillId: skill.id,
     charmId: charm.id,
     chargePercent: damageResult.chargePercent
   });
+  damageResult.rawFinalDamage = rawPlayerDamage;
+  damageResult.finalDamage = bossDamageModifiers.finalDamage;
+  appendDamageModifierLines(damageResult.bonusLines, "boss", bossDamageModifiers);
+  if (damageResult.finalDamage > 0) {
+    addStunGauge("boss", getSkillStunBuild(skill, damageResult), `skill:${skill.id}`, damageResult.bonusLines);
+  }
   const rawChargePercent = clamp(Math.round(Number(chargePercent) || 0), 0, BATTLE_FLOW_V2_CONFIG.maxChargePercent);
   if (rawChargePercent > 0) {
     recordGrammariaChargeUse(rawChargePercent);
@@ -8366,18 +8696,29 @@ function tryStunBoss(baseChance, lines) {
     return false;
   }
 
+  ensureBattleStatuses();
   let chance = baseChance;
   if (battle.bossWasStunnedLastTurn) {
-    chance *= 0.5;
+    chance *= STATUS_BALANCE_CONFIG.stun.repeatedStunResistanceMultiplier;
     battle.bossWasStunnedLastTurn = false;
   }
 
   if (Math.random() < chance) {
-    battle.bossStunned = true;
+    const bossStatus = getBattleStatus("boss");
+    if (bossStatus) {
+      bossStatus.stunnedTurns = Math.max(bossStatus.stunnedTurns || 0, STATUS_BALANCE_CONFIG.stun.bossStunTurns);
+      bossStatus.stunGauge = 0;
+    }
+    battle.bossStunned = false;
     addBattleMessageLine(lines, "บอสติด Stun! การโจมตีครั้งถัดไปถูกหยุดไว้");
+    statusLog("stun chance success", { chance });
     return true;
   }
 
+  const buildAmount = Math.round(chance * 30);
+  if (buildAmount > 0) {
+    addStunGauge("boss", buildAmount, "partial-stun-charm", lines);
+  }
   return false;
 }
 
@@ -8412,8 +8753,21 @@ function applyCharmSetupEffect(charm, lines) {
       addBattleMessageLine(lines, "ช่อง Parry ครั้งถัดไปกว้างขึ้น");
       break;
     case "nextDamageReduction":
-      state.guardShield = Math.max(state.guardShield || 0, charm.value || 0);
+      addDefenseShield("player", charm.value || 0, charm.hits || 1, charm.id);
       addBattleMessageLine(lines, `ลดดาเมจบอสครั้งถัดไป ${Math.round((charm.value || 0) * 100)}%`);
+      break;
+    case "addDefenseShield":
+      addDefenseShield("player", charm.value || 0, charm.hits || charm.duration || 1, charm.id);
+      addBattleMessageLine(lines, `Defense Shield ${Math.round((charm.value || 0) * 100)}% x${charm.hits || charm.duration || 1}`);
+      break;
+    case "addHitShield":
+      addHitShield("player", charm.value || 1, charm.id);
+      addBattleMessageLine(lines, `Hit Shield +${charm.value || 1}`);
+      break;
+    case "shieldAndGuard":
+      addHitShield("player", charm.stacks || 1, charm.id);
+      addDefenseShield("player", charm.value || 0.25, charm.hits || 1, charm.id);
+      addBattleMessageLine(lines, "สร้างโล่และเกราะป้องกัน");
       break;
     case "memoryCharge":
       effects.memoryCharge += charm.value || 1;
@@ -8441,8 +8795,9 @@ function applyCharmSetupEffect(charm, lines) {
       addBattleMessageLine(lines, "ตอบผิดครั้งถัดไปจะได้ลองใหม่ 1 ครั้ง");
       break;
     case "applyMark":
-      effects.markDamageBonus = Math.max(effects.markDamageBonus || 0, charm.value || 0);
-      addBattleMessageLine(lines, "บอสติด Mark รับดาเมจเพิ่มในครั้งนี้");
+    case "applyMarkStatus":
+      applyMark("boss", charm.value || STATUS_BALANCE_CONFIG.mark.defaultDamageBonus, charm.hits || 1, charm.duration || 1, charm.id);
+      addBattleMessageLine(lines, `Marked! บอสโดนดาเมจเพิ่ม ${Math.round((charm.value || STATUS_BALANCE_CONFIG.mark.defaultDamageBonus) * 100)}%`);
       break;
     case "counterOnGoodParry":
       effects.counterOnGoodParry = Math.max(effects.counterOnGoodParry || 0, charm.value || 0);
@@ -8451,6 +8806,10 @@ function applyCharmSetupEffect(charm, lines) {
     case "stunChance":
       effects.stunChance = Math.max(effects.stunChance || 0, charm.value || 0);
       addBattleMessageLine(lines, `มีโอกาส Stun บอส ${Math.round((charm.value || 0) * 100)}%`);
+      break;
+    case "stunBuild":
+      effects.stunBuildBonus = Math.max(effects.stunBuildBonus || 0, charm.value || 0);
+      addBattleMessageLine(lines, `สะสม Stun ให้บอส +${charm.value || 0}`);
       break;
     case "stunOnCritical":
       effects.stunOnCriticalChance = Math.max(effects.stunOnCriticalChance || 0, charm.value || 0);
@@ -8550,6 +8909,9 @@ function calculateCharmDamage(charm, baseDamage, lines) {
       }
       break;
     case "shieldPierceDamage":
+      if (getBattleStatus("boss")?.defenseShieldPercent > 0 || getBattleStatus("boss")?.hitShieldStacks > 0) {
+        addBattleMessageLine(lines, "Shield Pierce ทำงาน");
+      }
       damage = Math.round(damage * (charm.value || 1.2));
       break;
     case "stackingCorrectDamage":
@@ -8809,10 +9171,15 @@ function resolveActCharmAttack(charm, chargePercent = 0) {
   const grammariaGain = battle.pendingPlayerAttack.grammariaGain + grammariaBonus;
 
   triggerMotion(els.battlePlayer, "player-attack-motion");
-  state.enemyHp = clamp(state.enemyHp - totalDamage, 0, state.enemyMaxHp);
-  recordPlayerDamage(totalDamage, "grammariaCharge", {
+  const rawTotalDamage = totalDamage;
+  const bossDamageResult = applyStatusDamageToTarget("boss", rawTotalDamage, "grammariaCharge", {
     chargePercent: normalizedChargePercent
   });
+  appendDamageModifierLines(bonusLines, "boss", bossDamageResult);
+  totalDamage = bossDamageResult.finalDamage;
+  if (totalDamage > 0) {
+    addStunGauge("boss", getSkillStunBuild({ id: "grammariaCharge" }, damageResult), "grammariaCharge", bonusLines);
+  }
   recordChargeBonusDamage(chargeDamage.bonusDamage);
   triggerEnemyHitFeedback(totalDamage, isCrit ? "CRIT" : "");
   state.grammaria += grammariaGain;
@@ -8930,8 +9297,12 @@ function chooseActCharm(charm) {
   }
 
   triggerMotion(els.battlePlayer, "player-attack-motion");
-  state.enemyHp = clamp(state.enemyHp - damage, 0, state.enemyMaxHp);
-  recordPlayerDamage(damage, "charmAttack");
+  const bossDamageResult = applyStatusDamageToTarget("boss", damage, "charmAttack");
+  appendDamageModifierLines(bonusLines, "boss", bossDamageResult);
+  damage = bossDamageResult.finalDamage;
+  if (damage > 0) {
+    addStunGauge("boss", 15, "legacy-charm-attack", bonusLines);
+  }
   triggerEnemyHitFeedback(damage);
   state.grammaria += grammariaGain;
   battle.pendingPlayerAttack = null;
@@ -9223,15 +9594,23 @@ function startActBossWarning() {
     return;
   }
 
+  ensureBattleStatuses();
   if (battle.bossStunned) {
+    const bossStatus = getBattleStatus("boss");
+    if (bossStatus) {
+      bossStatus.stunnedTurns = Math.max(bossStatus.stunnedTurns || 0, 1);
+    }
     battle.bossStunned = false;
+  }
+  if (isTargetStunned("boss")) {
+    consumeStunTurn("boss");
     battle.bossWasStunnedLastTurn = true;
     battle.pendingBossAction = null;
     battle.pendingBossTurn = null;
     battle.turnNumber += 1;
     showOnlyBattlePanel(null);
     setBattleTurnOwner("player");
-    els.battleMessage.textContent = "บอสติด Stun! การโจมตีครั้งถัดไปถูกหยุดไว้";
+    els.battleMessage.textContent = "บอสติด Stun! การโจมตีครั้งนี้ถูกหยุดไว้";
     showBattleContinueButton(
       battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "คำถามถัดไป",
       continueActBattle
@@ -9382,6 +9761,49 @@ function startNextHeavyAttackParry() {
   });
 }
 
+function resolveHeavyAttackHitStatus(normalizedResult, chain) {
+  const battle = state.actBattle;
+  const action = chain?.action || battle?.pendingBossAction;
+  const damagePerHit = Math.max(1, Math.round((chain?.baseDamage || action?.damage || 1) / Math.max(1, chain?.chainCount || 1)));
+  let rawDamage = damagePerHit;
+  let rawCounterDamage = 0;
+  if (normalizedResult.grade === "perfect") {
+    rawDamage = 0;
+    rawCounterDamage = BOSS_HEAVY_ATTACK_CONFIG.counterDamagePerSuccess;
+  } else if (normalizedResult.grade === "good") {
+    rawDamage = Math.round(damagePerHit * 0.4);
+    rawCounterDamage = BOSS_HEAVY_ATTACK_CONFIG.counterDamagePerSuccess;
+  } else if (normalizedResult.grade === "weak") {
+    rawDamage = Math.round(damagePerHit * 0.6);
+  }
+
+  const lines = [];
+  const playerDamageResult = applyStatusDamageToTarget("player", rawDamage, "bossHeavyAttackHit", {
+    hitIndex: normalizedResult.index + 1,
+    grade: normalizedResult.grade
+  });
+  const bossCounterResult = applyStatusDamageToTarget("boss", rawCounterDamage, "bossHeavyAttackChainCounter", {
+    hitIndex: normalizedResult.index + 1,
+    grade: normalizedResult.grade
+  });
+  appendDamageModifierLines(lines, "player", playerDamageResult);
+  appendDamageModifierLines(lines, "boss", bossCounterResult);
+  applyBossMarkOnPlayerIfHit(action, playerDamageResult.finalDamage, lines);
+  recordParryCounterDamage(bossCounterResult.finalDamage, "bossHeavyAttackChainCounter");
+  if (bossCounterResult.finalDamage > 0) {
+    addStunGauge("boss", getCounterStunBuild(normalizedResult.grade), `heavy-chain:${normalizedResult.grade}`, lines);
+  }
+  return {
+    rawDamage,
+    finalDamage: playerDamageResult.finalDamage,
+    rawCounterDamage,
+    counterDamage: bossCounterResult.finalDamage,
+    playerDamageResult,
+    bossCounterResult,
+    lines
+  };
+}
+
 function handleHeavyAttackParryResult(result) {
   const battle = state.actBattle;
   const chain = battle?.heavyAttackState;
@@ -9398,6 +9820,11 @@ function handleHeavyAttackParryResult(result) {
     at: Date.now()
   };
 
+  const hitStatus = resolveHeavyAttackHitStatus(normalizedResult, chain);
+  normalizedResult.meta = {
+    ...normalizedResult.meta,
+    ...hitStatus
+  };
   chain.results.push(normalizedResult);
   chain.currentIndex += 1;
   if (normalizedResult.meta?.apGain) {
@@ -9406,6 +9833,10 @@ function handleHeavyAttackParryResult(result) {
   heavyAttackLog("parry result", normalizedResult);
 
   if (chain.currentIndex >= chain.chainCount) {
+    resolveBossHeavyAttackChain();
+    return;
+  }
+  if (state.enemyHp <= 0 || state.playerHp <= 0) {
     resolveBossHeavyAttackChain();
     return;
   }
@@ -9519,23 +9950,20 @@ function resolveBossHeavyAttackChain() {
   const missCount = total - successCount;
   const perfectChain = successCount === total;
   const apGainCount = chain.results.reduce((sum, item) => sum + Number(item.meta?.apGain || 0), 0);
-  const damagePerHit = Math.max(1, Math.round(chain.baseDamage / Math.max(1, total)));
-  const finalDamage = chain.results.reduce((sum, item) => {
-    if (item.grade === "perfect") {
-      return sum;
-    }
-    if (item.grade === "good") {
-      return sum + Math.round(damagePerHit * 0.4);
-    }
-    if (item.grade === "weak") {
-      return sum + Math.round(damagePerHit * 0.6);
-    }
-    return sum + damagePerHit;
-  }, 0);
-  let counterDamage = successCount * BOSS_HEAVY_ATTACK_CONFIG.counterDamagePerSuccess;
+  const finalDamage = chain.results.reduce((sum, item) => sum + Number(item.meta?.finalDamage || 0), 0);
+  const appliedCounterDamage = chain.results.reduce((sum, item) => sum + Number(item.meta?.counterDamage || 0), 0);
+  let counterBonusDamage = 0;
   if (perfectChain) {
-    counterDamage += BOSS_HEAVY_ATTACK_CONFIG.counterDamagePerfectChain;
+    const bonusResult = applyStatusDamageToTarget(
+      "boss",
+      BOSS_HEAVY_ATTACK_CONFIG.counterDamagePerfectChain,
+      "bossHeavyAttackPerfectChainBonus",
+      { grade: "perfect-chain" }
+    );
+    counterBonusDamage = bonusResult.finalDamage;
+    recordParryCounterDamage(counterBonusDamage, "bossHeavyAttackPerfectChainBonus");
   }
+  const counterDamage = appliedCounterDamage + counterBonusDamage;
 
   const summary = {
     total,
@@ -9545,6 +9973,7 @@ function resolveBossHeavyAttackChain() {
     baseDamage: chain.baseDamage,
     finalDamage,
     counterDamage,
+    counterBonusDamage,
     apGainCount,
     results: chain.results
   };
@@ -9592,8 +10021,6 @@ function applyBossHeavyAttackChainResult(summary) {
   setBattleTurnOwner("player");
 
   if (summary.counterDamage > 0) {
-    state.enemyHp = clamp(state.enemyHp - summary.counterDamage, 0, state.enemyMaxHp);
-    recordParryCounterDamage(summary.counterDamage, "bossHeavyAttackChainCounter");
     triggerMotion(els.battlePlayer, "player-attack-motion");
     triggerEnemyHitFeedback(summary.counterDamage, "COUNTER");
   } else if (summary.finalDamage > 0) {
@@ -9601,8 +10028,6 @@ function applyBossHeavyAttackChainResult(summary) {
   }
 
   if (summary.finalDamage > 0) {
-    state.playerHp = clamp(state.playerHp - summary.finalDamage, 0, 100);
-    recordBossDamage(summary.finalDamage, "bossHeavyAttackChain", summary);
     playAttackSfx();
   }
 
@@ -9836,22 +10261,22 @@ function resolvePointParry(result, meta = {}) {
   });
   recordParryForGrammaria(result, `point:${battle.turnNumber}:${battle.pendingBossTurn?.stepIndex || 0}`);
 
-  if (state.shield > 0) {
-    damage = Math.round(damage * (1 - state.shield));
-    state.shield = 0;
-  }
-  if (state.guardShield > 0) {
-    damage = Math.round(damage * (1 - state.guardShield));
-    state.guardShield = 0;
-  }
   if (effects.bossWeak) {
     damage = Math.round(damage * (1 - effects.bossWeak));
   }
 
-  state.playerHp = clamp(state.playerHp - damage, 0, 100);
-  state.enemyHp = clamp(state.enemyHp - counterDamage, 0, state.enemyMaxHp);
-  recordBossDamage(damage, "pointParryDamage", { result });
-  recordParryCounterDamage(counterDamage, "pointParryCounter");
+  const feedbackLines = [];
+  const playerDamageResult = applyStatusDamageToTarget("player", damage, "pointParryDamage", { result });
+  const bossCounterResult = applyStatusDamageToTarget("boss", counterDamage, "pointParryCounter", { result });
+  appendDamageModifierLines(feedbackLines, "player", playerDamageResult);
+  appendDamageModifierLines(feedbackLines, "boss", bossCounterResult);
+  applyBossMarkOnPlayerIfHit(action, playerDamageResult.finalDamage, feedbackLines);
+  recordParryCounterDamage(bossCounterResult.finalDamage, "pointParryCounter");
+  if (bossCounterResult.finalDamage > 0) {
+    addStunGauge("boss", getCounterStunBuild(result), `point-parry:${result}`, feedbackLines);
+  }
+  damage = playerDamageResult.finalDamage;
+  counterDamage = bossCounterResult.finalDamage;
   if (damage > 0) {
     playAttackSfx();
   }
@@ -9873,6 +10298,9 @@ function resolvePointParry(result, meta = {}) {
     : result === "GOOD"
       ? `Parry สำเร็จ! ปัดการโจมตี และสวนกลับ ${counterDamage} ดาเมจ`
       : `พลาดจังหวะ! การโจมตีผ่านเข้ามา รับดาเมจ ${damage}`;
+  if (feedbackLines.length) {
+    els.battleMessage.textContent += `\n${feedbackLines.join("\n")}`;
+  }
 
   if (state.enemyHp <= 0) {
     handleActEnemyDefeated("pointParryCounter");
@@ -9984,11 +10412,10 @@ function chooseBossQuestionAnswer(option, question) {
     recordWrongAnswerForGrammaria();
     battle.pendingBossAction.damage += 6;
     const chipDamage = isFinalBossStage(battle.stage) ? 10 : 7;
-    state.playerHp = clamp(state.playerHp - chipDamage, 0, 100);
-    recordBossDamage(chipDamage, "bossChipDamage");
+    const chipResult = applyStatusDamageToTarget("player", chipDamage, "bossChipDamage", { source: "bossQuestion" });
     playAttackSfx();
     triggerMotion(els.battleEnemy, "enemy-attack-motion");
-    feedback.innerHTML = `<strong>ยังไม่ถูกต้อง!</strong><br>บอสโจมตีแรงขึ้น คำตอบที่ถูกคือ <strong>${question.correctAnswer || question.answer}</strong><br>${question.explanation}`;
+    feedback.innerHTML = `<strong>ยังไม่ถูกต้อง!</strong><br>บอสโจมตีแรงขึ้น รับดาเมจ ${chipResult.finalDamage}<br>คำตอบที่ถูกคือ <strong>${question.correctAnswer || question.answer}</strong><br>${question.explanation}`;
   }
 
   els.answerOptions.appendChild(feedback);
@@ -10270,21 +10697,19 @@ function stopActParry(forcedResult = null, meta = {}) {
     challengeId: meta.challengeId || state.parry.challengeId
   });
 
-  if (state.shield > 0) {
-    damage = Math.round(damage * (1 - state.shield));
-    state.shield = 0;
-  }
-
-  if (state.guardShield > 0) {
-    damage = Math.round(damage * (1 - state.guardShield));
-    state.guardShield = 0;
-  }
-
   state.parry.resolved = true;
-  state.playerHp = clamp(state.playerHp - damage, 0, 100);
-  state.enemyHp = clamp(state.enemyHp - counterDamage, 0, state.enemyMaxHp);
-  recordBossDamage(damage, "bossAttack", { result: parryResult });
-  recordParryCounterDamage(counterDamage, "parryCounter");
+  const feedbackLines = [];
+  const playerDamageResult = applyStatusDamageToTarget("player", damage, "bossAttack", { result: parryResult });
+  const bossCounterResult = applyStatusDamageToTarget("boss", counterDamage, "parryCounter", { result: parryResult });
+  appendDamageModifierLines(feedbackLines, "player", playerDamageResult);
+  appendDamageModifierLines(feedbackLines, "boss", bossCounterResult);
+  applyBossMarkOnPlayerIfHit(action, playerDamageResult.finalDamage, feedbackLines);
+  recordParryCounterDamage(bossCounterResult.finalDamage, "parryCounter");
+  if (bossCounterResult.finalDamage > 0) {
+    addStunGauge("boss", getCounterStunBuild(parryResult), `bar-parry:${parryResult}`, feedbackLines);
+  }
+  damage = playerDamageResult.finalDamage;
+  counterDamage = bossCounterResult.finalDamage;
   if (damage > 0) {
     playAttackSfx();
   }
@@ -10303,6 +10728,9 @@ function stopActParry(forcedResult = null, meta = {}) {
   setBattleTurnOwner("player");
 
   els.battleMessage.textContent = `${thaiParryName(parryResult)} - รับดาเมจ ${damage}${counterDamage ? ` และสวนกลับ ${counterDamage}` : ""}`;
+  if (feedbackLines.length) {
+    els.battleMessage.textContent += `\n${feedbackLines.join("\n")}`;
+  }
   if (state.enemyHp <= 0) {
     handleActEnemyDefeated("parryCounter");
     return;
@@ -10720,12 +11148,26 @@ function updateBattleStats() {
   els.enemyHpText.textContent = `พลังชีวิต ${state.enemyHp} / ${enemyMaxHp}`;
   els.grammariaText.textContent = state.grammaria;
 
-  if (state.shield > 0) {
-    els.shieldText.textContent = "สมาธิ";
-  } else if (state.guardShield > 0) {
-    els.shieldText.textContent = "พิทักษ์";
-  } else {
-    els.shieldText.textContent = "ไม่มี";
+  if (els.shieldText) {
+    const playerStatus = getBattleStatus("player");
+    const bossStatus = getBattleStatus("boss");
+    const statusParts = [];
+    if (playerStatus?.defenseShieldPercent > 0 && playerStatus.defenseShieldHits > 0) {
+      statusParts.push(`DEF ${Math.round(playerStatus.defenseShieldPercent * 100)}% x${playerStatus.defenseShieldHits}`);
+    }
+    if (playerStatus?.hitShieldStacks > 0) {
+      statusParts.push(`เกราะ x${playerStatus.hitShieldStacks}`);
+    }
+    if (playerStatus?.markedHits > 0) {
+      statusParts.push(`Marked +${Math.round(playerStatus.markDamageBonus * 100)}%`);
+    }
+    if (bossStatus?.markedHits > 0) {
+      statusParts.push(`Boss Mark +${Math.round(bossStatus.markDamageBonus * 100)}%`);
+    }
+    if (bossStatus) {
+      statusParts.push(`Stun ${Math.round(bossStatus.stunGauge || 0)}/${bossStatus.stunThreshold || STATUS_BALANCE_CONFIG.stun.defaultThreshold}`);
+    }
+    els.shieldText.textContent = statusParts.length ? statusParts.join(" | ") : "ไม่มี";
   }
 
   updateActAPUI();
