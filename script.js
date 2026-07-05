@@ -8090,7 +8090,7 @@ function renderBattleSkillSelectionPanel() {
   battle.playerActionPhase = "skillSelect";
   cleanupGrammariaCharge();
   const currentAp = getBattlePlayerAp();
-  els.battleMessage.textContent = "เลือกพลังจากเศษ Grammar Core เพื่อโจมตี";
+  els.battleMessage.textContent = "แตะสกิลที่ต้องการใช้";
   els.charmPanel.querySelector("h3").textContent = "เลือกสกิลโจมตี";
   els.charmOptions.innerHTML = "";
   els.charmOptions.classList.add("battle-flow-v2-options");
@@ -8099,8 +8099,7 @@ function renderBattleSkillSelectionPanel() {
   const panel = document.createElement("div");
   panel.className = "battle-flow-v2-panel battle-skill-panel";
   panel.innerHTML = `
-    <div class="battle-flow-v2-header">
-      <span>เลือกสกิลโจมตี</span>
+    <div class="battle-flow-v2-header battle-flow-v2-meta">
       <strong>AP ${currentAp} / ${ACT_MAX_AP}</strong>
     </div>
     <p class="battle-flow-v2-hint">เลือกพลังจากเศษ Grammar Core เพื่อโจมตี</p>
@@ -8177,7 +8176,7 @@ function renderBattleCharmSelectionPanel() {
   }
 
   battle.playerActionPhase = "charmSelect";
-  els.battleMessage.textContent = `เลือกชาม Grammaria สำหรับ ${skill.thaiName}`;
+  els.battleMessage.textContent = "แตะชามที่ต้องการใช้กับสกิลนี้";
   els.charmPanel.querySelector("h3").textContent = "เลือกชาม Grammaria";
   els.charmOptions.innerHTML = "";
   els.charmOptions.classList.add("battle-flow-v2-options");
@@ -8185,8 +8184,7 @@ function renderBattleCharmSelectionPanel() {
   const panel = document.createElement("div");
   panel.className = "battle-flow-v2-panel battle-charm-panel";
   panel.innerHTML = `
-    <div class="battle-flow-v2-header">
-      <span>เลือกชาม Grammaria</span>
+    <div class="battle-flow-v2-header battle-flow-v2-meta">
       <strong>${skill.thaiName} · ${skill.apCost} AP</strong>
     </div>
   `;
@@ -12904,3 +12902,25 @@ setupAnimatedGrammarHallBackground();
 setupMainCharacterGifs();
 setupTeacherCharacterGifs();
 bindAvatarPreviewInputs();
+
+window.debugBattleMobileLayout = function debugBattleMobileLayout() {
+  const measure = selector => {
+    const element = document.querySelector(selector);
+    if (!element) {
+      return null;
+    }
+    const rect = element.getBoundingClientRect();
+    return Math.round(rect.height);
+  };
+  const layout = {
+    viewport: `${window.innerWidth}x${window.innerHeight}`,
+    scene: measure("#battleScene"),
+    header: measure("#battleScene .scene-header"),
+    stage: measure("#battleScene .battle-stage"),
+    dashboard: measure("#battleScene .battle-dashboard"),
+    panel: measure("#battleScene .battle-panel"),
+    options: measure("#battleScene .battle-flow-v2-body")
+  };
+  console.table(layout);
+  return layout;
+};

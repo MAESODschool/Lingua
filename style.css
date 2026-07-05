@@ -3734,6 +3734,264 @@ h3 {
   }
 }
 
+@media (max-width: 768px) {
+  #battleScene.active {
+    height: 100svh;
+    max-height: 100svh;
+    min-height: 100svh;
+    gap: 6px;
+    padding: 8px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    overflow: hidden;
+  }
+
+  #battleScene .scene-header {
+    flex: 0 0 auto;
+    max-height: 42px;
+    padding-inline: 46px;
+    overflow: hidden;
+  }
+
+  #battleScene .scene-header .eyebrow {
+    display: none;
+  }
+
+  #battleScene .scene-header h2 {
+    font-size: clamp(0.95rem, 3.8vw, 1.24rem);
+    line-height: 1.08;
+  }
+
+  #battleScene .battle-stage {
+    flex: 0 1 clamp(214px, 34svh, 348px);
+    min-height: 0;
+    max-height: clamp(214px, 34svh, 348px);
+    overflow: hidden;
+  }
+
+  #battleScene .battle-dashboard {
+    flex: 0 0 auto;
+    min-height: 0;
+    max-height: 52px;
+    overflow: hidden;
+  }
+
+  #battleScene .combatant,
+  #battleScene .enemy-side {
+    min-height: 0;
+    gap: 4px;
+    padding: 6px;
+  }
+
+  #battleScene .combat-text h3 {
+    font-size: clamp(0.78rem, 2.5vw, 0.92rem);
+    line-height: 1.08;
+  }
+
+  #battleScene .combat-text p {
+    font-size: clamp(0.68rem, 2.1vw, 0.78rem);
+    line-height: 1.1;
+  }
+
+  #battleScene #battlePlayer .main-character-gif.small,
+  #battleScene #battlePlayer .main-character-gif-fallback.small {
+    width: clamp(54px, 16vw, 86px);
+    height: clamp(68px, 20vw, 110px);
+  }
+
+  #battleScene .wisp-avatar,
+  #battleScene .enemy-memory-shade,
+  #battleScene .wisp-avatar.timedust-gif,
+  #battleScene .wisp-avatar.echo-trick-gif,
+  #battleScene .wisp-avatar.yesterday-spirit-gif,
+  #battleScene .wisp-avatar.memory-breaker-gif {
+    width: clamp(60px, 18vw, 100px);
+    height: clamp(60px, 18vw, 100px);
+  }
+
+  #battleScene .stat-pill {
+    min-height: 30px;
+    padding: 5px 7px;
+    font-size: clamp(0.72rem, 2.2vw, 0.82rem);
+    line-height: 1.08;
+  }
+
+  #battleScene .hp-bar {
+    height: 8px;
+  }
+
+  #battleScene .ap-pips {
+    margin-top: 3px;
+  }
+
+  #battleScene .ap-pip {
+    width: 10px;
+    height: 10px;
+  }
+
+  #battleScene .battle-panel {
+    flex: 1 1 46svh;
+    max-height: min(46svh, 430px);
+    min-height: 0;
+    gap: 6px;
+    padding: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #battleScene .battle-message {
+    flex: 0 0 auto;
+    max-height: 42px;
+    min-height: 0;
+    overflow: hidden;
+    font-size: clamp(0.78rem, 2.5vw, 0.9rem);
+    line-height: 1.2;
+  }
+
+  #battleScene .charm-panel {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #battleScene .charm-panel h3 {
+    flex: 0 0 auto;
+    margin-block: 0 4px;
+    font-size: clamp(0.86rem, 3vw, 1rem);
+    line-height: 1.08;
+  }
+
+  #battleScene .charm-options.battle-flow-v2-options {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow: hidden;
+  }
+
+  #battleScene .battle-flow-v2-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 100%;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  #battleScene .battle-flow-v2-header {
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    gap: 4px;
+  }
+
+  #battleScene .battle-flow-v2-meta strong {
+    width: 100%;
+    text-align: left;
+  }
+
+  #battleScene .battle-flow-v2-hint {
+    flex: 0 0 auto;
+    font-size: clamp(0.72rem, 2.3vw, 0.84rem);
+    line-height: 1.18;
+  }
+
+  #battleScene .battle-flow-v2-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #battleScene .battle-flow-v2-card-grid {
+    gap: 7px;
+  }
+
+  #battleScene .battle-skill-grid,
+  #battleScene .battle-charm-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #battleScene .battle-flow-v3-skill-card {
+    min-height: 58px;
+    padding: 7px 9px;
+    gap: 3px;
+  }
+
+  #battleScene .skill-card-topline {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 2px;
+  }
+
+  #battleScene .skill-card span,
+  #battleScene .skill-card small {
+    line-height: 1.16;
+  }
+
+  #battleScene .battle-flow-v3-skill-card > span:not(.skill-card-topline),
+  #battleScene .battle-flow-v3-skill-card small {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  #battleScene .battle-flow-v3-skill-card small {
+    margin-top: 2px;
+    font-size: clamp(0.7rem, 2.15vw, 0.78rem);
+  }
+
+  #battleScene .battle-flow-v2-charm {
+    min-height: 86px;
+    max-height: 112px;
+    padding: 7px 9px;
+    gap: 3px;
+    overflow: hidden;
+  }
+
+  #battleScene .battle-flow-v2-charm .charm-topline {
+    gap: 5px;
+    margin-bottom: 1px;
+  }
+
+  #battleScene .battle-flow-v2-charm .charm-icon {
+    font-size: 0.95rem;
+  }
+
+  #battleScene .battle-flow-v2-charm .charm-rank {
+    min-width: 0;
+    padding: 2px 6px;
+    font-size: 0.68rem;
+  }
+
+  #battleScene .battle-flow-v2-charm strong {
+    margin-bottom: 1px;
+    font-size: clamp(0.78rem, 2.35vw, 0.9rem);
+    line-height: 1.12;
+  }
+
+  #battleScene .battle-flow-v2-charm .charm-description {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: clamp(0.68rem, 2.15vw, 0.78rem);
+    line-height: 1.18;
+  }
+
+  #battleScene .battle-flow-v2-back {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 6px 8px;
+    font-size: 0.78rem;
+  }
+}
+
 .reward-list {
   display: grid;
   gap: 10px;
@@ -4151,5 +4409,38 @@ h3 {
   #battleScene .timing-bar {
     height: 24px;
     margin: 6px 0;
+  }
+}
+
+@media (max-width: 768px) {
+  #battleScene.active {
+    height: 100svh;
+    max-height: 100svh;
+    min-height: 100svh;
+    overflow: hidden;
+  }
+
+  #battleScene .scene-header,
+  #battleScene .battle-dashboard {
+    flex: 0 0 auto;
+  }
+
+  #battleScene .battle-stage {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+  }
+
+  #battleScene .battle-panel {
+    flex: 0 0 46svh;
+    max-height: 46svh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #battleScene .charm-options.battle-flow-v2-options,
+  #battleScene .battle-flow-v2-panel,
+  #battleScene .battle-flow-v2-body {
+    min-height: 0;
   }
 }
