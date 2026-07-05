@@ -1,0 +1,3 @@
+GitHub Pages redeploy marker
+Triggered: 2026-07-05T14:56:00+07:00
+No game logic changes.
