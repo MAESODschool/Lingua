@@ -1361,7 +1361,7 @@ const actAttackCharms = [
   makeCharm("c_short_focus", "สมาธิสั้น", "C", "parry", "parrySlow", 0.90, "ทำให้ Parry bar ช้าลงเล็กน้อย 1 ครั้ง", { duration: 1 }),
   makeCharm("c_vocab_armor", "เกราะคำศัพท์", "C", "defense", "nextDamageReduction", 0.15, "ลดดาเมจบอสครั้งถัดไป 15%", { duration: 1 }),
   makeCharm("c_past_compass", "เข็มทิศอดีต", "C", "attack", "pastDamageBonus", 1.10, "ถ้าคำถามเป็น Past Simple หรือ V2 เพิ่มดาเมจ 10%"),
-  makeCharm("c_memory_shard", "เศษผลึกความจำ", "C", "charge", "memoryCharge", 1, "สะสม Memory Charge 1 หน่วย"),
+  makeCharm("c_memory_shard", "เศษผลึกความจำ", "C", "charge", "memoryCharge", 1, "สะสม Memory Charge 1 หน่วย ครบ 3 หน่วยได้รับ AP +1"),
   makeCharm("c_confidence", "แต้มแห่งความมั่นใจ", "C", "reward", "nextCorrectBonusGrammaria", 3, "ตอบถูกครั้งถัดไป ได้ Grammaria เพิ่ม +3", { duration: 1 }),
   makeCharm("c_light_echo", "แรงสะท้อนเบา", "C", "attack", "echoDamage", 0.10, "หลังโจมตีหลัก ทำดาเมจซ้ำอีก 10%"),
   makeCharm("c_wanderer_breath", "ลมหายใจผู้พเนจร", "C", "heal", "conditionalHeal", 5, "ถ้า HP ต่ำกว่า 50% ฟื้นเพิ่ม 5", { condition: "hpBelow50" }),
@@ -1395,7 +1395,7 @@ const actAttackCharms = [
   makeCharm("a_parry_power", "เร่งพลังหลัง Parry", "A", "parry", "perfectParryNextDamage", 1.35, "ถ้า Perfect Parry สำเร็จ โจมตีครั้งถัดไปแรงขึ้น 35%", { duration: 1 }),
   makeCharm("a_stack_circle", "วงเวทสะสมพลัง", "A", "stack", "stackingCorrectDamage", 0.05, "ทุกครั้งที่ตอบถูก ดาเมจเพิ่ม 5% ซ้อนสูงสุด 5 ครั้ง", { maxStacks: 5 }),
   makeCharm("a_combo_echo", "Echo Strike", "A", "attack", "comboCorrectEcho", 0.30, "ถ้าตอบถูกติดกัน 2 ครั้ง โจมตีซ้ำอีก 30%", { condition: "twoCorrectInRow" }),
-  makeCharm("a_grammar_break", "Grammar Break", "A", "break", "bossQuestionBreak", 1, "ถ้าตอบคำถามบอสถูก ทำลาย Guard บอสและเพิ่มดาเมจครั้งถัดไป"),
+  makeCharm("a_grammar_break", "Grammar Break", "A", "break", "bossQuestionBreak", 1, "เพิ่มดาเมจ 15% และทำให้การโจมตีเจาะจังหวะ Guard ของบอส"),
 
   makeCharm("s_crystal_charge", "ชาร์จผลึก", "S", "charge", "crystalCharge", 1, "สะสม 1 ชาร์จ ครบ 3 ครั้ง ดาเมจถัดไป x2", { threshold: 3 }),
   makeCharm("s_time_echo", "เวทสะท้อนเวลา", "S", "attack", "delayedEchoDamage", 0.30, "ดาเมจที่ทำในเทิร์นนี้ 30% จะย้อนกลับไปโดนบอสอีกครั้งในเทิร์นถัดไป"),
@@ -1416,6 +1416,154 @@ const actAttackCharms = [
   makeCharm("ss_perfect_timeline", "Perfect Timeline", "SS", "parry-stun-counter", "perfectTimeline", null, "Perfect Parry ครั้งถัดไปทำให้บอสติด Stun และสวนกลับแรง x2", { stunOnPerfectParry: true, counterMultiplier: 2.00, duration: 1 }),
   makeCharm("ss_great_recall", "The Great Recall", "SS", "revive", "surviveFatalOnce", 0.40, "ถ้า HP เหลือ 0 ครั้งแรก จะรอดที่ 1 HP แล้วฟื้น 40%", { healPercent: 0.40, oncePerBattle: true })
 ];
+
+const CHARM_EFFECT_HANDLERS = {
+  damageMultiplier: { category: "damage", timing: "damage", requiresValue: true },
+  bonusGrammaria: { category: "reward", timing: "setup", requiresValue: true },
+  healFlat: { category: "heal", timing: "setup", requiresValue: true },
+  parrySlow: { category: "parry", timing: "setup", requiresValue: true },
+  nextDamageReduction: { category: "shield", timing: "setup", requiresValue: true },
+  pastDamageBonus: { category: "damage", timing: "damage", requiresValue: true },
+  memoryCharge: { category: "ap", timing: "setup", requiresValue: true },
+  nextCorrectBonusGrammaria: { category: "reward", timing: "setup", requiresValue: true },
+  echoDamage: { category: "damage", timing: "damage", requiresValue: true },
+  conditionalHeal: { category: "heal", timing: "setup", requiresValue: true },
+  parryZoneBonus: { category: "parry", timing: "setup", requiresValue: true },
+  removeWrongChoice: { category: "support", timing: "setup", requiresValue: true },
+  secondChanceParry: { category: "parry", timing: "setup", requiresValue: true },
+  criticalChanceBonus: { category: "critical", timing: "setup", requiresValue: true },
+  stunChance: { category: "stun", timing: "setup", requiresValue: true },
+  stunBuild: { category: "stun", timing: "setup", requiresValue: true },
+  healOnCorrect: { category: "heal", timing: "setup", requiresValue: true },
+  applyMarkStatus: { category: "mark", timing: "setup", requiresValue: true },
+  addHitShield: { category: "shield", timing: "setup", requiresValue: true },
+  addDefenseShield: { category: "shield", timing: "setup", requiresValue: true },
+  counterOnGoodParry: { category: "counter", timing: "parry", requiresValue: true },
+  firstTurnDamageBonus: { category: "damage", timing: "damage", requiresValue: true },
+  memoryEnemyBonus: { category: "damage", timing: "damage", requiresValue: true },
+  retryNextWrong: { category: "support", timing: "setup", requiresValue: true },
+  stunOnCritical: { category: "stun", timing: "setup", requiresValue: true },
+  shieldPierceDamage: { category: "damage", timing: "damage", requiresValue: true },
+  lifesteal: { category: "heal", timing: "setup", requiresValue: true },
+  applyWeak: { category: "debuff", timing: "setup", requiresValue: true },
+  perfectParryNextDamage: { category: "parry", timing: "parry", requiresValue: true },
+  stackingCorrectDamage: { category: "damage", timing: "damage", requiresValue: true },
+  comboCorrectEcho: { category: "damage", timing: "damage", requiresValue: true },
+  bossQuestionBreak: { category: "damage", timing: "damage", requiresValue: false },
+  crystalCharge: { category: "damage", timing: "damage", requiresValue: true },
+  delayedEchoDamage: { category: "damage", timing: "damage", requiresValue: true },
+  showHintBeforeQuestion: { category: "support", timing: "setup", requiresValue: true },
+  lowHpCriticalBonus: { category: "critical", timing: "damage", requiresValue: true },
+  damageOnStunned: { category: "damage", timing: "damage", requiresValue: true },
+  correctStreakDamage: { category: "damage", timing: "damage", requiresValue: true },
+  extraTurnChance: { category: "turn", timing: "postAttack", requiresValue: true },
+  rouletteDamage: { category: "damage", timing: "damage", requiresValue: false },
+  upgradeNextParry: { category: "parry", timing: "setup", requiresValue: true },
+  damageAndReward: { category: "damage", timing: "damage", requiresValue: false },
+  v2Judgement: { category: "damage", timing: "damage", requiresValue: false },
+  reflectNextBossAttack: { category: "counter", timing: "parry", requiresValue: true },
+  fullMemoryBurst: { category: "hybrid", timing: "setup", requiresValue: false },
+  verionSeal: { category: "support", timing: "setup", requiresValue: false },
+  perfectTimeline: { category: "parry", timing: "parry", requiresValue: false },
+  surviveFatalOnce: { category: "revive", timing: "setup", requiresValue: true },
+  applyMark: { category: "mark", timing: "setup", requiresValue: true },
+  shieldAndGuard: { category: "shield", timing: "setup", requiresValue: false }
+};
+
+function normalizeCharmEffect(charm) {
+  const handler = CHARM_EFFECT_HANDLERS[charm?.effectType] || null;
+  return {
+    id: charm?.id || "",
+    name: charm?.name || charm?.thaiName || "",
+    rank: charm?.rank || "",
+    type: charm?.type || "",
+    effectType: charm?.effectType || "",
+    handler,
+    supported: Boolean(handler),
+    hasValue: charm?.value !== undefined && charm?.value !== null,
+    valueRequired: Boolean(handler?.requiresValue)
+  };
+}
+
+function getCharmDebugSummary(charm) {
+  const effect = normalizeCharmEffect(charm);
+  const issues = [];
+  if (!effect.id) {
+    issues.push("missing-id");
+  }
+  if (!effect.name) {
+    issues.push("missing-name");
+  }
+  if (!effect.effectType) {
+    issues.push("missing-effectType");
+  }
+  if (!effect.supported) {
+    issues.push("unsupported-effectType");
+  }
+  if (effect.valueRequired && !effect.hasValue) {
+    issues.push("missing-value");
+  }
+  if (!charm?.description && !charm?.effect) {
+    issues.push("missing-description");
+  }
+  return {
+    id: effect.id,
+    name: effect.name,
+    rank: effect.rank,
+    type: effect.type,
+    effectType: effect.effectType,
+    category: effect.handler?.category || "unsupported",
+    timing: effect.handler?.timing || "none",
+    supported: effect.supported,
+    value: charm?.value,
+    issues
+  };
+}
+
+function getSelectedBattleCharm() {
+  const battle = state.actBattle;
+  return battle?.selectedCharmId ? getBattleFlowV2Charm(battle.selectedCharmId) : null;
+}
+
+function installCharmAuditDebug() {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.debugCharmAudit = function debugCharmAudit() {
+    const seenIds = new Set();
+    const duplicateIds = new Set();
+    const summaries = actAttackCharms.map(charm => {
+      if (seenIds.has(charm.id)) {
+        duplicateIds.add(charm.id);
+      }
+      seenIds.add(charm.id);
+      const summary = getCharmDebugSummary(charm);
+      if (duplicateIds.has(charm.id)) {
+        summary.issues.push("duplicate-id");
+      }
+      return summary;
+    });
+    const unsupported = summaries.filter(item => !item.supported);
+    const missingValues = summaries.filter(item => item.issues.includes("missing-value"));
+    const issues = summaries.filter(item => item.issues.length);
+    console.group("[Charm Audit]");
+    console.log("total charms:", summaries.length);
+    console.log("supported effect types:", Object.keys(CHARM_EFFECT_HANDLERS).sort());
+    console.log("unsupported effect types:", unsupported);
+    console.log("missing values:", missingValues);
+    console.log("duplicates:", [...duplicateIds]);
+    console.table(summaries);
+    if (issues.length) {
+      console.warn("[Charm Audit] issues found", issues);
+    } else {
+      console.log("[Charm Audit] all charm effect types are mapped");
+    }
+    console.groupEnd();
+    return { total: summaries.length, unsupported, missingValues, duplicateIds: [...duplicateIds], issues, summaries };
+  };
+}
+
+installCharmAuditDebug();
 
 const enemyAttackPatterns = {
   normal: {
@@ -3433,6 +3581,7 @@ function resetBattleActiveEffects() {
     bossWeak: 0,
     bossWeakTurns: 0,
     markDamageBonus: 0,
+    pierceBossShieldNextAttack: 0,
     lifestealRatio: 0,
     nextCorrectBonusGrammaria: 0,
     crystalCharge: 0,
@@ -3640,7 +3789,7 @@ function applyIncomingDamageModifiers(target, rawDamage, context = {}) {
     consumeMarkOnDamage(target);
   }
 
-  if (finalDamage > 0 && status.defenseShieldPercent > 0 && status.defenseShieldHits > 0) {
+  if (!context.bypassShield && finalDamage > 0 && status.defenseShieldPercent > 0 && status.defenseShieldHits > 0) {
     const beforeShield = finalDamage;
     finalDamage = Math.max(0, Math.round(finalDamage * (1 - status.defenseShieldPercent)));
     result.defenseReducedAmount = beforeShield - finalDamage;
@@ -3654,7 +3803,7 @@ function applyIncomingDamageModifiers(target, rawDamage, context = {}) {
     }
   }
 
-  if (finalDamage > 0 && status.hitShieldStacks > 0) {
+  if (!context.bypassShield && finalDamage > 0 && status.hitShieldStacks > 0) {
     status.hitShieldStacks = Math.max(0, status.hitShieldStacks - 1);
     result.absorbedByHitShield = true;
     result.consumedHitShield = true;
@@ -8242,6 +8391,7 @@ function calculateBattleFlowV2Damage({ baseDamage, answerResult, skill, charm, c
     grammariaBonus: bowlBonus.grammariaBonus || 0,
     isCrit: Boolean(bowlBonus.isCrit),
     stunChance: bowlBonus.stunChance || 0,
+    bypassBossShield: Boolean(bowlBonus.bypassBossShield),
     bonusLines: bowlBonus.bonusLines || []
   };
 }
@@ -8285,6 +8435,71 @@ function showBattleFlowV2AttackFeedback({ skill, charm, damageResult }) {
   }
   (damageResult.bonusLines || []).forEach(line => lines.push(line));
   els.battleMessage.textContent = lines.join("\n");
+}
+
+function applyCharmPostAttackEffect(charm, context = {}) {
+  const battle = context.battle || state.actBattle;
+  const lines = context.lines || [];
+  const result = { extraTurn: false };
+  if (!battle || !charm) {
+    return result;
+  }
+
+  if (charm.effectType === "extraTurnChance") {
+    const chance = clamp(Number(charm.value || 0), 0, 1);
+    if (Math.random() < chance) {
+      result.extraTurn = true;
+      addBattleMessageLine(lines, "Time Skip ทำงาน! ได้เล่นต่อทันที");
+    } else {
+      addBattleMessageLine(lines, "Time Skip ไม่ทำงานในครั้งนี้");
+    }
+  }
+
+  return result;
+}
+
+function applyCharmParryEffect({ grade, damage, counterDamage, action, lines = [] }) {
+  const effects = state.battleActiveEffects || {};
+  const normalizedGrade = String(grade || "").toUpperCase();
+  const isGoodOrPerfect = normalizedGrade === "GOOD" || normalizedGrade === "PERFECT";
+  let nextDamage = Math.max(0, Math.round(Number(damage) || 0));
+  let nextCounterDamage = Math.max(0, Math.round(Number(counterDamage) || 0));
+
+  if (isGoodOrPerfect && effects.blockIfGoodParry) {
+    nextDamage = 0;
+    effects.blockIfGoodParry = Math.max(0, effects.blockIfGoodParry - 1);
+    addBattleMessageLine(lines, "โล่แกรมมาเรียบล็อกดาเมจจาก Parry สำเร็จ");
+  }
+
+  if (isGoodOrPerfect && effects.counterOnGoodParry) {
+    const bonusCounter = Math.max(1, Math.round((action?.damage || 1) * effects.counterOnGoodParry));
+    nextCounterDamage += bonusCounter;
+    effects.counterOnGoodParry = 0;
+    addBattleMessageLine(lines, `พลังชามทำให้ Counter แรงขึ้น +${bonusCounter}`);
+  }
+
+  if (normalizedGrade === "PERFECT" && effects.perfectParryNextDamage) {
+    effects.perfectParryDamageBonus = Math.max(effects.perfectParryDamageBonus || 0, effects.perfectParryNextDamage);
+    effects.perfectParryNextDamage = 0;
+    addBattleMessageLine(lines, "Perfect Parry ชาร์จพลังโจมตีครั้งถัดไป");
+  }
+
+  if (normalizedGrade === "PERFECT" && effects.stunOnPerfectParry) {
+    nextCounterDamage = Math.round(nextCounterDamage * (effects.perfectTimelineCounterMultiplier || 2));
+    tryStunBoss(1, lines);
+    effects.stunOnPerfectParry = 0;
+    effects.perfectTimelineCounterMultiplier = 1;
+    addBattleMessageLine(lines, "Perfect Timeline ทำงาน");
+  }
+
+  if (effects.reflectNextBossAttack) {
+    const reflectedDamage = Math.max(1, Math.round((action?.damage || 1) * effects.reflectNextBossAttack));
+    nextCounterDamage += reflectedDamage;
+    effects.reflectNextBossAttack = 0;
+    addBattleMessageLine(lines, `คำสาปย้อนกลับสะท้อนดาเมจ +${reflectedDamage}`);
+  }
+
+  return { damage: nextDamage, counterDamage: nextCounterDamage };
 }
 
 function resetBattleFlowV2Selection({ phase = "bossTurn", cleanupCharge = true } = {}) {
@@ -8353,7 +8568,8 @@ function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) {
   const bossDamageModifiers = applyStatusDamageToTarget("boss", rawPlayerDamage, "battleFlowV2Skill", {
     skillId: skill.id,
     charmId: charm.id,
-    chargePercent: damageResult.chargePercent
+    chargePercent: damageResult.chargePercent,
+    bypassShield: damageResult.bypassBossShield
   });
   damageResult.rawFinalDamage = rawPlayerDamage;
   damageResult.finalDamage = bossDamageModifiers.finalDamage;
@@ -8369,6 +8585,13 @@ function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) {
   triggerEnemyHitFeedback(damageResult.finalDamage);
 
   tryStunBoss(damageResult.stunChance || 0, damageResult.bonusLines || []);
+  const postEffectLines = [];
+  const postEffectResult = applyCharmPostAttackEffect(charm, {
+    battle,
+    damageResult,
+    lines: postEffectLines
+  });
+  damageResult.bonusLines.push(...postEffectLines);
 
   const grammariaGain = (battle.pendingPlayerAttack?.grammariaGain || 0) + (damageResult.grammariaBonus || 0);
   if (grammariaGain > 0) {
@@ -8397,6 +8620,19 @@ function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) {
     battle.isResolvingTurn = false;
     battle.isAttacking = false;
     handleActEnemyDefeated("battleFlowV2Skill");
+    return;
+  }
+
+  if (postEffectResult.extraTurn) {
+    battle.skillFlowLocked = false;
+    battle.isResolvingTurn = false;
+    battle.isAttacking = false;
+    battle.playerActionPhase = "question";
+    setBattleTurnOwner("player");
+    showBattleContinueButton(
+      battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "คำถามถัดไป",
+      continueActBattle
+    );
     return;
   }
 
@@ -8774,6 +9010,11 @@ function applyCharmSetupEffect(charm, lines) {
     case "memoryCharge":
       effects.memoryCharge += charm.value || 1;
       addBattleMessageLine(lines, `สะสม Memory Charge ${effects.memoryCharge}`);
+      if (effects.memoryCharge >= (charm.threshold || 3)) {
+        effects.memoryCharge = 0;
+        gainActAP(1);
+        addBattleMessageLine(lines, "Memory Charge ครบ 3: ได้รับ AP +1");
+      }
       break;
     case "nextCorrectBonusGrammaria":
       effects.nextCorrectBonusGrammaria += charm.value || 0;
@@ -8912,9 +9153,10 @@ function calculateCharmDamage(charm, baseDamage, lines) {
       break;
     case "shieldPierceDamage":
       if (getBattleStatus("boss")?.defenseShieldPercent > 0 || getBattleStatus("boss")?.hitShieldStacks > 0) {
+        effects.pierceBossShieldNextAttack = 1;
         addBattleMessageLine(lines, "Shield Pierce ทำงาน");
+        damage = Math.round(damage * (charm.value || 1.2));
       }
-      damage = Math.round(damage * (charm.value || 1.2));
       break;
     case "stackingCorrectDamage":
       effects.stackingDamageBonus = clamp((effects.stackingDamageBonus || 0) + (charm.value || 0.05), 0, (charm.value || 0.05) * (charm.maxStacks || 5));
@@ -8929,7 +9171,8 @@ function calculateCharmDamage(charm, baseDamage, lines) {
       break;
     case "bossQuestionBreak":
       damage = Math.round(damage * 1.15);
-      addBattleMessageLine(lines, "Grammar Break เพิ่มดาเมจ");
+      effects.pierceBossShieldNextAttack = 1;
+      addBattleMessageLine(lines, "Grammar Break เพิ่มดาเมจและเจาะ Guard บอส");
       break;
     case "crystalCharge":
       effects.crystalCharge += charm.value || 1;
@@ -8950,8 +9193,9 @@ function calculateCharmDamage(charm, baseDamage, lines) {
       }
       break;
     case "damageOnStunned":
-      if (battle?.bossStunned) {
+      if (battle?.bossStunned || isTargetStunned("boss")) {
         damage = Math.round(damage * (charm.value || 1.5));
+        addBattleMessageLine(lines, "Stun Breaker ทำงาน");
       }
       break;
     case "correctStreakDamage":
@@ -9021,7 +9265,9 @@ function calculateCharmDamage(charm, baseDamage, lines) {
     addBattleMessageLine(lines, `ดูดพลังฟื้น HP +${healFromLifesteal}`);
   }
 
-  return { totalDamage, grammariaBonus: extraGrammaria, isCrit, stunChance };
+  const bypassBossShield = Boolean(effects.pierceBossShieldNextAttack);
+  effects.pierceBossShieldNextAttack = 0;
+  return { totalDamage, grammariaBonus: extraGrammaria, isCrit, stunChance, bypassBossShield };
 }
 
 function chooseActCharmV2(charm) {
@@ -9175,7 +9421,8 @@ function resolveActCharmAttack(charm, chargePercent = 0) {
   triggerMotion(els.battlePlayer, "player-attack-motion");
   const rawTotalDamage = totalDamage;
   const bossDamageResult = applyStatusDamageToTarget("boss", rawTotalDamage, "grammariaCharge", {
-    chargePercent: normalizedChargePercent
+    chargePercent: normalizedChargePercent,
+    bypassShield: damageResult.bypassBossShield
   });
   appendDamageModifierLines(bonusLines, "boss", bossDamageResult);
   totalDamage = bossDamageResult.finalDamage;
@@ -9780,6 +10027,15 @@ function resolveHeavyAttackHitStatus(normalizedResult, chain) {
   }
 
   const lines = [];
+  const parryCharmResult = applyCharmParryEffect({
+    grade: normalizedResult.grade,
+    damage: rawDamage,
+    counterDamage: rawCounterDamage,
+    action,
+    lines
+  });
+  rawDamage = parryCharmResult.damage;
+  rawCounterDamage = parryCharmResult.counterDamage;
   const playerDamageResult = applyStatusDamageToTarget("player", rawDamage, "bossHeavyAttackHit", {
     hitIndex: normalizedResult.index + 1,
     grade: normalizedResult.grade
@@ -10217,6 +10473,12 @@ function resolvePointParry(result, meta = {}) {
   state.pointParry.active = false;
 
   if (state.pointParry.chainMode) {
+    const effects = state.battleActiveEffects || {};
+    if (result !== "MISS" && effects.upgradeNextParry) {
+      const upgradeMap = { GOOD: "PERFECT", PERFECT: "PERFECT" };
+      result = upgradeMap[result] || result;
+      effects.upgradeNextParry = Math.max(0, effects.upgradeNextParry - 1);
+    }
     const grade = String(result || "MISS").toLowerCase();
     const onComplete = state.pointParry.onComplete;
     const apGain = result === "PERFECT" ? 1 : 0;
@@ -10255,6 +10517,16 @@ function resolvePointParry(result, meta = {}) {
     damage = PARRY_BALANCE_CONFIG.pointParry.preventDamageOnGood ? 0 : Math.round(action.damage * 0.5);
     counterDamage = PARRY_BALANCE_CONFIG.pointParry.counterDamageGood;
   }
+  const feedbackLines = [];
+  const parryCharmResult = applyCharmParryEffect({
+    grade: result,
+    damage,
+    counterDamage,
+    action,
+    lines: feedbackLines
+  });
+  damage = parryCharmResult.damage;
+  counterDamage = parryCharmResult.counterDamage;
   console.log("[ParryBalance] counter damage", {
     type: "point",
     grade: result.toLowerCase(),
@@ -10267,7 +10539,6 @@ function resolvePointParry(result, meta = {}) {
     damage = Math.round(damage * (1 - effects.bossWeak));
   }
 
-  const feedbackLines = [];
   const playerDamageResult = applyStatusDamageToTarget("player", damage, "pointParryDamage", { result });
   const bossCounterResult = applyStatusDamageToTarget("boss", counterDamage, "pointParryCounter", { result });
   appendDamageModifierLines(feedbackLines, "player", playerDamageResult);
