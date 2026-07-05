@@ -496,7 +496,7 @@ button {
   padding: 0;
   align-content: end;
   overflow: hidden;
-  background: url("assets/login-map.png") center center / cover no-repeat;
+  background: url("assets/ui/login_background_v3.png") center center / cover no-repeat;
 }
 
 #loginScene .sky-orbit {
