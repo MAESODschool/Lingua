@@ -8093,6 +8093,7 @@ function renderBattleSkillSelectionPanel() {
   els.battleMessage.textContent = "เลือกพลังจากเศษ Grammar Core เพื่อโจมตี";
   els.charmPanel.querySelector("h3").textContent = "เลือกสกิลโจมตี";
   els.charmOptions.innerHTML = "";
+  els.charmOptions.classList.add("battle-flow-v2-options");
   els.continueBattleButton.classList.add("hidden");
 
   const panel = document.createElement("div");
@@ -8104,6 +8105,10 @@ function renderBattleSkillSelectionPanel() {
     </div>
     <p class="battle-flow-v2-hint">เลือกพลังจากเศษ Grammar Core เพื่อโจมตี</p>
   `;
+  const optionScroll = document.createElement("div");
+  optionScroll.className = "battle-flow-v2-body battle-skill-scroll";
+  const optionGrid = document.createElement("div");
+  optionGrid.className = "battle-flow-v2-card-grid battle-skill-grid";
 
   PLAYER_SKILLS_V2.filter(skill => skill.enabled).forEach(skill => {
     const canUse = currentAp >= skill.apCost;
@@ -8120,8 +8125,10 @@ function renderBattleSkillSelectionPanel() {
       <small>${skill.effectText}</small>
     `;
     button.addEventListener("click", () => selectBattleSkill(skill.id));
-    panel.appendChild(button);
+    optionGrid.appendChild(button);
   });
+  optionScroll.appendChild(optionGrid);
+  panel.appendChild(optionScroll);
 
   els.charmOptions.appendChild(panel);
   showOnlyBattlePanel(els.charmPanel);
@@ -8173,6 +8180,7 @@ function renderBattleCharmSelectionPanel() {
   els.battleMessage.textContent = `เลือกชาม Grammaria สำหรับ ${skill.thaiName}`;
   els.charmPanel.querySelector("h3").textContent = "เลือกชาม Grammaria";
   els.charmOptions.innerHTML = "";
+  els.charmOptions.classList.add("battle-flow-v2-options");
 
   const panel = document.createElement("div");
   panel.className = "battle-flow-v2-panel battle-charm-panel";
@@ -8182,6 +8190,10 @@ function renderBattleCharmSelectionPanel() {
       <strong>${skill.thaiName} · ${skill.apCost} AP</strong>
     </div>
   `;
+  const optionScroll = document.createElement("div");
+  optionScroll.className = "battle-flow-v2-body battle-charm-scroll";
+  const optionGrid = document.createElement("div");
+  optionGrid.className = "battle-flow-v2-card-grid battle-charm-grid";
 
   selectRandomGrammariaBowls(3).forEach(charm => {
     const button = document.createElement("button");
@@ -8197,8 +8209,10 @@ function renderBattleCharmSelectionPanel() {
       <span class="charm-description">${charm.description || charm.effect}</span>
     `;
     button.addEventListener("click", () => selectBattleCharm(charm.id));
-    panel.appendChild(button);
+    optionGrid.appendChild(button);
   });
+  optionScroll.appendChild(optionGrid);
+  panel.appendChild(optionScroll);
 
   const backButton = document.createElement("button");
   backButton.type = "button";
@@ -8652,6 +8666,7 @@ function showActCharmChoices() {
 
   els.charmPanel.querySelector("h3").textContent = "เลือกเครื่องรางเวท 1 ชิ้น";
   els.charmOptions.innerHTML = "";
+  els.charmOptions.classList.remove("battle-flow-v2-options");
   selectRandomActCharms().forEach(charm => {
     const button = document.createElement("button");
     button.className = `charm-card rank-${charm.rank.toLowerCase()}`;
@@ -11490,6 +11505,7 @@ function chooseAnswer(option) {
 
 function showCharmChoices() {
   els.charmOptions.innerHTML = "";
+  els.charmOptions.classList.remove("battle-flow-v2-options");
 
   sample(charms, 3).forEach(charm => {
     const button = document.createElement("button");

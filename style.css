@@ -3266,9 +3266,11 @@ h3 {
 }
 
 .battle-flow-v2-panel {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   width: 100%;
+  min-height: 0;
 }
 
 .battle-flow-v2-header {
@@ -3290,6 +3292,15 @@ h3 {
   margin: 0;
   color: rgba(255, 246, 220, 0.86);
   line-height: 1.4;
+}
+
+.battle-flow-v2-body {
+  min-height: 0;
+}
+
+.battle-flow-v2-card-grid {
+  display: grid;
+  gap: 10px;
 }
 
 .battle-skill-panel,
@@ -3354,7 +3365,10 @@ h3 {
 }
 
 .battle-flow-v2-charm {
+  display: grid;
   min-height: 76px;
+  align-content: start;
+  gap: 6px;
 }
 
 .battle-flow-v2-charm.is-no-charm {
@@ -3380,14 +3394,73 @@ h3 {
 }
 
 @media (max-width: 640px) {
+  #battleScene .battle-panel {
+    max-height: min(46dvh, 360px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #battleScene .battle-message {
+    flex: 0 0 auto;
+  }
+
+  #battleScene .charm-panel {
+    min-height: 0;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #battleScene .charm-panel h3 {
+    flex: 0 0 auto;
+  }
+
+  #battleScene .charm-options {
+    min-height: 0;
+    max-height: none;
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+
+  .battle-flow-v2-panel {
+    max-height: 100%;
+    gap: 8px;
+    overflow: hidden;
+  }
+
   .battle-flow-v2-header,
   .skill-card-topline {
     align-items: flex-start;
     flex-direction: column;
+    gap: 4px;
   }
 
   .battle-flow-v2-header strong {
     text-align: left;
+  }
+
+  .battle-flow-v2-hint {
+    font-size: 0.82rem;
+    line-height: 1.25;
+  }
+
+  .battle-flow-v2-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .battle-flow-v2-card-grid {
+    gap: 8px;
+  }
+
+  .battle-charm-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .battle-flow-v2-actions {
@@ -3398,6 +3471,53 @@ h3 {
   .battle-flow-v2-charm {
     min-height: 0;
     padding: 10px;
+  }
+
+  .battle-flow-v3-skill-card {
+    gap: 4px;
+  }
+
+  .battle-flow-v3-skill-card small {
+    font-size: 0.76rem;
+    line-height: 1.22;
+  }
+
+  .battle-flow-v2-charm {
+    max-height: 148px;
+    overflow: hidden;
+    text-align: left;
+  }
+
+  .battle-flow-v2-charm .charm-topline {
+    margin-bottom: 2px;
+  }
+
+  .battle-flow-v2-charm strong {
+    line-height: 1.15;
+  }
+
+  .battle-flow-v2-charm .charm-description {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-height: 1.22;
+  }
+
+  .battle-flow-v2-back {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding-block: 8px;
+  }
+}
+
+@media (max-width: 430px) {
+  .battle-charm-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .battle-flow-v2-charm {
+    max-height: 132px;
   }
 }
 
@@ -3790,6 +3910,10 @@ h3 {
     order: 4;
     gap: 8px;
     padding: 10px;
+    max-height: min(46dvh, 360px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   #battleScene .stat-pill {
@@ -3811,6 +3935,40 @@ h3 {
     max-height: min(32dvh, 220px);
     overflow-y: auto;
     overscroll-behavior: contain;
+  }
+
+  #battleScene .charm-panel {
+    min-height: 0;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #battleScene .charm-panel h3 {
+    flex: 0 0 auto;
+  }
+
+  #battleScene .charm-options.battle-flow-v2-options {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow: hidden;
+  }
+
+  #battleScene .battle-flow-v2-panel {
+    flex: 1 1 auto;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  #battleScene .battle-flow-v2-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   #battleScene .primary-button,
