@@ -1607,6 +1607,35 @@ const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
 const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-v2-transparent.webp";
 const TEACHER_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("master-verion.png");
 const GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-animated.gif";
+const ACT1_BACKGROUND_MAP = {
+  timeDustFields: "assets/backgrounds/act1/act1_time_dust_fields.png",
+  echoTickRuins: "assets/backgrounds/act1/act1_echo_tick_ruins.png",
+  edForge: "assets/backgrounds/act1/act1_ed_forge.png",
+  irregularCave: "assets/backgrounds/act1/act1_irregular_cave.png",
+  rewindClockworks: "assets/backgrounds/act1/act1_rewind_clockworks.png",
+  memoryBreakerCitadel: "assets/backgrounds/act1/act1_memory_breaker_citadel.png"
+};
+const ACT1_BACKGROUND_FALLBACKS = {
+  // TODO: Keep act1_echo_tick_ruins.png as the safe fallback if act1_rewind_clockworks.png is replaced.
+  rewindClockworks: ACT1_BACKGROUND_MAP.echoTickRuins
+};
+const DEFAULT_ACT1_BACKGROUND_KEY = "timeDustFields";
+const ACT1_STAGE_BACKGROUND_KEYS = {
+  prologue: "timeDustFields",
+  "what-is-past": "timeDustFields",
+  "what-is-tense": "echoTickRuins",
+  "regular-intro": "edForge",
+  "regular-rule-1": "edForge",
+  "regular-rule-2": "edForge",
+  "regular-rule-3": "edForge",
+  "regular-rule-4": "rewindClockworks",
+  "ed-mini-boss": "edForge",
+  "irregular-lesson": "irregularCave",
+  "irregular-mini-boss": "irregularCave",
+  "merge-twist": "rewindClockworks",
+  "final-boss": "memoryBreakerCitadel",
+  ending: "memoryBreakerCitadel"
+};
 const TIME_DUST_IMAGE_PATH = "assets/characters/timedust-transparent-clean-optimized.webp";
 const TIME_DUST_FALLBACK_IMAGE_PATH = assetPath("enemies/time-dust.png");
 const ECHO_TRICK_IMAGE_PATH = "assets/characters/echo-trick-transparent-clean-optimized.webp";
@@ -1667,6 +1696,70 @@ function setupTeacherCharacterGifs() {
     img.src = TEACHER_CHARACTER_IMAGE_PATH;
     img.draggable = false;
     img.addEventListener("error", () => handleTeacherCharacterGifError(img), { once: true });
+  });
+}
+
+function getAct1BackgroundSrc(backgroundKey) {
+  const key = backgroundKey || DEFAULT_ACT1_BACKGROUND_KEY;
+  return ACT1_BACKGROUND_MAP[key] ||
+    ACT1_BACKGROUND_FALLBACKS[key] ||
+    ACT1_BACKGROUND_MAP[DEFAULT_ACT1_BACKGROUND_KEY] ||
+    GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH;
+}
+
+function getAct1BackgroundKeyForStage(stage) {
+  if (!stage) {
+    return DEFAULT_ACT1_BACKGROUND_KEY;
+  }
+  return ACT1_STAGE_BACKGROUND_KEYS[stage.id] || DEFAULT_ACT1_BACKGROUND_KEY;
+}
+
+function getNextAct1BackgroundKey(stage) {
+  const playableStages = getPlayableStages();
+  const currentIndex = stage ? getStageIndexById(stage.id) : -1;
+  const nextStage = currentIndex >= 0 ? playableStages[currentIndex + 1] : null;
+  return getAct1BackgroundKeyForStage(nextStage || stage);
+}
+
+function setActBackground(backgroundKey, options = {}) {
+  const src = getAct1BackgroundSrc(backgroundKey);
+  if (!src) {
+    if (options.warnMissing) {
+      console.warn("[Act1Background] Missing background:", backgroundKey);
+    }
+    return GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH;
+  }
+
+  const cssUrl = `url("${src}")`;
+  document.documentElement.style.setProperty("--act1-scene-background", cssUrl);
+  document.body.dataset.actBackgroundKey = backgroundKey || DEFAULT_ACT1_BACKGROUND_KEY;
+  return src;
+}
+
+function preloadAct1Backgrounds() {
+  const sources = new Set([
+    ...Object.values(ACT1_BACKGROUND_MAP),
+    ...Object.values(ACT1_BACKGROUND_FALLBACKS)
+  ].filter(Boolean));
+
+  sources.forEach(src => {
+    const image = new Image();
+    image.onload = () => {
+      image.dataset.loaded = "true";
+    };
+    image.onerror = () => {
+      console.warn("[Act1Background] Failed to preload:", src);
+    };
+    image.src = src;
+  });
+}
+
+function transitionToActBackground(backgroundKey, message, callback) {
+  runSceneTransition(message, () => {
+    setActBackground(backgroundKey, { warnMissing: true });
+    if (typeof callback === "function") {
+      callback();
+    }
   });
 }
 
@@ -3054,12 +3147,18 @@ function transitionToRegularEdLessonAfterTimeDust(stage) {
   });
   console.log("[TimeDust] Current lesson:", progress?.currentLessonId);
 
-  hideBattleUICompletely();
-  restoreLessonUIAfterBattle();
-  showLessonUICompletely();
-  showStageLesson(nextIndex, { lessonStepIndex: 0, dialogueIndex: 0 });
-  restoreNextButtonForLesson();
-  console.log("[TimeDust] Lesson UI shown");
+  transitionToActBackground(
+    getAct1BackgroundKeyForStage(nextStage),
+    "ไทม์ดัสต์สลายไปแล้ว... กฎของ Regular Verbs กำลังเปิดออก",
+    () => {
+      hideBattleUICompletely();
+      restoreLessonUIAfterBattle();
+      showLessonUICompletely();
+      showStageLesson(nextIndex, { lessonStepIndex: 0, dialogueIndex: 0 });
+      restoreNextButtonForLesson();
+      console.log("[TimeDust] Lesson UI shown");
+    }
+  );
 }
 
 const ACT_MAX_AP = 5;
@@ -5406,6 +5505,7 @@ function setupStoryScene(options = {}) {
     return;
   }
 
+  setActBackground("timeDustFields");
   stopTypewriter();
   const progress = loadProgress();
   state.dialogueIndex = progress && progress.currentScreen === "story"
@@ -5478,6 +5578,7 @@ function advanceDialogue() {
 }
 
 function startNounActivity() {
+  setActBackground("timeDustFields");
   showActInfoScreen();
 }
 
@@ -7215,6 +7316,7 @@ function startPostBossDialogue(stage, dialogueIndex = 0) {
     questions: [],
     isPostBossDialogue: true
   };
+  setActBackground(getNextAct1BackgroundKey(stage), { warnMissing: true });
   state.postBossDialogueStage = stage;
   state.currentLessonStage = postBossStage;
   const stageIndex = getStageIndexById(stage.id);
@@ -7574,6 +7676,7 @@ function showStageLesson(stageIndex, resumeState = {}) {
     return;
   }
 
+  setActBackground(getAct1BackgroundKeyForStage(stage), { warnMissing: true });
   state.actStageIndex = stageIndex;
   state.currentLessonStage = stage;
   updateLessonChrome(stage, stageIndex, "lesson");
@@ -7612,6 +7715,7 @@ function getQuestionText(question) {
 function startActBattle(stageIndex) {
   cleanupBossHeavyAttackChain({ clearParryUi: true });
   const stageConfig = getPlayableStages()[stageIndex];
+  setActBackground(getAct1BackgroundKeyForStage(stageConfig), { warnMissing: true });
   const allowedRuleIds = getAllowedRuleIdsForStage(stageConfig);
   const stage = {
     ...stageConfig,
@@ -11187,7 +11291,7 @@ function continueFinalBossVictory(stage) {
   console.log("[FinalBoss] showing Grammaria result");
   finalizeBossVictoryWithResult(stage, () => {
     console.log("[FinalBoss] starting post boss dialogue");
-    runSceneTransition("ความทรงจำสุดท้ายกำลังกลับคืน...", () => {
+    transitionToActBackground(getNextAct1BackgroundKey(stage), "ความทรงจำสุดท้ายกำลังกลับคืน...", () => {
       startPostBossDialogue(stage);
     });
   });
@@ -11244,7 +11348,11 @@ function handleActEnemyDefeated(source = "damage") {
   }
 
   finalizeBossVictoryWithResult(battle.stage, () => {
-    runSceneTransition(`ได้รับ ${battle.stage.reward.fragment}`, () => startPostBossDialogue(battle.stage));
+    transitionToActBackground(
+      getNextAct1BackgroundKey(battle.stage),
+      `ได้รับ ${battle.stage.reward.fragment}`,
+      () => startPostBossDialogue(battle.stage)
+    );
   });
   return true;
 }
@@ -11280,7 +11388,11 @@ function completeActStage() {
   }
 
   finalizeBossVictoryWithResult(stage, () => {
-    runSceneTransition(`ได้รับ ${stage.reward.fragment}`, () => startPostBossDialogue(stage));
+    transitionToActBackground(
+      getNextAct1BackgroundKey(stage),
+      `ได้รับ ${stage.reward.fragment}`,
+      () => startPostBossDialogue(stage)
+    );
   });
 }
 
@@ -12901,6 +13013,7 @@ initializeAuthUi().catch(error => {
 setupAnimatedGrammarHallBackground();
 setupMainCharacterGifs();
 setupTeacherCharacterGifs();
+preloadAct1Backgrounds();
 bindAvatarPreviewInputs();
 
 window.debugBattleMobileLayout = function debugBattleMobileLayout() {
