@@ -12502,23 +12502,309 @@ function showActEnding() {
   });
 }
 
+function calculatePercent(correct = 0, wrong = 0) {
+  const total = (Number(correct) || 0) + (Number(wrong) || 0);
+  return total > 0 ? Math.round(((Number(correct) || 0) / total) * 100) : null;
+}
+
+function formatAssessmentPercent(value) {
+  return value === null || Number.isNaN(value) ? "รอข้อมูล" : `${value}%`;
+}
+
+function getSavedBossResult(bossId) {
+  const grammariaState = playerData?.progress?.grammaria || ensureGrammariaState();
+  return grammariaState?.earnedByBoss?.[bossId] || null;
+}
+
+function combineBossResults(bossIds = []) {
+  return bossIds
+    .map(getSavedBossResult)
+    .filter(Boolean)
+    .reduce((summary, result) => {
+      summary.correctAnswers += Number(result.correctAnswers) || 0;
+      summary.wrongAnswers += Number(result.wrongAnswers) || 0;
+      summary.parryCount += Number(result.parryCount) || 0;
+      summary.playerDamageDealt += Number(result.playerDamageDealt) || 0;
+      summary.bossDamageDealt += Number(result.bossDamageDealt) || 0;
+      summary.highestDamage = Math.max(summary.highestDamage, Number(result.highestDamage) || 0);
+      if (Array.isArray(result.damageEvents)) {
+        summary.damageEvents.push(...result.damageEvents);
+      }
+      return summary;
+    }, {
+      correctAnswers: 0,
+      wrongAnswers: 0,
+      parryCount: 0,
+      playerDamageDealt: 0,
+      bossDamageDealt: 0,
+      highestDamage: 0,
+      damageEvents: []
+    });
+}
+
+function buildAct1AssessmentResult(progress = ensureActProgress()) {
+  const allBossSummary = combineBossResults(["timeDust", "echoTick", "yesterdaySprite", "rewindSlime", "edForger", "irregularWraith", "memoryBreaker"]);
+  const regularSummary = combineBossResults(["echoTick", "yesterdaySprite", "rewindSlime", "edForger"]);
+  const irregularSummary = combineBossResults(["irregularWraith", "memoryBreaker"]);
+  const finalBossSummary = combineBossResults(["memoryBreaker"]);
+  const finalBossResult = getSavedBossResult("memoryBreaker");
+  const totalAnswered = allBossSummary.correctAnswers + allBossSummary.wrongAnswers;
+  const overallAccuracy = calculatePercent(allBossSummary.correctAnswers, allBossSummary.wrongAnswers);
+  const regularAccuracy = calculatePercent(regularSummary.correctAnswers, regularSummary.wrongAnswers);
+  const irregularAccuracy = calculatePercent(irregularSummary.correctAnswers, irregularSummary.wrongAnswers);
+  const finalBossAccuracy = calculatePercent(finalBossSummary.correctAnswers, finalBossSummary.wrongAnswers);
+  const wrongAnswersReviewed = allBossSummary.wrongAnswers;
+  const completed = Boolean(progress?.finalBossDefeated || progress?.completedStages?.includes("final-boss") || finalBossResult);
+  const gameEvidenceScore = [
+    completed ? 3 : 0,
+    overallAccuracy !== null && overallAccuracy >= 70 ? 4 : 0,
+    regularAccuracy !== null && regularAccuracy >= 60 ? 2 : 0,
+    irregularAccuracy !== null && irregularAccuracy >= 60 ? 2 : 0,
+    wrongAnswersReviewed > 0 && completed ? 2 : 0,
+    null
+  ];
+  const gameEvidenceEarned = gameEvidenceScore
+    .filter(value => typeof value === "number")
+    .reduce((total, value) => total + value, 0);
+  const regularPass = regularAccuracy !== null && regularAccuracy >= 50;
+  const irregularPass = irregularAccuracy !== null && irregularAccuracy >= 50;
+
+  return {
+    act: 1,
+    actName: "Past Fragment",
+    topic: "Past Simple Tense",
+    targetGroup: "มัธยมศึกษาปีที่ 2",
+    bossDefeated: "The Memory Breaker",
+    completed,
+    accuracy: {
+      overall: overallAccuracy,
+      regularVerb: regularAccuracy,
+      irregularVerb: irregularAccuracy,
+      sentenceCorrection: null,
+      didStructure: finalBossAccuracy,
+      pastTimeWords: calculatePercent(getSavedBossResult("timeDust")?.correctAnswers, getSavedBossResult("timeDust")?.wrongAnswers),
+      totalAnswered
+    },
+    gameEvidence: {
+      attempts: Math.max(1, Object.keys(playerData?.progress?.grammaria?.earnedByBoss || {}).length || 1),
+      wrongAnswersReviewed,
+      improvementAfterRetry: wrongAnswersReviewed > 0 && completed,
+      highestCombo: finalBossSummary.highestDamage || allBossSummary.highestDamage || 0,
+      perfectParry: allBossSummary.parryCount || 0,
+      playerDamageDealt: allBossSummary.playerDamageDealt,
+      bossDamageDealt: allBossSummary.bossDamageDealt
+    },
+    score: {
+      knowledge: null,
+      application: null,
+      gameEvidence: gameEvidenceEarned,
+      competency: null,
+      attitude: null,
+      total: null
+    },
+    passingConditions: {
+      actCompleted: completed,
+      totalScoreAtLeast60: null,
+      regularAtLeast50: regularPass,
+      irregularAtLeast50: irregularPass,
+      reflectionSubmitted: null
+    },
+    qualityLevel: "รอครูประเมิน",
+    teacherAssessmentRequired: true
+  };
+}
+
+function assessmentStatusLabel(value) {
+  if (value === null) {
+    return "รอครูประเมิน";
+  }
+  return value ? "ผ่านเงื่อนไข" : "ควรฝึกเพิ่มเติม";
+}
+
+function renderRubricRows(items) {
+  return items.map(item => `
+    <div class="assessment-rubric-row">
+      <span>${item.label}</span>
+      <strong>${item.points === "-" ? "-" : `${item.points} คะแนน`}</strong>
+      <em>${item.status || "รอครูประเมิน"}</em>
+    </div>
+  `).join("");
+}
+
+function renderAct1AssessmentHtml(result) {
+  const shouldShowRemedial = result.passingConditions.regularAtLeast50 === false || result.passingConditions.irregularAtLeast50 === false;
+  const regularRemedial = result.passingConditions.regularAtLeast50 === false
+    ? "<p>ควรทบทวนกฎการเติม -ed, -d, y → ied และการเพิ่มพยัญชนะท้ายก่อนเติม -ed</p>"
+    : "";
+  const irregularRemedial = result.passingConditions.irregularAtLeast50 === false
+    ? "<p>ควรทบทวนกริยา Irregular Verb ที่พบบ่อย เช่น go → went, eat → ate, see → saw, write → wrote</p>"
+    : "";
+
+  return `
+    <section class="assessment-panel">
+      <div class="assessment-header">
+        <p class="eyebrow">Act 1 Completed: Past Fragment Restored</p>
+        <h3>แบบประเมินผลการเรียนรู้หลังจบเกม Lingua Act 1: Past Fragment</h3>
+        <p>เรื่อง Past Simple Tense • ${result.targetGroup} • คะแนนเต็ม 100 คะแนน</p>
+        <p class="assessment-note">การผ่านเกมเป็นหลักฐานการเรียนรู้เบื้องต้น ครูผู้สอนจะประเมินผลร่วมกับความถูกต้องของคำตอบ การนำความรู้ไปใช้ และการสะท้อนผลของผู้เรียน</p>
+      </div>
+
+      <div class="assessment-summary-grid">
+        <div><span>Final Boss Defeated</span><strong>${result.bossDefeated}</strong></div>
+        <div><span>ความถูกต้องรวม</span><strong>${formatAssessmentPercent(result.accuracy.overall)}</strong></div>
+        <div><span>Regular Verb Accuracy</span><strong>${formatAssessmentPercent(result.accuracy.regularVerb)}</strong></div>
+        <div><span>Irregular Verb Accuracy</span><strong>${formatAssessmentPercent(result.accuracy.irregularVerb)}</strong></div>
+        <div><span>Sentence Correction Accuracy</span><strong>${formatAssessmentPercent(result.accuracy.sentenceCorrection)}</strong></div>
+        <div><span>did / did not Accuracy</span><strong>${formatAssessmentPercent(result.accuracy.didStructure)}</strong></div>
+      </div>
+
+      <div class="assessment-score-card">
+        <h3>โครงสร้างการประเมิน 100 คะแนน</h3>
+        ${renderRubricRows([
+          { label: "ด้านความรู้และความถูกต้องทางไวยากรณ์", points: 40, status: "ใช้หลักฐานคำตอบในเกมประกอบ" },
+          { label: "ด้านทักษะการนำความรู้ไปใช้", points: 25, status: "รอครูประเมินจากใบงาน / การสะท้อนผล" },
+          { label: "ด้านหลักฐานการเรียนรู้จากเกม", points: 15, status: `${result.score.gameEvidence} / 15 คะแนน (ระบบคำนวณได้)` },
+          { label: "ด้านสมรรถนะสำคัญของผู้เรียน", points: 10 },
+          { label: "ด้านคุณลักษณะอันพึงประสงค์และเจตคติในการเรียนรู้", points: 10 }
+        ])}
+        <div class="assessment-total-line"><span>คะแนนรวมเพื่อสรุปผล</span><strong>รอครูประเมิน</strong></div>
+      </div>
+
+      <div class="assessment-two-column">
+        <div class="assessment-score-card">
+          <h3>ด้านความรู้และความถูกต้องทางไวยากรณ์ — 40 คะแนน</h3>
+          ${renderRubricRows([
+            { label: "เข้าใจคำบอกเวลาในอดีต เช่น yesterday, last night, ago, in 2020", points: 5, status: formatAssessmentPercent(result.accuracy.pastTimeWords) },
+            { label: "เปลี่ยนกริยา Regular Verb พื้นฐานได้ถูกต้อง เช่น walk → walked, play → played", points: 6, status: "ใช้ Regular Verb Accuracy ประกอบ" },
+            { label: "ใช้กฎเติม -d ได้ถูกต้อง เช่น like → liked, love → loved", points: 4, status: "ใช้ Regular Verb Accuracy ประกอบ" },
+            { label: "ใช้กฎคำลงท้าย y ได้ถูกต้อง เช่น study → studied, play → played", points: 6, status: "ใช้ Regular Verb Accuracy ประกอบ" },
+            { label: "ใช้กฎเพิ่มพยัญชนะท้ายก่อนเติม -ed ได้ถูกต้อง เช่น stop → stopped", points: 6, status: "ใช้ Regular Verb Accuracy ประกอบ" },
+            { label: "เปลี่ยนกริยา Irregular Verb ที่พบบ่อยได้ถูกต้อง เช่น go → went, eat → ate", points: 8, status: formatAssessmentPercent(result.accuracy.irregularVerb) },
+            { label: "ใช้โครงสร้าง did / did not + V1 ได้ถูกต้อง", points: 5, status: formatAssessmentPercent(result.accuracy.didStructure) }
+          ])}
+        </div>
+
+        <div class="assessment-score-card">
+          <h3>ด้านทักษะการนำความรู้ไปใช้ — 25 คะแนน</h3>
+          ${renderRubricRows([
+            { label: "เลือกกริยาช่องที่ 2 ได้ถูกต้องตามบริบทของประโยค", points: 5, status: "ใช้หลักฐานคำตอบในเกมประกอบ" },
+            { label: "เติมประโยค Past Simple ได้ถูกต้อง", points: 5, status: "ใช้หลักฐานคำตอบในเกมประกอบ" },
+            { label: "แก้ไขประโยค Past Simple ที่ผิดได้ถูกต้อง", points: 5, status: formatAssessmentPercent(result.accuracy.sentenceCorrection) },
+            { label: "แต่งประโยค Past Simple จากประสบการณ์ของตนเองได้", points: 5, status: "รอครูประเมินจากใบงาน" },
+            { label: "อธิบายเหตุผลของคำตอบได้อย่างง่ายเป็นภาษาไทยหรือภาษาอังกฤษ", points: 5, status: "รอครูประเมินจากการสะท้อนผล" }
+          ])}
+          <p>รอครูประเมินจากใบงาน / การสะท้อนผลหลังเล่นเกม</p>
+        </div>
+      </div>
+
+      <div class="assessment-two-column">
+        <div class="assessment-score-card">
+          <h3>หลักฐานการเรียนรู้จากเกม — 15 คะแนน</h3>
+          ${renderRubricRows([
+            { label: "เล่นจบ Act 1 และเอาชนะ The Memory Breaker ได้", points: 3, status: result.completed ? "ผ่าน" : "ยังไม่ผ่าน" },
+            { label: "ความถูกต้องรวมของคำตอบอย่างน้อย 70%", points: 4, status: formatAssessmentPercent(result.accuracy.overall) },
+            { label: "ความถูกต้องหัวข้อ Regular Verb อย่างน้อย 60%", points: 2, status: formatAssessmentPercent(result.accuracy.regularVerb) },
+            { label: "ความถูกต้องหัวข้อ Irregular Verb อย่างน้อย 60%", points: 2, status: formatAssessmentPercent(result.accuracy.irregularVerb) },
+            { label: "มีพัฒนาการจากการตอบผิดหรือการเล่นซ้ำ", points: 2, status: result.gameEvidence.improvementAfterRetry ? "มีหลักฐานเบื้องต้น" : "รอครูพิจารณา" },
+            { label: "เล่นอย่างซื่อสัตย์ ไม่สุ่มกด หรือคัดลอกคำตอบ", points: 2, status: "รอครูประเมิน" }
+          ])}
+        </div>
+      </div>
+
+      <div class="assessment-summary-grid">
+        <div><span>จำนวนครั้งที่พยายาม</span><strong>${result.gameEvidence.attempts}</strong></div>
+        <div><span>จำนวนข้อผิดพลาดที่ได้รับการทบทวน</span><strong>${result.gameEvidence.wrongAnswersReviewed}</strong></div>
+        <div><span>มีพัฒนาการหลังการตอบผิด</span><strong>${result.gameEvidence.improvementAfterRetry ? "มี" : "ไม่มีข้อมูลเพียงพอ"}</strong></div>
+        <div><span>Perfect / Good Parry</span><strong>${result.gameEvidence.perfectParry}</strong></div>
+        <div><span>ดาเมจสูงสุด / Highest Combo</span><strong>${result.gameEvidence.highestCombo}</strong></div>
+        <div><span>ระดับคุณภาพ</span><strong>${result.qualityLevel}</strong></div>
+      </div>
+
+      <div class="assessment-two-column">
+        <div class="assessment-score-card">
+          <h3>สมรรถนะสำคัญของผู้เรียน — 10 คะแนน</h3>
+          ${renderRubricRows([
+            { label: "ความสามารถในการสื่อสาร: อธิบายคำตอบหรือเหตุผลทางไวยากรณ์ได้", points: 2 },
+            { label: "ความสามารถในการคิด: วิเคราะห์ได้ว่าทำไมกริยาต้องเปลี่ยนรูป", points: 2 },
+            { label: "ความสามารถในการแก้ปัญหา: แก้ไขข้อผิดพลาดหลังได้รับผลสะท้อนได้", points: 2 },
+            { label: "ความสามารถในการใช้เทคโนโลยี: ใช้เกม Lingua เป็นเครื่องมือเรียนรู้อย่างเหมาะสม", points: 2 },
+            { label: "ความสามารถในการเรียนรู้ด้วยตนเอง: พัฒนาตนเองจากการลองผิดลองถูก", points: 2 }
+          ])}
+        </div>
+
+        <div class="assessment-score-card">
+          <h3>คุณลักษณะอันพึงประสงค์และเจตคติในการเรียนรู้ — 10 คะแนน</h3>
+          ${renderRubricRows([
+            { label: "มีส่วนร่วมในกิจกรรมอย่างตั้งใจ", points: 2 },
+            { label: "มีความพยายาม ไม่ยอมแพ้เมื่อตอบผิดหรือแพ้บอส", points: 2 },
+            { label: "เล่นอย่างซื่อสัตย์และปฏิบัติตามกติกาชั้นเรียน", points: 2 },
+            { label: "ช่วยเหลือเพื่อนอย่างเหมาะสมโดยไม่บอกคำตอบตรง ๆ", points: 2 },
+            { label: "ส่งแบบสะท้อนผลหลังเล่นเกมครบถ้วน", points: 2 }
+          ])}
+        </div>
+      </div>
+
+      <div class="assessment-score-card">
+        <h3>เงื่อนไขขั้นต่ำในการผ่านการประเมิน Act 1</h3>
+        ${renderRubricRows([
+          { label: "เล่นจบ Act 1 และเอาชนะ The Memory Breaker", points: "-", status: assessmentStatusLabel(result.passingConditions.actCompleted) },
+          { label: "ได้คะแนนรวมอย่างน้อย 60 คะแนน", points: "-", status: assessmentStatusLabel(result.passingConditions.totalScoreAtLeast60) },
+          { label: "Regular Verb อย่างน้อย 50%", points: "-", status: assessmentStatusLabel(result.passingConditions.regularAtLeast50) },
+          { label: "Irregular Verb อย่างน้อย 50%", points: "-", status: assessmentStatusLabel(result.passingConditions.irregularAtLeast50) },
+          { label: "ส่งแบบสะท้อนผลหลังเล่นเกม", points: "-", status: assessmentStatusLabel(result.passingConditions.reflectionSubmitted) }
+        ])}
+      </div>
+
+      <div class="assessment-score-card">
+        <h3>ระดับคุณภาพสำหรับครูใช้ประกอบการตัดสิน</h3>
+        <p>80–100 คะแนน: ดีเยี่ยม / Excellent — ผู้เรียนมีความเข้าใจชัดเจน ใช้ Past Simple ได้ถูกต้อง และสามารถนำความรู้ไปใช้ได้ดี</p>
+        <p>70–79 คะแนน: ดี / Good — ผู้เรียนเข้าใจเนื้อหาหลัก ใช้ Past Simple ได้ค่อนข้างถูกต้อง มีข้อผิดพลาดเล็กน้อย</p>
+        <p>60–69 คะแนน: ผ่าน / Pass — ผู้เรียนผ่านเกณฑ์ขั้นต่ำ แต่ยังต้องฝึกฝนเพิ่มเติมในบางประเด็น</p>
+        <p>ต่ำกว่า 60 คะแนน: ต้องปรับปรุง / Needs Improvement — ผู้เรียนยังไม่ผ่านเกณฑ์ ควรได้รับการสอนเสริมและประเมินซ้ำ</p>
+      </div>
+
+      <div class="assessment-reflection">
+        <h3>คำถามสะท้อนผลหลังเล่นเกม</h3>
+        <ol>
+          <li>กฎไวยากรณ์เรื่องใดที่ฉันเข้าใจมากที่สุดจาก Lingua Act 1?</li>
+          <li>ส่วนใดยากที่สุดสำหรับฉัน: Regular Verb หรือ Irregular Verb เพราะเหตุใด?</li>
+          <li>เขียนประโยค Past Simple เกี่ยวกับชีวิตของตนเอง 3 ประโยค เช่น Yesterday, I played football. / Last night, I ate dinner. / Two days ago, I went to the market.</li>
+        </ol>
+        <p>ให้นักเรียนตอบคำถามสะท้อนผลในใบงานหรือสมุดเรียน</p>
+      </div>
+
+      ${shouldShowRemedial ? `
+        <div class="assessment-remedial">
+          <h3>ข้อเสนอแนะเพื่อการฝึกเพิ่มเติม</h3>
+          <p>ผู้เรียนควรทบทวนเนื้อหาเรื่อง Past Simple Tense เพิ่มเติม โดยเฉพาะหัวข้อที่มีความถูกต้องต่ำ และทำแบบฝึกหัดเสริมก่อนรับการประเมินซ้ำ</p>
+          ${regularRemedial}
+          ${irregularRemedial}
+        </div>
+      ` : ""}
+    </section>
+  `;
+}
+
 function completeActVictoryScene() {
   clearEnemyTurnTimer();
   stopTimer("charge");
   stopParryCountdown();
   const progress = ensureActProgress();
   const rewards = progress ? progress.rewards.join(", ") : "Time Spark, Tense Spark, Ed Fragment, Irregular Fragment, Past Fragment";
+  const assessmentResult = buildAct1AssessmentResult(progress);
 
-  els.victoryTitle.textContent = "ได้รับ Past Fragment";
+  document.querySelector(".victory-card")?.classList.add("final-assessment-card");
+  els.victoryTitle.textContent = "แบบประเมินผลการเรียนรู้หลังจบเกม Lingua Act 1: Past Fragment";
   els.victoryEnemy.textContent = "The Memory Breaker";
-  els.victoryStory.textContent = PAST_FRAGMENT_ACT.endingLines.join(" ");
+  els.victoryStory.textContent = "Lingua Act 1 Learning Achievement Assessment: Past Simple Tense";
   els.victoryGrammaria.textContent = playerData ? playerData.grammaria || 0 : state.grammaria;
   els.victoryExtra.textContent = rewards;
   els.victoryBadge.textContent = PAST_FRAGMENT_ACT.badge;
-  els.victoryFragmentText.innerHTML = `สรุปบทเรียนโดยมาสเตอร์เวรีออน<br>${PAST_FRAGMENT_ACT.summary.map(item => `• ${item}`).join("<br>")}`;
+  els.victoryFragmentText.innerHTML = renderAct1AssessmentHtml(assessmentResult);
 
   if (playerData) {
     playerData.progress.currentScene = "pastFragmentVictory";
+    playerData.progress.act1AssessmentResult = assessmentResult;
     savePlayerData();
   }
 
@@ -12533,6 +12819,7 @@ function completeVictoryScene() {
   clearEnemyTurnTimer();
   stopTimer("charge");
   stopParryCountdown();
+  document.querySelector(".victory-card")?.classList.remove("final-assessment-card");
   els.victoryGrammaria.textContent = state.grammaria + state.sparkBonus;
   els.victoryExtra.textContent = state.sparkBonus;
 
