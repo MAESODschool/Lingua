@@ -66,6 +66,84 @@
       </div>
     </section>
 
+    <section id="mainMenuScene" class="scene main-menu-scene">
+      <div class="main-menu-dashboard">
+        <header class="main-menu-header">
+          <div class="main-menu-logo-wrap">
+            <img id="mainMenuLogo" class="main-menu-logo" src="assets/ui/lingua-main-menu-logo.png" alt="Lingua - Where Time Lives in Words" draggable="false">
+            <div id="mainMenuLogoFallback" class="main-menu-logo-fallback hidden">
+              <strong>LINGUA</strong>
+              <span>WHERE TIME LIVES IN WORDS</span>
+            </div>
+          </div>
+          <p class="main-menu-kicker">Player Dashboard / เมนูผู้เล่น</p>
+        </header>
+
+        <div class="main-menu-grid">
+          <section class="main-menu-card player-profile-card">
+            <div class="profile-avatar-frame">
+              <img id="mainMenuAvatar" class="main-menu-avatar main-character-gif" src="assets/characters/main-character-idle-transparent-clean-optimized.webp" alt="ผู้เล่น Lingua" draggable="false">
+            </div>
+            <div class="profile-copy">
+              <span>Player / ผู้เล่น</span>
+              <h2 id="mainMenuPlayerName">นักเดินทางแห่ง Lingua</h2>
+              <p id="mainMenuPlayerTitle">Novice Wordmage</p>
+              <div class="profile-stat-row">
+                <span>Current Act</span>
+                <strong id="mainMenuCurrentAct">Act 1: Past Fragment</strong>
+              </div>
+              <div class="profile-stat-row">
+                <span>Grammaria</span>
+                <strong id="mainMenuGrammaria">0</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="main-menu-card current-progress-card">
+            <h3>Learning Progress / ความคืบหน้าการเรียนรู้</h3>
+            <dl class="main-menu-progress-list">
+              <div>
+                <dt>Current Lesson / บทเรียนปัจจุบัน</dt>
+                <dd id="mainMenuCurrentLesson">ยังไม่มีความคืบหน้าที่บันทึกไว้</dd>
+              </div>
+              <div>
+                <dt>Current Area / ด่านปัจจุบัน</dt>
+                <dd id="mainMenuCurrentArea">รอการบันทึกข้อมูล</dd>
+              </div>
+              <div>
+                <dt>Next Goal / เป้าหมายถัดไป</dt>
+                <dd id="mainMenuNextGoal">เริ่มการเดินทางใน Act 1</dd>
+              </div>
+            </dl>
+            <div class="main-menu-progress-meter" aria-label="Act progress">
+              <div class="progress-meter-topline">
+                <span>Act Progress / ความคืบหน้า</span>
+                <strong id="mainMenuProgressPercent">0%</strong>
+              </div>
+              <div class="progress-meter-track"><i id="mainMenuProgressFill"></i></div>
+            </div>
+            <div class="boss-progress-line">
+              <span>Bosses Defeated / บอสที่เอาชนะแล้ว</span>
+              <strong id="mainMenuBossesDefeated">0 / 6</strong>
+            </div>
+          </section>
+
+          <section class="main-menu-card grammaria-collection-card">
+            <h3>Grammaria Collection / คลัง Grammaria</h3>
+            <div id="mainMenuCollection" class="grammaria-collection-grid"></div>
+          </section>
+
+          <section class="main-menu-card main-menu-actions">
+            <button id="continueJourneyButton" class="primary-button main-menu-button" type="button">เดินทางต่อ</button>
+            <button id="lessonMapButton" class="secondary-button main-menu-button" type="button">แผนที่บทเรียน</button>
+            <button id="assessmentResultButton" class="secondary-button main-menu-button" type="button">ผลการประเมิน</button>
+            <button id="accountSettingsButton" class="secondary-button main-menu-button" type="button">ตั้งค่าบัญชี</button>
+            <button id="mainMenuLogoutButton" class="secondary-button main-menu-button danger-button" type="button">ออกจากระบบ</button>
+          </section>
+        </div>
+      </div>
+    </section>
+
     <section id="createCharacterScene" class="scene">
       <div class="create-card">
         <p class="eyebrow">ผู้เล่นใหม่</p>

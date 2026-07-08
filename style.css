@@ -640,6 +640,348 @@ button {
   font-size: 0.78rem;
 }
 
+.main-menu-scene {
+  min-height: 100dvh;
+  padding: clamp(16px, 3vw, 32px);
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(84, 190, 255, 0.2), transparent 34%),
+    linear-gradient(145deg, rgba(9, 14, 42, 0.96), rgba(28, 17, 61, 0.94) 58%, rgba(13, 12, 36, 0.98)),
+    url("assets/backgrounds/grammar-hall-animated.gif") center / cover no-repeat;
+}
+
+.main-menu-scene::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(5, 8, 24, 0.48);
+}
+
+.main-menu-dashboard {
+  position: relative;
+  z-index: 1;
+  width: min(1080px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+
+.main-menu-header {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.main-menu-logo-wrap {
+  width: min(640px, 100%);
+  min-height: 82px;
+  display: grid;
+  place-items: center;
+}
+
+.main-menu-logo {
+  display: block;
+  width: min(560px, 92vw);
+  max-height: 152px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.5));
+}
+
+.main-menu-logo-fallback {
+  display: grid;
+  gap: 4px;
+  color: #ffe39a;
+  text-shadow: 0 0 18px rgba(116, 218, 255, 0.35);
+}
+
+.main-menu-logo-fallback strong {
+  font-size: clamp(2.6rem, 10vw, 5.4rem);
+  line-height: 0.9;
+}
+
+.main-menu-logo-fallback span,
+.main-menu-kicker {
+  color: #bfe9ff;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.main-menu-kicker {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.main-menu-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.92fr) minmax(320px, 1.18fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.main-menu-card {
+  border: 1px solid rgba(255, 219, 134, 0.44);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(21, 33, 76, 0.9), rgba(12, 15, 41, 0.9)),
+    rgba(12, 17, 45, 0.9);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #f8f0d2;
+}
+
+.player-profile-card {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.55fr) minmax(0, 1fr);
+  gap: 14px;
+  padding: 16px;
+  min-width: 0;
+}
+
+.profile-avatar-frame {
+  min-height: 220px;
+  display: grid;
+  place-items: end center;
+  border: 1px solid rgba(113, 221, 255, 0.28);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 70%, rgba(118, 245, 255, 0.22), transparent 34%),
+    linear-gradient(180deg, rgba(80, 48, 152, 0.28), rgba(9, 12, 34, 0.72));
+  overflow: hidden;
+}
+
+.main-menu-avatar {
+  width: min(170px, 100%);
+  max-height: 226px;
+  object-fit: contain;
+  object-position: bottom center;
+}
+
+.profile-copy,
+.main-menu-progress-list {
+  min-width: 0;
+}
+
+.profile-copy > span,
+.profile-stat-row span,
+.main-menu-progress-list dt,
+.progress-meter-topline span,
+.boss-progress-line span {
+  color: #9edcff;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.profile-copy h2 {
+  margin: 4px 0;
+  color: #fff7d6;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  line-height: 1.05;
+}
+
+.profile-copy p {
+  margin: 0 0 12px;
+  color: #ffe39a;
+  font-weight: 900;
+}
+
+.profile-stat-row,
+.boss-progress-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 219, 134, 0.18);
+}
+
+.profile-stat-row strong,
+.boss-progress-line strong {
+  text-align: right;
+}
+
+.current-progress-card,
+.grammaria-collection-card,
+.main-menu-actions {
+  padding: 16px;
+}
+
+.current-progress-card h3,
+.grammaria-collection-card h3 {
+  margin: 0 0 12px;
+  color: #ffe39a;
+  font-size: 1rem;
+}
+
+.main-menu-progress-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.main-menu-progress-list div {
+  display: grid;
+  gap: 3px;
+}
+
+.main-menu-progress-list dd {
+  margin: 0;
+  color: #fff8df;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.main-menu-progress-meter {
+  margin-top: 14px;
+}
+
+.progress-meter-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.progress-meter-track {
+  height: 12px;
+  border: 1px solid rgba(255, 219, 134, 0.45);
+  border-radius: 999px;
+  background: rgba(4, 8, 24, 0.72);
+  overflow: hidden;
+}
+
+.progress-meter-track i {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #55dcff, #b987ff 56%, #ffe39a);
+  box-shadow: 0 0 16px rgba(116, 218, 255, 0.45);
+}
+
+.grammaria-collection-card {
+  grid-column: 1 / -1;
+}
+
+.grammaria-collection-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.collection-fragment-card {
+  min-height: 92px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid rgba(116, 218, 255, 0.24);
+  border-radius: 12px;
+  background: rgba(4, 8, 24, 0.5);
+  text-align: center;
+}
+
+.collection-fragment-card strong {
+  color: #fff7d6;
+  font-size: 0.86rem;
+}
+
+.collection-fragment-card span {
+  color: #9edcff;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.collection-fragment-card.is-locked {
+  opacity: 0.56;
+  filter: grayscale(0.35);
+}
+
+.main-menu-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1.35fr repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.main-menu-button {
+  width: 100%;
+  min-height: 50px;
+}
+
+.main-menu-actions .danger-button {
+  border-color: rgba(255, 143, 143, 0.54);
+  color: #ffe4e4;
+}
+
+.account-settings-panel {
+  display: grid;
+  gap: 8px;
+}
+
+.account-settings-panel .grammaria-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 219, 134, 0.18);
+}
+
+.account-settings-panel .grammaria-breakdown-row span {
+  color: #9edcff;
+  font-weight: 900;
+}
+
+.account-settings-panel .grammaria-breakdown-row strong {
+  color: #fff8df;
+  text-align: right;
+}
+
+@media (max-width: 860px) {
+  .main-menu-grid,
+  .player-profile-card,
+  .main-menu-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-avatar-frame {
+    min-height: 172px;
+  }
+
+  .main-menu-avatar {
+    max-height: 180px;
+  }
+
+  .grammaria-collection-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .main-menu-scene {
+    padding: 12px;
+  }
+
+  .main-menu-logo-wrap {
+    min-height: 64px;
+  }
+
+  .main-menu-logo {
+    max-height: 96px;
+  }
+
+  .profile-stat-row,
+  .boss-progress-line,
+  .progress-meter-topline {
+    display: grid;
+    gap: 4px;
+  }
+
+  .profile-stat-row strong,
+  .boss-progress-line strong {
+    text-align: left;
+  }
+}
+
 .logout-button {
   position: fixed;
   top: 12px;

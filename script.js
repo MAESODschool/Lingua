@@ -18,6 +18,7 @@ import {
 // Lingua Prototype 1 uses small scene switches and one shared state object.
 const scenes = {
   login: document.getElementById("loginScene"),
+  mainMenu: document.getElementById("mainMenuScene"),
   createCharacter: document.getElementById("createCharacterScene"),
   title: document.getElementById("titleScene"),
   story: document.getElementById("storyScene"),
@@ -2184,6 +2185,25 @@ const els = {
   loginButton: document.getElementById("loginButton"),
   registerButton: document.getElementById("registerButton"),
   guestLoginButton: document.getElementById("guestLoginButton"),
+  mainMenuLogo: document.getElementById("mainMenuLogo"),
+  mainMenuLogoFallback: document.getElementById("mainMenuLogoFallback"),
+  mainMenuAvatar: document.getElementById("mainMenuAvatar"),
+  mainMenuPlayerName: document.getElementById("mainMenuPlayerName"),
+  mainMenuPlayerTitle: document.getElementById("mainMenuPlayerTitle"),
+  mainMenuCurrentAct: document.getElementById("mainMenuCurrentAct"),
+  mainMenuGrammaria: document.getElementById("mainMenuGrammaria"),
+  mainMenuCurrentLesson: document.getElementById("mainMenuCurrentLesson"),
+  mainMenuCurrentArea: document.getElementById("mainMenuCurrentArea"),
+  mainMenuNextGoal: document.getElementById("mainMenuNextGoal"),
+  mainMenuProgressPercent: document.getElementById("mainMenuProgressPercent"),
+  mainMenuProgressFill: document.getElementById("mainMenuProgressFill"),
+  mainMenuBossesDefeated: document.getElementById("mainMenuBossesDefeated"),
+  mainMenuCollection: document.getElementById("mainMenuCollection"),
+  continueJourneyButton: document.getElementById("continueJourneyButton"),
+  lessonMapButton: document.getElementById("lessonMapButton"),
+  assessmentResultButton: document.getElementById("assessmentResultButton"),
+  accountSettingsButton: document.getElementById("accountSettingsButton"),
+  mainMenuLogoutButton: document.getElementById("mainMenuLogoutButton"),
   loginUsername: document.getElementById("loginUsername"),
   loginPin: document.getElementById("loginPin"),
   registerDisplayName: document.getElementById("registerDisplayName"),
@@ -2328,7 +2348,7 @@ function cleanupButtonsForSceneChange(nextScene) {
 }
 
 function bgmKeyForScene(sceneName) {
-  if (sceneName === "login" || sceneName === "createCharacter") {
+  if (sceneName === "login" || sceneName === "mainMenu" || sceneName === "createCharacter") {
     return "login";
   }
   if (sceneName === "battle") {
@@ -3681,7 +3701,7 @@ function filterQuestionsForStage(questions, stage) {
   });
 
   if (invalid.length) {
-    console.error("[Invalid Question] This question is not unlocked:", invalid);
+    console.warn("[Invalid Question] This question is not unlocked:", invalid);
   }
 
   console.log("[Boss Questions]", filtered.map(q => q.ruleId || inferRuleIdFromQuestion(q)), filtered.map((q, index) => getQuestionId(q, index)));
@@ -4751,7 +4771,7 @@ async function enterGameForCurrentUser(statusMessage) {
   setAuthStatus(statusMessage);
   if (await hasExistingPlayer(user.userId)) {
     await loadPlayerProfile(user.userId);
-    runSceneTransition(statusMessage, startGameAfterLogin);
+    runSceneTransition(statusMessage, showMainMenu);
     return;
   }
 
@@ -5214,7 +5234,7 @@ async function createCharacterFromForm() {
 
   await savePlayerProfile();
   els.createStatus.textContent = "บันทึกข้อมูลแล้ว";
-  runSceneTransition("บันทึกข้อมูลแล้ว กำลังเข้าสู่โลก Lingua...", startGameAfterLogin);
+  runSceneTransition("บันทึกข้อมูลแล้ว กำลังเปิดเมนูผู้เล่น...", showMainMenu);
 }
 
 function getCheckedRadioValue(name, fallback) {
@@ -6377,6 +6397,292 @@ function loadProgress() {
   console.log("[Progress] Loaded:", progress);
   updateLessonGrammariaDisplay();
   return progress;
+}
+
+const MAIN_MENU_STAGE_LABELS = {
+  "what-is-past": {
+    lesson: "Introduction to Past Time",
+    area: "Time Dust Fields",
+    goal: "Learn how past time works"
+  },
+  "what-is-tense": {
+    lesson: "What is Tense?",
+    area: "Echo Tick Ruins",
+    goal: "Understand how verbs change with time"
+  },
+  "regular-rule-1": {
+    lesson: "Regular Verb Rules",
+    area: "The Ed Forge",
+    goal: "Master -ed for regular verbs"
+  },
+  "regular-rule-2": {
+    lesson: "Regular Verb Rules",
+    area: "The Ed Forge",
+    goal: "Use -d for verbs ending in e"
+  },
+  "regular-rule-3": {
+    lesson: "Regular Verb Rules",
+    area: "The Ed Forge",
+    goal: "Use y-ending rules correctly"
+  },
+  "regular-rule-4": {
+    lesson: "Past Simple Review",
+    area: "Rewind Clockworks",
+    goal: "Review short verb spelling rules"
+  },
+  "ed-mini-boss": {
+    lesson: "Regular Verb Boss Trial",
+    area: "The Ed Forge",
+    goal: "Defeat The -ed Forger"
+  },
+  "irregular-lesson": {
+    lesson: "Irregular Verb Lesson",
+    area: "Irregular Cave",
+    goal: "Learn irregular V2 forms"
+  },
+  "irregular-mini-boss": {
+    lesson: "Irregular Verb Boss Trial",
+    area: "Irregular Cave",
+    goal: "Defeat The Irregular Wraith"
+  },
+  "merge-twist": {
+    lesson: "Past Simple Review",
+    area: "Rewind Clockworks",
+    goal: "Prepare for the final boss"
+  },
+  "final-boss": {
+    lesson: "Final Assessment",
+    area: "Memory Breaker Citadel",
+    goal: "Defeat The Memory Breaker"
+  }
+};
+
+const MAIN_MENU_BOSS_IDS = ["timeDust", "echoTick", "yesterdaySprite", "edForger", "irregularWraith", "memoryBreaker"];
+const MAIN_MENU_COLLECTION_ITEMS = [
+  { id: "timeDust", label: "Time Spark", match: ["Time Spark"] },
+  { id: "echoTick", label: "Tense Spark", match: ["Tense Spark", "Rule 1 Spark", "Rule 2 Spark"] },
+  { id: "edForger", label: "Ed Fragment", match: ["Ed Fragment"] },
+  { id: "irregularWraith", label: "Irregular Fragment", match: ["Irregular Fragment", "Irregular Memory Spark"] },
+  { id: "memoryBreaker", label: "Past Fragment", match: ["Past Fragment"] }
+];
+
+function safeDisplayText(value, fallback = "ยังไม่มีข้อมูล") {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+  const text = String(value).trim();
+  if (!text || text === "undefined" || text === "null" || text === "NaN") {
+    return fallback;
+  }
+  return text;
+}
+
+function hasMeaningfulSavedProgress(progress) {
+  if (!progress) {
+    return false;
+  }
+  return Boolean(
+    progress.lastUpdatedAt ||
+    (Array.isArray(progress.completedLessons) && progress.completedLessons.length) ||
+    (Array.isArray(progress.defeatedBosses) && progress.defeatedBosses.length) ||
+    progress.currentScreen !== "story" ||
+    progress.currentStageId !== DEFAULT_ACT_PROGRESS.currentStageId
+  );
+}
+
+function getMainMenuStage(progress) {
+  const stageId = progress?.currentStageId || progress?.currentLessonId || DEFAULT_ACT_PROGRESS.currentStageId;
+  return getStageById(stageId) || getStageById(DEFAULT_ACT_PROGRESS.currentStageId) || getPlayableStages()[0] || null;
+}
+
+function getMainMenuStageLabels(progress) {
+  if (progress?.finalBossDefeated || progress?.currentScreen === "victory" || progress?.currentScreen === "pastFragmentVictory") {
+    return {
+      lesson: "Act 1 Completed",
+      area: "Past Fragment Restored",
+      goal: "View assessment result"
+    };
+  }
+  const stage = getMainMenuStage(progress);
+  const mapped = MAIN_MENU_STAGE_LABELS[stage?.id] || {};
+  return {
+    lesson: safeDisplayText(mapped.lesson || stage?.title || stage?.thaiTitle, "ยังไม่มีความคืบหน้าที่บันทึกไว้"),
+    area: safeDisplayText(mapped.area || stage?.thaiTitle || stage?.title, "รอการบันทึกข้อมูล"),
+    goal: safeDisplayText(mapped.goal || (stage?.enemy ? `Defeat ${stage.enemy}` : "เริ่มการเดินทางใน Act 1"), "เริ่มการเดินทางใน Act 1")
+  };
+}
+
+function calculateMainMenuActProgress(progress) {
+  if (!progress) {
+    return 0;
+  }
+  if (progress.finalBossDefeated || progress.currentScreen === "victory" || progress.currentScreen === "pastFragmentVictory") {
+    return 100;
+  }
+  const playableStages = getPlayableStages();
+  const completed = new Set(progress.completedLessons || []);
+  const completedCount = playableStages.filter(stage => completed.has(stage.id)).length;
+  const stageIndex = Math.max(getStageIndexById(progress.currentStageId), 0);
+  const stepProgress = Math.max(completedCount, stageIndex);
+  return clamp(Math.round((stepProgress / Math.max(playableStages.length, 1)) * 100), 0, 99);
+}
+
+function buildMainMenuCollection(progress, grammariaState) {
+  const rewards = new Set([...(progress?.rewards || []), ...(progress?.fragments || [])]);
+  const defeated = new Set(progress?.defeatedBosses || []);
+  const earnedBosses = grammariaState?.earnedByBoss || {};
+  return MAIN_MENU_COLLECTION_ITEMS.map(item => {
+    const unlocked = defeated.has(item.id) ||
+      Boolean(earnedBosses[item.id]) ||
+      item.match.some(fragment => rewards.has(fragment));
+    return {
+      label: unlocked ? item.label : "???",
+      status: unlocked ? "Unlocked" : "ยังไม่ค้นพบ",
+      unlocked
+    };
+  });
+}
+
+function buildMainMenuViewModel() {
+  const user = getCurrentUser();
+  const progress = loadProgress();
+  const grammariaState = ensureGrammariaState();
+  const labels = getMainMenuStageLabels(progress);
+  const defeatedBosses = new Set(progress?.defeatedBosses || []);
+  Object.keys(grammariaState?.earnedByBoss || {}).forEach(bossId => defeatedBosses.add(bossId));
+  const bossesDefeated = MAIN_MENU_BOSS_IDS.filter(bossId => defeatedBosses.has(bossId)).length;
+  const playerName = safeDisplayText(playerData?.characterName || playerData?.displayName || user?.displayName, "นักเดินทางแห่ง Lingua");
+  const accountType = user?.isGuest || playerData?.isGuest ? "Guest" : "Registered";
+  const progressPercent = calculateMainMenuActProgress(progress);
+  const hasSave = hasMeaningfulSavedProgress(progress);
+
+  return {
+    playerName,
+    accountType,
+    title: playerData?.level && playerData.level > 1 ? `Level ${playerData.level} Wordmage` : "Novice Wordmage",
+    avatarSrc: MAIN_CHARACTER_IMAGE_PATH,
+    currentActLabel: "Act 1: Past Fragment",
+    currentLessonLabel: labels.lesson,
+    currentAreaLabel: labels.area,
+    nextGoalLabel: labels.goal,
+    grammariaPoints: Number(grammariaState?.total ?? playerData?.grammaria ?? 0) || 0,
+    collection: buildMainMenuCollection(progress, grammariaState),
+    bossesDefeated,
+    totalBosses: MAIN_MENU_BOSS_IDS.length,
+    progressPercent,
+    canContinue: hasSave,
+    act1Completed: progress?.finalBossDefeated || progress?.currentScreen === "victory" || progress?.currentScreen === "pastFragmentVictory",
+    saveStatus: progress?.lastUpdatedAt ? "บันทึกแล้ว" : "ยังไม่มีความคืบหน้าที่บันทึกไว้"
+  };
+}
+
+function renderMainMenuCollection(collection = []) {
+  if (!els.mainMenuCollection) {
+    return;
+  }
+  els.mainMenuCollection.innerHTML = "";
+  if (!collection.length) {
+    const empty = document.createElement("div");
+    empty.className = "collection-fragment-card is-locked";
+    empty.innerHTML = "<strong>???</strong><span>ยังไม่มี Grammaria ที่ได้รับ</span>";
+    els.mainMenuCollection.appendChild(empty);
+    return;
+  }
+  collection.forEach(item => {
+    const card = document.createElement("div");
+    card.className = `collection-fragment-card${item.unlocked ? "" : " is-locked"}`;
+    card.innerHTML = `<strong>${safeDisplayText(item.label, "???")}</strong><span>${safeDisplayText(item.status, "ยังไม่ค้นพบ")}</span>`;
+    els.mainMenuCollection.appendChild(card);
+  });
+}
+
+function renderMainMenu() {
+  const view = buildMainMenuViewModel();
+  if (els.mainMenuLogo && els.mainMenuLogoFallback) {
+    els.mainMenuLogo.classList.remove("hidden");
+    els.mainMenuLogoFallback.classList.add("hidden");
+    els.mainMenuLogo.addEventListener("error", () => {
+      els.mainMenuLogo.classList.add("hidden");
+      els.mainMenuLogoFallback.classList.remove("hidden");
+    }, { once: true });
+  }
+  if (els.mainMenuAvatar) {
+    els.mainMenuAvatar.src = view.avatarSrc;
+    els.mainMenuAvatar.addEventListener("error", () => handleMainCharacterGifError(els.mainMenuAvatar), { once: true });
+  }
+  els.mainMenuPlayerName.textContent = view.playerName;
+  els.mainMenuPlayerTitle.textContent = view.title;
+  els.mainMenuCurrentAct.textContent = view.currentActLabel;
+  els.mainMenuGrammaria.textContent = view.grammariaPoints.toLocaleString("en-US");
+  els.mainMenuCurrentLesson.textContent = view.currentLessonLabel;
+  els.mainMenuCurrentArea.textContent = view.currentAreaLabel;
+  els.mainMenuNextGoal.textContent = view.nextGoalLabel;
+  els.mainMenuProgressPercent.textContent = `${view.progressPercent}%`;
+  els.mainMenuProgressFill.style.width = `${view.progressPercent}%`;
+  els.mainMenuBossesDefeated.textContent = `${view.bossesDefeated} / ${view.totalBosses}`;
+  renderMainMenuCollection(view.collection);
+
+  setButtonAction(els.continueJourneyButton, view.canContinue ? "เดินทางต่อ" : "เริ่มการเดินทาง", continueJourneyFromMainMenu, { lock: true });
+  setButtonAction(els.lessonMapButton, "แผนที่บทเรียน", openMainMenuLessonMap, { lock: false });
+  setButtonAction(els.assessmentResultButton, "ผลการประเมิน", openMainMenuAssessmentResult, { lock: false });
+  setButtonAction(els.accountSettingsButton, "ตั้งค่าบัญชี", openAccountSettingsModal, { lock: false });
+  setButtonAction(els.mainMenuLogoutButton, "ออกจากระบบ", logoutCurrentUser, { lock: true });
+}
+
+function showMainMenu() {
+  renderMainMenu();
+  showScene("mainMenu");
+}
+
+function continueJourneyFromMainMenu() {
+  runSceneTransition("กำลังเปิดเส้นทางการเรียนรู้...", startGameAfterLogin);
+}
+
+function openMainMenuLessonMap() {
+  if (typeof openLessonSelectModal === "function") {
+    openLessonSelectModal();
+    return;
+  }
+  openGameModal({
+    title: "แผนที่บทเรียน",
+    body: "แผนที่บทเรียนจะเปิดใช้ใน Prototype ถัดไป",
+    actions: [{ label: "ปิด", primary: true, onClick: closeGameModal }]
+  });
+}
+
+function openMainMenuAssessmentResult() {
+  const progress = loadProgress();
+  if (progress?.finalBossDefeated || progress?.currentScreen === "victory" || progress?.currentScreen === "pastFragmentVictory") {
+    runSceneTransition("กำลังเปิดผลการประเมิน...", completeActVictoryScene);
+    return;
+  }
+  openGameModal({
+    title: "ผลการประเมิน",
+    body: "ผลการประเมินจะปรากฏหลังจากเอาชนะ The Memory Breaker",
+    actions: [{ label: "รับทราบ", primary: true, onClick: closeGameModal }]
+  });
+}
+
+function openAccountSettingsModal() {
+  const view = buildMainMenuViewModel();
+  const panel = document.createElement("div");
+  panel.className = "account-settings-panel";
+  panel.innerHTML = `
+    <div class="grammaria-breakdown-row"><span>Player Name / ชื่อผู้เล่น</span><strong>${view.playerName}</strong></div>
+    <div class="grammaria-breakdown-row"><span>Account Type / ประเภทบัญชี</span><strong>${view.accountType}</strong></div>
+    <div class="grammaria-breakdown-row"><span>Current Act / Act ปัจจุบัน</span><strong>${view.currentActLabel}</strong></div>
+    <div class="grammaria-breakdown-row"><span>Current Lesson / บทเรียนปัจจุบัน</span><strong>${view.currentLessonLabel}</strong></div>
+    <div class="grammaria-breakdown-row"><span>Save Status / สถานะการบันทึก</span><strong>${view.saveStatus}</strong></div>
+  `;
+  openGameModal({
+    title: "Account Settings / ตั้งค่าบัญชี",
+    body: "ข้อมูลบัญชีและสถานะการบันทึก",
+    content: panel,
+    actions: [
+      { label: "ปิด", onClick: closeGameModal },
+      { label: "ออกจากระบบ", primary: true, onClick: logoutCurrentUser }
+    ]
+  });
 }
 
 function saveProgress(updateObject = {}) {
