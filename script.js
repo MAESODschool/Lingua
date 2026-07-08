@@ -13402,10 +13402,11 @@ function combineBossResults(bossIds = []) {
 }
 
 function buildAct1AssessmentResult(progress = ensureActProgress()) {
-  const allBossSummary = combineBossResults(["timeDust", "echoTick", "yesterdaySprite", "rewindSlime", "edForger", "irregularWraith", "memoryBreaker"]);
+  const allBossSummary = combineBossResults(["timeDustSprite", "yesterdayMite", "wasWereWisp", "memoryLantern", "lostPouchImp", "timeDust", "echoTick", "yesterdaySprite", "rewindSlime", "edForger", "irregularWraith", "memoryBreaker"]);
   const regularSummary = combineBossResults(["echoTick", "yesterdaySprite", "rewindSlime", "edForger"]);
   const irregularSummary = combineBossResults(["irregularWraith", "memoryBreaker"]);
   const finalBossSummary = combineBossResults(["memoryBreaker"]);
+  const pastTimeWordsSummary = combineBossResults(["timeDustSprite", "yesterdayMite", "timeDust"]);
   const finalBossResult = getSavedBossResult("memoryBreaker");
   const totalAnswered = allBossSummary.correctAnswers + allBossSummary.wrongAnswers;
   const overallAccuracy = calculatePercent(allBossSummary.correctAnswers, allBossSummary.wrongAnswers);
@@ -13441,7 +13442,7 @@ function buildAct1AssessmentResult(progress = ensureActProgress()) {
       irregularVerb: irregularAccuracy,
       sentenceCorrection: null,
       didStructure: finalBossAccuracy,
-      pastTimeWords: calculatePercent(getSavedBossResult("timeDust")?.correctAnswers, getSavedBossResult("timeDust")?.wrongAnswers),
+      pastTimeWords: calculatePercent(pastTimeWordsSummary.correctAnswers, pastTimeWordsSummary.wrongAnswers),
       totalAnswered
     },
     gameEvidence: {
