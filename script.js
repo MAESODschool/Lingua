@@ -2304,6 +2304,7 @@ const els = {
 };
 
 function showScene(name) {
+  cleanupButtonsForSceneChange(name);
   if (name === "login" || name === "createCharacter") {
     stopTypewriter();
     state.isTypingDialogue = false;
@@ -2313,7 +2314,17 @@ function showScene(name) {
   }
   Object.values(scenes).forEach(scene => scene.classList.remove("active"));
   scenes[name].classList.add("active");
+  applyDebugButtonVisibility();
   playBgmForScene(name);
+}
+
+function cleanupButtonsForSceneChange(nextScene) {
+  if (nextScene !== "battle") {
+    cleanupBattleInputState();
+  }
+  if (nextScene !== "story" && nextScene !== "battle") {
+    clearBattleButtonAction({ hide: true });
+  }
 }
 
 function bgmKeyForScene(sceneName) {
@@ -2695,8 +2706,10 @@ function closeGameModal() {
     return;
   }
 
+  els.gameModal.dataset.modalLocked = "false";
   els.gameModal.classList.add("hidden");
   els.gameModalClose.classList.remove("hidden");
+  setButtonEnabled(els.gameModalClose, true);
   els.gameModalTitle.textContent = "";
   els.gameModalBody.textContent = "";
   els.gameModalContent.innerHTML = "";
@@ -2707,12 +2720,101 @@ function isGameModalOpen() {
   return els.gameModal && !els.gameModal.classList.contains("hidden");
 }
 
+function setButtonEnabled(button, enabled) {
+  if (!button) {
+    return;
+  }
+
+  button.disabled = !enabled;
+  button.setAttribute("aria-disabled", enabled ? "false" : "true");
+  button.classList.toggle("disabled", !enabled);
+  button.classList.toggle("is-disabled", !enabled);
+  if (enabled) {
+    button.classList.remove("is-locked");
+    delete button.dataset.buttonLocked;
+  }
+}
+
+function clearButtonAction(button, options = {}) {
+  if (!button) {
+    return;
+  }
+
+  button.onclick = null;
+  delete button.dataset.buttonLocked;
+  button.classList.remove("is-locked", "is-loading");
+  if (options.disable !== false) {
+    setButtonEnabled(button, false);
+  }
+}
+
+function setButtonAction(button, label, handler, options = {}) {
+  if (!button) {
+    return;
+  }
+
+  clearButtonAction(button, { disable: false });
+  if (label !== null && label !== undefined) {
+    button.textContent = label;
+  }
+  if (options.hidden === false) {
+    button.classList.remove("hidden");
+  } else if (options.hidden === true) {
+    button.classList.add("hidden");
+  }
+  setButtonEnabled(button, options.enabled !== false);
+
+  button.onclick = event => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    if (button.disabled || button.classList.contains("hidden")) {
+      return;
+    }
+    if (state.isTransitioning && !options.allowDuringTransition) {
+      return;
+    }
+    if (options.lock !== false) {
+      if (button.dataset.buttonLocked === "true") {
+        return;
+      }
+      button.dataset.buttonLocked = "true";
+      button.classList.add("is-locked");
+      setButtonEnabled(button, false);
+    }
+    if (typeof handler === "function") {
+      const result = handler(event);
+      if (result === false && options.lock !== false) {
+        delete button.dataset.buttonLocked;
+        button.classList.remove("is-locked");
+        setButtonEnabled(button, true);
+      }
+    }
+  };
+}
+
+function runButtonActionOnce(button, callback) {
+  if (!button || button.disabled || button.dataset.buttonLocked === "true") {
+    return false;
+  }
+  button.dataset.buttonLocked = "true";
+  button.classList.add("is-locked");
+  setButtonEnabled(button, false);
+  if (typeof callback === "function") {
+    callback();
+  }
+  return true;
+}
+
 function openGameModal({ title, body = "", content = "", actions = [], lockClose = false }) {
   if (!els.gameModal) {
     return;
   }
 
+  els.gameModal.dataset.modalLocked = "false";
   els.gameModalClose.classList.toggle("hidden", Boolean(lockClose));
+  setButtonEnabled(els.gameModalClose, !lockClose);
   els.gameModalTitle.textContent = title;
   els.gameModalBody.textContent = body;
   els.gameModalContent.innerHTML = "";
@@ -2729,7 +2831,19 @@ function openGameModal({ title, body = "", content = "", actions = [], lockClose
     button.type = "button";
     button.className = action.primary ? "primary-button" : "secondary-button";
     button.textContent = action.label;
-    button.addEventListener("click", action.onClick);
+    button.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (els.gameModal.dataset.modalLocked === "true") {
+        return;
+      }
+      els.gameModal.dataset.modalLocked = "true";
+      els.gameModalActions.querySelectorAll("button").forEach(actionButton => setButtonEnabled(actionButton, false));
+      setButtonEnabled(els.gameModalClose, false);
+      if (typeof action.onClick === "function") {
+        action.onClick(event);
+      }
+    });
     els.gameModalActions.appendChild(button);
   });
 
@@ -2750,43 +2864,44 @@ function showOnlyBattlePanel(panelToShow) {
     .filter(Boolean)
     .forEach(panel => panel.classList.add("hidden"));
 
+  if (panelToShow !== els.continueBattleButton) {
+    clearButtonAction(els.continueBattleButton, { disable: true });
+  }
+  if (panelToShow !== els.bossIntentPanel) {
+    clearButtonAction(els.bossIntentReadyButton, { disable: true });
+  }
+
   if (panelToShow) {
     panelToShow.classList.remove("hidden");
   }
 }
 
 function enableBattleButton(button) {
-  if (!button) {
-    return;
-  }
-
-  button.disabled = false;
-  button.removeAttribute("disabled");
-  button.setAttribute("aria-disabled", "false");
-  button.classList.remove("disabled", "is-disabled", "is-locked");
-  button.style.pointerEvents = "";
+  setButtonEnabled(button, true);
 }
 
 function disableBattleButton(button) {
-  if (!button) {
-    return;
-  }
-
-  button.disabled = true;
-  button.setAttribute("aria-disabled", "true");
-  button.classList.add("disabled");
+  setButtonEnabled(button, false);
 }
 
 function resetBattleContinueControls() {
-  enableBattleButton(els.continueBattleButton);
-  enableBattleButton(els.bossIntentReadyButton);
+  clearButtonAction(els.continueBattleButton, { disable: false });
+  clearButtonAction(els.bossIntentReadyButton, { disable: false });
 }
 
 function showBattleContinueButton(label, onClick) {
-  enableBattleButton(els.continueBattleButton);
-  els.continueBattleButton.textContent = label;
-  els.continueBattleButton.onclick = onClick;
-  els.continueBattleButton.classList.remove("hidden");
+  setButtonAction(els.continueBattleButton, label, onClick, { hidden: false });
+}
+
+function setBattleButtonAction(label, onClick, options = {}) {
+  setButtonAction(els.battleButton, label, onClick, { hidden: false, ...options });
+}
+
+function clearBattleButtonAction({ hide = true } = {}) {
+  clearButtonAction(els.battleButton, { disable: true });
+  if (hide && els.battleButton) {
+    els.battleButton.classList.add("hidden");
+  }
 }
 
 function setBattleTurnOwner(owner) {
@@ -2796,7 +2911,7 @@ function setBattleTurnOwner(owner) {
 
 function setActionButtonsEnabled(isEnabled) {
   [els.attackButton, els.itemButton, els.focusButton].forEach(button => {
-    button.disabled = !isEnabled;
+    setButtonEnabled(button, isEnabled);
   });
   updateActActionMenuState();
 }
@@ -2830,6 +2945,9 @@ function cleanupBattleInputState() {
   stopParryCountdown();
   cleanupPointParryRingUI();
   cleanupBossHeavyAttackChain({ clearParryUi: false });
+  clearButtonAction(els.continueBattleButton, { disable: true });
+  clearButtonAction(els.bossIntentReadyButton, { disable: true });
+  setActionButtonsEnabled(false);
   state.parryAttack = null;
   state.shield = 0;
   state.guardShield = 0;
@@ -3078,8 +3196,7 @@ function restoreNextButtonForLesson() {
     console.warn("[TimeDust] Next dialogue button was not found");
   }
   if (els.battleButton) {
-    els.battleButton.disabled = false;
-    els.battleButton.classList.remove("disabled");
+    setButtonEnabled(els.battleButton, true);
   } else {
     console.warn("[TimeDust] Lesson main button was not found");
   }
@@ -3366,10 +3483,36 @@ function updateActActionMenuState() {
   }
 
   const ap = getActAP();
-  els.attackButton.disabled = ap < 1;
-  els.itemButton.disabled = ap < 1;
-  els.focusButton.disabled = false;
+  const canChoose = !battle.actionChoiceLocked && !isActBattleEnded(battle);
+  setButtonEnabled(els.attackButton, canChoose && ap >= 1);
+  setButtonEnabled(els.itemButton, canChoose);
+  setButtonEnabled(els.focusButton, canChoose);
   els.focusButton.classList.toggle("is-focus-hint", ap <= 0);
+}
+
+function canChooseActPlayerAction() {
+  const battle = state.actBattle;
+  if (!battle || isActBattleEnded(battle)) {
+    return false;
+  }
+  if (!els.actionMenu || els.actionMenu.classList.contains("hidden")) {
+    return false;
+  }
+  if (battle.actionChoiceLocked || battle.skillFlowLocked || battle.awaitingGrammarCharge || battle.pendingBossTurn || battle.pendingBossAction) {
+    return false;
+  }
+  return battle.playerActionPhase === "question";
+}
+
+function chooseActPlayerActionOnce(actionHandler) {
+  const battle = state.actBattle;
+  if (!canChooseActPlayerAction()) {
+    return false;
+  }
+  battle.actionChoiceLocked = true;
+  setActionButtonsEnabled(false);
+  actionHandler();
+  return true;
 }
 
 function beginActPlayerTurn(message = "") {
@@ -3390,8 +3533,10 @@ function beginActPlayerTurn(message = "") {
   battle.pendingBossAction = null;
   battle.pendingBossTurn = null;
   battle.bossIntentReadyConsumed = false;
+  battle.actionChoiceLocked = false;
   battle.awaitingParry = false;
   battle.awaitingPrepare = false;
+  battle.playerActionPhase = "question";
   showOnlyBattlePanel(els.actionMenu);
   resetBattleContinueControls();
   els.continueBattleButton.classList.add("hidden");
@@ -5383,9 +5528,16 @@ function showDialogueChoices(choices) {
   els.dialogueChoices.innerHTML = "";
   choices.forEach(choice => {
     const button = document.createElement("button");
+    button.type = "button";
     button.className = "dialogue-choice-btn";
     button.textContent = choice.text;
-    button.addEventListener("click", () => chooseDialogueResponse(choice));
+    button.addEventListener("click", () => {
+      if (button.disabled) {
+        return;
+      }
+      els.dialogueChoices.querySelectorAll("button").forEach(choiceButton => setButtonEnabled(choiceButton, false));
+      chooseDialogueResponse(choice);
+    });
     els.dialogueChoices.appendChild(button);
   });
   els.dialogueChoices.classList.remove("hidden");
@@ -7235,9 +7387,16 @@ function showLessonStoryChoices(choices) {
   els.dialogueChoices.innerHTML = "";
   choices.forEach(choice => {
     const button = document.createElement("button");
+    button.type = "button";
     button.className = "dialogue-choice-btn";
     button.textContent = choice.text;
-    button.addEventListener("click", () => chooseLessonStoryChoice(choice));
+    button.addEventListener("click", () => {
+      if (button.disabled) {
+        return;
+      }
+      els.dialogueChoices.querySelectorAll("button").forEach(choiceButton => setButtonEnabled(choiceButton, false));
+      chooseLessonStoryChoice(choice);
+    });
     els.dialogueChoices.appendChild(button);
   });
   els.dialogueChoices.classList.remove("hidden");
@@ -7530,7 +7689,7 @@ function renderLessonStep() {
 
   if (step.type === "check" || step.type === "choice") {
     renderLessonCheckStep(step);
-    els.battleButton.classList.add("hidden");
+    clearBattleButtonAction({ hide: true });
     return;
   }
 
@@ -7540,8 +7699,7 @@ function renderLessonStep() {
     renderLessonTextStep(step);
   }
 
-  els.battleButton.textContent = getLessonStepButtonText(step);
-  els.battleButton.onclick = advanceLessonStep;
+  setBattleButtonAction(getLessonStepButtonText(step), advanceLessonStep);
 }
 
 function getLessonStepFeedback(step) {
@@ -7602,9 +7760,16 @@ function renderLessonCheckStep(step) {
   step.choices.forEach(choice => {
     const choiceText = typeof choice === "string" ? choice : choice.text;
     const button = document.createElement("button");
+    button.type = "button";
     button.className = "lesson-choice-btn";
     button.textContent = choiceText;
-    button.addEventListener("click", () => chooseLessonStepAnswer(choice, step));
+    button.addEventListener("click", () => {
+      if (button.disabled) {
+        return;
+      }
+      els.wordGrid.querySelectorAll(".lesson-choice-btn").forEach(choiceButton => setButtonEnabled(choiceButton, false));
+      chooseLessonStepAnswer(choice, step);
+    });
     els.wordGrid.appendChild(button);
   });
 }
@@ -7621,9 +7786,7 @@ function chooseLessonStepAnswer(choice, step = null) {
   feedback.className = `lesson-step-card ${isCorrect ? "lesson-feedback-correct" : "lesson-feedback-wrong"}`;
   feedback.innerHTML = `<strong>${isCorrect ? "ถูกต้อง" : "ลองใหม่ในใจอีกครั้ง"}</strong><span>${feedbackText}</span>`;
   els.wordGrid.appendChild(feedback);
-  els.battleButton.textContent = "ถัดไป";
-  els.battleButton.onclick = advanceLessonStep;
-  els.battleButton.classList.remove("hidden");
+  setBattleButtonAction("ถัดไป", advanceLessonStep);
 }
 
 function advanceLessonStep() {
@@ -7653,9 +7816,7 @@ function showActInfoScreen() {
     "Learning Objectives",
     ...PAST_FRAGMENT_ACT.objectives
   ], "lesson-card");
-  els.battleButton.textContent = "เริ่มภารกิจ";
-  els.battleButton.classList.remove("hidden");
-  els.battleButton.onclick = () => showStageLesson(0);
+  setBattleButtonAction("เริ่มภารกิจ", () => showStageLesson(0));
 
   els.nounActivity.classList.remove("hidden");
   els.nounActivityVisual.classList.remove("hidden");
@@ -7749,6 +7910,7 @@ function startActBattle(stageIndex) {
     pendingPlayerAttack: null,
     playerActionPhase: "question",
     pendingPlayerAnswer: null,
+    actionChoiceLocked: false,
     selectedSkillId: "",
     selectedCharmId: "",
     selectedChargePercent: 0,
@@ -7850,15 +8012,14 @@ function useActItem() {
     return;
   }
 
-  if (!spendActAP(1)) {
-    beginActPlayerTurn("AP ไม่พอสำหรับใช้ไอเทม ใช้ตั้งสมาธิเพื่อฟื้น AP");
-    return;
-  }
-
-  battle.pendingBossAction = chooseActBossAction(battle);
+  battle.actionChoiceLocked = false;
   battle.advanceQuestionOnContinue = false;
-  els.battleMessage.textContent = "ยังไม่มีไอเทมต่อสู้ในบททดสอบนี้ การลังเลเปิดช่องให้ศัตรูตอบโต้";
-  setTimeout(startActBossWarning, 800);
+  showOnlyBattlePanel(els.actionMenu);
+  els.battleMessage.textContent = "ระบบไอเทมจะเปิดใช้ในเวอร์ชันถัดไป";
+  if (els.activityFeedback) {
+    els.activityFeedback.textContent = "ยังไม่มีไอเทมให้ใช้ในการต่อสู้นี้";
+  }
+  updateActActionMenuState();
 }
 
 function startActFocusAction() {
@@ -7885,6 +8046,7 @@ function startActFocusAction() {
 
   focusQuestion.options.forEach(option => {
     const button = document.createElement("button");
+    button.type = "button";
     button.className = "answer-button";
     button.textContent = option;
     button.addEventListener("click", () => chooseActFocusAnswer(option, focusQuestion));
@@ -8003,6 +8165,7 @@ function showActBattleQuestion() {
 
   visibleOptions.forEach(option => {
     const button = document.createElement("button");
+    button.type = "button";
     button.className = "answer-button";
     button.textContent = option;
     button.addEventListener("click", () => chooseActAnswer(option));
@@ -8771,6 +8934,7 @@ function showActCharmChoices() {
   els.charmOptions.classList.remove("battle-flow-v2-options");
   selectRandomActCharms().forEach(charm => {
     const button = document.createElement("button");
+    button.type = "button";
     button.className = `charm-card rank-${charm.rank.toLowerCase()}`;
     const rankLabel = charmRankMeta[charm.rank] || charmRankMeta.C;
     button.innerHTML = `
@@ -9916,10 +10080,7 @@ function showBossIntentPanel(turn) {
     : action?.warning || "ศัตรูกำลังเตรียมโจมตี";
   els.bossIntentType.textContent = `รูปแบบถัดไป: ${bossIntentLabel(turn)}`;
   battle.bossIntentReadyConsumed = false;
-  enableBattleButton(els.bossIntentReadyButton);
-  els.bossIntentReadyButton.textContent = "เตรียมพร้อม";
-  els.bossIntentReadyButton.classList.remove("hidden");
-  els.bossIntentReadyButton.onclick = handleBossIntentReady;
+  setButtonAction(els.bossIntentReadyButton, "เตรียมพร้อม", handleBossIntentReady, { hidden: false });
   els.battleMessage.textContent = "อ่านสัญญาณศัตรูก่อนเริ่มจังหวะป้องกัน";
 }
 
@@ -9931,17 +10092,14 @@ function handleBossIntentReady(event) {
 
   const battle = state.actBattle;
   if (!battle || !battle.pendingBossTurn || !battle.pendingBossAction) {
-    console.warn("[BossIntent] ready ignored: missing pending boss turn/action");
     return;
   }
 
   if (isActBattleEnded(battle)) {
-    console.warn("[BossIntent] ready ignored: battle already ended");
     return;
   }
 
   if (battle.bossIntentReadyConsumed) {
-    console.warn("[BossIntent] ready ignored: already consumed");
     return;
   }
 
@@ -10765,6 +10923,7 @@ function showBossQuestionStep() {
 
   question.options.forEach(option => {
     const button = document.createElement("button");
+    button.type = "button";
     button.className = "answer-button";
     button.textContent = option;
     button.addEventListener("click", () => chooseBossQuestionAnswer(option, question));
@@ -11408,8 +11567,8 @@ function restoreLessonUIAfterBattle() {
   els.dialogueActions.classList.add("hidden");
   els.nounActivity.classList.remove("hidden");
   els.nounActivityVisual.classList.remove("hidden");
-  els.battleButton.classList.remove("hidden", "disabled");
-  els.battleButton.disabled = false;
+  setButtonEnabled(els.battleButton, true);
+  els.battleButton.classList.remove("hidden");
   els.nextDialogueButton.classList.remove("hidden", "disabled");
   els.nextDialogueButton.disabled = false;
 }
@@ -11452,13 +11611,12 @@ function showStageReward(stage) {
       currentLessonStepIndex: 0
     });
   }
-  els.battleButton.textContent = stage.id === "ed-mini-boss"
+  const rewardButtonLabel = stage.id === "ed-mini-boss"
     ? "ไปยัง Irregular Verbs"
     : nextStage && nextStage.type === "final-boss"
       ? "ต่อสู้บอสปรากฏตัว"
       : "ด่านถัดไป";
-  els.battleButton.classList.remove("hidden");
-  els.battleButton.onclick = () => showStageLesson(nextIndex);
+  setBattleButtonAction(rewardButtonLabel, () => showStageLesson(nextIndex));
   showScene("story");
 }
 
@@ -11595,6 +11753,7 @@ function startAttack() {
 
   state.currentQuestion.options.forEach(option => {
     const button = document.createElement("button");
+    button.type = "button";
     button.className = "answer-button";
     button.textContent = option;
     button.addEventListener("click", () => chooseAnswer(option));
@@ -11619,6 +11778,7 @@ function showCharmChoices() {
 
   sample(charms, 3).forEach(charm => {
     const button = document.createElement("button");
+    button.type = "button";
     button.className = "charm-card";
     button.innerHTML = `<strong>${charm.name}</strong><span>${charm.effect}</span>`;
     button.addEventListener("click", () => chooseCharm(charm));
@@ -12910,7 +13070,31 @@ const lessonSelectGroups = [
   { title: "Final Review", stageId: "final-boss" }
 ];
 
-const LESSON_SELECT_TEST_MODE = true;
+const TEACHER_DEBUG_MODE = false;
+const PROTOTYPE_DEBUG_MODE = TEACHER_DEBUG_MODE;
+const LESSON_SELECT_TEST_MODE = TEACHER_DEBUG_MODE;
+
+function applyDebugButtonVisibility() {
+  [els.skipLessonButton, els.skipBattleButton].forEach(button => {
+    if (!button) {
+      return;
+    }
+    button.classList.toggle("hidden", !TEACHER_DEBUG_MODE);
+    button.tabIndex = TEACHER_DEBUG_MODE ? 0 : -1;
+    setButtonEnabled(button, TEACHER_DEBUG_MODE);
+  });
+}
+
+function guardTeacherDebugAction(action) {
+  if (!TEACHER_DEBUG_MODE) {
+    console.info("[ButtonAudit] Teacher debug action is disabled.");
+    return false;
+  }
+  if (typeof action === "function") {
+    action();
+  }
+  return true;
+}
 
 function openLessonSelectModal() {
   const progress = loadProgress();
@@ -12960,6 +13144,9 @@ function openLessonSelectModal() {
 }
 
 function openSkipLessonModal() {
+  if (!TEACHER_DEBUG_MODE) {
+    return;
+  }
   const stage = state.currentLessonStage || getPlayableStages()[state.actStageIndex] || getPlayableStages()[0];
   openGameModal({
     title: "ข้ามบทเรียนนี้?",
@@ -13010,6 +13197,9 @@ function skipCurrentLessonToBattleIntro(stage) {
 }
 
 function openSkipBattleModal() {
+  if (!TEACHER_DEBUG_MODE) {
+    return;
+  }
   openGameModal({
     title: "ข้ามไปต่อสู้",
     body: "ต้องการข้ามบทเรียนไปสู่การต่อสู้ใช่หรือไม่?",
@@ -13137,6 +13327,33 @@ function startBattleByEnemy(enemyId) {
   runSceneTransition(`${enemy.name} ปรากฏตัว!`, () => startActBattle(stageIndex));
 }
 
+function returnToTitleSafely() {
+  if (!runButtonActionOnce(els.returnTitleButton, () => {
+    closeGameModal();
+    clearEnemyTurnTimer();
+    stopTimer("charge");
+    stopParryCountdown();
+    cleanupPointParryRingUI();
+    cleanupBossHeavyAttackChain({ clearParryUi: true });
+    cancelNextDialogueHold();
+    state.actBattle = null;
+    state.parryAttack = null;
+    state.isPrologueActive = false;
+    state.isTypingDialogue = false;
+    setActionButtonsEnabled(false);
+    clearButtonAction(els.continueBattleButton, { disable: true });
+    clearButtonAction(els.bossIntentReadyButton, { disable: true });
+    showOnlyBattlePanel(null);
+    showScene("login");
+  })) {
+    return;
+  }
+
+  setTimeout(() => setButtonEnabled(els.returnTitleButton, true), 400);
+}
+
+applyDebugButtonVisibility();
+
 els.showLoginPanelButton.addEventListener("click", () => showAuthPanel("login"));
 els.showRegisterPanelButton.addEventListener("click", () => showAuthPanel("register"));
 els.loginButton.addEventListener("click", loginRegisteredUser);
@@ -13185,8 +13402,11 @@ els.lessonBackButton.addEventListener("click", handleLessonBack);
 els.lessonSelectButton.addEventListener("click", openLessonSelectModal);
 els.battleExitButton.addEventListener("click", confirmExitBattle);
 els.lessonDictionaryButton.addEventListener("click", () => {
-  els.activityFeedback.textContent = "พจนานุกรมแกรมมาเรียจะเปิดใช้ใน Prototype ถัดไป";
-  els.nounActivityVisual.classList.remove("hidden");
+  openGameModal({
+    title: "พจนานุกรมแกรมมาเรีย",
+    body: "พจนานุกรมแกรมมาเรียจะเปิดใช้ใน Prototype ถัดไป",
+    actions: [{ label: "รับทราบ", primary: true, onClick: closeGameModal }]
+  });
 });
 els.lessonExplainButton.addEventListener("click", () => {
   showLessonSummaryModal(state.currentLessonStage || getPlayableStages()[state.actStageIndex]);
@@ -13198,26 +13418,26 @@ els.lessonReviewButton.addEventListener("click", () => {
     showLessonSummaryModal(stage);
   }
 });
-els.skipBattleButton.addEventListener("click", openSkipBattleModal);
-els.skipLessonButton.addEventListener("click", openSkipLessonModal);
+els.skipBattleButton.addEventListener("click", () => guardTeacherDebugAction(openSkipBattleModal));
+els.skipLessonButton.addEventListener("click", () => guardTeacherDebugAction(openSkipLessonModal));
 els.previousDialogueButton.addEventListener("click", goPreviousLessonDialogueLine);
 els.attackButton.addEventListener("click", () => {
   if (state.actBattle) {
-    startActAttackAction();
+    chooseActPlayerActionOnce(startActAttackAction);
     return;
   }
   startAttack();
 });
 els.itemButton.addEventListener("click", () => {
   if (state.actBattle) {
-    useActItem();
+    chooseActPlayerActionOnce(useActItem);
     return;
   }
   useItem();
 });
 els.focusButton.addEventListener("click", () => {
   if (state.actBattle) {
-    startActFocusAction();
+    chooseActPlayerActionOnce(startActFocusAction);
     return;
   }
   focusTurn();
@@ -13254,18 +13474,62 @@ els.parryButton.addEventListener("keydown", event => {
   }
 });
 els.gameModalClose.addEventListener("click", closeGameModal);
-els.returnTitleButton.addEventListener("click", () => showScene("login"));
-els.bossIntentReadyButton.addEventListener("click", handleBossIntentReady);
-els.bossIntentReadyButton.addEventListener("keydown", event => {
-  if (event.key === "Enter" || event.key === " ") {
-    handleBossIntentReady(event);
-  }
-});
-els.bossIntentReadyButton.addEventListener("pointerup", handleBossIntentReady);
+els.returnTitleButton.addEventListener("click", returnToTitleSafely);
 els.muteButton.addEventListener("click", toggleMute);
 
 document.addEventListener("pointerdown", handleButtonSfxPointer, true);
 document.addEventListener("keydown", handleButtonSfxKey, true);
+
+window.debugButtonAudit = function debugButtonAudit() {
+  const activeScene = Object.entries(scenes).find(([, scene]) => scene?.classList.contains("active"))?.[0] || "unknown";
+  const battlePanels = {
+    bossIntent: els.bossIntentPanel,
+    actionMenu: els.actionMenu,
+    question: els.questionPanel,
+    charm: els.charmPanel,
+    charge: els.chargePanel,
+    parry: els.parryPanel,
+    pointParry: els.pointParryPanel,
+    continue: els.continueBattleButton
+  };
+  const visibleBattlePanel = Object.entries(battlePanels)
+    .filter(([, panel]) => panel && !panel.classList.contains("hidden"))
+    .map(([name]) => name);
+  const buttonEntries = {
+    attack: els.attackButton,
+    item: els.itemButton,
+    focus: els.focusButton,
+    continueBattle: els.continueBattleButton,
+    bossIntentReady: els.bossIntentReadyButton,
+    battle: els.battleButton,
+    skipLesson: els.skipLessonButton,
+    skipBattle: els.skipBattleButton,
+    returnTitle: els.returnTitleButton,
+    dictionary: els.lessonDictionaryButton
+  };
+  const report = Object.fromEntries(Object.entries(buttonEntries).map(([name, button]) => [name, button ? {
+    exists: true,
+    hidden: button.classList.contains("hidden"),
+    disabled: button.disabled,
+    ariaDisabled: button.getAttribute("aria-disabled"),
+    locked: button.dataset.buttonLocked === "true",
+    label: button.textContent.trim()
+  } : { exists: false }]));
+  report.scene = {
+    activeScene,
+    modalOpen: isGameModalOpen(),
+    battleActive: Boolean(state.actBattle),
+    battlePhase: state.actBattle?.playerActionPhase || state.actBattle?.phase || "",
+    visibleBattlePanel
+  };
+  report.flags = {
+    TEACHER_DEBUG_MODE,
+    PROTOTYPE_DEBUG_MODE,
+    LESSON_SELECT_TEST_MODE
+  };
+  console.table(report);
+  return report;
+};
 
 function bindGameAudioUnlockEvents() {
   const unlockOptions = { capture: true, passive: true };
