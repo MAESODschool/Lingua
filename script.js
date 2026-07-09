@@ -994,55 +994,55 @@ const finalBossQuestions = [
 
 const phase1PastMeaningQuestions = [
   { id: "phase1-past-meaning-1", prompt: "ข้อใดคืออดีต", options: ["สิ่งที่เกิดขึ้นแล้ว", "สิ่งที่กำลังจะเกิด", "สิ่งที่ยังไม่เริ่ม"], answer: "สิ่งที่เกิดขึ้นแล้ว", explanation: "อดีตคือสิ่งที่เกิดขึ้นแล้วและจบลงแล้ว" },
-  { id: "phase1-past-meaning-2", prompt: "คำว่า yesterday แปลว่าอะไร", options: ["เมื่อวาน", "วันนี้", "พรุ่งนี้"], answer: "เมื่อวาน", explanation: "yesterday แปลว่า เมื่อวาน" },
-  { id: "phase1-past-meaning-3", prompt: "ข้อใดเป็นเวลาอดีต", options: ["last night", "now", "tomorrow"], answer: "last night", explanation: "last night แปลว่าเมื่อคืน เป็นอดีต" },
-  { id: "phase1-past-meaning-4", prompt: "เหตุการณ์ใดจบลงแล้ว", options: ["I played yesterday.", "I am playing now.", "I will play tomorrow."], answer: "I played yesterday.", explanation: "yesterday บอกว่าเหตุการณ์เกิดขึ้นแล้ว" },
+  { id: "phase1-past-meaning-2", prompt: "คำว่า last year แปลว่าอะไร", options: ["ปีที่แล้ว", "ปีหน้า", "ปีนี้"], answer: "ปีที่แล้ว", explanation: "last year บอกเวลาที่ผ่านไปแล้ว" },
+  { id: "phase1-past-meaning-3", prompt: "ข้อใดเป็นเวลาอดีต", options: ["three days ago", "right now", "next month"], answer: "three days ago", explanation: "ago บอกเวลาที่ผ่านมาแล้ว" },
+  { id: "phase1-past-meaning-4", prompt: "เหตุการณ์ใดจบลงแล้ว", options: ["I visited the tower last summer.", "I am visiting now.", "I will visit tomorrow."], answer: "I visited the tower last summer.", explanation: "last summer บอกว่าเกิดขึ้นแล้ว" },
   { id: "phase1-past-meaning-5", prompt: "คำว่า tomorrow บอกเวลาใด", options: ["อนาคต", "อดีต", "เมื่อวาน"], answer: "อนาคต", explanation: "tomorrow คือพรุ่งนี้ จึงเป็นอนาคต" },
   { id: "phase1-past-meaning-6", prompt: "ถ้าเหตุการณ์เกิดเมื่อเช้าและจบแล้ว เรียกว่าอะไร", options: ["อดีต", "อนาคต", "ยังไม่เกิด"], answer: "อดีต", explanation: "เมื่อเหตุการณ์จบแล้ว ถือเป็นอดีต" },
-  { id: "phase1-past-meaning-7", prompt: "ข้อใดช่วยบอกอดีต", options: ["ago", "next", "tomorrow"], answer: "ago", explanation: "ago ใช้บอกเวลาที่ผ่านไปแล้ว" },
+  { id: "phase1-past-meaning-7", prompt: "ข้อใดช่วยบอกอดีต", options: ["a minute ago", "next time", "later"], answer: "a minute ago", explanation: "a minute ago คือหนึ่งนาทีก่อน" },
   { id: "phase1-past-meaning-8", prompt: "Past ใช้พูดถึงอะไร", options: ["เรื่องที่เกิดขึ้นแล้ว", "เรื่องที่กำลังทำ", "เรื่องที่จะทำ"], answer: "เรื่องที่เกิดขึ้นแล้ว", explanation: "Past ใช้พูดถึงเรื่องที่เกิดขึ้นแล้ว" }
 ];
 
 const phase1PastTimeWordsQuestions = [
-  { id: "phase1-time-words-1", prompt: "คำใดแปลว่า เมื่อวาน", options: ["yesterday", "today", "tomorrow"], answer: "yesterday", explanation: "yesterday แปลว่า เมื่อวาน" },
-  { id: "phase1-time-words-2", prompt: "last night แปลว่าอะไร", options: ["เมื่อคืน", "พรุ่งนี้เช้า", "ตอนนี้"], answer: "เมื่อคืน", explanation: "last night แปลว่าเมื่อคืน" },
-  { id: "phase1-time-words-3", prompt: "two days ago แปลว่าอะไร", options: ["สองวันที่แล้ว", "อีกสองวัน", "วันนี้"], answer: "สองวันที่แล้ว", explanation: "ago บอกเวลาที่ผ่านมาแล้ว" },
-  { id: "phase1-time-words-4", prompt: "คำใดเป็นคำบอกอดีต", options: ["last week", "next week", "soon"], answer: "last week", explanation: "last week แปลว่าสัปดาห์ที่แล้ว" },
-  { id: "phase1-time-words-5", prompt: "last year แปลว่าอะไร", options: ["ปีที่แล้ว", "ปีหน้า", "ปีนี้"], answer: "ปีที่แล้ว", explanation: "last year คือปีที่แล้ว" },
-  { id: "phase1-time-words-6", prompt: "คำใดไม่ใช่คำบอกอดีต", options: ["tomorrow", "yesterday", "last night"], answer: "tomorrow", explanation: "tomorrow คืออนาคต" },
-  { id: "phase1-time-words-7", prompt: "I played ____.", options: ["yesterday", "tomorrow", "now"], answer: "yesterday", explanation: "played เป็นอดีต จึงเข้ากับ yesterday" },
+  { id: "phase1-time-words-1", prompt: "คำใดแปลว่า วันจันทร์ที่แล้ว", options: ["last Monday", "next Monday", "this Monday"], answer: "last Monday", explanation: "last Monday คือวันจันทร์ที่แล้ว" },
+  { id: "phase1-time-words-2", prompt: "five years ago แปลว่าอะไร", options: ["ห้าปีที่แล้ว", "อีกห้าปี", "ปีนี้"], answer: "ห้าปีที่แล้ว", explanation: "ago บอกเวลาที่ผ่านมาแล้ว" },
+  { id: "phase1-time-words-3", prompt: "ข้อใดเป็นคำบอกอดีต", options: ["yesterday evening", "next evening", "soon"], answer: "yesterday evening", explanation: "yesterday evening คือเมื่อเย็นวาน" },
+  { id: "phase1-time-words-4", prompt: "คำใดเป็นคำบอกอดีต", options: ["last summer", "next summer", "tomorrow"], answer: "last summer", explanation: "last summer คือฤดูร้อนที่แล้ว" },
+  { id: "phase1-time-words-5", prompt: "three weeks ago แปลว่าอะไร", options: ["สามสัปดาห์ที่แล้ว", "อีกสามสัปดาห์", "สัปดาห์นี้"], answer: "สามสัปดาห์ที่แล้ว", explanation: "ago ใช้กับอดีต" },
+  { id: "phase1-time-words-6", prompt: "คำใดไม่ใช่คำบอกอดีต", options: ["tomorrow", "last Friday", "a long time ago"], answer: "tomorrow", explanation: "tomorrow คืออนาคต" },
+  { id: "phase1-time-words-7", prompt: "I cleaned my desk ____.", options: ["this morning", "next year", "soon"], answer: "this morning", explanation: "ถ้าเกิดเมื่อเช้าและจบแล้ว ถือเป็นอดีต" },
   { id: "phase1-time-words-8", prompt: "คำว่า ago มักใช้กับเวลาใด", options: ["อดีต", "อนาคต", "ตอนนี้"], answer: "อดีต", explanation: "ago ใช้กับเวลาที่ผ่านมาแล้ว" }
 ];
 
 const phase1WasWereQuestions = [
-  { id: "phase1-was-were-1", prompt: "I ____ happy yesterday.", options: ["was", "were", "am"], answer: "was", explanation: "I ใช้ was ในอดีต" },
-  { id: "phase1-was-were-2", prompt: "She ____ at home last night.", options: ["was", "were", "are"], answer: "was", explanation: "She ใช้ was" },
-  { id: "phase1-was-were-3", prompt: "They ____ late yesterday.", options: ["were", "was", "is"], answer: "were", explanation: "They ใช้ were" },
-  { id: "phase1-was-were-4", prompt: "We ____ in class yesterday.", options: ["were", "was", "am"], answer: "were", explanation: "We ใช้ were" },
-  { id: "phase1-was-were-5", prompt: "He ____ tired last night.", options: ["was", "were", "are"], answer: "was", explanation: "He ใช้ was" },
-  { id: "phase1-was-were-6", prompt: "You ____ very kind yesterday.", options: ["were", "was", "is"], answer: "were", explanation: "You ใช้ were" },
-  { id: "phase1-was-were-7", prompt: "It ____ cold yesterday.", options: ["was", "were", "are"], answer: "was", explanation: "It ใช้ was" },
-  { id: "phase1-was-were-8", prompt: "ข้อใดถูกต้อง", options: ["They were happy.", "They was happy.", "They is happy."], answer: "They were happy.", explanation: "They ต้องใช้ were" }
+  { id: "phase1-was-were-1", prompt: "He ____ sick yesterday.", options: ["was", "were", "is"], answer: "was", explanation: "He ใช้ was ในอดีต" },
+  { id: "phase1-was-were-2", prompt: "We ____ at the market last Sunday.", options: ["were", "was", "are"], answer: "were", explanation: "We ใช้ were" },
+  { id: "phase1-was-were-3", prompt: "The cat ____ under the chair last night.", options: ["was", "were", "are"], answer: "was", explanation: "The cat เป็นสิ่งเดียว ใช้ was" },
+  { id: "phase1-was-were-4", prompt: "You ____ late yesterday.", options: ["were", "was", "am"], answer: "were", explanation: "You ใช้ were" },
+  { id: "phase1-was-were-5", prompt: "My friends ____ happy after the game.", options: ["were", "was", "is"], answer: "were", explanation: "My friends เป็นหลายคน ใช้ were" },
+  { id: "phase1-was-were-6", prompt: "ข้อใดถูกต้อง", options: ["She was angry.", "She were angry.", "She is angry yesterday."], answer: "She was angry.", explanation: "She ใช้ was ในอดีต" },
+  { id: "phase1-was-were-7", prompt: "It ____ dark in the cave.", options: ["was", "were", "are"], answer: "was", explanation: "It ใช้ was" },
+  { id: "phase1-was-were-8", prompt: "The doors ____ open last night.", options: ["were", "was", "is"], answer: "were", explanation: "The doors มีหลายบาน ใช้ were" }
 ];
 
 const phase1ThereWasWereQuestions = [
-  { id: "phase1-there-1", prompt: "____ a book on the table yesterday.", options: ["There was", "There were", "There are"], answer: "There was", explanation: "a book เป็นเอกพจน์ จึงใช้ There was" },
-  { id: "phase1-there-2", prompt: "____ two cats in the room.", options: ["There were", "There was", "There is"], answer: "There were", explanation: "two cats เป็นพหูพจน์ จึงใช้ There were" },
-  { id: "phase1-there-3", prompt: "There ____ one lantern here.", options: ["was", "were", "are"], answer: "was", explanation: "one lantern มีหนึ่งอัน ใช้ was" },
-  { id: "phase1-there-4", prompt: "There ____ many clocks in the hall.", options: ["were", "was", "is"], answer: "were", explanation: "many clocks มีหลายอัน ใช้ were" },
-  { id: "phase1-there-5", prompt: "ข้อใดถูกต้อง", options: ["There was a key.", "There were a key.", "There are a key."], answer: "There was a key.", explanation: "a key เป็นเอกพจน์ ใช้ There was" },
-  { id: "phase1-there-6", prompt: "ข้อใดถูกต้อง", options: ["There were three doors.", "There was three doors.", "There is three doors."], answer: "There were three doors.", explanation: "three doors เป็นพหูพจน์ ใช้ There were" },
+  { id: "phase1-there-1", prompt: "____ a book on the desk.", options: ["There was", "There were", "There are"], answer: "There was", explanation: "a book เป็นสิ่งเดียว จึงใช้ There was" },
+  { id: "phase1-there-2", prompt: "____ three birds in the sky.", options: ["There were", "There was", "There is"], answer: "There were", explanation: "three birds มีหลายตัว จึงใช้ There were" },
+  { id: "phase1-there-3", prompt: "There ____ one chair near the wall.", options: ["was", "were", "are"], answer: "was", explanation: "one chair มีหนึ่งตัว ใช้ was" },
+  { id: "phase1-there-4", prompt: "There ____ many students in the hall.", options: ["were", "was", "is"], answer: "were", explanation: "many students มีหลายคน ใช้ were" },
+  { id: "phase1-there-5", prompt: "ข้อใดถูกต้อง", options: ["There was a dog near the gate.", "There were a dog near the gate.", "There are a dog near the gate."], answer: "There was a dog near the gate.", explanation: "a dog เป็นสิ่งเดียว ใช้ There was" },
+  { id: "phase1-there-6", prompt: "ข้อใดใช้กับ five boxes", options: ["There were five boxes.", "There was five boxes.", "There is five boxes."], answer: "There were five boxes.", explanation: "five boxes มีหลายกล่อง ใช้ There were" },
   { id: "phase1-there-7", prompt: "There was ใช้กับอะไร", options: ["สิ่งเดียว", "หลายสิ่ง", "อนาคต"], answer: "สิ่งเดียว", explanation: "There was ใช้กับเอกพจน์ในอดีต" },
   { id: "phase1-there-8", prompt: "There were ใช้กับอะไร", options: ["หลายสิ่ง", "สิ่งเดียว", "I"], answer: "หลายสิ่ง", explanation: "There were ใช้กับพหูพจน์ในอดีต" }
 ];
 
 const phase1HadQuestions = [
-  { id: "phase1-had-1", prompt: "I ____ a map yesterday.", options: ["had", "have", "has"], answer: "had", explanation: "had คือรูปอดีตของ have" },
-  { id: "phase1-had-2", prompt: "She ____ a blue crystal.", options: ["had", "has", "have"], answer: "had", explanation: "ในอดีตใช้ had กับทุกประธาน" },
-  { id: "phase1-had-3", prompt: "They ____ three keys last night.", options: ["had", "have", "has"], answer: "had", explanation: "They ในอดีตใช้ had" },
-  { id: "phase1-had-4", prompt: "He ____ an old book.", options: ["had", "has", "have"], answer: "had", explanation: "He ในอดีตใช้ had" },
+  { id: "phase1-had-1", prompt: "Yesterday, he ____ a red notebook.", options: ["had", "has", "have"], answer: "had", explanation: "ในอดีตใช้ had" },
+  { id: "phase1-had-2", prompt: "Last week, we ____ an English test.", options: ["had", "have", "has"], answer: "had", explanation: "we ในอดีตใช้ had" },
+  { id: "phase1-had-3", prompt: "They ____ lunch at noon yesterday.", options: ["had", "have", "has"], answer: "had", explanation: "They ในอดีตใช้ had" },
+  { id: "phase1-had-4", prompt: "My sister ____ a fever last night.", options: ["had", "has", "have"], answer: "had", explanation: "My sister ในอดีตใช้ had" },
   { id: "phase1-had-5", prompt: "had แปลว่าอะไรในบทนี้", options: ["มีแล้วในอดีต", "กำลังมี", "จะมี"], answer: "มีแล้วในอดีต", explanation: "had ใช้พูดถึงการมีในอดีต" },
-  { id: "phase1-had-6", prompt: "ข้อใดถูกต้อง", options: ["We had a lesson yesterday.", "We has a lesson yesterday.", "We have a lesson yesterday."], answer: "We had a lesson yesterday.", explanation: "yesterday เป็นอดีต จึงใช้ had" },
+  { id: "phase1-had-6", prompt: "ข้อใดถูกต้อง", options: ["She had a cold yesterday.", "She has a cold yesterday.", "She have a cold yesterday."], answer: "She had a cold yesterday.", explanation: "yesterday เป็นอดีต จึงใช้ had" },
   { id: "phase1-had-7", prompt: "have ในอดีตเปลี่ยนเป็นอะไร", options: ["had", "haved", "has"], answer: "had", explanation: "have เป็น Irregular Verb รูปอดีตคือ had" },
   { id: "phase1-had-8", prompt: "has ในอดีตเปลี่ยนเป็นอะไร", options: ["had", "hased", "have"], answer: "had", explanation: "has ในอดีตก็ใช้ had" }
 ];
@@ -1823,6 +1823,14 @@ function getNextAct1BackgroundKey(stage) {
   const currentIndex = stage ? getStageIndexById(stage.id) : -1;
   const nextStage = currentIndex >= 0 ? playableStages[currentIndex + 1] : null;
   return getAct1BackgroundKeyForStage(nextStage || stage);
+}
+
+function shouldKeepCurrentBackgroundForPostBoss(stage) {
+  return stage?.id === "act1_phase1_unit5_had";
+}
+
+function shouldTransitionToNextStageFromReward(stage) {
+  return stage?.id === "act1_phase1_unit5_had";
 }
 
 function setActBackground(backgroundKey, options = {}) {
@@ -7640,20 +7648,33 @@ Object.assign(LESSON_SEGMENTS, {
   "what-is-past": {
     ruleId: "pastMeaning",
     teacherExplanation: [
-      "ผู้พเนจร เรากำลังเข้าสู่ Past Fragment",
+      "แสงสีม่วงค่อย ๆ เปิดออกตรงหน้าเจ้า",
+      "เศษนาฬิกาเก่าลอยอยู่ทั่วท้องฟ้า",
+      "เศษกระดาษจากความทรงจำหมุนวนอยู่รอบตัว",
+      "สถานที่แห่งนี้ไม่ใช่โลกปัจจุบัน",
+      "มันคือดินแดนแห่งความทรงจำที่แตกสลาย",
+      "ยินดีต้อนรับ ผู้พเนจรแห่งภาษา",
+      "ข้าคือ มาสเตอร์เวรีออน",
+      "ผู้เฝ้ามองแกนภาษาแห่ง Lingua",
+      "เจ้าถูกเรียกมาที่นี่ เพราะ Past Fragment กำลังแตกสลาย",
+      "เมื่ออดีตแตกสลาย ความทรงจำก็เริ่มผิดเพี้ยน",
+      "ภารกิจของเจ้าคือฟื้นคืนอดีต",
+      "ใน Lingua อดีตถูกซ่อมด้วยความเข้าใจเรื่องภาษา",
+      "ทุกคำตอบที่ถูกต้อง จะทำให้ความทรงจำกลับเข้าที่",
+      "ก่อนต่อสู้กับเงาแห่งอดีต เจ้าต้องเข้าใจก่อน",
       "อดีตคือสิ่งที่เกิดขึ้นแล้ว",
       "ถ้าเหตุการณ์จบแล้ว เราเรียกว่า past",
-      "yesterday แปลว่า เมื่อวาน",
-      "last night แปลว่า เมื่อคืน",
-      "ago แปลว่า ที่ผ่านมาแล้ว",
-      "ภาษาไทยใช้คำบอกเวลาเพื่อช่วยบอกอดีต",
-      "ภาษาอังกฤษก็มีคำบอกเวลาแบบนี้เช่นกัน"
+      "ตอนนี้คือ present",
+      "สิ่งที่ยังไม่เกิดคือ future",
+      "แต่สิ่งที่เกิดไปแล้วคือ past",
+      "เมื่อเราพูดถึงอดีต เรามักมีคำบอกเวลา",
+      "คำเหล่านี้ช่วยบอกว่าเรื่องนั้นเกิดไปแล้ว"
     ],
     teacherExamples: [
+      "now = ตอนนี้",
       "yesterday แปลว่า เมื่อวาน",
       "last night แปลว่า เมื่อคืน",
-      "two days ago แปลว่า สองวันที่แล้ว",
-      "I played yesterday. แปลว่า ฉันเล่นเมื่อวาน"
+      "two days ago แปลว่า สองวันที่แล้ว"
     ],
     guidedPractice: [
       {
@@ -7676,32 +7697,40 @@ Object.assign(LESSON_SEGMENTS, {
       }
     ],
     preBossDialogue: [
-      "ฝุ่นเวลาเริ่มรวมตัวแล้ว",
-      "Time Dust Sprite จะทดสอบว่าเจ้ารู้จักอดีตหรือยัง"
+      "ฝุ่นเวลาบนพื้นเริ่มรวมตัวกัน",
+      "Time Dust Sprite เกิดจากความทรงจำที่จำเวลาไม่ได้",
+      "มันจะทดสอบว่าเจ้ารู้จักอดีตหรือยัง"
     ],
     postBossDialogue: [
       "Time Dust Sprite สลายไปแล้ว",
       "เศษเวลาแรกกลับมาเป็นระเบียบ",
-      "ต่อไปเราจะเรียนคำบอกเวลาอดีตให้ชัดขึ้น"
+      "เจ้ารู้แล้วว่า past คือสิ่งที่เกิดขึ้นแล้ว",
+      "ต่อไปเราจะตามหาคำบอกเวลาอดีตให้ชัดขึ้น"
     ]
   },
   "what-is-tense": {
     ruleId: "pastTimeWords",
     teacherExplanation: [
+      "เส้นทางข้างหน้าเต็มไปด้วยป้ายเวลา",
+      "บางป้ายบอกปัจจุบัน",
+      "บางป้ายบอกอนาคต",
+      "แต่ป้ายที่แตกร้าวคือป้ายของอดีต",
       "คำบอกเวลาช่วยให้เรารู้ว่าเรื่องเกิดเมื่อไร",
       "yesterday คือ เมื่อวาน",
-      "last night คือ เมื่อคืน",
       "last week คือ สัปดาห์ที่แล้ว",
-      "last year คือ ปีที่แล้ว",
+      "two months ago คือ สองเดือนที่แล้ว",
+      "in 2020 คือ ในปี 2020",
       "ago ใช้กับเวลาที่ผ่านมาแล้ว",
-      "เช่น two days ago แปลว่า สองวันที่แล้ว",
-      "ถ้าเห็นคำเหล่านี้ ให้คิดถึงอดีต"
+      "last ใช้กับช่วงเวลาที่ผ่านมาแล้วได้",
+      "ถ้าเห็นคำเหล่านี้ ให้คิดถึงอดีต",
+      "คำบอกเวลาไม่ได้เปลี่ยนกริยาเอง",
+      "แต่มันเตือนเราว่า ประโยคนี้เล่าเรื่องที่จบแล้ว"
     ],
     teacherExamples: [
-      "I walked yesterday.",
-      "She was tired last night.",
-      "We played last week.",
-      "They met two days ago."
+      "yesterday = เมื่อวาน",
+      "last week = สัปดาห์ที่แล้ว",
+      "two months ago = สองเดือนที่แล้ว",
+      "in 2020 = ในปี 2020"
     ],
     guidedPractice: [
       {
@@ -7725,31 +7754,56 @@ Object.assign(LESSON_SEGMENTS, {
     ],
     preBossDialogue: [
       "Yesterday Mite กำลังกัดกินคำบอกเวลา",
+      "ถ้าคำบอกเวลาหายไป ความทรงจำจะลำดับผิด",
       "เลือกคำอดีตให้ถูก แล้วเส้นทางจะเปิด"
     ],
     postBossDialogue: [
       "Yesterday Mite ถอยกลับไปแล้ว",
       "คำบอกเวลาอดีตเริ่มส่องแสง",
-      "ต่อไปเราจะเรียน was และ were"
+      "ตอนนี้เจ้ารู้สัญญาณของอดีตมากขึ้น",
+      "ต่อไปเราจะเรียน Verb to be ในอดีต",
+      "นั่นคือ was และ were"
     ]
   },
   "act1_phase1_unit3_was_were": {
     ruleId: "wasWere",
     teacherExplanation: [
-      "was และ were คือรูปอดีตของ verb to be",
-      "I ใช้ was",
-      "he ใช้ was",
-      "she ใช้ was",
-      "it ใช้ was",
-      "you ใช้ were",
-      "we ใช้ were",
-      "they ใช้ were"
+      "ก่อนเรียน was และ were เราต้องรู้จักคำว่า Verb",
+      "Verb แปลว่า คำกริยา",
+      "คำกริยาคือคำที่บอกการกระทำ",
+      "เช่น go แปลว่า ไป",
+      "eat แปลว่า กิน",
+      "play แปลว่า เล่น",
+      "walk แปลว่า เดิน",
+      "แต่มีคำกริยากลุ่มหนึ่งพิเศษมาก",
+      "กลุ่มนี้ชื่อว่า Verb to be",
+      "Verb to be ไม่ได้บอกการกระทำเสมอไป",
+      "มันใช้บอกว่าใครเป็นอะไร",
+      "มันใช้บอกว่าใครอยู่ที่ไหน",
+      "มันใช้บอกว่าสิ่งนั้นมีสภาพอย่างไร",
+      "ในปัจจุบัน Verb to be คือ is, am, are",
+      "I ใช้ am",
+      "he, she, it ใช้ is",
+      "you, we, they ใช้ are",
+      "แต่เมื่อเรื่องเกิดในอดีต รูปของมันจะเปลี่ยน",
+      "am ในอดีตเปลี่ยนเป็น was",
+      "is ในอดีตเปลี่ยนเป็น was",
+      "are ในอดีตเปลี่ยนเป็น were",
+      "ดังนั้น I am ready กลายเป็น I was ready",
+      "She is here กลายเป็น She was here",
+      "They are tired กลายเป็น They were tired",
+      "จำง่าย ๆ คือ I, he, she, it ใช้ was",
+      "you, we, they ใช้ were",
+      "อย่าสับสนกับกริยาการกระทำ",
+      "ถ้าพูดว่า play ในอดีต เราจะเรียนกฎอื่นภายหลัง",
+      "แต่ถ้าพูดว่า เป็น อยู่ คือ หรือรู้สึกในอดีต",
+      "ให้คิดถึง was และ were ก่อน"
     ],
     teacherExamples: [
-      "I was happy yesterday.",
-      "She was at home last night.",
-      "They were late yesterday.",
-      "We were in class yesterday."
+      "I am ready. -> I was ready.",
+      "She is here. -> She was here.",
+      "They are tired. -> They were tired.",
+      "We are in the room. -> We were in the room."
     ],
     guidedPractice: [
       {
@@ -7773,31 +7827,41 @@ Object.assign(LESSON_SEGMENTS, {
     ],
     preBossDialogue: [
       "Was-Were Wisp ลอยออกมาจากหมอกเวลา",
+      "มันสลับ was กับ were เพื่อทำให้ประโยคเพี้ยน",
       "จำคู่ประธานกับ was/were ให้ดี"
     ],
     postBossDialogue: [
       "Was-Were Wisp สงบลงแล้ว",
-      "เจ้ารู้จัก was และ were มากขึ้น",
-      "ต่อไปเราจะดู there was และ there were"
+      "เจ้ารู้แล้วว่า Verb to be มีรูปอดีต",
+      "was และ were ช่วยเล่าอดีตของสภาพและสถานที่",
+      "ต่อไปเราจะใช้ was และ were กับคำว่า there"
     ]
   },
   "act1_phase1_unit4_there_was_were": {
     ruleId: "thereWasWere",
     teacherExplanation: [
+      "บางครั้งเราไม่ได้บอกว่าใครทำอะไร",
+      "เราแค่อยากบอกว่า ในอดีตมีบางสิ่งอยู่",
+      "ภาษาอังกฤษใช้ there was และ there were",
       "There was แปลว่า มีอยู่ในอดีต",
       "ใช้ There was กับสิ่งเดียว",
-      "เช่น There was a book.",
-      "There were แปลว่า มีอยู่ในอดีตเช่นกัน",
-      "ใช้ There were กับหลายสิ่ง",
-      "เช่น There were two books.",
-      "ให้ดูจำนวนของสิ่งนั้น",
-      "สิ่งเดียวใช้ was หลายสิ่งใช้ were"
+      "เช่น มีโคมไฟหนึ่งดวง",
+      "There were ก็แปลว่า มีอยู่ในอดีต",
+      "แต่ใช้กับหลายสิ่ง",
+      "เช่น มีประตูหลายบาน",
+      "จุดสำคัญคือดูจำนวนของสิ่งนั้น",
+      "สิ่งเดียวใช้ There was",
+      "หลายสิ่งใช้ There were",
+      "ถ้าเห็น a, an หรือ one มักเป็นสิ่งเดียว",
+      "ถ้าเห็น two, three, many มักเป็นหลายสิ่ง",
+      "อย่าดูแค่คำว่า there",
+      "ให้ดูสิ่งที่อยู่หลัง there was หรือ there were"
     ],
     teacherExamples: [
-      "There was a key.",
-      "There was one lantern.",
-      "There were three clocks.",
-      "There were many doors."
+      "There was a lantern.",
+      "There was one bridge.",
+      "There were two doors.",
+      "There were many clocks."
     ],
     guidedPractice: [
       {
@@ -7821,31 +7885,46 @@ Object.assign(LESSON_SEGMENTS, {
     ],
     preBossDialogue: [
       "Memory Lantern จุดไฟขึ้นกลางทาง",
+      "แสงของมันแยกสิ่งเดียวกับหลายสิ่งออกจากกัน",
       "มันจะถามว่าในอดีตมีสิ่งเดียวหรือหลายสิ่ง"
     ],
     postBossDialogue: [
       "Memory Lantern Flame กลับมาอยู่ในมือเจ้า",
       "เจ้ามองเห็นจำนวนในประโยคได้ดีขึ้น",
+      "there was และ there were จะช่วยเล่าฉากในอดีต",
       "ต่อไปคือคำว่า had"
     ]
   },
   "act1_phase1_unit5_had": {
     ruleId: "hadPast",
     teacherExplanation: [
+      "ตอนนี้เรามาถึง Relic ชิ้นสุดท้ายของ Phase 1",
+      "คำนี้คือ had",
       "had คือรูปอดีตของ have",
       "had คือรูปอดีตของ has ด้วย",
-      "ในอดีต ใช้ had กับทุกประธาน",
+      "have แปลว่า มี",
+      "has ก็แปลว่า มี",
+      "แต่ในอดีต ทั้ง have และ has เปลี่ยนเป็น had",
+      "ข้อดีคือ had ใช้กับทุกประธาน",
       "I ใช้ had",
+      "you ใช้ had",
+      "he ใช้ had",
       "she ใช้ had",
+      "we ใช้ had",
       "they ใช้ had",
       "had แปลว่า มีแล้วในอดีต",
-      "เช่น I had a map yesterday."
+      "ถ้าเรื่องเกิดเมื่อวาน ใช้ had",
+      "ถ้าเรื่องเกิดสัปดาห์ที่แล้ว ใช้ had",
+      "ถ้าเรื่องเกิดไปแล้วและพูดถึงการมี ใช้ had",
+      "ไม่ต้องเติม s",
+      "ไม่ต้องเปลี่ยนตามประธาน",
+      "จำไว้ว่า อดีตของ have และ has คือ had"
     ],
     teacherExamples: [
       "I had a map yesterday.",
-      "She had a crystal.",
-      "They had three keys.",
-      "We had a lesson last week."
+      "She had a key last night.",
+      "They had a mission last week.",
+      "We had little time."
     ],
     guidedPractice: [
       {
@@ -7869,12 +7948,24 @@ Object.assign(LESSON_SEGMENTS, {
     ],
     preBossDialogue: [
       "Lost Pouch Imp ขโมย Had Relic ไป",
+      "มันทำให้ have และ has หลงทางในอดีต",
       "ใช้ had ให้ถูก แล้วเอาของคืนมา"
     ],
     postBossDialogue: [
       "Had Relic กลับคืนมาแล้ว",
+      "ของในถุงเริ่มกลับไปหาเจ้าของแล้ว",
+      "ดีมาก ผู้พเนจร",
+      "ตอนนี้เจ้าผ่านพื้นฐานของอดีตแล้ว",
+      "เจ้ารู้จักคำบอกเวลาในอดีต",
+      "เจ้ารู้จัก was และ were",
+      "เจ้ารู้จัก there was และ there were",
+      "และเจ้ารู้ว่า have กับ has ในอดีตคือ had",
       "Phase 1: Entering the Past เสร็จสมบูรณ์",
-      "เส้นทางสู่ The Ed Forge กำลังเปิดออก"
+      "เจ้าพร้อมจะเปลี่ยนกริยาทั่วไปให้เป็นอดีตแล้ว",
+      "เส้นทางต่อไปไม่ใช่ทุ่งฝุ่นเวลาอีกแล้ว",
+      "เจ้าต้องเดินทางไปยังโรงหลอมแห่ง -ed",
+      "ที่นั่น Regular Verbs จะถูกหลอมให้กลายเป็นอดีต",
+      "จงเตรียมตัวให้พร้อม"
     ]
   }
 });
@@ -8197,7 +8288,10 @@ function startPostBossDialogue(stage, dialogueIndex = 0) {
     questions: [],
     isPostBossDialogue: true
   };
-  setActBackground(getNextAct1BackgroundKey(stage), { warnMissing: true });
+  const postBossBackgroundKey = shouldKeepCurrentBackgroundForPostBoss(stage)
+    ? getAct1BackgroundKeyForStage(stage)
+    : getNextAct1BackgroundKey(stage);
+  setActBackground(postBossBackgroundKey, { warnMissing: true });
   state.postBossDialogueStage = stage;
   state.currentLessonStage = postBossStage;
   const stageIndex = getStageIndexById(stage.id);
@@ -12178,6 +12272,18 @@ function continueFinalBossVictory(stage) {
   });
 }
 
+function continueToPostBossDialogue(stage) {
+  if (shouldKeepCurrentBackgroundForPostBoss(stage)) {
+    startPostBossDialogue(stage);
+    return;
+  }
+  transitionToActBackground(
+    getNextAct1BackgroundKey(stage),
+    `ได้รับ ${stage.reward.fragment}`,
+    () => startPostBossDialogue(stage)
+  );
+}
+
 function handleActEnemyDefeated(source = "damage") {
   const battle = state.actBattle;
   if (!battle || battle.victoryHandled) {
@@ -12229,11 +12335,7 @@ function handleActEnemyDefeated(source = "damage") {
   }
 
   finalizeBossVictoryWithResult(battle.stage, () => {
-    transitionToActBackground(
-      getNextAct1BackgroundKey(battle.stage),
-      `ได้รับ ${battle.stage.reward.fragment}`,
-      () => startPostBossDialogue(battle.stage)
-    );
+    continueToPostBossDialogue(battle.stage);
   });
   return true;
 }
@@ -12269,11 +12371,7 @@ function completeActStage() {
   }
 
   finalizeBossVictoryWithResult(stage, () => {
-    transitionToActBackground(
-      getNextAct1BackgroundKey(stage),
-      `ได้รับ ${stage.reward.fragment}`,
-      () => startPostBossDialogue(stage)
-    );
+    continueToPostBossDialogue(stage);
   });
 }
 
@@ -12335,10 +12433,22 @@ function showStageReward(stage) {
   }
   const rewardButtonLabel = stage.id === "ed-mini-boss"
     ? "ไปยัง Irregular Verbs"
+    : shouldTransitionToNextStageFromReward(stage)
+      ? "เดินทางสู่ The Ed Forge"
     : nextStage && nextStage.type === "final-boss"
       ? "ต่อสู้บอสปรากฏตัว"
       : "ด่านถัดไป";
-  setBattleButtonAction(rewardButtonLabel, () => showStageLesson(nextIndex));
+  setBattleButtonAction(rewardButtonLabel, () => {
+    if (nextStage && shouldTransitionToNextStageFromReward(stage)) {
+      transitionToActBackground(
+        getAct1BackgroundKeyForStage(nextStage),
+        "The Ed Forge กำลังเปิดออก...",
+        () => showStageLesson(nextIndex)
+      );
+      return;
+    }
+    showStageLesson(nextIndex);
+  });
   showScene("story");
 }
 
