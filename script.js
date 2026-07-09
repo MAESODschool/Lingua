@@ -2180,6 +2180,7 @@ const state = {
   lastGeneralQuestionBaseVerb: "",
   pointParry: null,
   timeDustTransitionComplete: false,
+  isReturningToMainMenu: false,
   nextDialogueHold: null,
   audioUnlocked: false,
   currentBgmKey: "",
@@ -13717,6 +13718,63 @@ function completeVictoryScene() {
   showScene("victory");
 }
 
+function saveCurrentLessonPositionBeforeMainMenu() {
+  if (!playerData) {
+    return;
+  }
+
+  const stage = state.currentLessonStage || getPlayableStages()[state.actStageIndex] || null;
+  if (!stage) {
+    return;
+  }
+
+  const lessonPhase = state.lessonStoryMode
+    ? (state.lessonStorySteps[state.lessonStoryStepIndex]?.phase || "teacherExplanation")
+    : "teacherExplanation";
+
+  saveProgress({
+    currentStageId: stage.id,
+    currentLessonId: stage.id,
+    currentScreen: "lesson",
+    lastSafeScreen: "lesson",
+    lessonPhase,
+    currentDialogueIndex: Math.max(0, Number(state.lessonStoryStepIndex) || 0),
+    currentLessonStepIndex: Math.max(0, Number(state.lessonStepIndex) || 0)
+  });
+}
+
+function returnToPlayerMainMenuFromLesson(event = null) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  if (state.isReturningToMainMenu) {
+    return;
+  }
+
+  state.isReturningToMainMenu = true;
+
+  try {
+    if (isGameModalOpen()) {
+      closeGameModal();
+    }
+    closeExplanationPanel();
+    stopTypewriter();
+    cancelNextDialogueHold();
+    hideDialogueChoices();
+    hideNamePrompt();
+    state.isTypingDialogue = false;
+    state.awaitingDialogueChoice = false;
+    saveCurrentLessonPositionBeforeMainMenu();
+    showMainMenu();
+  } finally {
+    setTimeout(() => {
+      state.isReturningToMainMenu = false;
+    }, 500);
+  }
+}
+
 function handleLessonBack() {
   if (isGameModalOpen()) {
     closeGameModal();
@@ -14124,7 +14182,7 @@ els.nextDialogueButton.addEventListener("pointerup", cancelNextDialogueHold);
 els.nextDialogueButton.addEventListener("pointerleave", cancelNextDialogueHold);
 els.nextDialogueButton.addEventListener("pointercancel", cancelNextDialogueHold);
 els.explanationCloseButton.addEventListener("click", closeExplanationPanel);
-els.lessonBackButton.addEventListener("click", handleLessonBack);
+els.lessonBackButton.addEventListener("click", returnToPlayerMainMenuFromLesson);
 els.lessonSelectButton.addEventListener("click", openLessonSelectModal);
 els.battleExitButton.addEventListener("click", confirmExitBattle);
 els.lessonDictionaryButton.addEventListener("click", () => {
