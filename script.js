@@ -1825,10 +1825,6 @@ function getNextAct1BackgroundKey(stage) {
   return getAct1BackgroundKeyForStage(nextStage || stage);
 }
 
-function shouldKeepCurrentBackgroundForPostBoss(stage) {
-  return stage?.id === "act1_phase1_unit5_had";
-}
-
 function shouldTransitionToNextStageFromReward(stage) {
   return stage?.id === "act1_phase1_unit5_had";
 }
@@ -2838,9 +2834,66 @@ function runSceneTransition(message, onCovered) {
       setTimeout(() => {
         els.sceneTransition.classList.add("hidden");
         state.isTransitioning = false;
-      }, 380);
-    }, 260);
-  }, 420);
+      }, 620);
+    }, 160);
+  }, 620);
+}
+
+function resetSceneTransitionOverlay() {
+  if (els.sceneTransition) {
+    els.sceneTransition.classList.remove("visible");
+    els.sceneTransition.classList.add("hidden");
+  }
+  state.isTransitioning = false;
+}
+
+function runLessonUnitTransition(message, { onCovered, onFinished } = {}) {
+  if (state.isTransitioning) {
+    return false;
+  }
+
+  state.isTransitioning = true;
+  setButtonEnabled(els.nextDialogueButton, false);
+  setButtonEnabled(els.battleButton, false);
+  setButtonEnabled(els.continueBattleButton, false);
+  if (els.transitionText) {
+    els.transitionText.textContent = message || "กำลังเดินทางสู่บทเรียนถัดไป...";
+  }
+  els.sceneTransition.classList.remove("hidden");
+
+  requestAnimationFrame(() => {
+    els.sceneTransition.classList.add("visible");
+  });
+
+  setTimeout(() => {
+    try {
+      if (typeof onCovered === "function") {
+        onCovered();
+      }
+    } catch (error) {
+      console.error("[LessonTransition] Failed while scene was covered", error);
+      resetSceneTransitionOverlay();
+      return;
+    }
+
+    setTimeout(() => {
+      els.sceneTransition.classList.remove("visible");
+
+      setTimeout(() => {
+        resetSceneTransitionOverlay();
+        try {
+          if (typeof onFinished === "function") {
+            onFinished();
+          }
+        } catch (error) {
+          console.error("[LessonTransition] Failed after fade in", error);
+          resetSceneTransitionOverlay();
+        }
+      }, 620);
+    }, 160);
+  }, 620);
+
+  return true;
 }
 
 function closeGameModal() {
@@ -8288,10 +8341,7 @@ function startPostBossDialogue(stage, dialogueIndex = 0) {
     questions: [],
     isPostBossDialogue: true
   };
-  const postBossBackgroundKey = shouldKeepCurrentBackgroundForPostBoss(stage)
-    ? getAct1BackgroundKeyForStage(stage)
-    : getNextAct1BackgroundKey(stage);
-  setActBackground(postBossBackgroundKey, { warnMissing: true });
+  setActBackground(getAct1BackgroundKeyForStage(stage), { warnMissing: true });
   state.postBossDialogueStage = stage;
   state.currentLessonStage = postBossStage;
   const stageIndex = getStageIndexById(stage.id);
@@ -12273,15 +12323,7 @@ function continueFinalBossVictory(stage) {
 }
 
 function continueToPostBossDialogue(stage) {
-  if (shouldKeepCurrentBackgroundForPostBoss(stage)) {
-    startPostBossDialogue(stage);
-    return;
-  }
-  transitionToActBackground(
-    getNextAct1BackgroundKey(stage),
-    `ได้รับ ${stage.reward.fragment}`,
-    () => startPostBossDialogue(stage)
-  );
+  startPostBossDialogue(stage);
 }
 
 function handleActEnemyDefeated(source = "damage") {
@@ -12393,6 +12435,29 @@ function restoreLessonUIAfterBattle() {
   els.nextDialogueButton.disabled = false;
 }
 
+function transitionToNextStageLesson(stage, nextStage, nextIndex) {
+  if (!nextStage) {
+    showStageLesson(nextIndex);
+    return false;
+  }
+
+  const nextBackgroundKey = getAct1BackgroundKeyForStage(nextStage);
+  const message = stage?.id === "act1_phase1_unit5_had"
+    ? "The Ed Forge กำลังเปิดออก..."
+    : nextStage?.id === "irregular-lesson"
+      ? "Irregular Cave กำลังปรากฏ..."
+      : "ความทรงจำกำลังเปลี่ยนรูป...";
+
+  return runLessonUnitTransition(message, {
+    onCovered: () => {
+      setActBackground(nextBackgroundKey, { warnMissing: true });
+    },
+    onFinished: () => {
+      showStageLesson(nextIndex, { lessonStepIndex: 0, dialogueIndex: 0 });
+    }
+  });
+}
+
 function showStageReward(stage) {
   if (isFinalBossStage(stage)) {
     console.warn("[FinalBoss] showStageReward called for final boss; redirecting to post boss dialogue");
@@ -12439,12 +12504,8 @@ function showStageReward(stage) {
       ? "ต่อสู้บอสปรากฏตัว"
       : "ด่านถัดไป";
   setBattleButtonAction(rewardButtonLabel, () => {
-    if (nextStage && shouldTransitionToNextStageFromReward(stage)) {
-      transitionToActBackground(
-        getAct1BackgroundKeyForStage(nextStage),
-        "The Ed Forge กำลังเปิดออก...",
-        () => showStageLesson(nextIndex)
-      );
+    if (nextStage) {
+      transitionToNextStageLesson(stage, nextStage, nextIndex);
       return;
     }
     showStageLesson(nextIndex);

@@ -321,7 +321,7 @@ button {
 .scene-transition {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 9999;
   display: grid;
   place-items: center;
   gap: 14px;
@@ -329,11 +329,11 @@ button {
   color: white;
   text-align: center;
   background:
-    radial-gradient(circle at 50% 46%, rgba(115, 246, 255, 0.24), transparent 22%),
-    linear-gradient(180deg, rgba(8, 7, 28, 0.94), rgba(26, 20, 70, 0.96));
+    radial-gradient(circle at 50% 46%, rgba(115, 246, 255, 0.2), transparent 24%),
+    linear-gradient(180deg, rgba(5, 3, 20, 0.94), rgba(12, 7, 38, 0.96));
   opacity: 0;
   pointer-events: none;
-  transition: opacity 360ms ease;
+  transition: opacity 600ms ease;
 }
 
 .scene-transition.visible {
