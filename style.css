@@ -943,6 +943,65 @@ button {
   text-align: right;
 }
 
+.account-character-section {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 219, 134, 0.18);
+}
+
+.account-character-section h3 {
+  margin: 0;
+  color: #fff8df;
+  font-size: 1rem;
+}
+
+.account-character-preview {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(113, 221, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(8, 12, 33, 0.38);
+}
+
+.account-character-preview .account-character-image {
+  width: min(128px, 42vw);
+  max-height: 168px;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.account-character-preview strong {
+  color: #fff8df;
+}
+
+.account-character-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.account-character-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(255, 219, 134, 0.18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff8df;
+  font-weight: 900;
+}
+
+.account-character-option span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 860px) {
   .main-menu-grid,
   .player-profile-card,
@@ -1152,7 +1211,7 @@ button {
   width: 86px;
   height: 118px;
   border-radius: 0;
-  background: transparent url("assets/male.png") center bottom / contain no-repeat;
+  background: transparent url("assets/characters/male_wanderer_idle.gif") center bottom / contain no-repeat;
   box-shadow: none;
   filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.34));
 }
@@ -2430,7 +2489,7 @@ h3 {
 
 .wanderer-avatar {
   border-radius: 0;
-  background: transparent url("assets/male.png") center bottom / contain no-repeat;
+  background: transparent url("assets/characters/male_wanderer_idle.gif") center bottom / contain no-repeat;
   box-shadow: none;
   filter: drop-shadow(0 0 18px rgba(115, 246, 255, 0.35));
 }

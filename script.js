@@ -1711,10 +1711,24 @@ function assetPath(fileName) {
   return `${ASSET_BASE_URL}${fileName.replace(/^\/+/, "")}`;
 }
 
-const MAIN_CHARACTER_IMAGE_PATH = "assets/characters/main-character-idle-transparent-clean-optimized.webp";
-const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("male.png");
+const MAIN_CHARACTER_IMAGE_PATH = "assets/characters/male_wanderer_idle.gif";
+const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = "assets/characters/main-character-idle-transparent-clean-optimized.webp";
 const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-v2-transparent.webp";
 const TEACHER_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("master-verion.png");
+const PLAYER_CHARACTERS = {
+  male_wanderer: {
+    id: "male_wanderer",
+    label: "ผู้พเนจรชาย",
+    asset: MAIN_CHARACTER_IMAGE_PATH,
+    fallbackAsset: MAIN_CHARACTER_FALLBACK_IMAGE_PATH
+  },
+  female_wanderer: {
+    id: "female_wanderer",
+    label: "ผู้พเนจรหญิง",
+    asset: "assets/characters/female_wanderer_idle.gif",
+    fallbackAsset: MAIN_CHARACTER_IMAGE_PATH
+  }
+};
 const GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-animated.gif";
 const ACT1_BACKGROUND_MAP = {
   timeDustFields: "assets/backgrounds/act1/act1_time_dust_fields.png",
@@ -1760,36 +1774,81 @@ const MEMORY_BREAKER_FALLBACK_IMAGE_PATH = assetPath("enemies/memory-breaker.png
 function createMainCharacterElement(className = "") {
   const img = document.createElement("img");
   img.className = `main-character-gif ${className}`.trim();
-  img.src = MAIN_CHARACTER_IMAGE_PATH;
   img.alt = "Main Character";
   img.draggable = false;
+  applyPlayerCharacterImage(img);
   return img;
 }
 
+function normalizePlayerCharacterId(characterId) {
+  return PLAYER_CHARACTERS[characterId] ? characterId : "male_wanderer";
+}
+
+function getCharacterIdFromAvatar(avatar = {}) {
+  if (avatar.characterId) {
+    return normalizePlayerCharacterId(avatar.characterId);
+  }
+  return avatar.gender === "female" ? "female_wanderer" : "male_wanderer";
+}
+
+function getCharacterIdFromGender(gender) {
+  return gender === "female" ? "female_wanderer" : "male_wanderer";
+}
+
+function ensurePlayerCharacterData(data = playerData) {
+  if (!data) {
+    return "male_wanderer";
+  }
+  const characterId = normalizePlayerCharacterId(data.characterId || getCharacterIdFromAvatar(data.avatar));
+  data.characterId = characterId;
+  data.avatar = {
+    ...(data.avatar || {}),
+    characterId
+  };
+  return characterId;
+}
+
+function getPlayerCharacter(characterId = ensurePlayerCharacterData()) {
+  return PLAYER_CHARACTERS[normalizePlayerCharacterId(characterId)] || PLAYER_CHARACTERS.male_wanderer;
+}
+
+function applyPlayerCharacterImage(img, characterId = ensurePlayerCharacterData()) {
+  if (!img) {
+    return;
+  }
+  const character = getPlayerCharacter(characterId);
+  img.className = img.className.replace(/\bmain-character-gif-fallback\b/g, "main-character-gif").trim();
+  img.dataset.characterId = character.id;
+  img.dataset.fallbackApplied = "false";
+  img.src = character.asset;
+  img.alt = character.label;
+  img.draggable = false;
+  img.onerror = () => handleMainCharacterGifError(img);
+}
+
 function handleMainCharacterGifError(img) {
-  console.warn("[Character] main-character-idle-transparent-clean-optimized.webp failed to load");
+  const failedCharacterId = normalizePlayerCharacterId(img?.dataset?.characterId);
+  console.warn("[Character] player character asset failed to load", failedCharacterId);
+  if (failedCharacterId !== "male_wanderer") {
+    applyPlayerCharacterImage(img, "male_wanderer");
+    return;
+  }
   if (img.dataset.fallbackApplied === "true") {
     return;
   }
 
   img.dataset.fallbackApplied = "true";
-  const fallback = document.createElement("img");
-  if (img.id) {
-    fallback.id = img.id;
-  }
-  fallback.className = img.className.replace(/\bmain-character-gif\b/g, "main-character-gif-fallback").trim();
-  fallback.src = MAIN_CHARACTER_FALLBACK_IMAGE_PATH;
-  fallback.alt = img.alt || "Main Character";
-  fallback.draggable = false;
-  fallback.setAttribute("aria-hidden", img.getAttribute("aria-hidden") || "false");
-  img.replaceWith(fallback);
+  img.className = img.className.replace(/\bmain-character-gif\b/g, "main-character-gif-fallback").trim();
+  img.src = MAIN_CHARACTER_FALLBACK_IMAGE_PATH;
 }
 
 function setupMainCharacterGifs() {
-  document.querySelectorAll(".main-character-gif").forEach(img => {
-    img.src = MAIN_CHARACTER_IMAGE_PATH;
-    img.draggable = false;
-    img.addEventListener("error", () => handleMainCharacterGifError(img), { once: true });
+  refreshPlayerCharacterSprites();
+}
+
+function refreshPlayerCharacterSprites(characterId = ensurePlayerCharacterData()) {
+  document.querySelectorAll(".main-character-gif, .main-character-gif-fallback").forEach(img => {
+    applyPlayerCharacterImage(img, characterId);
   });
 }
 
@@ -2461,6 +2520,9 @@ function showScene(name) {
     stopDialogueTypeSfx();
   }
   Object.values(scenes).forEach(scene => scene.classList.remove("active"));
+  if (["story", "battle", "mainMenu"].includes(name)) {
+    refreshPlayerCharacterSprites();
+  }
   scenes[name].classList.add("active");
   applyDebugButtonVisibility();
   playBgmForScene(name);
@@ -4455,11 +4517,13 @@ function getPlayerDocRef(uid) {
 }
 
 function createFirestorePlayerDoc(sessionUser, progress) {
+  ensurePlayerCharacterData(progress);
   return {
     uid: sessionUser.uid,
     username: sessionUser.username,
     displayName: sessionUser.displayName,
     mode: "registered",
+    characterId: progress.characterId,
     hasSeenPrologue: Boolean(progress.hasSeenPrologue),
     progress: sanitizeForFirestore(progress),
     settings: {
@@ -4481,6 +4545,7 @@ function createRemotePlayerData(sessionUser, savedProgress = null) {
   merged.displayName = merged.displayName || sessionUser.displayName;
   merged.mode = "registered";
   merged.isGuest = false;
+  ensurePlayerCharacterData(merged);
   return merged;
 }
 
@@ -4885,6 +4950,7 @@ const progressService = {
         username: nextProgress.username,
         displayName: nextProgress.displayName,
         mode: "registered",
+        characterId: nextProgress.characterId,
         hasSeenPrologue: Boolean(nextProgress.hasSeenPrologue),
         progress: sanitizeForFirestore(nextProgress),
         settings: {
@@ -5230,6 +5296,7 @@ async function loadPlayerData(userId) {
 async function loadPlayerProfile(userId) {
   playerData = await loadPlayerData(userId);
   if (playerData) {
+    ensurePlayerCharacterData(playerData);
     state.currentUser = {
       userId: playerData.userId,
       uid: playerData.uid || playerData.userId,
@@ -5242,6 +5309,7 @@ async function loadPlayerProfile(userId) {
     };
     playerStorage.set(AUTH_STORAGE_KEYS.currentUser, JSON.stringify(state.currentUser));
     updateAuthUi();
+    refreshPlayerCharacterSprites();
   }
   return playerData;
 }
@@ -5261,11 +5329,13 @@ function createDefaultPlayerData(user) {
     hasSeenPrologue: false,
     mode: user.mode || (user.isGuest ? "guest" : "registered"),
     isGuest: Boolean(user.isGuest),
+    characterId: "male_wanderer",
     characterName: "",
     className: "",
     room: "",
     keyStage: user.keyStage || "",
     avatar: {
+      characterId: "male_wanderer",
       gender: "other",
       bodyType: "normal",
       type: "wanderer",
@@ -5335,6 +5405,7 @@ function savePlayerData() {
     return false;
   }
 
+  ensurePlayerCharacterData(playerData);
   playerData.updatedAt = new Date().toISOString();
   return progressService.saveProgress(playerData.userId, playerData).catch(error => {
     console.warn("[Progress] Failed to save player data", error);
@@ -5399,6 +5470,8 @@ async function createCharacterFromForm() {
   const avatarChoice = document.querySelector("input[name=\"avatarType\"]:checked");
   const genderChoice = document.querySelector("input[name=\"avatarGender\"]:checked");
   const bodyTypeChoice = document.querySelector("input[name=\"avatarBodyType\"]:checked");
+  const selectedGender = genderChoice ? genderChoice.value : "other";
+  const characterId = getCharacterIdFromGender(selectedGender);
 
   if (!room) {
     els.createStatus.textContent = "กรุณากรอกห้องเรียน";
@@ -5406,6 +5479,7 @@ async function createCharacterFromForm() {
   }
 
   playerData = createDefaultPlayerData(user);
+  playerData.characterId = characterId;
   playerData.characterName = "";
   playerData.className = className;
   playerData.keyStage = keyStage;
@@ -5417,7 +5491,8 @@ async function createCharacterFromForm() {
     room
   };
   playerData.avatar = {
-    gender: genderChoice ? genderChoice.value : "other",
+    characterId,
+    gender: selectedGender,
     bodyType: bodyTypeChoice ? bodyTypeChoice.value : "normal",
     type: avatarChoice ? avatarChoice.value : "wanderer",
     outfit: "default",
@@ -5425,6 +5500,7 @@ async function createCharacterFromForm() {
   };
 
   await savePlayerProfile();
+  refreshPlayerCharacterSprites(characterId);
   els.createStatus.textContent = "บันทึกข้อมูลแล้ว";
   runSceneTransition("บันทึกข้อมูลแล้ว กำลังเปิดเมนูผู้เล่น...", showMainMenu);
 }
@@ -5441,11 +5517,14 @@ function updateAvatarPreview() {
 
   const gender = getCheckedRadioValue("avatarGender", "other");
   const bodyType = getCheckedRadioValue("avatarBodyType", "normal");
+  const characterId = getCharacterIdFromGender(gender);
+  const character = getPlayerCharacter(characterId);
   const genderLabels = { male: "ชาย", female: "หญิง", other: "ไม่ระบุ" };
   const bodyLabels = { small: "ตัวเล็ก", normal: "ปกติ", tall: "สูง" };
 
   els.avatarPreview.className = `avatar-preview main-character-gif main-character-preview-gif avatar-gender-${gender} avatar-body-${bodyType}`;
-  els.avatarPreviewText.textContent = `ตัวอย่าง: ${genderLabels[gender] || genderLabels.other} / ${bodyLabels[bodyType] || bodyLabels.normal}`;
+  applyPlayerCharacterImage(els.avatarPreview, characterId);
+  els.avatarPreviewText.textContent = `ตัวอย่าง: ${character.label} / ${genderLabels[gender] || genderLabels.other} / ${bodyLabels[bodyType] || bodyLabels.normal}`;
 }
 
 function bindAvatarPreviewInputs() {
@@ -5636,6 +5715,12 @@ function finishTypewriter() {
   state.isTypingDialogue = false;
 
   const line = state.activeDialogue[state.dialogueIndex];
+  if (line && line.optionalMasterQuestionId) {
+    showOptionalMasterQuestionChoices(line.optionalMasterQuestionId);
+    setDialogueButtonReady(false);
+    return;
+  }
+
   if (line && line.lessonChoices) {
     showLessonStoryChoices(line.lessonChoices);
     setDialogueButtonReady(false);
@@ -6786,12 +6871,15 @@ function buildMainMenuViewModel() {
   const accountType = user?.isGuest || playerData?.isGuest ? "Guest" : "Registered";
   const progressPercent = calculateMainMenuActProgress(progress);
   const hasSave = hasMeaningfulSavedProgress(progress);
+  const character = getPlayerCharacter(ensurePlayerCharacterData());
 
   return {
     playerName,
     accountType,
     title: playerData?.level && playerData.level > 1 ? `Level ${playerData.level} Wordmage` : "Novice Wordmage",
-    avatarSrc: MAIN_CHARACTER_IMAGE_PATH,
+    avatarSrc: character.asset,
+    characterId: character.id,
+    characterLabel: character.label,
     currentActLabel: "Act 1: Past Fragment",
     currentLessonLabel: labels.lesson,
     currentAreaLabel: labels.area,
@@ -6838,8 +6926,7 @@ function renderMainMenu() {
     }, { once: true });
   }
   if (els.mainMenuAvatar) {
-    els.mainMenuAvatar.src = view.avatarSrc;
-    els.mainMenuAvatar.addEventListener("error", () => handleMainCharacterGifError(els.mainMenuAvatar), { once: true });
+    applyPlayerCharacterImage(els.mainMenuAvatar, view.characterId);
   }
   els.mainMenuPlayerName.textContent = view.playerName;
   els.mainMenuPlayerTitle.textContent = view.title;
@@ -6894,6 +6981,77 @@ function openMainMenuAssessmentResult() {
   });
 }
 
+function createAccountCharacterSection() {
+  const currentCharacterId = ensurePlayerCharacterData();
+  const currentCharacter = getPlayerCharacter(currentCharacterId);
+  const section = document.createElement("section");
+  section.className = "account-character-section";
+  section.innerHTML = `
+    <h3>ตัวละครของฉัน</h3>
+    <div class="account-character-preview">
+      <img class="main-character-gif account-character-image" src="${currentCharacter.asset}" alt="${currentCharacter.label}" draggable="false">
+      <strong id="accountCharacterCurrentLabel">${currentCharacter.label}</strong>
+    </div>
+    <div class="account-character-options" role="radiogroup" aria-label="เลือกตัวละคร">
+      ${Object.values(PLAYER_CHARACTERS).map(character => `
+        <label class="account-character-option">
+          <input type="radio" name="accountCharacterId" value="${character.id}" ${character.id === currentCharacterId ? "checked" : ""}>
+          <span>${character.label}</span>
+        </label>
+      `).join("")}
+    </div>
+    <button id="saveAccountCharacterButton" class="primary-button" type="button">บันทึกตัวละคร</button>
+    <p id="accountCharacterStatus" class="form-status">เลือกตัวละครที่ต้องการใช้ในเมนูและฉากต่อสู้</p>
+  `;
+  const preview = section.querySelector(".account-character-image");
+  const currentLabel = section.querySelector("#accountCharacterCurrentLabel");
+  const status = section.querySelector("#accountCharacterStatus");
+  const saveButton = section.querySelector("#saveAccountCharacterButton");
+  const updatePreview = characterId => {
+    const character = getPlayerCharacter(characterId);
+    applyPlayerCharacterImage(preview, character.id);
+    currentLabel.textContent = character.label;
+  };
+  section.querySelectorAll("input[name=\"accountCharacterId\"]").forEach(input => {
+    input.addEventListener("change", () => updatePreview(input.value));
+  });
+  saveButton.addEventListener("click", event => {
+    event.preventDefault();
+    if (!runButtonActionOnce(saveButton, async () => {
+      const selected = section.querySelector("input[name=\"accountCharacterId\"]:checked");
+      const characterId = normalizePlayerCharacterId(selected?.value);
+      if (!playerData) {
+        status.textContent = "ยังไม่พบข้อมูลผู้เล่น";
+        setButtonEnabled(saveButton, true);
+        delete saveButton.dataset.buttonLocked;
+        return;
+      }
+      playerData.characterId = characterId;
+      playerData.avatar = {
+        ...(playerData.avatar || {}),
+        characterId,
+        gender: characterId === "female_wanderer" ? "female" : "male"
+      };
+      try {
+        await savePlayerData();
+        refreshPlayerCharacterSprites(characterId);
+        renderMainMenu();
+        updatePreview(characterId);
+        status.textContent = "เปลี่ยนตัวละครสำเร็จ";
+      } catch (error) {
+        console.warn("[Character] Failed to save selected character", error);
+        status.textContent = "บันทึกตัวละครไม่สำเร็จ กรุณาลองใหม่";
+      }
+      delete saveButton.dataset.buttonLocked;
+      saveButton.classList.remove("is-locked");
+      setButtonEnabled(saveButton, true);
+    })) {
+      return;
+    }
+  });
+  return section;
+}
+
 function startLessonFromLessonMap(stage, stageIndex, { isReplay = false } = {}) {
   if (!stage || stageIndex < 0 || state.isTransitioning) {
     return;
@@ -6944,6 +7102,7 @@ function openAccountSettingsModal() {
     <div class="grammaria-breakdown-row"><span>Current Lesson / บทเรียนปัจจุบัน</span><strong>${view.currentLessonLabel}</strong></div>
     <div class="grammaria-breakdown-row"><span>Save Status / สถานะการบันทึก</span><strong>${view.saveStatus}</strong></div>
   `;
+  panel.appendChild(createAccountCharacterSection());
   openGameModal({
     title: "Account Settings / ตั้งค่าบัญชี",
     body: "ข้อมูลบัญชีและสถานะการบันทึก",
@@ -7244,6 +7403,327 @@ function guidedPracticeNode(prompt, choices, correctAnswer, feedback) {
   });
 }
 
+const OPTIONAL_MASTER_QUESTIONS = {
+  openingAct1: {
+    continueText: "ข้าเข้าใจแล้ว เดินทางต่อ",
+    questions: [
+      {
+        id: "past_fragment",
+        question: "Past Fragment คืออะไร?",
+        answer: [
+          "Past Fragment คือเศษพลังของอดีตที่หลุดออกจากแกนภาษา",
+          "มันเก็บเสียง ภาพ และความทรงจำของสิ่งที่เคยเกิดขึ้นไว้ภายใน",
+          "เมื่อเศษพลังนี้แตกสลาย อดีตก็เริ่มพร่าเลือน",
+          "สิ่งที่เคยเกิดขึ้น อาจถูกลืมราวกับไม่เคยมีอยู่"
+        ]
+      },
+      {
+        id: "language_repairs_past",
+        question: "ทำไมภาษาเกี่ยวกับการซ่อมอดีต?",
+        answer: [
+          "ใน Lingua ภาษาไม่ใช่เพียงคำพูด",
+          "ภาษาเป็นเวทมนตร์ที่จัดระเบียบความทรงจำ",
+          "ถ้าใช้กฎภาษาให้ถูกต้อง ความทรงจำจะกลับเข้าที่",
+          "แต่ถ้าใช้ผิด เงาแห่งอดีตจะบิดเบือนความจริง"
+        ]
+      }
+    ]
+  },
+  whatIsPast: {
+    continueText: "ข้าเข้าใจแล้ว เดินทางต่อ",
+    questions: [
+      {
+        id: "this_morning_past",
+        question: "เมื่อเช้านี้ถือว่าเป็นอดีตไหม?",
+        answer: [
+          "ถือว่าเป็นอดีตได้ ถ้าเหตุการณ์นั้นเกิดขึ้นแล้วก่อนตอนนี้",
+          "แม้ดวงอาทิตย์ของวันนี้ยังไม่ลับฟ้า แต่เหตุการณ์ที่ผ่านไปแล้วก็คือเงาของอดีต",
+          "เช่น I ate breakfast this morning.",
+          "this morning จึงเป็นคำใบ้อดีตได้ หากเรื่องนั้นเกิดขึ้นไปแล้ว"
+        ]
+      },
+      {
+        id: "past_not_far",
+        question: "อดีตต้องเป็นเรื่องเมื่อวานเท่านั้นหรือเปล่า?",
+        answer: [
+          "ไม่ใช่เลย ผู้พเนจร",
+          "yesterday เป็นเพียงประตูบานหนึ่งของอดีตเท่านั้น",
+          "อดีตอาจซ่อนอยู่ในคำว่า last week, five years ago, long ago หรือ once",
+          "จงมองหาคำที่บอกว่าเหตุการณ์นั้นผ่านไปแล้ว"
+        ]
+      }
+    ]
+  },
+  pastTimeWords: {
+    continueText: "ข้าเข้าใจแล้ว เริ่มต่อสู้",
+    questions: [
+      {
+        id: "last_ago",
+        question: "last กับ ago ต่างกันยังไง?",
+        answer: [
+          "last ใช้ชี้ไปยังช่วงเวลาก่อนหน้านี้",
+          "เช่น last night, last week และ last year",
+          "แต่ ago ใช้นับย้อนกลับจากตอนนี้",
+          "เช่น two days ago หรือ five years ago"
+        ]
+      },
+      {
+        id: "every_day",
+        question: "every day เป็นคำบอกอดีตไหม?",
+        answer: [
+          "every day ไม่ใช่คำบอกอดีตเฉพาะครั้ง",
+          "มันบอกกิจวัตร หรือสิ่งที่เกิดขึ้นเป็นประจำ",
+          "ถ้าจะพูดถึงอดีต ต้องมีคำใบ้ที่ชัดกว่า เช่น yesterday หรือ last Monday",
+          "อย่าให้คำที่ดูคุ้นตาหลอกเจ้าออกจากเส้นทางเวลา"
+        ]
+      }
+    ]
+  },
+  wasWere: {
+    continueText: "ข้าเข้าใจแล้ว เริ่มต่อสู้",
+    questions: [
+      {
+        id: "verb_vs_to_be",
+        question: "Verb ทั่วไปต่างจาก Verb to be ยังไง?",
+        answer: [
+          "Verb ทั่วไปคือกริยาที่บอกการกระทำ",
+          "เช่น go, eat, play และ walk",
+          "แต่ Verb to be บอกสถานะ ตัวตน ความรู้สึก หรือสถานที่",
+          "มันเหมือนแสงที่บอกว่าใครเป็นอะไร หรืออยู่ที่ใดในความทรงจำ"
+        ]
+      },
+      {
+        id: "was_play_wrong",
+        question: "ทำไม I was play ถึงผิด?",
+        answer: [
+          "I was play ผิด เพราะ play เป็นกริยาทั่วไป",
+          "was ใช้กับ Verb to be ไม่ได้ใช้วางหน้ากริยาทั่วไปแบบนี้",
+          "ถ้าจะเล่าอดีตของการเล่น ต้องเปลี่ยน play เป็น played",
+          "จึงควรพูดว่า I played football yesterday."
+        ]
+      }
+    ]
+  },
+  thereWasWere: {
+    continueText: "ข้าเข้าใจแล้ว เริ่มต่อสู้",
+    questions: [
+      {
+        id: "there_vs_was",
+        question: "there was ต่างจาก was เฉย ๆ ยังไง?",
+        answer: [
+          "was และ were ธรรมดาใช้กับประธานโดยตรง",
+          "เช่น He was tired หรือ They were happy",
+          "แต่ there was และ there were ใช้บอกว่า เคยมีบางสิ่งอยู่",
+          "มันคือเวทที่เปิดเผยสิ่งที่เคยอยู่ในฉากความทรงจำ"
+        ]
+      },
+      {
+        id: "there_count",
+        question: "ดูตรงไหนว่าต้องใช้ there was หรือ there were?",
+        answer: [
+          "ให้ดูคำนามที่อยู่ข้างหลัง",
+          "ถ้ามีสิ่งเดียว ใช้ there was",
+          "ถ้ามีหลายสิ่ง ใช้ there were",
+          "เช่น There was a book แต่ There were three books."
+        ]
+      }
+    ]
+  },
+  hadPast: {
+    continueText: "ข้าเข้าใจแล้ว เริ่มต่อสู้",
+    questions: [
+      {
+        id: "he_she_had",
+        question: "ทำไม he กับ she ก็ใช้ had?",
+        answer: [
+          "เพราะในอดีต have และ has จะรวมเป็นรูปเดียวกัน",
+          "รูปนั้นคือ had",
+          "ดังนั้น he, she และ it ก็ใช้ had ได้",
+          "เช่น She had a key yesterday."
+        ]
+      },
+      {
+        id: "had_all_subjects",
+        question: "had ใช้กับทุกประธานเลยไหม?",
+        answer: [
+          "ใช่แล้ว ในอดีต had ใช้ได้กับทุกประธาน",
+          "I had, you had, we had, they had",
+          "He had, she had, it had",
+          "had คือร่องรอยของสิ่งที่เคยมีอยู่ในอดีต"
+        ]
+      }
+    ]
+  },
+  phase1Ending: {
+    continueText: "ข้าเข้าใจแล้ว เดินทางต่อ",
+    questions: [
+      {
+        id: "next_lesson",
+        question: "ต่อไปเราจะเรียนอะไร?",
+        answer: [
+          "ต่อไป เจ้าจะเรียนวิธีเปลี่ยนกริยาทั่วไปให้เป็นอดีต",
+          "เจ้ารู้แล้วว่าอดีตคืออะไร",
+          "บัดนี้ เจ้าต้องเรียนรู้วิธีเขียนการกระทำในอดีต",
+          "เส้นทางนั้นจะพาเราไปยัง The Ed Forge"
+        ]
+      },
+      {
+        id: "regular_meaning",
+        question: "Regular Verb คืออะไร?",
+        answer: [
+          "Regular Verb คือกริยาที่เปลี่ยนรูปตามกฎ",
+          "มันไม่ดื้อรั้นเหมือนกริยาไร้กฎ",
+          "ส่วนมาก เมื่อเข้าสู่อดีต มันจะรับตรา -ed",
+          "แต่ตรานั้นมีหลายกฎ และเจ้าต้องหลอมมันให้ถูกต้อง"
+        ]
+      }
+    ]
+  },
+  regularEd: {
+    continueText: "ข้าเข้าใจแล้ว เริ่มต่อสู้",
+    questions: [
+      {
+        id: "regular_meaning",
+        question: "Regular Verb คืออะไร?",
+        answer: [
+          "Regular Verb คือกริยาที่ตามกฎ",
+          "เมื่อเล่าอดีต มักเติม -ed",
+          "เช่น walk กลายเป็น walked"
+        ]
+      },
+      {
+        id: "ed_mark",
+        question: "-ed บอกอะไร?",
+        answer: [
+          "-ed เป็นตราแห่งอดีตของคำทั่วไป",
+          "มันบอกว่าเหตุการณ์เกิดขึ้นแล้ว",
+          "เช่น I watched the moon."
+        ]
+      }
+    ]
+  },
+  endingEAddD: {
+    continueText: "ข้าเข้าใจแล้ว เรียนต่อ",
+    questions: [
+      {
+        id: "why_only_d",
+        question: "ทำไม like ไม่เป็น likeed?",
+        answer: [
+          "เพราะ like มีตัว e อยู่ท้ายคำแล้ว",
+          "ถ้าเติม -ed ทั้งหมด จะกลายเป็น likeed ซึ่งผิด",
+          "คำนี้ต้องรับเพียงตัว d เพิ่มเข้าไป",
+          "like จึงกลายเป็น liked"
+        ]
+      },
+      {
+        id: "spot_ending_e",
+        question: "ถ้าคำลงท้ายด้วย e ต้องทำยังไง?",
+        answer: [
+          "ถ้ากริยาลงท้ายด้วย e ให้เติมเพียง -d",
+          "อย่าให้เปลวไฟของโรงหลอมเติม e ซ้ำจนคำเสียรูป",
+          "love จึงเป็น loved",
+          "dance จึงเป็น danced"
+        ]
+      }
+    ]
+  },
+  yRule: {
+    continueText: "ข้าเข้าใจแล้ว เริ่มต่อสู้",
+    questions: [
+      {
+        id: "y_always_change",
+        question: "ทำไม study เป็น studied แต่ play เป็น played?",
+        answer: [
+          "study มีพยัญชนะอยู่หน้า y",
+          "เมื่อเข้าสู่อดีต y จึงเปลี่ยนเป็น i แล้วเติม -ed",
+          "study จึงกลายเป็น studied",
+          "แต่ play มีสระอยู่หน้า y จึงเติม -ed ได้เลย เป็น played"
+        ]
+      },
+      {
+        id: "y_to_i",
+        question: "ต้องเปลี่ยน y เป็น i ทุกครั้งไหม?",
+        answer: [
+          "ไม่ต้องเปลี่ยนทุกครั้ง",
+          "กฎนี้ขึ้นอยู่กับตัวอักษรก่อน y",
+          "ถ้าหน้า y เป็นพยัญชนะ ให้เปลี่ยน y เป็น i แล้วเติม -ed",
+          "ถ้าหน้า y เป็นสระ ให้เติม -ed ได้เลย"
+        ]
+      }
+    ]
+  },
+  doubleConsonant: {
+    continueText: "ข้าเข้าใจแล้ว เริ่มต่อสู้",
+    questions: [
+      {
+        id: "why_double",
+        question: "ทำไม stop เป็น stopped?",
+        answer: [
+          "stop เป็นคำสั้นที่จบด้วยพยัญชนะเสียงหนัก",
+          "ก่อนรับตรา -ed มันต้องเพิ่มพยัญชนะท้ายอีกหนึ่งตัว",
+          "stop จึงกลายเป็น stopped",
+          "เหมือนการตอกตราให้แน่นบนประตูแห่งอดีต"
+        ]
+      },
+      {
+        id: "not_every_word",
+        question: "ทำไม open ไม่เป็น openned?",
+        answer: [
+          "open ไม่ใช้กฎเพิ่มพยัญชนะท้ายแบบนั้น",
+          "มันจึงเติม -ed ได้ตามปกติ",
+          "open กลายเป็น opened",
+          "ไม่ใช่ openned อย่าให้คำหลอกให้เจ้าตอกตัวอักษรเกินจำเป็น"
+        ]
+      }
+    ]
+  },
+  beforeEdForger: {
+    continueText: "ข้าเข้าใจแล้ว เริ่มต่อสู้",
+    questions: [
+      {
+        id: "forger_test",
+        question: "บอสนี้จะทดสอบอะไร?",
+        answer: [
+          "The Ed Forger จะทดสอบกฎของ Regular Verb ทั้งหมด",
+          "มันจะโยนคำที่ถูกหลอมผิดออกมาเพื่อทำให้เจ้าสับสน",
+          "เจ้าต้องพิสูจน์ว่าเข้าใจกฎ ไม่ใช่แค่จำคำตอบ",
+          "นี่คือประตูสุดท้ายของโรงหลอม -ed"
+        ]
+      },
+      {
+        id: "before_boss_tip",
+        question: "ฉันควรดูอะไรก่อนตอบ?",
+        answer: [
+          "ก่อนตอบ ให้มองท้ายคำก่อนเสมอ",
+          "ดูว่าคำลงท้ายด้วย e หรือไม่",
+          "ดูว่าคำลงท้ายด้วย y หรือไม่ และหน้า y เป็นสระหรือพยัญชนะ",
+          "จากนั้นค่อยดูว่าต้องเพิ่มพยัญชนะท้ายหรือไม่"
+        ]
+      }
+    ]
+  }
+};
+
+function isOptionalMasterQuestionMarker(entry) {
+  return Boolean(entry && typeof entry === "object" && entry.optionalMasterQuestionId);
+}
+
+function createOptionalMasterQuestionNode(menuId, phase = "teacherExplanation") {
+  return createSegmentNode("ถามมาสเตอร์เวรีออน", phase, "ผู้พเนจร", {
+    optionalMasterQuestionId: menuId
+  });
+}
+
+function appendLessonSegmentLines(steps, lines, phase, speaker = "มาสเตอร์เวรีออน") {
+  (lines || []).forEach(entry => {
+    if (isOptionalMasterQuestionMarker(entry)) {
+      steps.push(createOptionalMasterQuestionNode(entry.optionalMasterQuestionId, phase));
+      return;
+    }
+    steps.push(createSegmentNode(entry, phase, speaker));
+  });
+}
+
 const LESSON_SEGMENTS = {
   "what-is-past": {
     ruleId: "past_concept",
@@ -7433,6 +7913,7 @@ const LESSON_SEGMENTS = {
     preBossDialogue: [
       "เจ้ามองเห็น e ที่ปลายคำได้แล้ว",
       "Echo Tick จะหลอกให้เจ้าเติม e ซ้ำ",
+      { optionalMasterQuestionId: "endingEAddD" },
       "จงดูท้ายคำก่อน แล้วเติมเพียง -d ให้ถูกต้อง"
     ],
     postBossDialogue: [
@@ -7485,6 +7966,7 @@ const LESSON_SEGMENTS = {
     preBossDialogue: [
       "ตอนนี้เจ้ารู้ทั้งสองทางของตัว y แล้ว",
       "Yesterday Sprite จะสลับ play กับ study ให้เจ้าสับสน",
+      { optionalMasterQuestionId: "yRule" },
       "อย่าเดา ให้มองตัวก่อน y เสมอ"
     ],
     postBossDialogue: [
@@ -7536,6 +8018,7 @@ const LESSON_SEGMENTS = {
     preBossDialogue: [
       "เจ้าฝึกคำสั้นเพิ่มพยัญชนะท้ายแล้ว",
       "Rewind Slime จะย้อนคำให้ผิด ถ้าเจ้าสะกดไม่แม่น",
+      { optionalMasterQuestionId: "doubleConsonant" },
       "ดูคำให้ดี แล้วค่อยหลอมรูปอดีต"
     ],
     postBossDialogue: [
@@ -7591,6 +8074,7 @@ const LESSON_SEGMENTS = {
     preBossDialogue: [
       "The -ed Forger จะใช้คำใหม่จากกฎเดิมทั้งหมด",
       "ถ้าเจ้ารู้กฎจริง จงพิสูจน์ให้เขาเห็น",
+      { optionalMasterQuestionId: "beforeEdForger" },
       "จงเลือกกฎให้ตรงกับคำ แล้วหลอมอดีตให้ถูกต้อง"
     ],
     postBossDialogue: [
@@ -7765,6 +8249,7 @@ Object.assign(LESSON_SEGMENTS, {
       "ผู้เฝ้ามองแกนภาษาแห่ง Lingua",
       "เจ้าถูกเรียกมาที่นี่ เพราะ Past Fragment กำลังแตกสลาย",
       "เมื่ออดีตแตกสลาย ความทรงจำก็เริ่มผิดเพี้ยน",
+      { optionalMasterQuestionId: "openingAct1" },
       "ภารกิจของเจ้าคือฟื้นคืนอดีต",
       "ใน Lingua อดีตถูกซ่อมด้วยความเข้าใจเรื่องภาษา",
       "ทุกคำตอบที่ถูกต้อง จะทำให้ความทรงจำกลับเข้าที่",
@@ -7784,6 +8269,7 @@ Object.assign(LESSON_SEGMENTS, {
       "บางครั้ง เหตุการณ์ที่เกิดวันนี้ก็เป็นอดีตได้",
       "เช่น this morning หรือ earlier today",
       "ถ้ามันเกิดขึ้นแล้วก่อนตอนนี้ มันคืออดีต",
+      { optionalMasterQuestionId: "whatIsPast" },
       "ในเรื่องเล่า เราอาจเจอ long ago",
       "หรือคำว่า once ที่แปลว่า ครั้งหนึ่ง",
       "คำเหล่านี้จะพาเราเข้าไปในความทรงจำเก่า",
@@ -7888,6 +8374,7 @@ Object.assign(LESSON_SEGMENTS, {
     preBossDialogue: [
       "Yesterday Mite กำลังกัดกินคำบอกเวลา",
       "ถ้าคำบอกเวลาหายไป ความทรงจำจะลำดับผิด",
+      { optionalMasterQuestionId: "pastTimeWords" },
       "เลือกคำอดีตให้ถูก แล้วเส้นทางจะเปิด"
     ],
     postBossDialogue: [
@@ -7961,6 +8448,7 @@ Object.assign(LESSON_SEGMENTS, {
     preBossDialogue: [
       "Was-Were Wisp ลอยออกมาจากหมอกเวลา",
       "มันสลับ was กับ were เพื่อทำให้ประโยคเพี้ยน",
+      { optionalMasterQuestionId: "wasWere" },
       "จำคู่ประธานกับ was/were ให้ดี"
     ],
     postBossDialogue: [
@@ -8019,6 +8507,7 @@ Object.assign(LESSON_SEGMENTS, {
     preBossDialogue: [
       "Memory Lantern จุดไฟขึ้นกลางทาง",
       "แสงของมันแยกสิ่งเดียวกับหลายสิ่งออกจากกัน",
+      { optionalMasterQuestionId: "thereWasWere" },
       "มันจะถามว่าในอดีตมีสิ่งเดียวหรือหลายสิ่ง"
     ],
     postBossDialogue: [
@@ -8082,6 +8571,7 @@ Object.assign(LESSON_SEGMENTS, {
     preBossDialogue: [
       "Lost Pouch Imp ขโมย Had Relic ไป",
       "มันทำให้ have และ has หลงทางในอดีต",
+      { optionalMasterQuestionId: "hadPast" },
       "ใช้ had ให้ถูก แล้วเอาของคืนมา"
     ],
     postBossDialogue: [
@@ -8094,6 +8584,7 @@ Object.assign(LESSON_SEGMENTS, {
       "เจ้ารู้จัก there was และ there were",
       "และเจ้ารู้ว่า have กับ has ในอดีตคือ had",
       "Phase 1: Entering the Past เสร็จสมบูรณ์",
+      { optionalMasterQuestionId: "phase1Ending" },
       "เจ้าพร้อมจะเปลี่ยนกริยาทั่วไปให้เป็นอดีตแล้ว",
       "เส้นทางต่อไปไม่ใช่ทุ่งฝุ่นเวลาอีกแล้ว",
       "เจ้าต้องเดินทางไปยังโรงหลอมแห่ง -ed",
@@ -8130,18 +8621,14 @@ function buildLessonSegmentDialogue(stage) {
   }
 
   const steps = [];
-  (segment.teacherExplanation || []).forEach(text => {
-    steps.push(createSegmentNode(text, "teacherExplanation"));
-  });
+  appendLessonSegmentLines(steps, segment.teacherExplanation, "teacherExplanation");
   (segment.teacherExamples || []).forEach((text, index) => {
     steps.push(createSegmentNode(`ตัวอย่างที่ ${index + 1}: ${text}`, "teacherExamples"));
   });
   (segment.guidedPractice || []).forEach(practice => {
     steps.push(guidedPracticeNode(practice.prompt, practice.choices, practice.answer, practice.feedback));
   });
-  (segment.preBossDialogue || []).forEach(text => {
-    steps.push(createSegmentNode(text, "preBossDialogue"));
-  });
+  appendLessonSegmentLines(steps, segment.preBossDialogue, "preBossDialogue");
   if (stage.questions && stage.questions.length) {
     steps.push(createBattleIntroStep(stage));
   }
@@ -8153,7 +8640,9 @@ function buildPostBossDialogue(stage) {
   const lines = segment?.postBossDialogue?.length
     ? segment.postBossDialogue
     : [`${stage?.thaiEnemy || stage?.enemy || "บอส"} พ่ายแพ้แล้ว`, "บทเรียนส่วนนี้เสร็จสมบูรณ์แล้ว เราจะเดินหน้าต่อ"];
-  return lines.map(text => createSegmentNode(text, "postBossDialogue"));
+  const steps = [];
+  appendLessonSegmentLines(steps, lines, "postBossDialogue");
+  return steps;
 }
 
 function validateLessonSegments() {
@@ -8288,7 +8777,15 @@ function renderLessonStoryStep(options = {}) {
     return;
   }
 
-  if (state.currentLessonStage && !options.suppressProgressSave) {
+  if (step.optionalMasterReturn) {
+    const menuIndex = clamp(step.optionalMasterMenuIndex, 0, Math.max(state.lessonStorySteps.length - 1, 0));
+    removeOptionalMasterTempSteps(menuIndex);
+    state.lessonStoryStepIndex = menuIndex;
+    renderLessonStoryStep({ suppressProgressSave: true });
+    return;
+  }
+
+  if (state.currentLessonStage && !options.suppressProgressSave && !step.optionalMasterTemp) {
     saveProgress({
       currentStageId: state.currentLessonStage.id,
       currentLessonId: state.currentLessonStage.id,
@@ -8348,7 +8845,76 @@ function showLessonStoryChoices(choices) {
   els.dialogueChoices.classList.remove("hidden");
 }
 
+function showOptionalMasterQuestionChoices(menuId) {
+  const menu = OPTIONAL_MASTER_QUESTIONS[menuId];
+  if (!menu || !Array.isArray(menu.questions) || menu.questions.length < 2) {
+    setDialogueButtonReady(true);
+    updatePreviousDialogueButton();
+    return;
+  }
+
+  const choices = menu.questions.map(question => ({
+    text: question.question,
+    optionalMasterQuestionId: menuId,
+    optionalMasterQuestionItemId: question.id
+  }));
+  choices.push({
+    text: menu.continueText || "ข้าเข้าใจแล้ว ไปต่อ",
+    optionalMasterContinue: true,
+    optionalMasterQuestionId: menuId
+  });
+  showLessonStoryChoices(choices);
+}
+
+function removeOptionalMasterTempSteps(menuIndex) {
+  while (state.lessonStorySteps[menuIndex + 1]?.optionalMasterTemp) {
+    state.lessonStorySteps.splice(menuIndex + 1, 1);
+  }
+}
+
+function createOptionalMasterAnswerStep(text, menuIndex) {
+  return createSegmentNode(text, "optionalMasterAnswer", "มาสเตอร์เวรีออน", {
+    optionalMasterTemp: true,
+    optionalMasterMenuIndex: menuIndex
+  });
+}
+
+function handleOptionalMasterQuestionChoice(choice) {
+  const menuIndex = state.lessonStoryStepIndex;
+  removeOptionalMasterTempSteps(menuIndex);
+  state.awaitingDialogueChoice = false;
+
+  if (choice.optionalMasterContinue) {
+    advanceLessonStoryStep();
+    return;
+  }
+
+  const menu = OPTIONAL_MASTER_QUESTIONS[choice.optionalMasterQuestionId];
+  const question = menu?.questions?.find(item => item.id === choice.optionalMasterQuestionItemId);
+  const answerLines = Array.isArray(question?.answer) ? question.answer : [];
+  if (!answerLines.length) {
+    renderLessonStoryStep({ suppressProgressSave: true });
+    return;
+  }
+
+  const answerSteps = answerLines.map(line => createOptionalMasterAnswerStep(line, menuIndex));
+  answerSteps.push(createSegmentNode("", "optionalMasterReturn", "มาสเตอร์เวรีออน", {
+    optionalMasterTemp: true,
+    optionalMasterReturn: true,
+    optionalMasterMenuIndex: menuIndex
+  }));
+  state.lessonStorySteps.splice(menuIndex + 1, 0, ...answerSteps);
+  state.lessonStoryStepIndex = menuIndex + 1;
+  renderLessonStoryStep({ suppressProgressSave: true });
+}
+
 function chooseLessonStoryChoice(choice) {
+  if (choice.optionalMasterContinue || choice.optionalMasterQuestionId) {
+    hideDialogueChoices();
+    handleOptionalMasterQuestionChoice(choice);
+    return;
+  }
+
   hideDialogueChoices();
   state.lessonStorySteps.splice(state.lessonStoryStepIndex + 1, 0, {
     speaker: "มาสเตอร์เวรีออน",
@@ -8365,11 +8931,13 @@ function chooseLessonStoryChoice(choice) {
 
 function advanceLessonStoryStep() {
   state.lessonStoryStepIndex += 1;
-  saveProgress({
-    currentDialogueIndex: state.lessonStoryStepIndex,
-    currentScreen: "lesson",
-    lastSafeScreen: "lesson"
-  });
+  if (!state.lessonStorySteps[state.lessonStoryStepIndex]?.optionalMasterTemp) {
+    saveProgress({
+      currentDialogueIndex: state.lessonStoryStepIndex,
+      currentScreen: "lesson",
+      lastSafeScreen: "lesson"
+    });
+  }
   if (state.lessonStoryStepIndex >= state.lessonStorySteps.length) {
     finishPastDialogueLesson();
     return;
