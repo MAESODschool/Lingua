@@ -994,24 +994,24 @@ const finalBossQuestions = [
 
 const phase1PastMeaningQuestions = [
   { id: "phase1-past-meaning-1", prompt: "ข้อใดคืออดีต", options: ["สิ่งที่เกิดขึ้นแล้ว", "สิ่งที่กำลังจะเกิด", "สิ่งที่ยังไม่เริ่ม"], answer: "สิ่งที่เกิดขึ้นแล้ว", explanation: "อดีตคือสิ่งที่เกิดขึ้นแล้วและจบลงแล้ว" },
-  { id: "phase1-past-meaning-2", prompt: "คำว่า last year แปลว่าอะไร", options: ["ปีที่แล้ว", "ปีหน้า", "ปีนี้"], answer: "ปีที่แล้ว", explanation: "last year บอกเวลาที่ผ่านไปแล้ว" },
-  { id: "phase1-past-meaning-3", prompt: "ข้อใดเป็นเวลาอดีต", options: ["three days ago", "right now", "next month"], answer: "three days ago", explanation: "ago บอกเวลาที่ผ่านมาแล้ว" },
-  { id: "phase1-past-meaning-4", prompt: "เหตุการณ์ใดจบลงแล้ว", options: ["I visited the tower last summer.", "I am visiting now.", "I will visit tomorrow."], answer: "I visited the tower last summer.", explanation: "last summer บอกว่าเกิดขึ้นแล้ว" },
-  { id: "phase1-past-meaning-5", prompt: "คำว่า tomorrow บอกเวลาใด", options: ["อนาคต", "อดีต", "เมื่อวาน"], answer: "อนาคต", explanation: "tomorrow คือพรุ่งนี้ จึงเป็นอนาคต" },
-  { id: "phase1-past-meaning-6", prompt: "ถ้าเหตุการณ์เกิดเมื่อเช้าและจบแล้ว เรียกว่าอะไร", options: ["อดีต", "อนาคต", "ยังไม่เกิด"], answer: "อดีต", explanation: "เมื่อเหตุการณ์จบแล้ว ถือเป็นอดีต" },
-  { id: "phase1-past-meaning-7", prompt: "ข้อใดช่วยบอกอดีต", options: ["a minute ago", "next time", "later"], answer: "a minute ago", explanation: "a minute ago คือหนึ่งนาทีก่อน" },
-  { id: "phase1-past-meaning-8", prompt: "Past ใช้พูดถึงอะไร", options: ["เรื่องที่เกิดขึ้นแล้ว", "เรื่องที่กำลังทำ", "เรื่องที่จะทำ"], answer: "เรื่องที่เกิดขึ้นแล้ว", explanation: "Past ใช้พูดถึงเรื่องที่เกิดขึ้นแล้ว" }
+  { id: "phase1-past-meaning-2", prompt: "Which phrase shows the past?", options: ["next week", "last Monday", "tomorrow", "soon"], answer: "last Monday", explanation: "ถูกต้อง last Monday บอกว่าเหตุการณ์เกิดขึ้นแล้ว" },
+  { id: "phase1-past-meaning-3", prompt: "Which phrase means something happened before now?", options: ["a few minutes ago", "next year", "every day", "soon"], answer: "a few minutes ago", explanation: "ถูกต้อง ago เป็นสัญญาณว่าเหตุการณ์ผ่านมาแล้ว" },
+  { id: "phase1-past-meaning-4", prompt: "Which sentence talks about the past?", options: ["I will eat dinner tomorrow.", "I ate breakfast earlier this morning.", "I am studying now.", "I play football every day."], answer: "I ate breakfast earlier this morning.", explanation: "ถูกต้อง earlier this morning ถ้าเกิดจบแล้ว ถือเป็นอดีตได้" },
+  { id: "phase1-past-meaning-5", prompt: "Many years ago means:", options: ["in the future", "at this moment", "in the past", "every morning"], answer: "in the past", explanation: "ถูกต้อง many years ago ใช้เล่าเรื่องในอดีต" },
+  { id: "phase1-past-meaning-6", prompt: "Which one is NOT a past time clue?", options: ["last weekend", "three years ago", "yesterday evening", "next Monday"], answer: "next Monday", explanation: "next Monday เป็นอนาคต ไม่ใช่อดีต" },
+  { id: "phase1-past-meaning-7", prompt: "Which phrase is used in stories to talk about the past?", options: ["one night", "right now", "next time", "tomorrow"], answer: "one night", explanation: "ถูกต้อง one night ใช้เปิดเหตุการณ์ในเรื่องเล่าอดีตได้" },
+  { id: "phase1-past-meaning-8", prompt: "Which phrase shows a past date?", options: ["in 2018", "next year", "now", "soon"], answer: "in 2018", explanation: "ถูกต้อง in 2018 เป็นวันที่ผ่านมาแล้ว" }
 ];
 
 const phase1PastTimeWordsQuestions = [
-  { id: "phase1-time-words-1", prompt: "คำใดแปลว่า วันจันทร์ที่แล้ว", options: ["last Monday", "next Monday", "this Monday"], answer: "last Monday", explanation: "last Monday คือวันจันทร์ที่แล้ว" },
-  { id: "phase1-time-words-2", prompt: "five years ago แปลว่าอะไร", options: ["ห้าปีที่แล้ว", "อีกห้าปี", "ปีนี้"], answer: "ห้าปีที่แล้ว", explanation: "ago บอกเวลาที่ผ่านมาแล้ว" },
-  { id: "phase1-time-words-3", prompt: "ข้อใดเป็นคำบอกอดีต", options: ["yesterday evening", "next evening", "soon"], answer: "yesterday evening", explanation: "yesterday evening คือเมื่อเย็นวาน" },
-  { id: "phase1-time-words-4", prompt: "คำใดเป็นคำบอกอดีต", options: ["last summer", "next summer", "tomorrow"], answer: "last summer", explanation: "last summer คือฤดูร้อนที่แล้ว" },
-  { id: "phase1-time-words-5", prompt: "three weeks ago แปลว่าอะไร", options: ["สามสัปดาห์ที่แล้ว", "อีกสามสัปดาห์", "สัปดาห์นี้"], answer: "สามสัปดาห์ที่แล้ว", explanation: "ago ใช้กับอดีต" },
-  { id: "phase1-time-words-6", prompt: "คำใดไม่ใช่คำบอกอดีต", options: ["tomorrow", "last Friday", "a long time ago"], answer: "tomorrow", explanation: "tomorrow คืออนาคต" },
-  { id: "phase1-time-words-7", prompt: "I cleaned my desk ____.", options: ["this morning", "next year", "soon"], answer: "this morning", explanation: "ถ้าเกิดเมื่อเช้าและจบแล้ว ถือเป็นอดีต" },
-  { id: "phase1-time-words-8", prompt: "คำว่า ago มักใช้กับเวลาใด", options: ["อดีต", "อนาคต", "ตอนนี้"], answer: "อดีต", explanation: "ago ใช้กับเวลาที่ผ่านมาแล้ว" }
+  { id: "phase1-time-words-1", prompt: "Which one is a past time expression?", options: ["next week", "last summer", "now", "soon"], answer: "last summer", explanation: "ถูกต้อง last summer เป็นคำบอกเวลาในอดีต" },
+  { id: "phase1-time-words-2", prompt: "Which one is NOT a past time expression?", options: ["five years ago", "yesterday morning", "next Friday", "long ago"], answer: "next Friday", explanation: "next Friday เป็นเรื่องอนาคต ไม่ใช่อดีต" },
+  { id: "phase1-time-words-3", prompt: "Choose the past time expression.", options: ["earlier today", "tomorrow morning", "next month", "soon"], answer: "earlier today", explanation: "ถูกต้อง earlier today เกิดก่อนตอนนี้แล้ว" },
+  { id: "phase1-time-words-4", prompt: "Which phrase can begin a story about the past?", options: ["Long ago", "Right now", "Next week", "Soon"], answer: "Long ago", explanation: "ถูกต้อง Long ago ใช้เปิดเรื่องเล่าในอดีต" },
+  { id: "phase1-time-words-5", prompt: "Which phrase shows a finished time?", options: ["in 2018", "next year", "every day", "now"], answer: "in 2018", explanation: "ถูกต้อง in 2018 เป็นปีที่ผ่านไปแล้ว" },
+  { id: "phase1-time-words-6", prompt: "Which sentence should use Past Simple?", options: ["I will visit my friend tomorrow.", "I visited my friend last weekend.", "I visit my friend every day.", "I am visiting my friend now."], answer: "I visited my friend last weekend.", explanation: "ถูกต้อง last weekend บอกว่าเหตุการณ์เกิดขึ้นแล้ว" },
+  { id: "phase1-time-words-7", prompt: "Which phrase means ก่อนเข้าเรียน?", options: ["before class", "after tomorrow", "next class", "every class"], answer: "before class", explanation: "ถูกต้อง before class แปลว่า ก่อนเข้าเรียน" },
+  { id: "phase1-time-words-8", prompt: "When I was a child talks about:", options: ["the past", "the future", "right now", "every day"], answer: "the past", explanation: "ถูกต้อง วลีนี้พูดถึงช่วงเวลาตอนเด็กในอดีต" }
 ];
 
 const phase1WasWereQuestions = [
@@ -7762,32 +7762,48 @@ Object.assign(LESSON_SEGMENTS, {
       "ตอนนี้คือ present",
       "สิ่งที่ยังไม่เกิดคือ future",
       "แต่สิ่งที่เกิดไปแล้วคือ past",
-      "เมื่อเราพูดถึงอดีต เรามักมีคำบอกเวลา",
-      "คำเหล่านี้ช่วยบอกว่าเรื่องนั้นเกิดไปแล้ว"
+      "หลายคนจำได้แค่คำว่า yesterday",
+      "แต่ภาษาอังกฤษมีคำใบ้อดีตอีกมาก",
+      "คำเหล่านี้เป็นเหมือนร่องรอยของอดีต",
+      "last night หมายถึง เมื่อคืน",
+      "last week หมายถึง สัปดาห์ที่แล้ว",
+      "two days ago หมายถึง สองวันที่แล้ว",
+      "in 2020 หมายถึง ในปี 2020",
+      "บางครั้ง เหตุการณ์ที่เกิดวันนี้ก็เป็นอดีตได้",
+      "เช่น this morning หรือ earlier today",
+      "ถ้ามันเกิดขึ้นแล้วก่อนตอนนี้ มันคืออดีต",
+      "ในเรื่องเล่า เราอาจเจอ long ago",
+      "หรือคำว่า once ที่แปลว่า ครั้งหนึ่ง",
+      "คำเหล่านี้จะพาเราเข้าไปในความทรงจำเก่า",
+      "จงมองหาคำใบ้ของอดีตให้ดี"
     ],
     teacherExamples: [
-      "now = ตอนนี้",
-      "yesterday แปลว่า เมื่อวาน",
-      "last night แปลว่า เมื่อคืน",
-      "two days ago แปลว่า สองวันที่แล้ว"
+      "yesterday = เมื่อวาน",
+      "last night = เมื่อคืน",
+      "two days ago = สองวันที่แล้ว",
+      "in 2020 = ในปี 2020",
+      "this morning = เมื่อเช้านี้",
+      "earlier today = ก่อนหน้านี้วันนี้",
+      "long ago = เมื่อนานมาแล้ว",
+      "once = ครั้งหนึ่ง"
     ],
     guidedPractice: [
       {
-        prompt: "ข้อใดเป็นอดีต?",
-        choices: ["yesterday", "tomorrow", "now"],
-        answer: "yesterday",
+        prompt: "ข้อใดเป็นคำใบ้อดีต?",
+        choices: ["earlier today", "tomorrow", "right now"],
+        answer: "earlier today",
         feedback: {
-          correct: "ถูกต้อง yesterday คือเมื่อวาน",
+          correct: "ถูกต้อง earlier today บอกว่าเกิดก่อนตอนนี้แล้ว",
           wrong: "ยังไม่ใช่ ให้มองหาคำที่บอกว่าเกิดขึ้นแล้ว"
         }
       },
       {
-        prompt: "last night แปลว่าอะไร?",
-        choices: ["เมื่อคืน", "พรุ่งนี้", "ตอนนี้"],
-        answer: "เมื่อคืน",
+        prompt: "long ago ใช้พูดถึงเวลาใด?",
+        choices: ["อดีต", "อนาคต", "ตอนนี้"],
+        answer: "อดีต",
         feedback: {
-          correct: "ดีมาก last night คือเมื่อคืน",
-          wrong: "ยังไม่ถูก last night คือเมื่อคืน"
+          correct: "ดีมาก long ago ใช้เล่าเรื่องในอดีต",
+          wrong: "ยังไม่ถูก long ago หมายถึง เมื่อนานมาแล้ว"
         }
       }
     ],
@@ -7811,39 +7827,49 @@ Object.assign(LESSON_SEGMENTS, {
       "บางป้ายบอกอนาคต",
       "แต่ป้ายที่แตกร้าวคือป้ายของอดีต",
       "คำบอกเวลาช่วยให้เรารู้ว่าเรื่องเกิดเมื่อไร",
-      "yesterday คือ เมื่อวาน",
-      "last week คือ สัปดาห์ที่แล้ว",
-      "two months ago คือ สองเดือนที่แล้ว",
-      "in 2020 คือ ในปี 2020",
-      "ago ใช้กับเวลาที่ผ่านมาแล้ว",
-      "last ใช้กับช่วงเวลาที่ผ่านมาแล้วได้",
-      "ถ้าเห็นคำเหล่านี้ ให้คิดถึงอดีต",
+      "ตอนนี้เจ้ารู้แล้วว่าอดีตคือสิ่งที่เกิดขึ้นแล้ว",
+      "ต่อไป เจ้าต้องจำแนกคำบอกเวลาให้แม่นยำขึ้น",
+      "คำว่า last มักพาเราไปสู่อดีต",
+      "เช่น last month, last year และ last weekend",
+      "คำว่า ago ก็เป็นสัญญาณสำคัญของอดีต",
+      "เช่น five years ago หรือ a few hours ago",
+      "บางคำบอกปีหรือวันที่ผ่านมาแล้ว",
+      "เช่น in 2019 หรือ on May 5th, 2022",
+      "บางคำขึ้นต้นด้วย before",
+      "เช่น before class หรือ before lunch",
+      "ในเรื่องเล่า คำว่า once และ long ago ก็เปิดประตูสู่อดีต",
+      "when I was a child ก็เล่าช่วงวัยเด็กในอดีต",
+      "ถ้าแยกคำเหล่านี้ได้ เจ้าจะรู้ว่าเมื่อใดต้องใช้ Past Simple",
       "คำบอกเวลาไม่ได้เปลี่ยนกริยาเอง",
       "แต่มันเตือนเราว่า ประโยคนี้เล่าเรื่องที่จบแล้ว"
     ],
     teacherExamples: [
-      "yesterday = เมื่อวาน",
-      "last week = สัปดาห์ที่แล้ว",
-      "two months ago = สองเดือนที่แล้ว",
-      "in 2020 = ในปี 2020"
+      "last month = เดือนที่แล้ว",
+      "last year = ปีที่แล้ว",
+      "last weekend = สุดสัปดาห์ที่แล้ว",
+      "five years ago = ห้าปีที่แล้ว",
+      "a few hours ago = ไม่กี่ชั่วโมงก่อน",
+      "in 2019 = ในปี 2019",
+      "on May 5th, 2022 = วันที่ 5 พฤษภาคม 2022",
+      "when I was a child = ตอนที่ฉันเป็นเด็ก"
     ],
     guidedPractice: [
       {
-        prompt: "คำใดแปลว่า เมื่อวาน?",
-        choices: ["yesterday", "today", "tomorrow"],
-        answer: "yesterday",
+        prompt: "ข้อใดเป็นคำบอกเวลาอดีต?",
+        choices: ["last weekend", "next week", "now"],
+        answer: "last weekend",
         feedback: {
-          correct: "ถูกต้อง yesterday คือเมื่อวาน",
-          wrong: "ยังไม่ถูก คำว่าเมื่อวานคือ yesterday"
+          correct: "ถูกต้อง last weekend เป็นเวลาที่ผ่านมาแล้ว",
+          wrong: "ยังไม่ถูก ลองหาคำที่บอกว่าเหตุการณ์เกิดขึ้นไปแล้ว"
         }
       },
       {
-        prompt: "two days ago แปลว่าอะไร?",
-        choices: ["สองวันที่แล้ว", "อีกสองวัน", "วันนี้"],
-        answer: "สองวันที่แล้ว",
+        prompt: "ข้อใดไม่ใช่อดีต?",
+        choices: ["soon", "before lunch", "many years ago"],
+        answer: "soon",
         feedback: {
-          correct: "ดีมาก ago บอกเวลาที่ผ่านมาแล้ว",
-          wrong: "ยังไม่ถูก ago ใช้กับอดีต"
+          correct: "ดีมาก soon บอกว่ายังไม่เกิด",
+          wrong: "ระวังนะ before และ ago มักชี้ไปยังอดีต"
         }
       }
     ],
