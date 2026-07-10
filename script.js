@@ -2174,6 +2174,8 @@ const state = {
   lessonStepIndex: 0,
   currentLessonStage: null,
   postBossDialogueStage: null,
+  activeReplayLessonId: null,
+  replayReturnProgress: null,
   lessonStoryMode: false,
   lessonStorySteps: [],
   lessonStoryStepIndex: 0,
@@ -6316,7 +6318,7 @@ function renderBossGrammariaResult(result, onContinue) {
   panel.className = "grammaria-result";
   panel.innerHTML = `
     <div class="grammaria-breakdown">
-      <h3>สรุปการต่อสู้</h3>
+      <h3>${result.replay ? "Replay Complete / เรียนซ้ำสำเร็จ" : "สรุปการต่อสู้"}</h3>
       <div class="grammaria-breakdown-row"><span>ตอบถูก</span><strong>${result.correctAnswers || 0} ข้อ</strong></div>
       <div class="grammaria-breakdown-row"><span>ตอบผิด</span><strong>${result.wrongAnswers || 0} ข้อ</strong></div>
       <div class="grammaria-breakdown-row"><span>ดาเมจที่ทำกับบอส</span><strong>${result.playerDamageDealt || 0}</strong></div>
@@ -6333,14 +6335,15 @@ function renderBossGrammariaResult(result, onContinue) {
       <div class="grammaria-breakdown-row"><span>ตอบถูก ${result.correctAnswers || 0} ข้อ × ${GRAMMARIA_POINTS.correctAnswer}</span><strong>${result.correctPoints || 0}</strong></div>
       <div class="grammaria-breakdown-row"><span>Point Parry ${result.parryCount || 0} ครั้ง × ${GRAMMARIA_POINTS.parry}</span><strong>${result.parryPoints || 0}</strong></div>
       <div class="grammaria-breakdown-row"><span>Grammaria Charge ${result.grammariaChargeCount || 0} ครั้ง × ${GRAMMARIA_POINTS.charge}</span><strong>${result.chargePoints || 0}</strong></div>
-      <div class="grammaria-total-row"><span>ได้รับจากบอสนี้</span><strong>${result.earned || 0} Grammaria</strong></div>
+      <div class="grammaria-total-row"><span>${result.replay ? "ได้รับในโหมดเรียนซ้ำ" : "ได้รับจากบอสนี้"}</span><strong>${result.earned || 0} Grammaria</strong></div>
       <div class="grammaria-total-row"><span>Grammaria สะสมทั้งหมด</span><strong>${result.totalAfter || 0}</strong></div>
 
       <h3>Fragment / Reward</h3>
-      <div class="grammaria-breakdown-row"><span>Fragment ที่ได้รับ</span><strong>${result.rewardFragment || "ไม่มี"}</strong></div>
+      <div class="grammaria-breakdown-row"><span>Fragment ที่ได้รับ</span><strong>${result.replay ? "ไม่มีรางวัลซ้ำ" : (result.rewardFragment || "ไม่มี")}</strong></div>
       ${result.rewardBadge ? `<div class="grammaria-breakdown-row"><span>Badge ที่ได้รับ</span><strong>${result.rewardBadge}</strong></div>` : ""}
     </div>
-    ${result.duplicate ? "<p class=\"grammaria-result-note\">บอสนี้เคยให้ Grammaria แล้ว จึงไม่เพิ่มคะแนนซ้ำ แต่ยังแสดงผลการต่อสู้ให้ดูได้</p>" : ""}
+    ${result.replay ? "<p class=\"grammaria-result-note\">คุณได้ทบทวนบทเรียนนี้แล้ว ไม่มีการรับ Grammaria หรือรางวัลซ้ำในโหมดเรียนซ้ำ</p>" : ""}
+    ${result.duplicate && !result.replay ? "<p class=\"grammaria-result-note\">บอสนี้เคยให้ Grammaria แล้ว จึงไม่เพิ่มคะแนนซ้ำ แต่ยังแสดงผลการต่อสู้ให้ดูได้</p>" : ""}
   `;
 
   console.log("[BossResult] finalizing", {
@@ -6352,8 +6355,8 @@ function renderBossGrammariaResult(result, onContinue) {
   });
 
   openGameModal({
-    title: `ชัยชนะเหนือ ${result.bossName || "บอสแห่ง Lingua"}`,
-    body: "สรุปผลการต่อสู้และรางวัลที่ได้รับ",
+    title: result.replay ? "เรียนซ้ำสำเร็จ" : `ชัยชนะเหนือ ${result.bossName || "บอสแห่ง Lingua"}`,
+    body: result.replay ? "ไม่มีการรับ Grammaria หรือรางวัลซ้ำในโหมดเรียนซ้ำ" : "สรุปผลการต่อสู้และรางวัลที่ได้รับ",
     content: panel,
     actions: [
       {
@@ -6876,6 +6879,45 @@ function openMainMenuAssessmentResult() {
     title: "ผลการประเมิน",
     body: "ผลการประเมินจะปรากฏหลังจากเอาชนะ The Memory Breaker",
     actions: [{ label: "รับทราบ", primary: true, onClick: closeGameModal }]
+  });
+}
+
+function startLessonFromLessonMap(stage, stageIndex, { isReplay = false } = {}) {
+  if (!stage || stageIndex < 0 || state.isTransitioning) {
+    return;
+  }
+
+  closeGameModal();
+  if (isReplay) {
+    runSceneTransition("กำลังเปิดโหมดเรียนซ้ำ...", () => {
+      showStageLesson(stageIndex, { lessonStepIndex: 0, dialogueIndex: 0, isReplay: true });
+    });
+    return;
+  }
+
+  saveProgress({
+    currentLessonId: stage.id,
+    currentStageId: stage.id,
+    currentScreen: "lesson",
+    lastSafeScreen: "lesson"
+  });
+  runSceneTransition("กำลังเปิดบทเรียน...", () => {
+    showStageLesson(stageIndex, { lessonStepIndex: 0, dialogueIndex: 0 });
+  });
+}
+
+function confirmReplayLesson(stage, stageIndex) {
+  openGameModal({
+    title: "เรียนซ้ำบทเรียน",
+    body: "คุณต้องการเรียนซ้ำบทเรียนนี้หรือไม่? การเรียนซ้ำจะไม่ได้รับ Grammaria หรือรางวัลซ้ำ",
+    actions: [
+      { label: "ยกเลิก", onClick: closeGameModal },
+      {
+        label: "เรียนซ้ำ",
+        primary: true,
+        onClick: () => startLessonFromLessonMap(stage, stageIndex, { isReplay: true })
+      }
+    ]
   });
 }
 
@@ -8346,15 +8388,17 @@ function startPostBossDialogue(stage, dialogueIndex = 0) {
   state.currentLessonStage = postBossStage;
   const stageIndex = getStageIndexById(stage.id);
   state.actStageIndex = stageIndex >= 0 ? stageIndex : state.actStageIndex;
-  saveProgress({
-    currentStageId: stage.id,
-    currentLessonId: stage.id,
-    currentScreen: "lesson",
-    lastSafeScreen: isFinalBossStage(stage) ? "victory" : "lesson",
-    lessonPhase: "postBossDialogue",
-    currentDialogueIndex: dialogueIndex,
-    currentLessonStepIndex: 0
-  });
+  if (!isReplayingStage(stage)) {
+    saveProgress({
+      currentStageId: stage.id,
+      currentLessonId: stage.id,
+      currentScreen: "lesson",
+      lastSafeScreen: isFinalBossStage(stage) ? "victory" : "lesson",
+      lessonPhase: "postBossDialogue",
+      currentDialogueIndex: dialogueIndex,
+      currentLessonStepIndex: 0
+    });
+  }
   console.log("[Lesson Start]", `${stage.id}:postBoss`, ["postBossDialogue"]);
   startLessonDialogueSequence(postBossStage, buildPostBossDialogue(stage), dialogueIndex);
 }
@@ -8703,21 +8747,44 @@ function showStageLesson(stageIndex, resumeState = {}) {
     return;
   }
 
+  const isReplay = Boolean(resumeState.isReplay);
+  if (isReplay) {
+    const progress = loadProgress();
+    state.activeReplayLessonId = stage.id;
+    state.replayReturnProgress = progress ? {
+      currentStageId: progress.currentStageId,
+      currentLessonId: progress.currentLessonId,
+      currentScreen: progress.currentScreen,
+      lastSafeScreen: progress.lastSafeScreen,
+      lessonPhase: progress.lessonPhase,
+      currentDialogueIndex: progress.currentDialogueIndex,
+      currentLessonStepIndex: progress.currentLessonStepIndex
+    } : null;
+  } else if (!resumeState.preserveReplayState) {
+    state.activeReplayLessonId = null;
+    state.replayReturnProgress = null;
+  }
+
   setActBackground(getAct1BackgroundKeyForStage(stage), { warnMissing: true });
   state.actStageIndex = stageIndex;
   state.currentLessonStage = stage;
   updateLessonChrome(stage, stageIndex, "lesson");
+  if (isReplay) {
+    els.activityFeedback.textContent = "โหมดเรียนซ้ำ: จะไม่ได้รับ Grammaria หรือรางวัลซ้ำ";
+  }
   console.log("[Lesson Start]", stage.id, getAllowedRuleIdsForStage(stage));
   startStageDialogueLesson(stage, resumeState.dialogueIndex || 0);
-  saveProgress({
-    currentStageId: stage.id,
-    currentLessonId: stage.id,
-    currentScreen: "lesson",
-    lastSafeScreen: "lesson",
-    lessonPhase: (buildStageDialogueSequence(stage)[resumeState.dialogueIndex || 0] || {}).phase || "teacherExplanation",
-    currentLessonStepIndex: 0,
-    currentDialogueIndex: resumeState.dialogueIndex || 0
-  });
+  if (!isReplay) {
+    saveProgress({
+      currentStageId: stage.id,
+      currentLessonId: stage.id,
+      currentScreen: "lesson",
+      lastSafeScreen: "lesson",
+      lessonPhase: (buildStageDialogueSequence(stage)[resumeState.dialogueIndex || 0] || {}).phase || "teacherExplanation",
+      currentLessonStepIndex: 0,
+      currentDialogueIndex: resumeState.dialogueIndex || 0
+    });
+  }
 }
 
 function completeNonBattleStage(stage) {
@@ -12216,15 +12283,50 @@ function addUniqueActValue(list, value) {
   }
 }
 
+function isReplayingStage(stage) {
+  return Boolean(stage && state.activeReplayLessonId === stage.id);
+}
+
+function createReplayBossResultSnapshot(stage, stats = getCurrentBattleStats()) {
+  const snapshot = createBossResultSnapshot(stage, stats);
+  return {
+    ...snapshot,
+    replay: true,
+    duplicate: true,
+    earned: 0,
+    correctPoints: 0,
+    parryPoints: 0,
+    chargePoints: 0,
+    totalAfter: playerData?.progress?.grammaria?.total ?? playerData?.grammaria ?? state.grammaria ?? 0,
+    rewardFragment: "",
+    rewardBadge: ""
+  };
+}
+
 function grantActReward(stage, options = {}) {
   const progress = ensureActProgress();
   if (!progress) {
     return null;
   }
 
-  const shouldAwardGrammaria = options.awardGrammaria !== false;
-  const alreadyCompleted = progress.completedStages.includes(stage.id);
-  const grammariaResult = shouldAwardGrammaria ? awardBossGrammaria(stage) : null;
+  if (isReplayingStage(stage)) {
+    state.lastGrammariaResult = createReplayBossResultSnapshot(stage);
+    return state.lastGrammariaResult;
+  }
+
+  const alreadyCompleted = progress.completedStages.includes(stage.id) || progress.completedLessons.includes(stage.id);
+  const shouldAwardGrammaria = options.awardGrammaria !== false && !alreadyCompleted;
+  const grammariaResult = shouldAwardGrammaria
+    ? awardBossGrammaria(stage)
+    : (alreadyCompleted ? {
+      ...createReplayBossResultSnapshot(stage),
+      replay: false,
+      duplicate: true,
+      rewardFragment: stage?.reward?.fragment || ""
+    } : null);
+  if (grammariaResult) {
+    state.lastGrammariaResult = grammariaResult;
+  }
   addUniqueActValue(progress.completedStages, stage.id);
   markCompletedLesson(stage.id);
   markBossDefeated(stage);
@@ -12466,25 +12568,36 @@ function showStageReward(stage) {
   }
 
   const nextIndex = state.actStageIndex + 1;
+  const isReplay = isReplayingStage(stage);
   const grammariaEarned = state.lastGrammariaResult?.bossId === (getBossProgressId(stage) || stage.id)
     ? state.lastGrammariaResult.earned || 0
     : 0;
   state.isLessonSummaryOpen = false;
   restoreLessonUIAfterBattle();
-  const rewardLines = [
-    state.lastStageResult.totalQuestions
-      ? `คำตอบถูกต้อง: ${state.lastStageResult.correctAnswers} / ${state.lastStageResult.totalQuestions}`
-      : "บทเรียนเสร็จสิ้น",
-    `Fragment: ${stage.reward.fragment}`,
-    `Grammaria ที่ได้รับ: +${grammariaEarned}`
-  ];
+  const rewardLines = isReplay
+    ? [
+      state.lastStageResult.totalQuestions
+        ? `คำตอบถูกต้อง: ${state.lastStageResult.correctAnswers} / ${state.lastStageResult.totalQuestions}`
+        : "บทเรียนเสร็จสิ้น",
+      "เรียนซ้ำสำเร็จ",
+      "ไม่มีการรับ Grammaria หรือรางวัลซ้ำในโหมดเรียนซ้ำ"
+    ]
+    : [
+      state.lastStageResult.totalQuestions
+        ? `คำตอบถูกต้อง: ${state.lastStageResult.correctAnswers} / ${state.lastStageResult.totalQuestions}`
+        : "บทเรียนเสร็จสิ้น",
+      `Fragment: ${stage.reward.fragment}`,
+      `Grammaria ที่ได้รับ: +${grammariaEarned}`
+    ];
 
   updateLessonChrome(stage, state.actStageIndex, "lesson");
-  els.nounActivityVisual.querySelector("h3").textContent = "ได้รับ Fragment";
-  els.activityFeedback.textContent = `ได้รับ ${stage.reward.fragment} และ Grammaria +${grammariaEarned}`;
+  els.nounActivityVisual.querySelector("h3").textContent = isReplay ? "เรียนซ้ำสำเร็จ" : "ได้รับ Fragment";
+  els.activityFeedback.textContent = isReplay
+    ? "คุณได้ทบทวนบทเรียนนี้แล้ว ไม่มีรางวัลซ้ำ"
+    : `ได้รับ ${stage.reward.fragment} และ Grammaria +${grammariaEarned}`;
   renderActionCards(rewardLines, "lesson-card");
   const nextStage = getPlayableStages()[nextIndex];
-  if (nextStage) {
+  if (nextStage && !isReplay) {
     console.log("[Progress] Next lesson:", nextStage.id);
     saveProgress({
       currentStageId: nextStage.id,
@@ -12495,6 +12608,15 @@ function showStageReward(stage) {
       currentDialogueIndex: 0,
       currentLessonStepIndex: 0
     });
+  }
+  if (isReplay) {
+    setBattleButtonAction("กลับเมนูผู้เล่น", () => {
+      state.activeReplayLessonId = null;
+      state.replayReturnProgress = null;
+      showMainMenu();
+    });
+    showScene("story");
+    return;
   }
   const rewardButtonLabel = stage.id === "ed-mini-boss"
     ? "ไปยัง Irregular Verbs"
@@ -13894,6 +14016,10 @@ function saveCurrentLessonPositionBeforeMainMenu() {
     return;
   }
 
+  if (state.activeReplayLessonId) {
+    return;
+  }
+
   const stage = state.currentLessonStage || getPlayableStages()[state.actStageIndex] || null;
   if (!stage) {
     return;
@@ -13939,6 +14065,8 @@ function returnToPlayerMainMenuFromLesson(event = null) {
     state.awaitingDialogueChoice = false;
     saveCurrentLessonPositionBeforeMainMenu();
     showMainMenu();
+    state.activeReplayLessonId = null;
+    state.replayReturnProgress = null;
   } finally {
     setTimeout(() => {
       state.isReturningToMainMenu = false;
@@ -13949,6 +14077,11 @@ function returnToPlayerMainMenuFromLesson(event = null) {
 function handleLessonBack() {
   if (isGameModalOpen()) {
     closeGameModal();
+    return;
+  }
+
+  if (state.activeReplayLessonId) {
+    returnToPlayerMainMenuFromLesson();
     return;
   }
 
@@ -14002,6 +14135,12 @@ function confirmExitBattle() {
           stopParryCountdown();
           state.actBattle = null;
           state.parryAttack = null;
+          if (state.activeReplayLessonId) {
+            showMainMenu();
+            state.activeReplayLessonId = null;
+            state.replayReturnProgress = null;
+            return;
+          }
           runSceneTransition("กลับสู่แผนที่บทเรียน...", () => {
             showScene("story");
             showActInfoScreen();
@@ -14078,14 +14217,19 @@ function openLessonSelectModal() {
       <em>${isCompleted ? "เรียนซ้ำได้" : isUnlocked ? (LESSON_SELECT_TEST_MODE ? "เปิดสำหรับทดสอบ" : "เริ่ม / เล่นต่อ") : "ยังไม่ปลดล็อก"}</em>
     `;
     button.addEventListener("click", () => {
-      closeGameModal();
-      saveProgress({
-        currentLessonId: stage.id,
-        currentStageId: stage.id,
-        currentScreen: "lesson",
-        lastSafeScreen: "lesson"
-      });
-      showStageLesson(stageIndex);
+      if (!isUnlocked) {
+        openGameModal({
+          title: "บทเรียนยังไม่ปลดล็อก",
+          body: "บทเรียนนี้ยังไม่ปลดล็อก กรุณาเรียนบทเรียนก่อนหน้าให้สำเร็จก่อน",
+          actions: [{ label: "รับทราบ", primary: true, onClick: closeGameModal }]
+        });
+        return;
+      }
+      if (isCompleted) {
+        confirmReplayLesson(stage, stageIndex);
+        return;
+      }
+      startLessonFromLessonMap(stage, stageIndex);
     });
     content.appendChild(button);
   });
