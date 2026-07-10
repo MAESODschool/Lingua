@@ -235,6 +235,14 @@ const EARLY_BOSS_BALANCE = {
   }
 };
 
+const PHASE1_STARTER_STAGE_IDS = new Set([
+  "what-is-past",
+  "what-is-tense",
+  "act1_phase1_unit3_was_were",
+  "act1_phase1_unit4_there_was_were",
+  "act1_phase1_unit5_had"
+]);
+
 const FOCUS_BALANCE_CONFIG = {
   correctApGain: 1,
   wrongApGain: 0,
@@ -1115,7 +1123,7 @@ const PAST_FRAGMENT_ACT = {
       phaseTitle: "Entering the Past",
       enemy: "Yesterday Mite",
       thaiEnemy: "ไรเมื่อวาน",
-      enemyMaxHp: 55,
+      enemyMaxHp: 60,
       completionKey: "tenseLessonCompleted",
       reward: { grammaria: 20, fragment: "Yesterday Shard" },
       lesson: [
@@ -1134,7 +1142,7 @@ const PAST_FRAGMENT_ACT = {
       phaseTitle: "Entering the Past",
       enemy: "Was-Were Wisp",
       thaiEnemy: "วิสป์ was-were",
-      enemyMaxHp: 60,
+      enemyMaxHp: 68,
       completionKey: "phase1WasWereCompleted",
       reward: { grammaria: 25, fragment: "Was-Were Glow" },
       lesson: [
@@ -1153,7 +1161,7 @@ const PAST_FRAGMENT_ACT = {
       phaseTitle: "Entering the Past",
       enemy: "Memory Lantern",
       thaiEnemy: "โคมความทรงจำ",
-      enemyMaxHp: 60,
+      enemyMaxHp: 72,
       completionKey: "phase1ThereWasWereCompleted",
       reward: { grammaria: 25, fragment: "Memory Lantern Flame" },
       lesson: [
@@ -1172,7 +1180,7 @@ const PAST_FRAGMENT_ACT = {
       phaseTitle: "Entering the Past",
       enemy: "Lost Pouch Imp",
       thaiEnemy: "อิมป์ถุงของหาย",
-      enemyMaxHp: 65,
+      enemyMaxHp: 80,
       completionKey: "phase1HadCompleted",
       reward: { grammaria: 30, fragment: "Had Relic" },
       lesson: [
@@ -3521,6 +3529,10 @@ function getBalancedBossMaxHp(stage, baseHp = 100) {
   }
 
   const normalizedBaseHp = Math.max(1, Number(stage?.enemyMaxHp || stage?.maxHp || stage?.hp || baseHp) || baseHp);
+  if (PHASE1_STARTER_STAGE_IDS.has(stage?.id)) {
+    return normalizedBaseHp;
+  }
+
   const bossKey = normalizeBossBalanceKey(stage);
   const balance = EARLY_BOSS_BALANCE[bossKey];
   if (!balance) {
