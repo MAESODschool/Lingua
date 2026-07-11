@@ -15,6 +15,32 @@
   --glow-blue: #55d7ff;
   --glow-violet: #8c62ff;
   --act1-scene-background: url("assets/backgrounds/grammar-hall-animated.gif");
+  --lingua-frame-bg:
+    radial-gradient(circle at 50% 0%, rgba(98, 191, 234, 0.12), transparent 36%),
+    linear-gradient(145deg, rgba(25, 19, 62, 0.96), rgba(8, 8, 29, 0.96));
+  --lingua-frame-bg-soft:
+    radial-gradient(circle at 20% 0%, rgba(140, 99, 232, 0.16), transparent 34%),
+    linear-gradient(145deg, rgba(34, 27, 75, 0.9), rgba(13, 11, 39, 0.92));
+  --lingua-frame-bg-light:
+    linear-gradient(180deg, rgba(255, 247, 221, 0.95), rgba(238, 205, 148, 0.95));
+  --lingua-gold: #d7b35a;
+  --lingua-gold-light: #f3dc91;
+  --lingua-gold-dark: #856225;
+  --lingua-violet: #8c63e8;
+  --lingua-violet-soft: rgba(140, 99, 232, 0.34);
+  --lingua-crystal-blue: #62bfea;
+  --lingua-crystal-blue-soft: rgba(98, 191, 234, 0.24);
+  --lingua-frame-border: 1px solid rgba(226, 188, 102, 0.78);
+  --lingua-frame-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.38),
+    inset 0 0 0 1px rgba(255, 241, 190, 0.1),
+    inset 0 0 24px rgba(112, 74, 188, 0.1),
+    0 0 14px rgba(128, 88, 220, 0.16);
+  --lingua-frame-shadow-compact:
+    0 8px 18px rgba(0, 0, 0, 0.24),
+    inset 0 0 0 1px rgba(255, 241, 190, 0.08);
+  --lingua-radius-major: 18px;
+  --lingua-radius-small: 12px;
 }
 
 .ap-pips {
@@ -5016,5 +5042,545 @@ h3 {
   #battleScene .battle-flow-v2-panel,
   #battleScene .battle-flow-v2-body {
     min-height: 0;
+  }
+}
+
+/* Lingua frame system */
+.lingua-frame {
+  position: relative;
+  box-sizing: border-box;
+  background: var(--lingua-frame-bg);
+  border: var(--lingua-frame-border);
+  box-shadow: var(--lingua-frame-shadow);
+}
+
+.lingua-frame--major::before,
+.lingua-frame--dialogue::before,
+.lingua-frame--modal::before,
+.lingua-frame--reward::before,
+.main-menu-card::before,
+.dialogue-panel::before,
+.activity-panel::before,
+.battle-panel::before,
+.combatant::before,
+.game-modal-card::before,
+.victory-card::before,
+.lesson-select-card::before,
+.lesson-progress-card::before,
+.profile-avatar-frame::before,
+.avatar-preview-panel::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(243, 220, 145, 0.18);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.lingua-frame--major::after,
+.lingua-frame--dialogue::after,
+.lingua-frame--modal::after,
+.lingua-frame--reward::after,
+.main-menu-card::after,
+.dialogue-panel::after,
+.battle-panel::after,
+.combatant::after,
+.game-modal-card::after,
+.victory-card::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translateX(-50%) rotate(45deg);
+  border: 1px solid rgba(243, 220, 145, 0.78);
+  border-radius: 3px;
+  background: linear-gradient(135deg, rgba(185, 156, 255, 0.95), rgba(77, 185, 231, 0.86));
+  box-shadow: 0 0 10px rgba(140, 99, 232, 0.36);
+  pointer-events: none;
+}
+
+.title-card,
+.create-card,
+.victory-card,
+.dialogue-panel,
+.activity-panel,
+.activity-brief,
+.battle-panel,
+.hero-card,
+.combatant,
+.main-menu-card,
+.game-modal-card,
+.lesson-progress-card,
+.assessment-header,
+.assessment-score-card,
+.assessment-reflection,
+.assessment-remedial {
+  position: relative;
+  box-sizing: border-box;
+  border-color: rgba(226, 188, 102, 0.62);
+  background: var(--lingua-frame-bg);
+  box-shadow: var(--lingua-frame-shadow);
+}
+
+.dialogue-panel,
+.activity-panel,
+.battle-panel,
+.combatant,
+.main-menu-card,
+.game-modal-card,
+.victory-card,
+.assessment-header,
+.assessment-score-card,
+.assessment-reflection,
+.assessment-remedial {
+  border-radius: var(--lingua-radius-major);
+}
+
+.activity-brief,
+.hero-card,
+.lesson-card,
+.lesson-step-card,
+.lesson-visual-card,
+.collection-fragment-card,
+.account-character-preview,
+.account-character-option,
+.avatar-options,
+.avatar-preview-panel,
+.form-grid input,
+.form-grid select {
+  box-sizing: border-box;
+  border-color: rgba(226, 188, 102, 0.44);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(98, 191, 234, 0.1), transparent 36%),
+    linear-gradient(145deg, rgba(24, 19, 58, 0.78), rgba(10, 10, 31, 0.82));
+  box-shadow: var(--lingua-frame-shadow-compact);
+}
+
+.speaker-name,
+.lesson-example-panel .speaker-name {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px 10px;
+  border: 1px solid rgba(243, 220, 145, 0.58);
+  border-radius: 999px;
+  color: #fff4c7;
+  background: linear-gradient(180deg, rgba(79, 43, 138, 0.92), rgba(32, 20, 78, 0.94));
+  box-shadow: inset 0 0 10px rgba(98, 191, 234, 0.12), 0 0 10px rgba(140, 99, 232, 0.14);
+}
+
+.dialogue-panel.speaker-player {
+  border-color: rgba(98, 191, 234, 0.7);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(98, 191, 234, 0.18), transparent 38%),
+    linear-gradient(145deg, rgba(17, 42, 92, 0.94), rgba(9, 12, 38, 0.94));
+}
+
+.dialogue-panel.speaker-verion {
+  border-color: rgba(243, 220, 145, 0.72);
+  background:
+    radial-gradient(circle at 90% 0%, rgba(215, 179, 90, 0.16), transparent 36%),
+    linear-gradient(145deg, rgba(58, 34, 99, 0.95), rgba(13, 11, 39, 0.95));
+}
+
+.dialogue-panel.speaker-system {
+  border-color: rgba(140, 99, 232, 0.58);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(140, 99, 232, 0.14), transparent 36%),
+    linear-gradient(145deg, rgba(21, 18, 55, 0.96), rgba(8, 8, 29, 0.96));
+}
+
+.dialogue-text,
+.battle-message,
+.lesson-card,
+.answer-feedback,
+.activity-brief,
+.lesson-thought-bubble {
+  color: #fff7df;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+}
+
+.main-menu-card,
+.current-progress-card,
+.grammaria-collection-card,
+.main-menu-actions,
+.player-profile-card {
+  border-color: rgba(226, 188, 102, 0.58);
+}
+
+.profile-avatar-frame,
+.account-character-preview,
+.avatar-preview-panel {
+  position: relative;
+  border-color: rgba(98, 191, 234, 0.44);
+  background:
+    radial-gradient(circle at 50% 72%, rgba(98, 191, 234, 0.2), transparent 34%),
+    radial-gradient(circle at 50% 8%, rgba(215, 179, 90, 0.13), transparent 30%),
+    linear-gradient(180deg, rgba(50, 34, 104, 0.34), rgba(8, 10, 31, 0.76));
+}
+
+.profile-stat-row,
+.boss-progress-line,
+.account-character-section,
+.account-settings-panel .grammaria-breakdown-row {
+  border-color: rgba(226, 188, 102, 0.22);
+}
+
+.collection-fragment-card {
+  border-color: rgba(98, 191, 234, 0.34);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(98, 191, 234, 0.13), transparent 36%),
+    linear-gradient(145deg, rgba(13, 18, 47, 0.82), rgba(6, 8, 25, 0.86));
+}
+
+.collection-fragment-card:not(.is-locked) {
+  border-color: rgba(215, 179, 90, 0.62);
+  box-shadow:
+    var(--lingua-frame-shadow-compact),
+    0 0 14px rgba(98, 191, 234, 0.15);
+}
+
+.collection-fragment-card.is-locked,
+.lesson-select-card.is-locked {
+  border-color: rgba(157, 153, 179, 0.24);
+  background:
+    linear-gradient(145deg, rgba(22, 21, 39, 0.78), rgba(10, 10, 24, 0.86));
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.2);
+}
+
+.lesson-select-card {
+  position: relative;
+  box-sizing: border-box;
+  border-color: rgba(140, 99, 232, 0.46);
+  border-radius: var(--lingua-radius-small);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(98, 191, 234, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(19, 18, 55, 0.94), rgba(9, 9, 30, 0.96));
+  box-shadow: var(--lingua-frame-shadow-compact);
+}
+
+.lesson-select-card.is-completed {
+  border-color: rgba(215, 179, 90, 0.78);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(98, 191, 234, 0.18), transparent 36%),
+    linear-gradient(145deg, rgba(34, 30, 76, 0.96), rgba(10, 12, 35, 0.96));
+  box-shadow:
+    var(--lingua-frame-shadow-compact),
+    0 0 16px rgba(98, 191, 234, 0.16);
+}
+
+.lesson-select-card:not(.is-locked):hover {
+  border-color: rgba(243, 220, 145, 0.9);
+  box-shadow:
+    var(--lingua-frame-shadow-compact),
+    0 0 18px rgba(140, 99, 232, 0.25);
+}
+
+#battleScene .combatant {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(98, 191, 234, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(16, 22, 57, 0.9), rgba(7, 8, 28, 0.9));
+}
+
+#battlePlayer.combatant {
+  border-color: rgba(98, 191, 234, 0.62);
+  box-shadow:
+    var(--lingua-frame-shadow-compact),
+    0 0 16px rgba(98, 191, 234, 0.14);
+}
+
+#battleEnemy.combatant {
+  border-color: rgba(215, 111, 151, 0.58);
+  box-shadow:
+    var(--lingua-frame-shadow-compact),
+    0 0 16px rgba(215, 111, 151, 0.13);
+}
+
+#battleScene .battle-panel,
+#battleScene .question-panel,
+#battleScene .charm-panel,
+#battleScene .timing-panel,
+#battleScene .countdown-parry,
+#battleScene .boss-intent-panel,
+#battleScene .point-parry-panel,
+.battle-flow-v2-panel {
+  border-color: rgba(226, 188, 102, 0.62);
+  outline: 1px solid rgba(226, 188, 102, 0.22);
+  outline-offset: -4px;
+  border-radius: var(--lingua-radius-major);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(98, 191, 234, 0.1), transparent 34%),
+    linear-gradient(145deg, rgba(19, 15, 48, 0.94), rgba(8, 8, 29, 0.95));
+  box-shadow: var(--lingua-frame-shadow);
+}
+
+#battleScene .boss-intent-panel,
+#battleScene .point-parry-panel {
+  border-color: rgba(243, 220, 145, 0.82);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 101, 119, 0.14), transparent 40%),
+    radial-gradient(circle at 50% 100%, rgba(98, 191, 234, 0.12), transparent 38%),
+    linear-gradient(145deg, rgba(42, 16, 64, 0.95), rgba(13, 10, 36, 0.96));
+}
+
+.stat-pill,
+.lesson-grammaria-display,
+.progress-meter-track,
+.hp-bar,
+.ap-pip,
+.timing-bar,
+.parry-gauge,
+.boss-intent-type,
+.charm-rank {
+  border-color: rgba(226, 188, 102, 0.52);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 241, 190, 0.08),
+    0 0 10px rgba(98, 191, 234, 0.1);
+}
+
+.word-card,
+.answer-button,
+.charm-card,
+.skill-card,
+.battle-flow-v3-skill-card,
+.battle-flow-v2-charm,
+.dialogue-choice-btn,
+.lesson-choice-btn {
+  box-sizing: border-box;
+  border-color: rgba(226, 188, 102, 0.56);
+  border-radius: var(--lingua-radius-small);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(98, 191, 234, 0.14), transparent 34%),
+    linear-gradient(145deg, rgba(34, 27, 75, 0.86), rgba(10, 11, 34, 0.9));
+  box-shadow:
+    var(--lingua-frame-shadow-compact),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.word-card:hover,
+.answer-button:hover,
+.charm-card:hover,
+.skill-card:not(.is-disabled):hover,
+.battle-flow-v2-charm:not(.is-disabled):hover,
+.dialogue-choice-btn:hover,
+.lesson-choice-btn:hover {
+  border-color: rgba(98, 191, 234, 0.9);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(98, 191, 234, 0.18), transparent 36%),
+    linear-gradient(145deg, rgba(42, 34, 94, 0.92), rgba(13, 13, 40, 0.94));
+  box-shadow:
+    var(--lingua-frame-shadow-compact),
+    0 0 16px rgba(98, 191, 234, 0.18);
+}
+
+.word-card.correct,
+.answer-button.correct {
+  border-color: rgba(105, 226, 164, 0.86);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(105, 226, 164, 0.22), transparent 40%),
+    linear-gradient(145deg, rgba(18, 74, 59, 0.92), rgba(9, 28, 30, 0.94));
+}
+
+.word-card.wrong,
+.answer-button.wrong {
+  border-color: rgba(255, 101, 119, 0.8);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 101, 119, 0.18), transparent 40%),
+    linear-gradient(145deg, rgba(74, 20, 48, 0.92), rgba(28, 9, 26, 0.94));
+}
+
+.skill-card.is-disabled,
+.charm-card:disabled,
+.answer-button:disabled,
+.primary-button:disabled,
+.secondary-button:disabled,
+.action-button:disabled {
+  border-color: rgba(157, 153, 179, 0.3);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.18);
+}
+
+.primary-button,
+.secondary-button,
+.action-button,
+.main-menu-button,
+.game-modal-actions button,
+.battle-flow-v2-actions button,
+.logout-button,
+.lesson-round-btn,
+.lesson-dictionary-btn {
+  border-color: rgba(243, 220, 145, 0.74);
+  background:
+    linear-gradient(180deg, rgba(115, 79, 205, 0.98), rgba(39, 28, 112, 0.98) 55%, rgba(19, 17, 64, 0.98));
+  box-shadow:
+    0 5px 0 rgba(73, 45, 117, 0.78),
+    0 0 14px rgba(140, 99, 232, 0.18),
+    inset 0 0 0 1px rgba(255, 241, 190, 0.12);
+}
+
+.secondary-button,
+.battle-flow-v2-back,
+.logout-button {
+  background:
+    linear-gradient(180deg, rgba(33, 44, 96, 0.96), rgba(16, 18, 58, 0.98));
+}
+
+.danger-button,
+.main-menu-actions .danger-button {
+  border-color: rgba(255, 143, 143, 0.62);
+  background:
+    linear-gradient(180deg, rgba(113, 37, 76, 0.96), rgba(58, 20, 50, 0.98));
+}
+
+.primary-button:hover,
+.secondary-button:hover,
+.action-button:hover,
+.main-menu-button:hover,
+.game-modal-actions button:hover,
+.battle-flow-v2-actions button:hover {
+  border-color: rgba(243, 220, 145, 0.95);
+  box-shadow:
+    0 5px 0 rgba(73, 45, 117, 0.78),
+    0 0 18px rgba(98, 191, 234, 0.22),
+    inset 0 0 0 1px rgba(255, 241, 190, 0.16);
+}
+
+.game-modal-card {
+  color: #fff7df;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(215, 179, 90, 0.16), transparent 34%),
+    linear-gradient(145deg, rgba(29, 22, 69, 0.98), rgba(9, 8, 30, 0.98));
+}
+
+.game-modal-card h3 {
+  color: #fff1b5;
+}
+
+.game-modal-card > p,
+.grammaria-result-note,
+.skip-enemy-card p {
+  color: rgba(255, 246, 220, 0.82);
+}
+
+.game-modal-content,
+.grammaria-result,
+.final-evaluation-panel,
+.defeat-result {
+  color: #fff7df;
+}
+
+.grammaria-breakdown-row,
+.grammaria-total-row,
+.final-evaluation-summary,
+.skip-enemy-card,
+.reward-list div,
+.assessment-summary-grid div,
+.assessment-rubric-row,
+.assessment-total-line {
+  border-color: rgba(226, 188, 102, 0.42);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(98, 191, 234, 0.1), transparent 34%),
+    linear-gradient(145deg, rgba(29, 23, 69, 0.82), rgba(12, 12, 35, 0.86));
+  color: #fff7df;
+  box-shadow: var(--lingua-frame-shadow-compact);
+}
+
+.grammaria-total-row,
+.assessment-total-line,
+.reward-list div {
+  border-color: rgba(243, 220, 145, 0.62);
+}
+
+.defeat-cause {
+  border-color: rgba(255, 101, 119, 0.48);
+  background: linear-gradient(145deg, rgba(78, 23, 48, 0.9), rgba(28, 9, 26, 0.94));
+  color: #ffe4e4;
+}
+
+#loginScene .login-card {
+  position: relative;
+  box-sizing: border-box;
+  border-color: rgba(215, 179, 90, 0.86);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.26), transparent 28%),
+    var(--lingua-frame-bg-light);
+  box-shadow:
+    0 6px 0 rgba(104, 58, 18, 0.78),
+    0 0 24px rgba(255, 213, 106, 0.34),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.42);
+}
+
+#loginScene .auth-local-note,
+#loginScene .auth-mode-label {
+  border-color: rgba(133, 98, 37, 0.42);
+  background: rgba(255, 247, 221, 0.74);
+}
+
+#loginScene .form-grid input {
+  border-color: rgba(215, 179, 90, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 190, 0.08);
+}
+
+#loginScene .auth-tab,
+#loginScene #loginButton,
+#loginScene #registerButton,
+#loginScene #guestLoginButton {
+  box-shadow:
+    0 5px 0 rgba(104, 58, 18, 0.78),
+    0 0 14px rgba(140, 99, 232, 0.16),
+    inset 0 0 0 1px rgba(255, 241, 190, 0.14);
+}
+
+@media (max-width: 720px) {
+  .lingua-frame--major::before,
+  .lingua-frame--dialogue::before,
+  .lingua-frame--modal::before,
+  .lingua-frame--reward::before,
+  .main-menu-card::before,
+  .dialogue-panel::before,
+  .activity-panel::before,
+  .battle-panel::before,
+  .combatant::before,
+  .game-modal-card::before,
+  .victory-card::before,
+  .lesson-select-card::before,
+  .lesson-progress-card::before,
+  .profile-avatar-frame::before,
+  .avatar-preview-panel::before {
+    inset: 4px;
+  }
+
+  .lingua-frame--major::after,
+  .lingua-frame--dialogue::after,
+  .lingua-frame--modal::after,
+  .lingua-frame--reward::after,
+  .main-menu-card::after,
+  .dialogue-panel::after,
+  .battle-panel::after,
+  .combatant::after,
+  .game-modal-card::after,
+  .victory-card::after {
+    width: 9px;
+    height: 9px;
+    top: -4px;
+  }
+
+  .title-card,
+  .create-card,
+  .victory-card,
+  .dialogue-panel,
+  .activity-panel,
+  .activity-brief,
+  .battle-panel,
+  .hero-card,
+  .combatant,
+  .main-menu-card,
+  .game-modal-card {
+    box-shadow:
+      0 8px 18px rgba(0, 0, 0, 0.28),
+      inset 0 0 0 1px rgba(255, 241, 190, 0.08),
+      inset 0 0 14px rgba(112, 74, 188, 0.08);
   }
 }

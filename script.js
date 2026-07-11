@@ -1713,7 +1713,7 @@ function assetPath(fileName) {
 
 const MAIN_CHARACTER_IMAGE_PATH = "assets/characters/male_wanderer_idle.gif";
 const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = "assets/characters/main-character-idle-transparent-clean-optimized.webp";
-const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master-verion-v2-transparent.webp";
+const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master_verion_idle.gif";
 const TEACHER_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("master-verion.png");
 const PLAYER_CHARACTERS = {
   male_wanderer: {
@@ -1853,7 +1853,7 @@ function refreshPlayerCharacterSprites(characterId = ensurePlayerCharacterData()
 }
 
 function handleTeacherCharacterGifError(img) {
-  console.warn("[Character] master-verion-v2-transparent.webp failed to load");
+  console.warn("[Character] Master Verion character asset failed to load");
   if (img.dataset.fallbackApplied === "true") {
     return;
   }
