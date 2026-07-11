@@ -130,6 +130,42 @@ const BOSS_ACTIONS = [
   { type: "ultimate", label: "อัลติ", damage: 35, hitCount: 3, markChance: 0.28, markDamageBonus: 0.25, markHits: 2, warning: "บอสกำลังใช้อัลติ! เตรียมปัดป้อง!", zoneWidth: 24, minZoneWidth: 8, speed: 650, zoneSpeed: 1250, shrinkPerSecond: 7, parryDuration: 3100 }
 ];
 
+const BOSS_INTERACTION_WEIGHTS = {
+  normal: 0.40,
+  typing: 0.30,
+  arrangement: 0.30
+};
+
+const BOSS_GRAMMAR_CHALLENGE_CONFIG = {
+  enabled: true,
+  maxSpecialConsecutive: 2,
+  recentWordLimit: 8,
+  counterDamageRatio: 0.6,
+  counterDamageMin: 8,
+  counterDamageMax: 18
+};
+
+const BOSS_V2_CHALLENGE_WORDS = [
+  { id: "regular_play_played", group: "regular", v1: "play", v2: "played", lessonTags: ["regular-rule-1", "regular-rule-2"], hint: "เติม -ed ให้คำกริยาปกติ" },
+  { id: "regular_walk_walked", group: "regular", v1: "walk", v2: "walked", lessonTags: ["regular-rule-1", "regular-rule-2"], hint: "เติม -ed ให้คำกริยาปกติ" },
+  { id: "regular_clean_cleaned", group: "regular", v1: "clean", v2: "cleaned", lessonTags: ["regular-rule-1", "regular-rule-2"], hint: "เติม -ed ให้คำกริยาปกติ" },
+  { id: "regular_watch_watched", group: "regular", v1: "watch", v2: "watched", lessonTags: ["regular-rule-1", "regular-rule-2"], hint: "เติม -ed ให้คำกริยาปกติ" },
+  { id: "regular_love_loved", group: "regular", v1: "love", v2: "loved", lessonTags: ["regular-rule-2"], hint: "ลงท้ายด้วย e เติม -d" },
+  { id: "regular_live_lived", group: "regular", v1: "live", v2: "lived", lessonTags: ["regular-rule-2"], hint: "ลงท้ายด้วย e เติม -d" },
+  { id: "regular_try_tried", group: "regular", v1: "try", v2: "tried", lessonTags: ["regular-rule-3"], hint: "เปลี่ยน y เป็น i แล้วเติม -ed" },
+  { id: "regular_study_studied", group: "regular", v1: "study", v2: "studied", lessonTags: ["regular-rule-3"], hint: "เปลี่ยน y เป็น i แล้วเติม -ed" },
+  { id: "regular_stop_stopped", group: "regular", v1: "stop", v2: "stopped", lessonTags: ["regular-rule-4"], hint: "บางคำต้องเพิ่มพยัญชนะท้ายก่อนเติม -ed" },
+  { id: "regular_plan_planned", group: "regular", v1: "plan", v2: "planned", lessonTags: ["regular-rule-4"], hint: "บางคำต้องเพิ่มพยัญชนะท้ายก่อนเติม -ed" },
+  { id: "irregular_go_went", group: "irregular", v1: "go", v2: "went", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" },
+  { id: "irregular_eat_ate", group: "irregular", v1: "eat", v2: "ate", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" },
+  { id: "irregular_see_saw", group: "irregular", v1: "see", v2: "saw", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" },
+  { id: "irregular_buy_bought", group: "irregular", v1: "buy", v2: "bought", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" },
+  { id: "irregular_take_took", group: "irregular", v1: "take", v2: "took", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" },
+  { id: "irregular_speak_spoke", group: "irregular", v1: "speak", v2: "spoke", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" },
+  { id: "irregular_write_wrote", group: "irregular", v1: "write", v2: "wrote", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" },
+  { id: "irregular_break_broke", group: "irregular", v1: "break", v2: "broke", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" }
+];
+
 const DEFAULT_POINT_PARRY_CONFIG = {
   enabled: true,
   counterDamage: 4,
@@ -1729,6 +1765,28 @@ const PLAYER_CHARACTERS = {
     fallbackAsset: MAIN_CHARACTER_IMAGE_PATH
   }
 };
+const DIALOGUE_SPEAKER_PORTRAITS = {
+  master_verion: {
+    name: "มาสเตอร์เวรีออน",
+    portrait: "assets/portraits/master_verion_portrait.png"
+  },
+  male_wanderer: {
+    name: "ผู้พเนจร",
+    portrait: "assets/portraits/male_wanderer_portrait.png"
+  },
+  female_wanderer: {
+    name: "ผู้พเนจร",
+    portrait: "assets/portraits/female_wanderer_portrait.png"
+  },
+  memory_breaker: {
+    name: "ผู้ทำลายความทรงจำ",
+    portrait: "assets/portraits/memory_breaker_portrait.png"
+  },
+  ed_forger: {
+    name: "The Ed Forger",
+    portrait: "assets/portraits/ed_forger_portrait.png"
+  }
+};
 const GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH = "assets/backgrounds/grammar-hall-animated.gif";
 const ACT1_BACKGROUND_MAP = {
   timeDustFields: "assets/backgrounds/act1/act1_time_dust_fields.png",
@@ -2414,6 +2472,8 @@ const els = {
   speakerName: document.getElementById("speakerName"),
   dialogueText: document.getElementById("dialogueText"),
   dialogueChoices: document.getElementById("dialogueChoices"),
+  dialoguePortraitSlot: document.getElementById("dialoguePortraitSlot"),
+  dialogueSpeakerPortrait: document.getElementById("dialogueSpeakerPortrait"),
   previousDialogueButton: document.getElementById("previousDialogueButton"),
   nextDialogueButton: document.getElementById("nextDialogueButton"),
   lessonGrammariaDisplay: document.getElementById("lessonGrammariaDisplay"),
@@ -2435,6 +2495,10 @@ const els = {
   shieldText: document.getElementById("shieldText"),
   battleTitle: document.getElementById("battleTitle"),
   battleExitButton: document.getElementById("battleExitButton"),
+  battleTurnIndicator: document.getElementById("battleTurnIndicator"),
+  battleCurrentTurn: document.getElementById("battleCurrentTurn"),
+  battleCurrentTurnActor: document.getElementById("battleCurrentTurnActor"),
+  battleUpcomingTurnList: document.getElementById("battleUpcomingTurnList"),
   battleEnemySprite: document.getElementById("battleEnemySprite"),
   battleEnemyName: document.getElementById("battleEnemyName"),
   battleEnemyDescription: document.getElementById("battleEnemyDescription"),
@@ -2526,6 +2590,7 @@ function showScene(name) {
   scenes[name].classList.add("active");
   applyDebugButtonVisibility();
   playBgmForScene(name);
+  renderBattleTurnIndicator();
 }
 
 function cleanupButtonsForSceneChange(nextScene) {
@@ -3172,8 +3237,100 @@ function clearBattleButtonAction({ hide = true } = {}) {
 }
 
 function setBattleTurnOwner(owner) {
+  const battle = state.actBattle;
+  if (battle && (owner === "player" || owner === "enemy")) {
+    battle.currentTurnActor = owner === "enemy" ? "boss" : "player";
+  }
   els.battlePlayer.classList.toggle("is-active-turn", owner === "player");
   els.battleEnemy.classList.toggle("is-active-turn", owner === "enemy");
+  renderBattleTurnIndicator();
+}
+
+function getBattleCurrentActorForDisplay(battle = state.actBattle) {
+  if (!battle || isActBattleEnded(battle)) {
+    return "";
+  }
+  if (battle.pendingBossTurn || battle.pendingBossAction || battle.awaitingParry || battle.awaitingPrepare || battle.heavyAttackState?.active || battle.bossGrammarChallenge?.active) {
+    return "boss";
+  }
+  if (battle.playerActionPhase || !battle.currentTurnActor) {
+    return battle.currentTurnActor || "player";
+  }
+  return battle.currentTurnActor;
+}
+
+function getBattleActorLabel(actor, { current = false } = {}) {
+  if (actor === "boss") {
+    return current ? "ตาของบอส" : "บอส";
+  }
+  return current ? "ตาของผู้เล่น" : "ผู้เล่น";
+}
+
+function buildAlternatingTurnPreview(currentActor, count = 5) {
+  const preview = [];
+  let actor = currentActor === "boss" ? "player" : "boss";
+  for (let index = 0; index < count; index += 1) {
+    preview.push({
+      actor,
+      label: getBattleActorLabel(actor)
+    });
+    actor = actor === "boss" ? "player" : "boss";
+  }
+  return preview;
+}
+
+function getBattleTurnPreview(count = 5) {
+  const battle = state.actBattle;
+  const currentActor = getBattleCurrentActorForDisplay(battle);
+  if (!currentActor) {
+    return [];
+  }
+  return buildAlternatingTurnPreview(currentActor, count).slice(0, count);
+}
+
+function hideBattleTurnIndicator() {
+  if (!els.battleTurnIndicator) {
+    return;
+  }
+  els.battleTurnIndicator.classList.add("hidden");
+  if (els.battleUpcomingTurnList) {
+    els.battleUpcomingTurnList.innerHTML = "";
+  }
+}
+
+function renderBattleTurnIndicator() {
+  if (!els.battleTurnIndicator || !els.battleCurrentTurnActor || !els.battleUpcomingTurnList) {
+    return;
+  }
+
+  const battle = state.actBattle;
+  const isBattleSceneActive = scenes.battle?.classList.contains("active");
+  const currentActor = getBattleCurrentActorForDisplay(battle);
+  if (!isBattleSceneActive || !currentActor) {
+    hideBattleTurnIndicator();
+    return;
+  }
+
+  const upcomingTurns = getBattleTurnPreview(5);
+  if (upcomingTurns.length !== 5) {
+    hideBattleTurnIndicator();
+    return;
+  }
+
+  els.battleTurnIndicator.classList.remove("hidden", "is-player-turn", "is-boss-turn");
+  els.battleTurnIndicator.classList.add(currentActor === "boss" ? "is-boss-turn" : "is-player-turn");
+  els.battleCurrentTurnActor.textContent = getBattleActorLabel(currentActor, { current: true });
+  els.battleCurrentTurn.dataset.actor = currentActor;
+  els.battleUpcomingTurnList.innerHTML = "";
+  upcomingTurns.forEach((turn, index) => {
+    const slot = document.createElement("div");
+    slot.className = `battle-turn-slot battle-turn-slot--${turn.actor}`;
+    slot.innerHTML = `
+      <span class="turn-order-number">${index + 1}</span>
+      <span class="turn-actor-name">${turn.label}</span>
+    `;
+    els.battleUpcomingTurnList.appendChild(slot);
+  });
 }
 
 function setActionButtonsEnabled(isEnabled) {
@@ -5610,6 +5767,7 @@ function updateDialogue() {
   els.speakerName.textContent = line.speaker;
   updateSpeakingCharacter(line.speaker);
   updateDialogueSpeakerTone(line.speaker);
+  updateDialogueSpeakerPortrait(line.speaker);
   hideDialogueChoices();
   updatePreviousDialogueButton();
   startTypewriter(resolveDialogueText(line));
@@ -5618,6 +5776,55 @@ function updateDialogue() {
 function updateDialogueSpeakerTone(speaker = "") {
   els.dialoguePanel.classList.remove("speaker-player", "speaker-verion", "speaker-system");
   els.dialoguePanel.classList.add(getSpeakerToneClass(speaker));
+}
+
+function getDialogueSpeakerId(speaker = "") {
+  const text = String(speaker || "");
+  if (text.includes("ผู้พเนจร")) {
+    return ensurePlayerCharacterData();
+  }
+  if (text.includes("มาสเตอร์เวรีออน") || text.includes("เวรีออน")) {
+    return "master_verion";
+  }
+  if (text.includes("Memory Breaker") || text.includes("ผู้ทำลายความทรงจำ")) {
+    return "memory_breaker";
+  }
+  if (text.includes("Ed Forger") || text.includes("-ed Forger") || text.includes("The -ed Forger")) {
+    return "ed_forger";
+  }
+  return "";
+}
+
+function hideDialogueSpeakerPortrait(reason = "") {
+  if (!els.dialoguePanel || !els.dialoguePortraitSlot || !els.dialogueSpeakerPortrait) {
+    return;
+  }
+  els.dialoguePanel.classList.add("dialogue-portrait-missing");
+  els.dialoguePortraitSlot.classList.add("hidden");
+  els.dialogueSpeakerPortrait.removeAttribute("src");
+  els.dialogueSpeakerPortrait.alt = "";
+  if (reason) {
+    console.warn("[Dialogue] portrait hidden", reason);
+  }
+}
+
+function updateDialogueSpeakerPortrait(speaker = "") {
+  if (!els.dialoguePanel || !els.dialoguePortraitSlot || !els.dialogueSpeakerPortrait) {
+    return;
+  }
+
+  const speakerId = getDialogueSpeakerId(speaker);
+  const portraitConfig = speakerId ? DIALOGUE_SPEAKER_PORTRAITS[speakerId] : null;
+  if (!portraitConfig?.portrait) {
+    hideDialogueSpeakerPortrait("");
+    return;
+  }
+
+  els.dialoguePanel.classList.remove("dialogue-portrait-missing");
+  els.dialoguePortraitSlot.classList.remove("hidden");
+  els.dialogueSpeakerPortrait.onerror = () => hideDialogueSpeakerPortrait(portraitConfig.portrait);
+  els.dialogueSpeakerPortrait.src = portraitConfig.portrait;
+  els.dialogueSpeakerPortrait.alt = portraitConfig.name || speaker || "";
 }
 
 function startTypewriter(text) {
@@ -8803,6 +9010,7 @@ function renderLessonStoryStep(options = {}) {
   els.speakerName.textContent = step.speaker;
   updateSpeakingCharacter(step.speaker);
   updateDialogueSpeakerTone(step.speaker);
+  updateDialogueSpeakerPortrait(step.speaker);
   const finalButtonText = state.currentLessonStage?.questions?.length
     ? (state.currentLessonStage.type && state.currentLessonStage.type.includes("boss") ? "เริ่มต่อสู้" : "เริ่มฝึก")
     : "ไปต่อ";
@@ -9489,7 +9697,8 @@ function startActBattle(stageIndex) {
     reviewDialogueIndex: state.lessonStoryStepIndex || 0,
     victoryHandled: false,
     grammariaStats: createBattleStats(stage),
-    statuses: null
+    statuses: null,
+    bossGrammarChallenge: createBossGrammarChallengeState()
   };
   resetBattleStatuses(state.actBattle);
   state.currentBattleStats = state.actBattle.grammariaStats;
@@ -10505,6 +10714,508 @@ function getBossKey(stage) {
     return "memoryBreaker";
   }
   return null;
+}
+
+function createBossGrammarChallengeState() {
+  return {
+    active: false,
+    mode: "normal",
+    word: null,
+    inputLocked: false,
+    resolved: false,
+    consecutiveSpecialCount: 0,
+    recentWordIds: [],
+    arrangementTiles: [],
+    selectedTileIds: []
+  };
+}
+
+function normalizeV2Answer(value = "") {
+  return String(value).trim().toLowerCase().replace(/\s+/g, "");
+}
+
+function addRecentBossV2Word(challenge, wordId) {
+  if (!challenge || !wordId) {
+    return;
+  }
+  if (!Array.isArray(challenge.recentWordIds)) {
+    challenge.recentWordIds = [];
+  }
+  challenge.recentWordIds = challenge.recentWordIds.filter(id => id !== wordId);
+  challenge.recentWordIds.push(wordId);
+  const limit = BOSS_GRAMMAR_CHALLENGE_CONFIG.recentWordLimit;
+  if (challenge.recentWordIds.length > limit) {
+    challenge.recentWordIds = challenge.recentWordIds.slice(-limit);
+  }
+}
+
+function resetActiveBossGrammarChallenge({ keepSession = true } = {}) {
+  const challenge = state.actBattle?.bossGrammarChallenge;
+  if (!challenge) {
+    return;
+  }
+  const consecutiveSpecialCount = keepSession ? challenge.consecutiveSpecialCount : 0;
+  const recentWordIds = keepSession && Array.isArray(challenge.recentWordIds) ? [...challenge.recentWordIds] : [];
+  Object.assign(challenge, createBossGrammarChallengeState(), {
+    consecutiveSpecialCount,
+    recentWordIds
+  });
+}
+
+function getCompletedLessonSetForBossChallenges() {
+  const progress = ensureActProgress();
+  if (progress) {
+    validateProgress(progress);
+  }
+  const completed = new Set();
+  [
+    progress?.completedLessons,
+    progress?.completedStages
+  ].forEach(list => {
+    if (!Array.isArray(list)) {
+      return;
+    }
+    list.forEach(id => {
+      if (id) {
+        completed.add(id);
+      }
+    });
+  });
+  return completed;
+}
+
+function hasTaughtBossV2Word(word, completedSet, stage) {
+  if (!word || !completedSet) {
+    return false;
+  }
+  const bossKey = getBossKey(stage);
+  const stageId = stage?.id || "";
+  if (bossKey === "edForger" && word.group === "regular" && stageId === "ed-mini-boss") {
+    return true;
+  }
+  if (bossKey === "irregularWraith" && word.group === "irregular" && stageId === "irregular-mini-boss") {
+    return true;
+  }
+  if (bossKey === "memoryBreaker") {
+    return word.lessonTags.some(tag => completedSet.has(tag)) ||
+      (word.group === "regular" && completedSet.has("ed-mini-boss")) ||
+      (word.group === "irregular" && completedSet.has("irregular-mini-boss"));
+  }
+  return word.lessonTags.some(tag => completedSet.has(tag));
+}
+
+function getEligibleBossV2Words(stage, challenge) {
+  const bossKey = getBossKey(stage);
+  if (!BOSS_GRAMMAR_CHALLENGE_CONFIG.enabled || !bossKey) {
+    return [];
+  }
+
+  const completedSet = getCompletedLessonSetForBossChallenges();
+  let allowedGroups = [];
+  if (bossKey === "edForger") {
+    allowedGroups = ["regular"];
+  } else if (bossKey === "irregularWraith") {
+    allowedGroups = ["irregular"];
+  } else if (bossKey === "memoryBreaker") {
+    allowedGroups = ["regular", "irregular"];
+  }
+
+  const taughtWords = BOSS_V2_CHALLENGE_WORDS.filter(word =>
+    allowedGroups.includes(word.group) &&
+    hasTaughtBossV2Word(word, completedSet, stage)
+  );
+  if (!taughtWords.length) {
+    return [];
+  }
+
+  const recentIds = new Set(challenge?.recentWordIds || []);
+  const freshWords = taughtWords.filter(word => !recentIds.has(word.id));
+  return freshWords.length ? freshWords : taughtWords;
+}
+
+function chooseBossV2ChallengeWord(stage, challenge) {
+  const eligibleWords = getEligibleBossV2Words(stage, challenge);
+  return sample(eligibleWords, 1)[0] || null;
+}
+
+function chooseBossInteractionMode(challenge, hasEligibleWords) {
+  if (!hasEligibleWords || !challenge) {
+    return "normal";
+  }
+  if ((challenge.consecutiveSpecialCount || 0) >= BOSS_GRAMMAR_CHALLENGE_CONFIG.maxSpecialConsecutive) {
+    return "normal";
+  }
+
+  const roll = Math.random();
+  const typingCutoff = BOSS_INTERACTION_WEIGHTS.normal + BOSS_INTERACTION_WEIGHTS.typing;
+  if (roll < BOSS_INTERACTION_WEIGHTS.normal) {
+    return "normal";
+  }
+  if (roll < typingCutoff) {
+    return "typing";
+  }
+  return "arrangement";
+}
+
+function createArrangementTiles(answer) {
+  return String(answer)
+    .split("")
+    .map((char, index) => ({ id: `${char}-${index}-${Math.random().toString(36).slice(2, 6)}`, char, originalIndex: index }));
+}
+
+function startBossGrammarChallengeIfEligible() {
+  const battle = state.actBattle;
+  const challenge = battle?.bossGrammarChallenge;
+  if (!battle || !challenge || !battle.pendingBossTurn || !battle.pendingBossAction) {
+    return false;
+  }
+
+  const word = chooseBossV2ChallengeWord(battle.stage, challenge);
+  const mode = chooseBossInteractionMode(challenge, Boolean(word));
+  if (mode === "normal" || !word) {
+    challenge.consecutiveSpecialCount = 0;
+    return false;
+  }
+
+  Object.assign(challenge, {
+    active: true,
+    mode,
+    word,
+    inputLocked: false,
+    resolved: false,
+    arrangementTiles: mode === "arrangement" ? shuffleArray(createArrangementTiles(word.v2)) : [],
+    selectedTileIds: []
+  });
+  challenge.consecutiveSpecialCount = (challenge.consecutiveSpecialCount || 0) + 1;
+  addRecentBossV2Word(challenge, word.id);
+
+  if (mode === "typing") {
+    showBossTypingChallenge();
+  } else {
+    showBossArrangementChallenge();
+  }
+  return true;
+}
+
+function lockBossGrammarChallengeControls() {
+  const challenge = state.actBattle?.bossGrammarChallenge;
+  if (challenge) {
+    challenge.inputLocked = true;
+  }
+  els.answerOptions.querySelectorAll("button, input").forEach(control => {
+    control.disabled = true;
+  });
+}
+
+function renderBossChallengeHeader(title, word) {
+  els.questionText.innerHTML = `
+    <span class="boss-v2-challenge-kicker">V1 → V2</span>
+    <strong>${title}</strong>
+    <span class="boss-v2-challenge-prompt">เปลี่ยน <b>${word.v1}</b> ให้เป็นรูปอดีต</span>
+    <span class="boss-v2-challenge-hint">${word.hint}</span>
+  `;
+}
+
+function showBossTypingChallenge() {
+  const battle = state.actBattle;
+  const challenge = battle?.bossGrammarChallenge;
+  if (!battle || !challenge?.word) {
+    return;
+  }
+
+  setBattleTurnOwner("enemy");
+  showOnlyBattlePanel(els.questionPanel);
+  els.continueBattleButton.classList.add("hidden");
+  els.battleMessage.textContent = "บอสทดสอบรูปอดีต พิมพ์คำตอบแล้วกด ยืนยัน";
+  renderBossChallengeHeader("Typing Answer Mode", challenge.word);
+  els.answerOptions.innerHTML = "";
+
+  const panel = document.createElement("div");
+  panel.className = "boss-v2-challenge-panel boss-v2-typing-panel";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "boss-v2-typing-input";
+  input.autocomplete = "off";
+  input.spellcheck = false;
+  input.placeholder = "พิมพ์ V2 ที่นี่";
+  input.setAttribute("aria-label", "พิมพ์คำตอบ V2");
+  const confirmButton = document.createElement("button");
+  confirmButton.type = "button";
+  confirmButton.className = "answer-button boss-v2-confirm-button";
+  confirmButton.textContent = "ยืนยัน";
+  confirmButton.setAttribute("aria-label", "ยืนยัน");
+  confirmButton.disabled = true;
+
+  input.addEventListener("input", () => {
+    confirmButton.disabled = challenge.inputLocked || !input.value.trim();
+  });
+  input.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+    }
+  });
+  confirmButton.addEventListener("click", () => confirmBossTypingChallenge(input.value));
+
+  panel.append(input, confirmButton);
+  els.answerOptions.appendChild(panel);
+  input.focus({ preventScroll: true });
+}
+
+function confirmBossTypingChallenge(value) {
+  const battle = state.actBattle;
+  const challenge = battle?.bossGrammarChallenge;
+  if (!battle || !challenge?.active || challenge.mode !== "typing" || challenge.resolved || challenge.inputLocked) {
+    return;
+  }
+
+  const answer = normalizeV2Answer(value);
+  if (!answer) {
+    return;
+  }
+
+  challenge.resolved = true;
+  lockBossGrammarChallengeControls();
+  const isCorrect = answer === normalizeV2Answer(challenge.word.v2);
+  showBossGrammarChallengeFeedback(isCorrect, isCorrect
+    ? `ถูกต้อง! ${challenge.word.v1} → ${challenge.word.v2}`
+    : `ยังไม่ถูก ${challenge.word.v1} → ${challenge.word.v2}`);
+
+  if (isCorrect) {
+    window.setTimeout(() => {
+      forceBossTurnToStoredDefenseOnly(battle);
+      resetActiveBossGrammarChallenge({ keepSession: true });
+      showBossIntentPanel(battle.pendingBossTurn);
+    }, 650);
+    return;
+  }
+
+  window.setTimeout(() => resolveBossGrammarDirectHit("typing"), 650);
+}
+
+function forceBossTurnToStoredDefenseOnly(battle) {
+  if (!battle?.pendingBossTurn || !battle.pendingBossAction) {
+    return;
+  }
+  const currentSequence = battle.pendingBossTurn.sequence?.length
+    ? battle.pendingBossTurn.sequence
+    : battle.pendingBossAction.sequence || ["attack"];
+  const defenseSequence = currentSequence.filter(step => ["attack", "point", "heavy"].includes(step));
+  battle.pendingBossTurn.sequence = defenseSequence.length
+    ? defenseSequence
+    : [chooseBossDefenseStep(battle.pendingBossAction, battle)];
+  battle.pendingBossTurn.stepIndex = 0;
+}
+
+function showBossArrangementChallenge() {
+  const battle = state.actBattle;
+  const challenge = battle?.bossGrammarChallenge;
+  if (!battle || !challenge?.word) {
+    return;
+  }
+
+  setBattleTurnOwner("enemy");
+  showOnlyBattlePanel(els.questionPanel);
+  els.continueBattleButton.classList.add("hidden");
+  els.battleMessage.textContent = "เรียงตัวอักษรให้เป็น V2 แล้วกด ยืนยัน";
+  renderBossChallengeHeader("Word Arrangement Mode", challenge.word);
+  renderBossArrangementControls();
+}
+
+function renderBossArrangementControls() {
+  const battle = state.actBattle;
+  const challenge = battle?.bossGrammarChallenge;
+  if (!battle || !challenge?.word || challenge.mode !== "arrangement") {
+    return;
+  }
+
+  const selectedIds = new Set(challenge.selectedTileIds || []);
+  const selectedTiles = challenge.selectedTileIds
+    .map(id => challenge.arrangementTiles.find(tile => tile.id === id))
+    .filter(Boolean);
+  els.answerOptions.innerHTML = "";
+
+  const panel = document.createElement("div");
+  panel.className = "boss-v2-challenge-panel boss-v2-arrangement-panel";
+  const answerRow = document.createElement("div");
+  answerRow.className = "boss-v2-arrangement-answer";
+  const selectedText = selectedTiles.map(tile => tile.char).join("");
+  answerRow.textContent = selectedText || "แตะตัวอักษรเพื่อเรียงคำ";
+
+  const tileRow = document.createElement("div");
+  tileRow.className = "boss-v2-arrangement-tiles";
+  challenge.arrangementTiles.forEach(tile => {
+    const tileButton = document.createElement("button");
+    tileButton.type = "button";
+    tileButton.className = "boss-v2-letter-tile";
+    tileButton.textContent = tile.char;
+    tileButton.disabled = challenge.inputLocked || selectedIds.has(tile.id);
+    tileButton.addEventListener("click", () => {
+      if (challenge.inputLocked || selectedIds.has(tile.id)) {
+        return;
+      }
+      challenge.selectedTileIds.push(tile.id);
+      renderBossArrangementControls();
+    });
+    tileRow.appendChild(tileButton);
+  });
+
+  const controlRow = document.createElement("div");
+  controlRow.className = "boss-v2-arrangement-controls";
+  const undoButton = document.createElement("button");
+  undoButton.type = "button";
+  undoButton.className = "answer-button secondary";
+  undoButton.textContent = "ย้อนหนึ่งตัว";
+  undoButton.disabled = challenge.inputLocked || !challenge.selectedTileIds.length;
+  undoButton.addEventListener("click", () => {
+    if (challenge.inputLocked) {
+      return;
+    }
+    challenge.selectedTileIds.pop();
+    renderBossArrangementControls();
+  });
+
+  const clearButton = document.createElement("button");
+  clearButton.type = "button";
+  clearButton.className = "answer-button secondary";
+  clearButton.textContent = "ล้างคำตอบ";
+  clearButton.disabled = challenge.inputLocked || !challenge.selectedTileIds.length;
+  clearButton.addEventListener("click", () => {
+    if (challenge.inputLocked) {
+      return;
+    }
+    challenge.selectedTileIds = [];
+    renderBossArrangementControls();
+  });
+
+  const confirmButton = document.createElement("button");
+  confirmButton.type = "button";
+  confirmButton.className = "answer-button boss-v2-confirm-button";
+  confirmButton.textContent = "ยืนยัน";
+  confirmButton.setAttribute("aria-label", "ยืนยัน");
+  confirmButton.disabled = challenge.inputLocked || challenge.selectedTileIds.length !== challenge.arrangementTiles.length;
+  confirmButton.addEventListener("click", confirmBossArrangementChallenge);
+
+  controlRow.append(undoButton, clearButton, confirmButton);
+  panel.append(answerRow, tileRow, controlRow);
+  els.answerOptions.appendChild(panel);
+}
+
+function confirmBossArrangementChallenge() {
+  const battle = state.actBattle;
+  const challenge = battle?.bossGrammarChallenge;
+  if (!battle || !challenge?.active || challenge.mode !== "arrangement" || challenge.resolved || challenge.inputLocked) {
+    return;
+  }
+  if (challenge.selectedTileIds.length !== challenge.arrangementTiles.length) {
+    return;
+  }
+
+  challenge.resolved = true;
+  lockBossGrammarChallengeControls();
+  const answer = challenge.selectedTileIds
+    .map(id => challenge.arrangementTiles.find(tile => tile.id === id)?.char || "")
+    .join("");
+  const isCorrect = normalizeV2Answer(answer) === normalizeV2Answer(challenge.word.v2);
+  showBossGrammarChallengeFeedback(isCorrect, isCorrect
+    ? `เรียงถูกต้อง! ${challenge.word.v1} → ${challenge.word.v2}`
+    : `ยังไม่ถูก ${challenge.word.v1} → ${challenge.word.v2}`);
+
+  if (isCorrect) {
+    window.setTimeout(resolveBossGrammarCounterAttack, 650);
+    return;
+  }
+
+  window.setTimeout(() => resolveBossGrammarDirectHit("arrangement"), 650);
+}
+
+function showBossGrammarChallengeFeedback(isCorrect, text) {
+  const feedback = document.createElement("div");
+  feedback.className = `answer-feedback ${isCorrect ? "correct" : "wrong"}`;
+  feedback.innerHTML = `<strong>${isCorrect ? "ถูกต้อง!" : "ยังไม่ถูกต้อง"}</strong><br>${text}`;
+  els.answerOptions.appendChild(feedback);
+  els.battleMessage.textContent = isCorrect
+    ? "เจ้าต้านโจทย์ของบอสได้สำเร็จ"
+    : "บอสโจมตีทันที ไม่มีจังหวะ Parry";
+}
+
+function resolveBossGrammarDirectHit(mode) {
+  const battle = state.actBattle;
+  if (!battle || !battle.pendingBossAction || isActBattleEnded(battle)) {
+    return;
+  }
+
+  const action = battle.pendingBossAction;
+  resetActiveBossGrammarChallenge({ keepSession: true });
+  showOnlyBattlePanel(null);
+  setBattleTurnOwner("player");
+  const rawDamage = Math.max(1, Number(action.damage || action.baseDamage || battle.stage?.enemyDamage || battle.stage?.bossDamage || 12));
+  const playerDamageResult = applyStatusDamageToTarget("player", rawDamage, "bossV2ChallengeDirectHit", {
+    mode,
+    actionType: action.type,
+    bypassParry: true
+  });
+  const feedbackLines = [];
+  appendDamageModifierLines(feedbackLines, "player", playerDamageResult);
+  applyBossMarkOnPlayerIfHit(action, playerDamageResult.finalDamage, feedbackLines);
+  playAttackSfx();
+  triggerMotion(els.battleEnemy, "enemy-attack-motion");
+  updateBattleStats();
+  syncBattleStateToPlayerData();
+  els.battleMessage.textContent = `บอสโจมตีเข้าเต็ม ๆ รับดาเมจ ${playerDamageResult.finalDamage}`;
+  if (feedbackLines.length) {
+    els.battleMessage.textContent += `\n${feedbackLines.join("\n")}`;
+  }
+
+  if (resolvePlayerDefeat("HP เหลือ 0")) {
+    return;
+  }
+
+  finalizeBossTurnState();
+  showBattleContinueButton(
+    battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "เทิร์นถัดไป",
+    continueActBattle
+  );
+  battle.justRevived = false;
+}
+
+function resolveBossGrammarCounterAttack() {
+  const battle = state.actBattle;
+  if (!battle || !battle.pendingBossAction || isActBattleEnded(battle)) {
+    return;
+  }
+
+  const challengeWord = battle.bossGrammarChallenge?.word;
+  resetActiveBossGrammarChallenge({ keepSession: true });
+  showOnlyBattlePanel(null);
+  setBattleTurnOwner("player");
+  const baseDamage = Number(battle.damagePerCorrect || 12);
+  const counterDamage = clamp(
+    Math.round(baseDamage * BOSS_GRAMMAR_CHALLENGE_CONFIG.counterDamageRatio),
+    BOSS_GRAMMAR_CHALLENGE_CONFIG.counterDamageMin,
+    BOSS_GRAMMAR_CHALLENGE_CONFIG.counterDamageMax
+  );
+  const bossDamageResult = applyStatusDamageToTarget("boss", counterDamage, "bossV2ArrangementCounter", {
+    wordId: challengeWord?.id || "",
+    noApCost: true,
+    noReward: true
+  });
+  triggerMotion(els.battlePlayer, "player-attack-motion");
+  triggerEnemyHitFeedback(bossDamageResult.finalDamage, "COUNTER");
+  updateBattleStats();
+  syncBattleStateToPlayerData();
+  els.battleMessage.textContent = `เรียงคำสำเร็จ! เจ้าสวนกลับ ${bossDamageResult.finalDamage} ดาเมจ\nไม่มีการใช้ AP และไม่มีรางวัลพิเศษ`;
+
+  if (state.enemyHp <= 0) {
+    handleActEnemyDefeated("bossV2ArrangementCounter");
+    return;
+  }
+
+  finalizeBossTurnState();
+  showBattleContinueButton(
+    battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "เทิร์นถัดไป",
+    continueActBattle
+  );
+  battle.justRevived = false;
 }
 
 function getParryConfigForBoss(stage, action = null) {
@@ -11698,6 +12409,10 @@ function startActBossWarning() {
     wrongQuestions: 0
   };
 
+  if (startBossGrammarChallengeIfEligible()) {
+    return;
+  }
+
   showBossIntentPanel(battle.pendingBossTurn);
 }
 
@@ -12555,6 +13270,7 @@ function finalizeBossTurnState() {
   battle.pendingBossAction = null;
   battle.pendingBossTurn = null;
   battle.turnNumber += 1;
+  renderBattleTurnIndicator();
 }
 
 function prepareActParry() {

@@ -279,9 +279,14 @@
           </div>
 
           <div id="dialoguePanel" class="dialogue-panel vn-dialogue dialogue-box">
-            <p id="speakerName" class="speaker-name"></p>
-            <p id="dialogueText" class="dialogue-text"></p>
-            <div id="dialogueChoices" class="dialogue-choices hidden"></div>
+            <div id="dialoguePortraitSlot" class="dialogue-speaker-portrait-slot hidden" aria-hidden="true">
+              <img id="dialogueSpeakerPortrait" class="dialogue-speaker-portrait" alt="" draggable="false">
+            </div>
+            <div class="dialogue-main-content">
+              <p id="speakerName" class="speaker-name"></p>
+              <p id="dialogueText" class="dialogue-text"></p>
+              <div id="dialogueChoices" class="dialogue-choices hidden"></div>
+            </div>
           </div>
 
           <div id="lessonStoryVisual" class="lesson-story-visual hidden" aria-live="polite"></div>
@@ -354,6 +359,17 @@
         <p class="eyebrow">การต่อสู้</p>
         <h2 id="battleTitle">The Memory Breaker</h2>
       </header>
+
+      <div id="battleTurnIndicator" class="battle-turn-indicator hidden" aria-live="polite">
+        <div id="battleCurrentTurn" class="battle-current-turn">
+          <span class="battle-turn-label">ตาปัจจุบัน</span>
+          <strong id="battleCurrentTurnActor">ตาของผู้เล่น</strong>
+        </div>
+        <div class="battle-upcoming-turns">
+          <span class="battle-turn-label">5 ตาถัดไป</span>
+          <div id="battleUpcomingTurnList" class="battle-upcoming-turn-list"></div>
+        </div>
+      </div>
 
       <div class="battle-stage">
         <article id="battlePlayer" class="combatant player-side">

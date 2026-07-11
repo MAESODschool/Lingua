@@ -5584,3 +5584,489 @@ h3 {
       inset 0 0 14px rgba(112, 74, 188, 0.08);
   }
 }
+
+/* Upper lesson dialogue layout */
+#storyScene .story-illustration .vn-dialogue {
+  top: 10px;
+  bottom: auto;
+  left: 12px;
+  right: 12px;
+  width: auto;
+  min-height: 112px;
+  height: auto;
+  max-height: 158px;
+  padding: 34px 18px 14px;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+#storyScene .story-illustration .vn-dialogue::before {
+  inset: 4px;
+}
+
+#storyScene .story-illustration .vn-dialogue::after {
+  top: -4px;
+  width: 10px;
+  height: 10px;
+}
+
+#storyScene .story-illustration .vn-dialogue .speaker-name {
+  max-width: calc(100% - 16px);
+  margin: 0 0 7px;
+  position: absolute;
+  top: 8px;
+  left: 16px;
+  z-index: 2;
+  overflow-wrap: anywhere;
+}
+
+#storyScene .story-illustration .vn-dialogue .dialogue-text {
+  min-height: 0;
+  max-height: 86px;
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  line-height: 1.5;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  scrollbar-width: thin;
+}
+
+#storyScene .story-illustration .vn-dialogue .dialogue-choices {
+  max-height: 92px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+#storyScene .story-illustration .vn-dialogue:has(.dialogue-choices:not(.hidden)) {
+  max-height: 190px;
+}
+
+@media (min-width: 560px) {
+  #storyScene .story-illustration .vn-dialogue {
+    top: 12px;
+    left: 14px;
+    right: 14px;
+    min-height: 118px;
+    max-height: 172px;
+    padding: 38px 22px 16px;
+  }
+
+  #storyScene .story-illustration .vn-dialogue .speaker-name {
+    left: 20px;
+  }
+
+  #storyScene .story-illustration .vn-dialogue .dialogue-text {
+    max-height: 106px;
+  }
+
+  #storyScene .story-illustration .vn-dialogue:has(.dialogue-choices:not(.hidden)) {
+    max-height: 204px;
+  }
+}
+
+@media (max-width: 420px) {
+  #storyScene .story-illustration .vn-dialogue {
+    top: 8px;
+    left: 10px;
+    right: 10px;
+    min-height: 108px;
+    max-height: 148px;
+    padding: 32px 14px 12px;
+    border-radius: 14px;
+  }
+
+  #storyScene .story-illustration .vn-dialogue .speaker-name {
+    top: 7px;
+    left: 12px;
+    max-width: calc(100% - 12px);
+    padding: 3px 8px;
+    font-size: 0.82rem;
+  }
+
+  #storyScene .story-illustration .vn-dialogue .dialogue-text {
+    max-height: 80px;
+    font-size: 0.96rem;
+    line-height: 1.45;
+  }
+
+#storyScene .story-illustration .vn-dialogue:has(.dialogue-choices:not(.hidden)) {
+  max-height: 176px;
+  }
+}
+
+/* Dialogue speaker portraits */
+#storyScene .story-illustration .vn-dialogue {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 14px;
+  padding: 12px 18px 12px;
+}
+
+#storyScene .story-illustration .vn-dialogue.dialogue-portrait-missing {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.dialogue-speaker-portrait-slot {
+  position: relative;
+  width: 112px;
+  min-height: 126px;
+  border: 1px solid rgba(238, 202, 111, 0.72);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(94, 204, 255, 0.22), transparent 42%),
+    linear-gradient(180deg, rgba(35, 22, 78, 0.88), rgba(9, 11, 35, 0.94));
+  box-shadow:
+    inset 0 0 16px rgba(91, 201, 255, 0.14),
+    0 0 16px rgba(151, 100, 255, 0.22);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.dialogue-speaker-portrait-slot::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(255, 235, 166, 0.28);
+  border-radius: 9px;
+  pointer-events: none;
+}
+
+.dialogue-speaker-portrait {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  pointer-events: none;
+}
+
+.dialogue-main-content {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-content: start;
+  gap: 6px;
+}
+
+#storyScene .story-illustration .vn-dialogue .dialogue-main-content .speaker-name {
+  position: static;
+  top: auto;
+  left: auto;
+  max-width: 100%;
+  margin: 0;
+}
+
+#storyScene .story-illustration .vn-dialogue .dialogue-main-content .dialogue-text {
+  max-height: 72px;
+}
+
+#storyScene .story-illustration .vn-dialogue .dialogue-main-content .dialogue-choices {
+  max-height: 76px;
+}
+
+#storyScene .story-illustration .vn-dialogue.dialogue-portrait-missing .dialogue-main-content .dialogue-text {
+  max-height: 92px;
+}
+
+/* Battle turn indicator */
+#battleScene .battle-turn-indicator {
+  flex: 0 0 auto;
+}
+
+.battle-turn-indicator {
+  display: grid;
+  grid-template-columns: minmax(112px, 0.5fr) minmax(0, 1.5fr);
+  gap: 10px;
+  width: min(620px, 100%);
+  margin: 0 auto;
+  padding: 8px 10px;
+  border: 1px solid rgba(226, 188, 102, 0.58);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(107, 201, 255, 0.16), transparent 46%),
+    linear-gradient(145deg, rgba(19, 18, 55, 0.82), rgba(8, 8, 29, 0.88));
+  box-shadow:
+    inset 0 0 14px rgba(98, 191, 234, 0.1),
+    0 0 18px rgba(83, 59, 169, 0.26);
+  pointer-events: none;
+}
+
+.battle-current-turn,
+.battle-upcoming-turns {
+  min-width: 0;
+}
+
+.battle-turn-label {
+  display: block;
+  margin-bottom: 4px;
+  color: rgba(255, 239, 190, 0.82);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.battle-current-turn strong {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 220, 132, 0.84);
+  border-radius: 10px;
+  color: #fff9dc;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(97, 212, 255, 0.24), transparent 58%),
+    linear-gradient(180deg, rgba(70, 48, 137, 0.9), rgba(22, 20, 62, 0.94));
+  box-shadow: 0 0 14px rgba(139, 109, 255, 0.3);
+  font-size: 0.95rem;
+}
+
+.battle-turn-indicator.is-boss-turn .battle-current-turn strong {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(196, 73, 129, 0.22), transparent 58%),
+    linear-gradient(180deg, rgba(87, 39, 87, 0.92), rgba(28, 16, 54, 0.94));
+}
+
+.battle-upcoming-turn-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.battle-turn-slot {
+  display: grid;
+  min-width: 0;
+  min-height: 34px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  padding: 5px 6px;
+  border: 1px solid rgba(226, 188, 102, 0.4);
+  border-radius: 8px;
+  color: rgba(255, 247, 223, 0.92);
+  background: rgba(16, 18, 48, 0.7);
+  box-shadow: inset 0 0 10px rgba(98, 191, 234, 0.08);
+  font-size: 0.78rem;
+}
+
+.battle-turn-slot--player {
+  border-color: rgba(105, 206, 255, 0.5);
+}
+
+.battle-turn-slot--boss {
+  border-color: rgba(213, 118, 163, 0.45);
+}
+
+.turn-order-number {
+  display: inline-grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 999px;
+  color: #120d2a;
+  background: #f1d487;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.turn-actor-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 560px) {
+  #storyScene .story-illustration .vn-dialogue {
+    grid-template-columns: 122px minmax(0, 1fr);
+    gap: 16px;
+    padding: 14px 22px;
+  }
+
+  .dialogue-speaker-portrait-slot {
+    width: 122px;
+    min-height: 136px;
+  }
+
+  #storyScene .story-illustration .vn-dialogue .dialogue-main-content .dialogue-text {
+    max-height: 86px;
+  }
+}
+
+@media (max-width: 520px) {
+  .battle-turn-indicator {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 7px;
+  }
+
+  .battle-current-turn strong,
+  .battle-turn-slot {
+    min-height: 30px;
+  }
+
+  .battle-turn-slot {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 2px;
+    padding: 4px 3px;
+    font-size: 0.68rem;
+  }
+
+  .turn-order-number {
+    width: 16px;
+    height: 16px;
+    font-size: 0.62rem;
+  }
+}
+
+@media (max-width: 420px) {
+  #storyScene .story-illustration .vn-dialogue {
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .dialogue-speaker-portrait-slot {
+    width: 82px;
+    min-height: 98px;
+    border-radius: 10px;
+  }
+
+  #storyScene .story-illustration .vn-dialogue .dialogue-main-content .speaker-name {
+    font-size: 0.78rem;
+  }
+
+  #storyScene .story-illustration .vn-dialogue .dialogue-main-content .dialogue-text {
+    max-height: 58px;
+    font-size: 0.88rem;
+  }
+
+  #storyScene .story-illustration .vn-dialogue .dialogue-main-content .dialogue-choices {
+    max-height: 68px;
+  }
+}
+
+.boss-v2-challenge-kicker,
+.boss-v2-challenge-prompt,
+.boss-v2-challenge-hint {
+  display: block;
+}
+
+.boss-v2-challenge-kicker {
+  margin-bottom: 6px;
+  color: #9ed8ff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.boss-v2-challenge-prompt {
+  margin-top: 8px;
+  color: #f8fbff;
+  font-size: 1rem;
+}
+
+.boss-v2-challenge-hint {
+  margin-top: 6px;
+  color: rgba(229, 236, 255, 0.78);
+  font-size: 0.88rem;
+}
+
+.boss-v2-challenge-panel {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 620px);
+  margin: 0 auto;
+}
+
+.boss-v2-typing-panel {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.boss-v2-typing-input {
+  min-width: 0;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(134, 202, 255, 0.45);
+  border-radius: 8px;
+  background: rgba(8, 14, 34, 0.84);
+  color: #ffffff;
+  font: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.boss-v2-typing-input:focus {
+  border-color: rgba(122, 217, 255, 0.88);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(75, 184, 255, 0.18);
+}
+
+.boss-v2-confirm-button {
+  min-width: 104px;
+  white-space: nowrap;
+}
+
+.boss-v2-arrangement-panel {
+  justify-items: center;
+}
+
+.boss-v2-arrangement-answer {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 214, 125, 0.38);
+  border-radius: 8px;
+  background: rgba(15, 20, 45, 0.74);
+  color: #fff5c8;
+  font-weight: 800;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.boss-v2-arrangement-tiles,
+.boss-v2-arrangement-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.boss-v2-letter-tile {
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(135, 211, 255, 0.45);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(55, 96, 166, 0.9), rgba(18, 30, 74, 0.94));
+  color: #ffffff;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.boss-v2-letter-tile:disabled {
+  cursor: default;
+  opacity: 0.36;
+}
+
+@media (max-width: 520px) {
+  .boss-v2-typing-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .boss-v2-confirm-button {
+    width: 100%;
+  }
+
+  .boss-v2-letter-tile {
+    width: 40px;
+    height: 40px;
+  }
+}
