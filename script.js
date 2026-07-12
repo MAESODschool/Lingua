@@ -2312,6 +2312,7 @@ const state = {
   nextDialogueHold: null,
   audioUnlocked: false,
   currentBgmKey: "",
+  pendingBgmKey: "",
   isMuted: false,
   audioLocked: true,
   typewriterAudioUnlocked: false,
@@ -2675,12 +2676,22 @@ function playBgmForScene(sceneName) {
 }
 
 function playBgm(key, options = {}) {
-  if (!state.audioUnlocked || state.isMuted || !bgmTracks[key]) {
+  if (!bgmTracks[key]) {
+    return false;
+  }
+  if (state.isMuted) {
+    return false;
+  }
+  if (!state.audioUnlocked) {
+    state.pendingBgmKey = key;
     return false;
   }
 
   const shouldRestart = options.restart === true;
   if (!shouldRestart && state.currentBgmKey === key && !bgmTracks[key].paused) {
+    if (state.pendingBgmKey === key) {
+      state.pendingBgmKey = "";
+    }
     return true;
   }
 
@@ -2712,7 +2723,24 @@ function playBgm(key, options = {}) {
     clearBgmFadeTimer(key);
     bgmTracks[key].volume = getBgmVolume(key);
   }
-  bgmTracks[key].play().catch(() => {});
+  const playPromise = bgmTracks[key].play();
+  if (playPromise && typeof playPromise.then === "function") {
+    playPromise
+      .then(() => {
+        if (state.pendingBgmKey === key) {
+          state.pendingBgmKey = "";
+        }
+      })
+      .catch(error => {
+        state.pendingBgmKey = key;
+        console.warn("[BGM] Playback blocked until user interaction", {
+          trackId: key,
+          src: BGM_PATHS[key],
+          currentTrackId: state.currentBgmKey,
+          error
+        });
+      });
+  }
   return true;
 }
 
@@ -3003,11 +3031,10 @@ function clearPrologueTypingTimer() {
 }
 
 function unlockGameAudio() {
-  if (state.audioUnlocked && state.typewriterAudioUnlocked) {
-    return;
+  const shouldLogUnlock = !state.audioUnlocked || !state.typewriterAudioUnlocked || Boolean(state.pendingBgmKey);
+  if (shouldLogUnlock) {
+    console.log("[Audio] unlock requested");
   }
-
-  console.log("[Audio] unlock requested");
   resumeAudioContextIfPresent();
   if (!state.audioUnlocked) {
     state.audioUnlocked = true;
@@ -3015,7 +3042,11 @@ function unlockGameAudio() {
   }
 
   const activeScene = Object.keys(scenes).find(key => scenes[key].classList.contains("active")) || "login";
-  playBgmForScene(activeScene);
+  if (state.pendingBgmKey && bgmTracks[state.pendingBgmKey]) {
+    playBgm(state.pendingBgmKey, { fade: false });
+  } else {
+    playBgmForScene(activeScene);
+  }
 
   if (state.typewriterAudioUnlocked) {
     return;

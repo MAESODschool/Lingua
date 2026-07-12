@@ -10,7 +10,12 @@
   --red: #ff6577;
   --purple: #9b7cff;
   --deep-blue: #101747;
-  --lesson-character-shift-y: 22px;
+  --lesson-character-shift-y: 44px;
+  --text-on-dark-primary: #fff8ea;
+  --text-on-dark-secondary: #e9e4ff;
+  --text-on-dark-gold: #ffe49b;
+  --text-on-light-primary: #17142f;
+  --text-disabled-dark: #c9c1df;
   --parchment: #fff1d6;
   --parchment-ink: #3a2417;
   --glow-blue: #55d7ff;
@@ -296,10 +301,13 @@ body {
   min-height: 38px;
   padding: 8px 12px;
   border-radius: 999px;
-  color: #fff7d6;
+  color: var(--text-on-dark-primary);
   background: rgba(31, 18, 74, 0.86);
   border: 2px solid rgba(255, 213, 106, 0.78);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32);
+  font-size: clamp(0.78rem, 2vw, 0.9rem);
+  line-height: 1.18;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 
 button {
@@ -1816,7 +1824,8 @@ h3 {
 }
 
 .dialogue-prev-button:disabled {
-  opacity: 0.45;
+  opacity: 0.72;
+  color: var(--text-disabled-dark);
   cursor: not-allowed;
   filter: grayscale(0.35);
 }
@@ -1883,7 +1892,7 @@ h3 {
   text-align: center;
   border: 2px solid rgba(255, 213, 106, 0.86);
   border-radius: 22px 22px 12px 12px;
-  color: #fff8cc;
+  color: var(--text-on-dark-primary);
   background:
     linear-gradient(180deg, rgba(99, 63, 158, 0.96), rgba(32, 21, 82, 0.98));
   box-shadow: 0 6px 0 rgba(92, 50, 12, 0.78), 0 0 26px rgba(255, 213, 106, 0.24), inset 0 0 22px rgba(115, 246, 255, 0.12);
@@ -1913,8 +1922,8 @@ h3 {
 
 .lesson-title-banner h2 {
   margin: 0 0 4px;
-  font-size: clamp(1.7rem, 8vw, 2.55rem);
-  line-height: 1;
+  font-size: clamp(1.32rem, 6.4vw, 2.05rem);
+  line-height: 1.08;
   text-shadow: 0 3px 0 rgba(47, 21, 88, 0.86), 0 0 16px rgba(255, 213, 106, 0.34);
 }
 
@@ -1926,15 +1935,16 @@ h3 {
   padding: 4px 12px;
   border: 1px solid rgba(255, 213, 106, 0.74);
   border-radius: 999px;
-  color: #fff2a8;
+  color: var(--text-on-dark-gold);
   background: rgba(20, 15, 56, 0.82);
-  font-size: clamp(0.76rem, 3.5vw, 0.98rem);
+  font-size: clamp(0.7rem, 2.8vw, 0.86rem);
   font-weight: 900;
-  line-height: 1.15;
+  line-height: 1.2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.72);
 }
 
 .lesson-location-label {
-  color: white;
+  color: var(--text-on-dark-primary);
   border-color: rgba(115, 246, 255, 0.34);
   background: rgba(13, 35, 80, 0.62);
 }
@@ -2331,13 +2341,16 @@ h3 {
   border-radius: 22px;
   background: linear-gradient(180deg, #39a7ff, #1557d9 52%, #08309b);
   box-shadow: 0 7px 0 #7b4918, 0 0 18px rgba(55, 167, 255, 0.48), inset 0 0 18px rgba(255, 255, 255, 0.2);
-  font-size: clamp(1.28rem, 6vw, 1.9rem);
+  color: var(--text-on-dark-primary);
+  font-size: clamp(1.04rem, 4.6vw, 1.42rem);
+  line-height: 1.18;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.72);
 }
 
 .lesson-main-action .dialogue-prev-button {
   background: linear-gradient(180deg, #7555ce, #3d2798 52%, #221261);
   box-shadow: 0 7px 0 #4a2a7a, 0 0 18px rgba(140, 98, 255, 0.38), inset 0 0 18px rgba(255, 255, 255, 0.18);
-  font-size: clamp(1.02rem, 4.6vw, 1.42rem);
+  font-size: clamp(0.9rem, 3.8vw, 1.12rem);
 }
 
 .lesson-grammaria-display {
@@ -2375,8 +2388,10 @@ h3 {
   border-radius: 14px;
   background: linear-gradient(180deg, #7b3ec8, #33186e);
   box-shadow: 0 4px 0 #73400f;
-  font-size: 0.78rem;
-  line-height: 1.15;
+  color: var(--text-on-dark-primary);
+  font-size: clamp(0.68rem, 2.2vw, 0.78rem);
+  line-height: 1.2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.72);
 }
 
 .lesson-map-btn {
@@ -4176,7 +4191,7 @@ h3 {
 
 @media (max-width: 768px) {
   :root {
-    --lesson-character-shift-y: 14px;
+    --lesson-character-shift-y: 28px;
   }
 
   #battleScene.active {
@@ -5176,7 +5191,7 @@ h3 {
   padding: 4px 10px;
   border: 1px solid rgba(243, 220, 145, 0.58);
   border-radius: 999px;
-  color: #fff4c7;
+  color: var(--text-on-dark-gold);
   background: linear-gradient(180deg, rgba(79, 43, 138, 0.92), rgba(32, 20, 78, 0.94));
   box-shadow: inset 0 0 10px rgba(98, 191, 234, 0.12), 0 0 10px rgba(140, 99, 232, 0.14);
 }
@@ -5208,7 +5223,7 @@ h3 {
 .answer-feedback,
 .activity-brief,
 .lesson-thought-bubble {
-  color: #fff7df;
+  color: var(--text-on-dark-primary);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
 }
 
@@ -5408,6 +5423,7 @@ h3 {
 .secondary-button:disabled,
 .action-button:disabled {
   border-color: rgba(157, 153, 179, 0.3);
+  color: var(--text-disabled-dark);
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.18);
 }
 
@@ -5421,12 +5437,15 @@ h3 {
 .lesson-round-btn,
 .lesson-dictionary-btn {
   border-color: rgba(243, 220, 145, 0.74);
+  color: var(--text-on-dark-primary);
   background:
     linear-gradient(180deg, rgba(115, 79, 205, 0.98), rgba(39, 28, 112, 0.98) 55%, rgba(19, 17, 64, 0.98));
   box-shadow:
     0 5px 0 rgba(73, 45, 117, 0.78),
     0 0 14px rgba(140, 99, 232, 0.18),
     inset 0 0 0 1px rgba(255, 241, 190, 0.12);
+  line-height: 1.2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.68);
 }
 
 .secondary-button,
