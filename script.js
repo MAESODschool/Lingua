@@ -9653,6 +9653,7 @@ function startActBattle(stageIndex) {
     pendingBossAction: null,
     pendingBossTurn: null,
     bossIntentReadyConsumed: false,
+    bossQuestionState: createBossQuestionState(),
     bossQuestionIndex: 0,
     pendingPlayerAttack: null,
     playerActionPhase: "question",
@@ -10727,6 +10728,15 @@ function createBossGrammarChallengeState() {
     recentWordIds: [],
     arrangementTiles: [],
     selectedTileIds: []
+  };
+}
+
+function createBossQuestionState() {
+  return {
+    active: false,
+    inputLocked: false,
+    resolved: false,
+    questionId: ""
   };
 }
 
@@ -12453,6 +12463,47 @@ function runNextBossTurnStep() {
   showBossAttackStep();
 }
 
+function resetBossQuestionState(battle = state.actBattle) {
+  if (!battle) {
+    return;
+  }
+  battle.currentBossQuestion = null;
+  battle.bossQuestionState = createBossQuestionState();
+}
+
+function isRenderableBossQuestion(question) {
+  if (!question) {
+    return false;
+  }
+  const answer = question.correctAnswer || question.answer;
+  const questionText = getQuestionText(question);
+  return Boolean(
+    questionText &&
+    answer &&
+    Array.isArray(question.options) &&
+    question.options.length >= 2 &&
+    question.options.includes(answer)
+  );
+}
+
+function fallbackBossQuestionToStoredAttack(reason = "missing-question") {
+  const battle = state.actBattle;
+  if (!battle || !battle.pendingBossTurn || !battle.pendingBossAction || isActBattleEnded(battle)) {
+    return;
+  }
+
+  console.warn("[Boss Question] Falling back to stored boss action:", reason);
+  resetBossQuestionState(battle);
+  setBattleTurnOwner("enemy");
+
+  const turn = battle.pendingBossTurn;
+  const currentStepIndex = Math.max(0, turn.stepIndex - 1);
+  const fallbackStep = chooseBossDefenseStep(battle.pendingBossAction, battle);
+  turn.sequence.splice(currentStepIndex, 1, fallbackStep);
+  turn.stepIndex = currentStepIndex;
+  runNextBossTurnStep();
+}
+
 function showHeavyAttackChainMessage(action) {
   const battle = state.actBattle;
   if (!battle || !action) {
@@ -13162,11 +13213,22 @@ function showBossQuestionStep() {
   }
   const rawQuestion = battle && getBossQuestion(battle.stage);
   if (!battle || !rawQuestion) {
-    runNextBossTurnStep();
+    fallbackBossQuestionToStoredAttack("no-boss-question");
     return;
   }
   const question = prepareQuestion(rawQuestion);
+  if (!isRenderableBossQuestion(question)) {
+    fallbackBossQuestionToStoredAttack("invalid-boss-question");
+    return;
+  }
+
   battle.currentBossQuestion = question;
+  battle.bossQuestionState = {
+    active: true,
+    inputLocked: false,
+    resolved: false,
+    questionId: question.id || ""
+  };
 
   showOnlyBattlePanel(els.questionPanel);
   setBattleTurnOwner("enemy");
@@ -13190,6 +13252,11 @@ function chooseBossQuestionAnswer(option, question) {
   if (!battle || !battle.pendingBossTurn || !battle.pendingBossAction) {
     return;
   }
+  if (!battle.bossQuestionState?.active || battle.bossQuestionState.inputLocked || battle.bossQuestionState.resolved) {
+    return;
+  }
+  battle.bossQuestionState.inputLocked = true;
+  battle.bossQuestionState.resolved = true;
 
   const isCorrect = option === (question.correctAnswer || question.answer);
   const feedback = document.createElement("div");
@@ -13224,6 +13291,7 @@ function chooseBossQuestionAnswer(option, question) {
   els.answerOptions.appendChild(feedback);
   updateBattleStats();
   syncBattleStateToPlayerData();
+  battle.bossQuestionState.active = false;
   if (!isCorrect && resolvePlayerDefeat("HP เหลือ 0")) {
     return;
   }
@@ -13267,6 +13335,7 @@ function finalizeBossTurnState() {
   }
   battle.awaitingParry = false;
   battle.awaitingPrepare = false;
+  resetBossQuestionState(battle);
   battle.pendingBossAction = null;
   battle.pendingBossTurn = null;
   battle.turnNumber += 1;
