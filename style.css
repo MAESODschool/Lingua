@@ -10,7 +10,7 @@
   --red: #ff6577;
   --purple: #9b7cff;
   --deep-blue: #101747;
-  --lesson-character-shift-y: 44px;
+  --lesson-character-shift-y: 68px;
   --text-on-dark-primary: #fff8ea;
   --text-on-dark-secondary: #e9e4ff;
   --text-on-dark-gold: #ffe49b;
@@ -4191,7 +4191,7 @@ h3 {
 
 @media (max-width: 768px) {
   :root {
-    --lesson-character-shift-y: 28px;
+    --lesson-character-shift-y: 84px;
   }
 
   #battleScene.active {
