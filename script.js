@@ -130,11 +130,14 @@ const BOSS_ACTIONS = [
   { type: "ultimate", label: "อัลติ", damage: 35, hitCount: 3, markChance: 0.28, markDamageBonus: 0.25, markHits: 2, warning: "บอสกำลังใช้อัลติ! เตรียมปัดป้อง!", zoneWidth: 24, minZoneWidth: 8, speed: 650, zoneSpeed: 1250, shrinkPerSecond: 7, parryDuration: 3100 }
 ];
 
-const BOSS_INTERACTION_WEIGHTS = {
-  normal: 0.40,
-  typing: 0.30,
-  arrangement: 0.30
+const ENEMY_ACTION_WEIGHTS = {
+  question: 0.35,
+  normalAttack: 0.25,
+  typing: 0.20,
+  arrangement: 0.20
 };
+
+const PLAYER_DAMAGE_TO_BOSS_MULTIPLIER = 0.90;
 
 const BOSS_GRAMMAR_CHALLENGE_CONFIG = {
   enabled: true,
@@ -450,12 +453,6 @@ const bossQuestionBanks = {
     { prompt: "drop →", options: ["dropped", "droped", "dropd", "dropied"], answer: "dropped", explanation: "drop ต้องเพิ่ม p ก่อนเติม -ed" },
     { sentence: "He ____ his homework this morning.", options: ["did", "do", "does", "doing"], answer: "did", explanation: "this morning ถ้าเหตุการณ์จบแล้วถือเป็นอดีต ใช้ did" }
   ]
-};
-
-const bossActionPatterns = {
-  edForger: [["attack"], ["question"], ["question", "attack"], ["attack"]],
-  irregularWraith: [["question"], ["attack"], ["question", "attack"], ["attack", "question"], ["question"]],
-  memoryBreaker: [["question", "attack"], ["attack", "question"], ["question", "attack", "question"], ["question", "question", "attack"]]
 };
 
 const bossDifficultyWeights = {
@@ -4304,10 +4301,7 @@ function ensureBattleStatuses(battle = state.actBattle) {
       ...(battle.statuses[target] || {})
     };
   });
-  if (battle.bossStunned) {
-    battle.statuses.boss.stunnedTurns = Math.max(battle.statuses.boss.stunnedTurns || 0, 1);
-    battle.bossStunned = false;
-  }
+  battle.bossStunned = false;
   if (state.guardShield > 0) {
     battle.statuses.player.defenseShieldPercent = Math.max(
       battle.statuses.player.defenseShieldPercent || 0,
@@ -4345,10 +4339,29 @@ function addStunGauge(target, amount, source = "", lines = []) {
   if (!buildAmount) {
     return false;
   }
-  status.stunGauge = clamp((status.stunGauge || 0) + buildAmount, 0, status.stunThreshold || STATUS_BALANCE_CONFIG.stun.defaultThreshold);
+  const threshold = getTargetStunThreshold(target);
+  status.stunGauge = clamp(getTargetStunValue(target) + buildAmount, 0, threshold);
   addBattleMessageLine(lines, `${target === "boss" ? "บอส" : "ผู้เล่น"} สะสม Stun +${buildAmount}`);
   statusLog("stun build", { target, amount: buildAmount, gauge: status.stunGauge, source });
   return applyStunIfThresholdReached(target, lines);
+}
+
+function getTargetStunValue(target, battle = state.actBattle) {
+  const status = getBattleStatus(target, battle);
+  const value = Number(status?.stunGauge);
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.max(0, value);
+}
+
+function getTargetStunThreshold(target, battle = state.actBattle) {
+  const status = getBattleStatus(target, battle);
+  const threshold = Number(status?.stunThreshold ?? STATUS_BALANCE_CONFIG.stun.defaultThreshold);
+  if (!Number.isFinite(threshold) || threshold <= 0) {
+    return STATUS_BALANCE_CONFIG.stun.defaultThreshold;
+  }
+  return threshold;
 }
 
 function applyStunIfThresholdReached(target, lines = []) {
@@ -4356,24 +4369,21 @@ function applyStunIfThresholdReached(target, lines = []) {
   if (!status) {
     return false;
   }
-  const threshold = status.stunThreshold || STATUS_BALANCE_CONFIG.stun.defaultThreshold;
-  if ((status.stunGauge || 0) < threshold) {
+  const threshold = getTargetStunThreshold(target);
+  if (getTargetStunValue(target) < threshold) {
     return false;
   }
-  const battle = state.actBattle;
-  const resistanceMultiplier = battle?.bossWasStunnedLastTurn && target === "boss"
-    ? STATUS_BALANCE_CONFIG.stun.repeatedStunResistanceMultiplier
-    : 1;
   status.stunnedTurns = Math.max(
     status.stunnedTurns || 0,
     target === "boss" ? STATUS_BALANCE_CONFIG.stun.bossStunTurns : 1
   );
-  status.stunGauge = Math.max(0, Math.round((status.stunGauge - threshold) * resistanceMultiplier));
+  status.stunGauge = threshold;
+  const battle = state.actBattle;
   if (target === "boss" && battle) {
     battle.bossStunned = false;
   }
   addBattleMessageLine(lines, `${target === "boss" ? "บอส" : "ผู้เล่น"}ติด Stun!`);
-  statusLog("stun applied", { target, stunnedTurns: status.stunnedTurns, remainingGauge: status.stunGauge });
+  statusLog("stun applied", { target, stunnedTurns: status.stunnedTurns, gauge: status.stunGauge });
   return true;
 }
 
@@ -4388,7 +4398,7 @@ function consumeStunTurn(target) {
 
 function isTargetStunned(target) {
   const status = getBattleStatus(target);
-  return Boolean(status?.stunnedTurns > 0);
+  return Boolean(status?.stunnedTurns > 0 && getTargetStunValue(target) >= getTargetStunThreshold(target));
 }
 
 function addDefenseShield(target, percent, hits = 1, source = "", options = {}) {
@@ -9655,6 +9665,10 @@ function startActBattle(stageIndex) {
     bossIntentReadyConsumed: false,
     bossQuestionState: createBossQuestionState(),
     bossQuestionIndex: 0,
+    enemyActionHistory: {
+      lastMode: "",
+      consecutiveCount: 0
+    },
     pendingPlayerAttack: null,
     playerActionPhase: "question",
     pendingPlayerAnswer: null,
@@ -9681,6 +9695,8 @@ function startActBattle(stageIndex) {
     simpleIrregularStreak: 0,
     bossStunned: false,
     bossWasStunnedLastTurn: false,
+    stunSkipResolving: false,
+    stunTurnCompleted: false,
     correctStreak: 0,
     ap: ACT_MAX_AP,
     focusBuff: null,
@@ -10848,23 +10864,72 @@ function chooseBossV2ChallengeWord(stage, challenge) {
   return sample(eligibleWords, 1)[0] || null;
 }
 
-function chooseBossInteractionMode(challenge, hasEligibleWords) {
-  if (!hasEligibleWords || !challenge) {
-    return "normal";
+function getEnemyActionHistory(battle) {
+  if (!battle.enemyActionHistory) {
+    battle.enemyActionHistory = {
+      lastMode: "",
+      consecutiveCount: 0
+    };
   }
-  if ((challenge.consecutiveSpecialCount || 0) >= BOSS_GRAMMAR_CHALLENGE_CONFIG.maxSpecialConsecutive) {
-    return "normal";
+  return battle.enemyActionHistory;
+}
+
+function hasEnemyQuestionAvailable(stage) {
+  return getEnemyQuestionBank(stage).questions.length > 0;
+}
+
+function getEligibleEnemyActionModes(battle) {
+  if (!battle || isActBattleEnded(battle)) {
+    return [];
   }
 
-  const roll = Math.random();
-  const typingCutoff = BOSS_INTERACTION_WEIGHTS.normal + BOSS_INTERACTION_WEIGHTS.typing;
-  if (roll < BOSS_INTERACTION_WEIGHTS.normal) {
-    return "normal";
+  const modes = [];
+  if (hasEnemyQuestionAvailable(battle.stage)) {
+    modes.push("question");
   }
-  if (roll < typingCutoff) {
-    return "typing";
+  modes.push("normalAttack");
+
+  const challenge = battle.bossGrammarChallenge || createBossGrammarChallengeState();
+  const hasEligibleV2Words = Boolean(chooseBossV2ChallengeWord(battle.stage, challenge));
+  if (hasEligibleV2Words) {
+    modes.push("typing", "arrangement");
   }
-  return "arrangement";
+
+  const history = getEnemyActionHistory(battle);
+  if (history.lastMode && history.consecutiveCount >= 2 && history.lastMode !== "normalAttack" && modes.length > 1) {
+    return modes.filter(mode => mode !== history.lastMode);
+  }
+  return modes;
+}
+
+function selectWeightedEnemyActionMode(modes, weights = ENEMY_ACTION_WEIGHTS) {
+  const weightedModes = modes
+    .map(mode => ({ mode, weight: Math.max(0, Number(weights[mode]) || 0) }))
+    .filter(item => item.weight > 0);
+  if (!weightedModes.length) {
+    return modes.includes("normalAttack") ? "normalAttack" : modes[0] || "normalAttack";
+  }
+
+  const total = weightedModes.reduce((sum, item) => sum + item.weight, 0);
+  const roll = Math.random() * total;
+  let cumulative = 0;
+  for (const item of weightedModes) {
+    cumulative += item.weight;
+    if (roll < cumulative) {
+      return item.mode;
+    }
+  }
+  return weightedModes[weightedModes.length - 1].mode;
+}
+
+function recordEnemyActionMode(battle, mode) {
+  const history = getEnemyActionHistory(battle);
+  if (history.lastMode === mode) {
+    history.consecutiveCount += 1;
+  } else {
+    history.lastMode = mode;
+    history.consecutiveCount = 1;
+  }
 }
 
 function createArrangementTiles(answer) {
@@ -10880,9 +10945,14 @@ function startBossGrammarChallengeIfEligible() {
     return false;
   }
 
+  const forcedMode = battle.pendingBossAction.grammarChallengeMode;
+  if (forcedMode !== "typing" && forcedMode !== "arrangement") {
+    return false;
+  }
+
   const word = chooseBossV2ChallengeWord(battle.stage, challenge);
-  const mode = chooseBossInteractionMode(challenge, Boolean(word));
-  if (mode === "normal" || !word) {
+  const mode = forcedMode;
+  if (!word) {
     challenge.consecutiveSpecialCount = 0;
     return false;
   }
@@ -11542,8 +11612,9 @@ function tryStunBoss(baseChance, lines) {
   if (Math.random() < chance) {
     const bossStatus = getBattleStatus("boss");
     if (bossStatus) {
+      const threshold = getTargetStunThreshold("boss");
+      bossStatus.stunGauge = threshold;
       bossStatus.stunnedTurns = Math.max(bossStatus.stunnedTurns || 0, STATUS_BALANCE_CONFIG.stun.bossStunTurns);
-      bossStatus.stunGauge = 0;
     }
     battle.bossStunned = false;
     addBattleMessageLine(lines, "บอสติด Stun! การโจมตีครั้งถัดไปถูกหยุดไว้");
@@ -12330,7 +12401,6 @@ function createBossComboAttackAction(stage, battle, templateAction) {
 function chooseActBossAction(battle) {
   const hpPercent = state.enemyHp / state.enemyMaxHp;
   const bossKey = getBossKey(battle.stage);
-  const patterns = bossKey ? bossActionPatterns[bossKey] : null;
   let baseAction = BOSS_ACTIONS[0];
 
   if (isFinalBossStage(battle.stage) && (hpPercent <= 0.35 || battle.turnNumber % 5 === 0)) {
@@ -12341,16 +12411,17 @@ function chooseActBossAction(battle) {
     baseAction = BOSS_ACTIONS.find(action => action.type === "skill");
   }
 
-  const pattern = !patterns
-    ? ["attack"]
-    : baseAction.type === "ultimate"
-    ? (bossKey === "memoryBreaker" ? ["question", "question", "attack"] : ["question", "attack"])
-    : sample(patterns, 1)[0];
+  const eligibleModes = getEligibleEnemyActionModes(battle);
+  const selectedMode = selectWeightedEnemyActionMode(eligibleModes);
+  recordEnemyActionMode(battle, selectedMode);
+  const pattern = selectedMode === "question" ? ["question"] : ["attack"];
 
   const action = {
     ...baseAction,
     sequence: [...pattern],
-    bossKey
+    bossKey,
+    enemyActionMode: selectedMode,
+    grammarChallengeMode: selectedMode === "typing" || selectedMode === "arrangement" ? selectedMode : ""
   };
   action.sequence = action.sequence.map(step => step === "attack" ? chooseBossDefenseStep(action, battle) : step);
   return action;
@@ -12362,6 +12433,83 @@ function chooseBossDefenseStep(action, battle) {
     return "attack";
   }
   return Math.random() < parryConfig.chance ? "point" : "attack";
+}
+
+function shouldEnemyBeStunned(battle = state.actBattle) {
+  if (!battle || isActBattleEnded(battle)) {
+    return false;
+  }
+  const bossStatus = getBattleStatus("boss", battle);
+  const stunValue = getTargetStunValue("boss", battle);
+  const threshold = getTargetStunThreshold("boss", battle);
+  if (stunValue >= threshold) {
+    bossStatus.stunnedTurns = Math.max(bossStatus.stunnedTurns || 0, STATUS_BALANCE_CONFIG.stun.bossStunTurns);
+    return true;
+  }
+  if (bossStatus) {
+    bossStatus.stunnedTurns = 0;
+  }
+  battle.bossStunned = false;
+  battle.stunSkipResolving = false;
+  battle.stunTurnCompleted = false;
+  return false;
+}
+
+function completeStunnedEnemyTurn() {
+  const battle = state.actBattle;
+  if (!battle || battle.stunTurnCompleted || isActBattleEnded(battle)) {
+    return;
+  }
+
+  battle.stunTurnCompleted = true;
+  battle.stunSkipResolving = false;
+  battle.pendingBossAction = null;
+  battle.pendingBossTurn = null;
+  battle.awaitingPrepare = false;
+  battle.awaitingParry = false;
+  battle.turnNumber += 1;
+  renderBattleTurnIndicator();
+  setBattleTurnOwner("player");
+
+  showBattleContinueButton(
+    battle.questionIndex >= battle.stage.questions.length - 1 || state.enemyHp <= 0 ? "รับรางวัล" : "คำถามถัดไป",
+    continueActBattle
+  );
+}
+
+function resolveEnemyStunAtTurnStart(battle = state.actBattle) {
+  if (!battle || isActBattleEnded(battle)) {
+    return false;
+  }
+
+  ensureBattleStatuses(battle);
+  if (!shouldEnemyBeStunned(battle)) {
+    return false;
+  }
+  if (battle.stunSkipResolving) {
+    return true;
+  }
+
+  const bossStatus = getBattleStatus("boss", battle);
+  battle.stunSkipResolving = true;
+  battle.stunTurnCompleted = false;
+  battle.bossWasStunnedLastTurn = true;
+  battle.bossStunned = false;
+  if (bossStatus) {
+    consumeStunTurn("boss");
+    bossStatus.stunGauge = 0;
+    bossStatus.stunnedTurns = 0;
+  }
+  battle.pendingBossAction = null;
+  battle.pendingBossTurn = null;
+
+  showOnlyBattlePanel(null);
+  setBattleTurnOwner("enemy");
+  els.battleMessage.textContent = "บอสติด Stun! การโจมตีครั้งนี้ถูกหยุดไว้";
+  showBattleContinueButton("ดำเนินต่อ", completeStunnedEnemyTurn);
+  updateBattleStats();
+  syncBattleStateToPlayerData();
+  return true;
 }
 
 function bossIntentLabel(turn) {
@@ -12435,27 +12583,7 @@ function startActBossWarning() {
     return;
   }
 
-  ensureBattleStatuses();
-  if (battle.bossStunned) {
-    const bossStatus = getBattleStatus("boss");
-    if (bossStatus) {
-      bossStatus.stunnedTurns = Math.max(bossStatus.stunnedTurns || 0, 1);
-    }
-    battle.bossStunned = false;
-  }
-  if (isTargetStunned("boss")) {
-    consumeStunTurn("boss");
-    battle.bossWasStunnedLastTurn = true;
-    battle.pendingBossAction = null;
-    battle.pendingBossTurn = null;
-    battle.turnNumber += 1;
-    showOnlyBattlePanel(null);
-    setBattleTurnOwner("player");
-    els.battleMessage.textContent = "บอสติด Stun! การโจมตีครั้งนี้ถูกหยุดไว้";
-    showBattleContinueButton(
-      battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "คำถามถัดไป",
-      continueActBattle
-    );
+  if (resolveEnemyStunAtTurnStart(battle)) {
     return;
   }
 
