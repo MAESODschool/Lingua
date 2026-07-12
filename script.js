@@ -2621,6 +2621,9 @@ function showScene(name) {
 
 function cleanupButtonsForSceneChange(nextScene) {
   if (nextScene !== "battle") {
+    clearParryLayoutState();
+  }
+  if (nextScene !== "battle") {
     cleanupBattleInputState();
   }
   if (nextScene !== "story" && nextScene !== "battle") {
@@ -3352,6 +3355,54 @@ function showOnlyBattlePanel(panelToShow) {
   if (panelToShow) {
     panelToShow.classList.remove("hidden");
   }
+  updateParryLayoutState(panelToShow);
+}
+
+function isParryLayoutPanel(panel) {
+  return panel === els.parryPanel || panel === els.pointParryPanel;
+}
+
+function syncVisibleViewportHeight() {
+  const height = window.visualViewport?.height || window.innerHeight;
+  if (!height) {
+    return;
+  }
+  document.documentElement.style.setProperty("--visible-viewport-height", `${Math.round(height)}px`);
+}
+
+function updateParryLayoutState(panelToShow = null) {
+  syncVisibleViewportHeight();
+  const isActive = isParryLayoutPanel(panelToShow);
+  document.body.classList.toggle("parry-active", isActive);
+  if (scenes.battle) {
+    scenes.battle.classList.toggle("parry-layout-active", isActive);
+  }
+}
+
+function clearParryLayoutState() {
+  document.body.classList.remove("parry-active");
+  if (scenes.battle) {
+    scenes.battle.classList.remove("parry-layout-active");
+  }
+}
+
+function startParryBarAfterLayout(challengeId, durationMs, onTimeout) {
+  syncVisibleViewportHeight();
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (!isCurrentParryBarChallenge(challengeId)) {
+        return;
+      }
+      scheduleParryBarArming(challengeId);
+      startParryGauge(challengeId);
+      state.parry.resolveTimeout = setTimeout(() => {
+        if (!isCurrentParryBarChallenge(challengeId)) {
+          return;
+        }
+        onTimeout();
+      }, durationMs);
+    });
+  });
 }
 
 function enableBattleButton(button) {
@@ -9218,7 +9269,9 @@ function showLessonStoryChoices(choices) {
   choices.forEach(choice => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "dialogue-choice-btn";
+    button.className = choice.optionalMasterContinue || choice.optionalMasterQuestionId
+      ? "dialogue-choice-btn optional-master-choice"
+      : "dialogue-choice-btn";
     button.textContent = choice.text;
     button.addEventListener("click", () => {
       if (button.disabled) {
@@ -13093,14 +13146,9 @@ function startHeavyAttackParryBar({ index, total, onComplete }) {
   els.parryGaugeZone.style.left = `${state.parry.gaugeZoneStart}%`;
   els.parryButton.disabled = true;
   showOnlyBattlePanel(els.parryPanel);
-  scheduleParryBarArming(challenge.id);
-  startParryGauge(challenge.id);
-  state.parry.resolveTimeout = setTimeout(() => {
-    if (!isCurrentParryBarChallenge(challenge.id)) {
-      return;
-    }
+  startParryBarAfterLayout(challenge.id, durationMs, () => {
     stopActParry("MISS", { source: "timeout", challengeId: challenge.id });
-  }, durationMs);
+  });
 }
 
 function startHeavyAttackPointParry({ index, total, onComplete }) {
@@ -13130,7 +13178,7 @@ function startHeavyAttackPointParry({ index, total, onComplete }) {
     resolvePointParryRing("tap");
   }, { passive: false });
   els.pointParryArena.appendChild(ringGame);
-  startPointParryRingChallenge({
+  startPointParryRingAfterLayout({
     ...difficulty,
     chainMode: true,
     onComplete
@@ -13262,6 +13310,8 @@ function getPointParryDifficulty() {
   };
 }
 
+let pointParryLayoutStartToken = 0;
+
 function cancelPointParryRingChallenge() {
   if (state.pointParry?.rafId) {
     cancelAnimationFrame(state.pointParry.rafId);
@@ -13272,8 +13322,10 @@ function cancelPointParryRingChallenge() {
 }
 
 function cleanupPointParryRingUI() {
+  pointParryLayoutStartToken += 1;
   cancelPointParryRingChallenge();
   state.pointParry = null;
+  clearParryLayoutState();
   if (els.pointParryArena) {
     els.pointParryArena.innerHTML = "";
   }
@@ -13341,6 +13393,25 @@ function startPointParryRingChallenge(options = {}) {
   state.pointParry.rafId = requestAnimationFrame(tick);
 }
 
+function startPointParryRingAfterLayout(options = {}) {
+  const token = ++pointParryLayoutStartToken;
+  syncVisibleViewportHeight();
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (token !== pointParryLayoutStartToken) {
+        return;
+      }
+      if (els.pointParryPanel?.classList.contains("hidden")) {
+        return;
+      }
+      if (!els.pointParryArena?.querySelector(".point-parry-ring-game")) {
+        return;
+      }
+      startPointParryRingChallenge(options);
+    });
+  });
+}
+
 function resolvePointParryRing(reason = "tap") {
   const challenge = state.pointParry;
   if (!challenge || challenge.resolved) {
@@ -13402,7 +13473,7 @@ function showPointParryStep() {
     resolvePointParryRing("tap");
   }, { passive: false });
   els.pointParryArena.appendChild(ringGame);
-  startPointParryRingChallenge(difficulty);
+  startPointParryRingAfterLayout(difficulty);
 }
 
 function resolvePointParry(result, meta = {}) {
@@ -13802,18 +13873,13 @@ function beginActParryPhase() {
     challengeId: challenge.id,
     durationMs
   });
-  scheduleParryBarArming(challenge.id);
-  startParryGauge(challenge.id);
-  state.parry.resolveTimeout = setTimeout(() => {
-    if (!isCurrentParryBarChallenge(challenge.id)) {
-      return;
-    }
+  startParryBarAfterLayout(challenge.id, durationMs, () => {
     console.log("[ParryBar] timeout = miss", {
       challengeId: challenge.id,
       progress: state.parry.gaugeProgress
     });
     stopActParry("MISS", { source: "timeout", challengeId: challenge.id });
-  }, durationMs);
+  });
 }
 
 function stopActParry(forcedResult = null, meta = {}) {
@@ -14749,6 +14815,7 @@ function stopParryCountdown() {
 
   state.parry = null;
   els.parryButton.disabled = false;
+  clearParryLayoutState();
 }
 
 function createParryBarChallenge(config = {}) {
@@ -14995,18 +15062,13 @@ function beginNextParryHit() {
     challengeId: challenge.id,
     durationMs
   });
-  scheduleParryBarArming(challenge.id);
-  startParryGauge(challenge.id);
-  state.parry.resolveTimeout = setTimeout(() => {
-    if (!isCurrentParryBarChallenge(challenge.id)) {
-      return;
-    }
+  startParryBarAfterLayout(challenge.id, durationMs, () => {
     console.log("[ParryBar] timeout = miss", {
       challengeId: challenge.id,
       progress: state.parry.gaugeProgress
     });
     resolveCountdownParry("MISS", { source: "timeout", challengeId: challenge.id });
-  }, durationMs);
+  });
 }
 
 function startParryGauge(challengeId = state.parry?.challengeId) {
@@ -16408,7 +16470,26 @@ function bindGameAudioUnlockEvents() {
   });
 }
 
+function bindVisibleViewportSync() {
+  let frameId = null;
+  const requestSync = () => {
+    if (frameId) {
+      return;
+    }
+    frameId = requestAnimationFrame(() => {
+      frameId = null;
+      syncVisibleViewportHeight();
+    });
+  };
+
+  syncVisibleViewportHeight();
+  window.addEventListener("resize", requestSync, { passive: true });
+  window.addEventListener("orientationchange", requestSync, { passive: true });
+  window.visualViewport?.addEventListener("resize", requestSync, { passive: true });
+}
+
 bindGameAudioUnlockEvents();
+bindVisibleViewportSync();
 initializeAuthUi().catch(error => {
   console.warn("[Auth] Failed to initialize Firebase auth state", error);
   updateAuthUi();
