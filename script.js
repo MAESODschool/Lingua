@@ -2326,24 +2326,52 @@ const BGM_PATHS = {
   login: "assets/bgm/into-lingua-v1.mp3",
   hall: "assets/bgm/verions-grammar-hall.mp3",
   battle: "assets/bgm/lingua-spell-battle.mp3",
-  victoryScene: "assets/bgm/victory-scene.mp3"
+  victoryScene: "assets/bgm/victory-scene.mp3",
+  edForge: "assets/bgm/ed_forge_bgm.mp3"
 };
 
 const BGM_LOOP = {
   login: true,
   hall: true,
   battle: true,
-  victoryScene: false
+  victoryScene: false,
+  edForge: true
 };
+
+const DEFAULT_BGM_VOLUME = 0.45;
+const BGM_FADE_MS = 650;
+const BGM_VOLUME = {
+  edForge: 0.32
+};
+
+const ED_FORGE_BGM_STAGE_IDS = new Set([
+  "regular-intro",
+  "regular-rule-1",
+  "regular-rule-2",
+  "regular-rule-3",
+  "regular-rule-4",
+  "ed-mini-boss"
+]);
 
 const bgmTracks = Object.fromEntries(
   Object.entries(BGM_PATHS).map(([key, path]) => [key, new Audio(path)])
 );
+const bgmFadeTimers = new Map();
+
+function getBgmVolume(key) {
+  return BGM_VOLUME[key] ?? DEFAULT_BGM_VOLUME;
+}
 
 Object.entries(bgmTracks).forEach(([key, track]) => {
   track.loop = Boolean(BGM_LOOP[key]);
   track.preload = "auto";
-  track.volume = 0.45;
+  track.volume = getBgmVolume(key);
+  track.addEventListener("error", error => {
+    console.warn(`[BGM] ${key} track failed to load`, {
+      src: BGM_PATHS[key],
+      error
+    });
+  }, { once: true });
 });
 
 const DIALOGUE_TYPE_SFX_PATH = "assets/sfx/dialogue-type.mp3";
@@ -2603,10 +2631,38 @@ function bgmKeyForScene(sceneName) {
   if (sceneName === "login" || sceneName === "mainMenu" || sceneName === "createCharacter") {
     return "login";
   }
+  if (shouldUseEdForgeBgm(sceneName)) {
+    return "edForge";
+  }
   if (sceneName === "battle") {
     return "battle";
   }
   return "hall";
+}
+
+function getBgmContextStages(sceneName) {
+  const stages = sceneName === "battle"
+    ? [state.actBattle?.stage]
+    : [
+      state.currentLessonStage,
+      state.postBossDialogueStage
+    ];
+  if (typeof getPlayableStages === "function") {
+    stages.push(getPlayableStages()[state.actStageIndex]);
+  }
+  return stages.filter(Boolean);
+}
+
+function isEdForgeBgmStage(stage) {
+  const stageId = typeof stage === "string" ? stage : stage?.id;
+  return ED_FORGE_BGM_STAGE_IDS.has(stageId);
+}
+
+function shouldUseEdForgeBgm(sceneName) {
+  if (sceneName !== "story" && sceneName !== "battle") {
+    return false;
+  }
+  return getBgmContextStages(sceneName).some(isEdForgeBgmStage);
 }
 
 function playBgmForScene(sceneName) {
@@ -2628,8 +2684,16 @@ function playBgm(key, options = {}) {
     return true;
   }
 
+  const previousKey = state.currentBgmKey;
+  const previousTrack = previousKey ? bgmTracks[previousKey] : null;
+  const shouldFadeEdForgeTransition = previousKey &&
+    previousKey !== key &&
+    (previousKey === "edForge" || key === "edForge") &&
+    options.fade !== false;
+
   Object.entries(bgmTracks).forEach(([trackKey, track]) => {
-    if (trackKey !== key) {
+    if (trackKey !== key && (!shouldFadeEdForgeTransition || trackKey !== previousKey)) {
+      clearBgmFadeTimer(trackKey);
       track.pause();
       track.currentTime = 0;
     }
@@ -2641,8 +2705,62 @@ function playBgm(key, options = {}) {
   if (shouldRestart) {
     bgmTracks[key].currentTime = 0;
   }
+  if (shouldFadeEdForgeTransition) {
+    fadeOutPreviousBgm(previousKey, previousTrack);
+    fadeInBgm(key, bgmTracks[key]);
+  } else {
+    clearBgmFadeTimer(key);
+    bgmTracks[key].volume = getBgmVolume(key);
+  }
   bgmTracks[key].play().catch(() => {});
   return true;
+}
+
+function clearBgmFadeTimer(key) {
+  const frameId = bgmFadeTimers.get(key);
+  if (frameId) {
+    cancelAnimationFrame(frameId);
+    bgmFadeTimers.delete(key);
+  }
+}
+
+function fadeBgmTrack(key, track, fromVolume, toVolume, durationMs, onComplete) {
+  clearBgmFadeTimer(key);
+  const startedAt = performance.now();
+  track.volume = fromVolume;
+
+  const step = now => {
+    const progress = clamp((now - startedAt) / durationMs, 0, 1);
+    track.volume = fromVolume + (toVolume - fromVolume) * progress;
+    if (progress >= 1) {
+      bgmFadeTimers.delete(key);
+      if (onComplete) {
+        onComplete();
+      }
+      return;
+    }
+    bgmFadeTimers.set(key, requestAnimationFrame(step));
+  };
+
+  bgmFadeTimers.set(key, requestAnimationFrame(step));
+}
+
+function fadeOutPreviousBgm(previousKey, previousTrack) {
+  if (!previousTrack || previousTrack.paused) {
+    return;
+  }
+  fadeBgmTrack(previousKey, previousTrack, previousTrack.volume, 0, BGM_FADE_MS, () => {
+    previousTrack.pause();
+    previousTrack.currentTime = 0;
+    previousTrack.volume = getBgmVolume(previousKey);
+  });
+}
+
+function fadeInBgm(key, track) {
+  clearBgmFadeTimer(key);
+  const targetVolume = getBgmVolume(key);
+  track.volume = 0;
+  fadeBgmTrack(key, track, 0, targetVolume, BGM_FADE_MS);
 }
 
 function playVictorySceneMusic() {
@@ -3247,13 +3365,16 @@ function getBattleCurrentActorForDisplay(battle = state.actBattle) {
   if (!battle || isActBattleEnded(battle)) {
     return "";
   }
-  if (battle.pendingBossTurn || battle.pendingBossAction || battle.awaitingParry || battle.awaitingPrepare || battle.heavyAttackState?.active || battle.bossGrammarChallenge?.active) {
-    return "boss";
-  }
-  if (battle.playerActionPhase || !battle.currentTurnActor) {
-    return battle.currentTurnActor || "player";
-  }
-  return battle.currentTurnActor;
+  return battle.currentTurnActor || (
+    battle.pendingBossTurn ||
+    battle.pendingBossAction ||
+    battle.awaitingParry ||
+    battle.awaitingPrepare ||
+    battle.heavyAttackState?.active ||
+    battle.bossGrammarChallenge?.active
+      ? "boss"
+      : "player"
+  );
 }
 
 function getBattleActorLabel(actor, { current = false } = {}) {
@@ -4460,6 +4581,7 @@ function applyIncomingDamageModifiers(target, rawDamage, context = {}) {
     absorbedByHitShield: false,
     defenseReducedAmount: 0,
     markBonusAmount: 0,
+    bossResistanceReducedAmount: 0,
     consumedHitShield: false,
     consumedDefenseShield: false
   };
@@ -4495,6 +4617,12 @@ function applyIncomingDamageModifiers(target, rawDamage, context = {}) {
     finalDamage = 0;
   }
 
+  if (target === "boss" && finalDamage > 0 && !context.skipBossDamageResistance && isTrueBossStage(state.actBattle?.stage)) {
+    const beforeBossResistance = finalDamage;
+    finalDamage = Math.max(1, Math.round(finalDamage * PLAYER_DAMAGE_TO_BOSS_MULTIPLIER));
+    result.bossResistanceReducedAmount = beforeBossResistance - finalDamage;
+  }
+
   result.finalDamage = finalDamage;
   console.log("[Shield] incoming damage", { target, rawDamage, ...result, source: context.source || "" });
   return result;
@@ -4522,6 +4650,9 @@ function appendDamageModifierLines(lines, target, result) {
   }
   if (result.defenseReducedAmount > 0) {
     addBattleMessageLine(lines, `Defense Shield ลดดาเมจ ${result.defenseReducedAmount}`);
+  }
+  if (target === "boss" && result.bossResistanceReducedAmount > 0) {
+    addBattleMessageLine(lines, `Boss Resistance ลดดาเมจ ${result.bossResistanceReducedAmount}`);
   }
   if (result.absorbedByHitShield) {
     addBattleMessageLine(lines, `${target === "boss" ? "บอส" : "ผู้เล่น"}ใช้ Hit Shield กันดาเมจ`);
@@ -6838,6 +6969,13 @@ function isFinalBossStage(stage) {
     normalizedEnemy === "memoryBreaker" ||
     compactEnemy === "thememorybreaker" ||
     compactEnemy === "memorybreaker";
+}
+
+function isTrueBossStage(stage) {
+  if (!stage) {
+    return false;
+  }
+  return isFinalBossStage(stage) || String(stage.type || "").includes("boss");
 }
 
 function getBossProgressId(stage) {
@@ -11227,7 +11365,7 @@ function resolveBossGrammarDirectHit(mode) {
   const action = battle.pendingBossAction;
   resetActiveBossGrammarChallenge({ keepSession: true });
   showOnlyBattlePanel(null);
-  setBattleTurnOwner("player");
+  setBattleTurnOwner("enemy");
   const rawDamage = Math.max(1, Number(action.damage || action.baseDamage || battle.stage?.enemyDamage || battle.stage?.bossDamage || 12));
   const playerDamageResult = applyStatusDamageToTarget("player", rawDamage, "bossV2ChallengeDirectHit", {
     mode,
@@ -11267,7 +11405,7 @@ function resolveBossGrammarCounterAttack() {
   const challengeWord = battle.bossGrammarChallenge?.word;
   resetActiveBossGrammarChallenge({ keepSession: true });
   showOnlyBattlePanel(null);
-  setBattleTurnOwner("player");
+  setBattleTurnOwner("enemy");
   const baseDamage = Number(battle.damagePerCorrect || 12);
   const counterDamage = clamp(
     Math.round(baseDamage * BOSS_GRAMMAR_CHALLENGE_CONFIG.counterDamageRatio),
@@ -12468,7 +12606,6 @@ function completeStunnedEnemyTurn() {
   battle.awaitingPrepare = false;
   battle.awaitingParry = false;
   battle.turnNumber += 1;
-  renderBattleTurnIndicator();
   setBattleTurnOwner("player");
 
   showBattleContinueButton(
@@ -12583,6 +12720,7 @@ function startActBossWarning() {
     return;
   }
 
+  setBattleTurnOwner("enemy");
   if (resolveEnemyStunAtTurnStart(battle)) {
     return;
   }
@@ -13049,7 +13187,7 @@ function applyBossHeavyAttackChainResult(summary) {
   stopParryCountdown();
   cleanupPointParryRingUI();
   showOnlyBattlePanel(null);
-  setBattleTurnOwner("player");
+  setBattleTurnOwner("enemy");
 
   if (summary.counterDamage > 0) {
     triggerMotion(els.battlePlayer, "player-attack-motion");
@@ -13338,7 +13476,7 @@ function resolvePointParry(result, meta = {}) {
   syncBattleStateToPlayerData();
   cleanupPointParryRingUI();
   showOnlyBattlePanel(null);
-  setBattleTurnOwner("player");
+  setBattleTurnOwner("enemy");
   els.battleMessage.textContent = result === "PERFECT"
     ? `Perfect Parry! ปัดการโจมตีสำเร็จ และสวนกลับ ${counterDamage} ดาเมจ และได้รับ Critical Counter`
     : result === "GOOD"
@@ -13532,6 +13670,7 @@ function finalizeBossTurnState() {
   battle.pendingBossAction = null;
   battle.pendingBossTurn = null;
   battle.turnNumber += 1;
+  battle.currentTurnActor = "player";
   renderBattleTurnIndicator();
 }
 
@@ -13791,7 +13930,7 @@ function stopActParry(forcedResult = null, meta = {}) {
   updateBattleStats();
   syncBattleStateToPlayerData();
   showOnlyBattlePanel(null);
-  setBattleTurnOwner("player");
+  setBattleTurnOwner("enemy");
 
   els.battleMessage.textContent = `${thaiParryName(parryResult)} - รับดาเมจ ${damage}${counterDamage ? ` และสวนกลับ ${counterDamage}` : ""}`;
   if (feedbackLines.length) {
