@@ -3332,6 +3332,8 @@ function openGameModal({ title, body = "", content = "", actions = [], lockClose
 }
 
 function showOnlyBattlePanel(panelToShow) {
+  els.questionPanel?.classList.remove("boss-v2-arrangement-active");
+  scenes.battle?.classList.remove("arrangement-layout-active");
   [
     els.bossIntentPanel,
     els.actionMenu,
@@ -11317,6 +11319,9 @@ function showBossArrangementChallenge() {
 
   setBattleTurnOwner("enemy");
   showOnlyBattlePanel(els.questionPanel);
+  syncVisibleViewportHeight();
+  els.questionPanel.classList.add("boss-v2-arrangement-active");
+  scenes.battle.classList.add("arrangement-layout-active");
   els.continueBattleButton.classList.add("hidden");
   els.battleMessage.textContent = "เรียงตัวอักษรให้เป็น V2 แล้วกด ยืนยัน";
   renderBossChallengeHeader("Word Arrangement Mode", challenge.word);
@@ -11346,11 +11351,14 @@ function renderBossArrangementControls() {
   const tileRow = document.createElement("div");
   tileRow.className = "boss-v2-arrangement-tiles";
   challenge.arrangementTiles.forEach(tile => {
+    if (selectedIds.has(tile.id)) {
+      return;
+    }
     const tileButton = document.createElement("button");
     tileButton.type = "button";
     tileButton.className = "boss-v2-letter-tile";
     tileButton.textContent = tile.char;
-    tileButton.disabled = challenge.inputLocked || selectedIds.has(tile.id);
+    tileButton.disabled = challenge.inputLocked;
     tileButton.addEventListener("click", () => {
       if (challenge.inputLocked || selectedIds.has(tile.id)) {
         return;
@@ -11363,6 +11371,8 @@ function renderBossArrangementControls() {
 
   const controlRow = document.createElement("div");
   controlRow.className = "boss-v2-arrangement-controls";
+  const editControls = document.createElement("div");
+  editControls.className = "boss-v2-arrangement-edit-controls";
   const undoButton = document.createElement("button");
   undoButton.type = "button";
   undoButton.className = "answer-button secondary";
@@ -11397,7 +11407,8 @@ function renderBossArrangementControls() {
   confirmButton.disabled = challenge.inputLocked || challenge.selectedTileIds.length !== challenge.arrangementTiles.length;
   confirmButton.addEventListener("click", confirmBossArrangementChallenge);
 
-  controlRow.append(undoButton, clearButton, confirmButton);
+  editControls.append(undoButton, clearButton);
+  controlRow.append(editControls, confirmButton);
   panel.append(answerRow, tileRow, controlRow);
   els.answerOptions.appendChild(panel);
 }
