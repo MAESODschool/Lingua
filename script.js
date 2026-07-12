@@ -11354,11 +11354,65 @@ function getFocusQuestion(stage) {
   return question;
 }
 
-function getBossQuestion(stage) {
+function normalizeEnemyQuestionBank(questions, stage, source) {
+  const stageId = stage?.id || "stage";
+  return (questions || []).map((question, index) => ({
+    ...question,
+    id: getQuestionId(question, index, `enemy-${source}-${stageId}`)
+  }));
+}
+
+function getEnemyQuestionBank(stage) {
+  if (!stage) {
+    return {
+      source: "none",
+      bossKey: null,
+      questions: []
+    };
+  }
+
   const key = getBossKey(stage);
-  const rawBank = key ? bossQuestionBanks[key] : null;
-  const bank = rawBank ? filterQuestionsForStage(rawBank, stage) : null;
-  if (!bank || !bank.length) {
+  const dedicatedBank = key && Array.isArray(bossQuestionBanks[key])
+    ? normalizeEnemyQuestionBank(filterQuestionsForStage(bossQuestionBanks[key], stage), stage, "boss")
+    : [];
+
+  if (dedicatedBank.length) {
+    return {
+      source: "boss",
+      bossKey: key,
+      questions: dedicatedBank
+    };
+  }
+
+  const stageBank = Array.isArray(stage.questions)
+    ? normalizeEnemyQuestionBank(filterQuestionsForStage(stage.questions, stage), stage, "stage")
+    : [];
+
+  if (stageBank.length) {
+    return {
+      source: "stage",
+      bossKey: key,
+      questions: stageBank
+    };
+  }
+
+  return {
+    source: "none",
+    bossKey: key,
+    questions: []
+  };
+}
+
+function getBossQuestion(stage) {
+  const bankData = getEnemyQuestionBank(stage);
+  const { source, bossKey: key, questions: bank } = bankData;
+  if (!bank.length) {
+    console.warn("[Enemy Question] No valid question bank available", {
+      stageId: stage?.id,
+      enemy: stage?.enemy,
+      bossKey: key,
+      source
+    });
     return null;
   }
 
@@ -11371,22 +11425,25 @@ function getBossQuestion(stage) {
     battle.usedBossQuestionIds = new Set();
   }
 
+  const hasDifficultyMetadata = source === "boss" && bank.some(question => question.difficulty);
   const weights = bossDifficultyWeights[key] || { medium: 50, hard: 35, boss: 15 };
-  let preferredDifficulty = weightedPickFromTable(weights);
-  let pool = bank.filter(question =>
-    question.difficulty === preferredDifficulty &&
-    !battle.usedBossQuestionIds.has(question.id) &&
-    question.baseVerb !== battle.lastBossQuestionBaseVerb
-  );
+  const preferredDifficulty = hasDifficultyMetadata ? weightedPickFromTable(weights) : null;
+  let pool = hasDifficultyMetadata
+    ? bank.filter(question =>
+      question.difficulty === preferredDifficulty &&
+      !battle.usedBossQuestionIds.has(question.id) &&
+      getQuestionBaseWord(question) !== battle.lastBossQuestionBaseVerb
+    )
+    : [];
 
-  if (key === "memoryBreaker" && battle.simpleIrregularStreak >= 2) {
+  if (source === "boss" && key === "memoryBreaker" && battle.simpleIrregularStreak >= 2) {
     pool = pool.filter(question => !["irregular-v2", "mixed-rule"].includes(question.type));
   }
 
   if (!pool.length) {
     pool = bank.filter(question =>
       !battle.usedBossQuestionIds.has(question.id) &&
-      question.baseVerb !== battle.lastBossQuestionBaseVerb
+      getQuestionBaseWord(question) !== battle.lastBossQuestionBaseVerb
     );
   }
 
@@ -11401,12 +11458,12 @@ function getBossQuestion(stage) {
 
   const question = sample(pool, 1)[0];
   battle.usedBossQuestionIds.add(question.id);
-  battle.lastBossQuestionBaseVerb = question.baseVerb || "";
+  battle.lastBossQuestionBaseVerb = getQuestionBaseWord(question) || "";
   battle.bossQuestionIndex += 1;
 
-  if (key === "memoryBreaker" && question.type === "irregular-v2") {
+  if (source === "boss" && key === "memoryBreaker" && question.type === "irregular-v2") {
     battle.simpleIrregularStreak = (battle.simpleIrregularStreak || 0) + 1;
-  } else if (key === "memoryBreaker") {
+  } else if (source === "boss" && key === "memoryBreaker") {
     battle.simpleIrregularStreak = 0;
   }
 
@@ -12492,7 +12549,15 @@ function fallbackBossQuestionToStoredAttack(reason = "missing-question") {
     return;
   }
 
-  console.warn("[Boss Question] Falling back to stored boss action:", reason);
+  console.warn("[Enemy Question] Unable to render question; falling back to stored boss action", {
+    reason,
+    stageId: battle.stage?.id,
+    enemy: battle.stage?.enemy,
+    bossKey: getBossKey(battle.stage),
+    actionType: battle.pendingBossAction?.type,
+    sequence: battle.pendingBossTurn?.sequence,
+    stepIndex: battle.pendingBossTurn?.stepIndex
+  });
   resetBossQuestionState(battle);
   setBattleTurnOwner("enemy");
 
