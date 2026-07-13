@@ -6341,6 +6341,7 @@ h3 {
 
 @media (max-width: 768px) {
   #battleScene.arrangement-layout-active .battle-panel {
+    display: grid;
     overflow: hidden;
     align-content: stretch;
     grid-template-rows: auto minmax(0, 1fr);
@@ -6356,11 +6357,16 @@ h3 {
   }
 
   #battleScene .question-panel.boss-v2-arrangement-active {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
     height: 100%;
     min-height: 0;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
     align-content: stretch;
+    justify-items: stretch;
     gap: 6px;
     overflow: hidden;
     padding: 8px 10px max(8px, env(safe-area-inset-bottom));
@@ -6393,10 +6399,14 @@ h3 {
   }
 
   #battleScene .question-panel.boss-v2-arrangement-active .answer-options {
+    width: 100%;
+    max-width: none;
     min-height: 0;
     height: 100%;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-content: stretch;
+    justify-items: stretch;
     overflow: hidden;
   }
 
@@ -6404,8 +6414,12 @@ h3 {
     height: 100%;
     min-height: 0;
     max-height: 100%;
+    max-width: none;
+    min-width: 0;
     width: 100%;
+    box-sizing: border-box;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto;
     align-content: stretch;
     justify-items: stretch;
@@ -6414,6 +6428,10 @@ h3 {
   }
 
   #battleScene .boss-v2-arrangement-answer {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
     min-height: 44px;
     padding: 7px 10px;
     color: #fff7e8;
@@ -6424,6 +6442,10 @@ h3 {
   }
 
   #battleScene .boss-v2-arrangement-tiles {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
     min-height: 0;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(50px, 58px));
@@ -6448,6 +6470,9 @@ h3 {
 
   #battleScene .boss-v2-arrangement-controls {
     width: 100%;
+    max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
     display: grid;
     grid-template-columns: 1fr;
     gap: 7px;
@@ -6459,9 +6484,16 @@ h3 {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 7px;
     width: 100%;
+    max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   #battleScene .boss-v2-arrangement-controls .answer-button {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
     min-height: 42px;
     padding: 7px 9px;
     font-size: clamp(0.78rem, 3vw, 0.92rem);
@@ -6470,6 +6502,8 @@ h3 {
 
   #battleScene .boss-v2-arrangement-controls .boss-v2-confirm-button {
     width: 100%;
+    max-width: none;
+    min-width: 0;
     min-height: 46px;
     padding: 9px 14px;
     border-color: rgba(255, 226, 154, 0.78);
