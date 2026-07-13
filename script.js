@@ -137,6 +137,20 @@ const ENEMY_ACTION_WEIGHTS = {
   arrangement: 0.20
 };
 
+const BOSS_ACTION_BASE_WEIGHTS = {
+  typing: 0.30,
+  arrangement: 0.30,
+  question: 0.25,
+  normalAttack: 0.15
+};
+
+const BOSS_ACTION_FAIRNESS_CONFIG = {
+  maxConsecutiveChallengeModes: 2,
+  pityEligibleTurns: 3,
+  pityBoost: 0.10,
+  historyLimit: 8
+};
+
 const PLAYER_DAMAGE_TO_BOSS_MULTIPLIER = 0.90;
 
 const BOSS_GRAMMAR_CHALLENGE_CONFIG = {
@@ -9891,7 +9905,10 @@ function startActBattle(stageIndex) {
     bossQuestionIndex: 0,
     enemyActionHistory: {
       lastMode: "",
-      consecutiveCount: 0
+      consecutiveCount: 0,
+      actions: [],
+      turnsSinceTyping: 0,
+      turnsSinceArrangement: 0
     },
     pendingPlayerAttack: null,
     playerActionPhase: "question",
@@ -11092,14 +11109,26 @@ function getEnemyActionHistory(battle) {
   if (!battle.enemyActionHistory) {
     battle.enemyActionHistory = {
       lastMode: "",
-      consecutiveCount: 0
+      consecutiveCount: 0,
+      actions: [],
+      turnsSinceTyping: 0,
+      turnsSinceArrangement: 0
     };
   }
+  if (!Array.isArray(battle.enemyActionHistory.actions)) {
+    battle.enemyActionHistory.actions = [];
+  }
+  battle.enemyActionHistory.turnsSinceTyping = Number(battle.enemyActionHistory.turnsSinceTyping || 0);
+  battle.enemyActionHistory.turnsSinceArrangement = Number(battle.enemyActionHistory.turnsSinceArrangement || 0);
   return battle.enemyActionHistory;
 }
 
 function hasEnemyQuestionAvailable(stage) {
   return getEnemyQuestionBank(stage).questions.length > 0;
+}
+
+function supportsBossGrammarChallenges(battle) {
+  return Boolean(battle && getBossKey(battle.stage));
 }
 
 function getEligibleEnemyActionModes(battle) {
@@ -11114,45 +11143,105 @@ function getEligibleEnemyActionModes(battle) {
   modes.push("normalAttack");
 
   const challenge = battle.bossGrammarChallenge || createBossGrammarChallengeState();
-  const hasEligibleV2Words = Boolean(chooseBossV2ChallengeWord(battle.stage, challenge));
-  if (hasEligibleV2Words) {
+  const hasEligibleV2Words = supportsBossGrammarChallenges(battle) &&
+    Boolean(chooseBossV2ChallengeWord(battle.stage, challenge));
+  if (hasEligibleV2Words && !challenge.active) {
     modes.push("typing", "arrangement");
   }
 
   const history = getEnemyActionHistory(battle);
-  if (history.lastMode && history.consecutiveCount >= 2 && history.lastMode !== "normalAttack" && modes.length > 1) {
+  if (
+    history.lastMode &&
+    history.consecutiveCount >= BOSS_ACTION_FAIRNESS_CONFIG.maxConsecutiveChallengeModes &&
+    history.lastMode !== "normalAttack" &&
+    modes.length > 1
+  ) {
     return modes.filter(mode => mode !== history.lastMode);
   }
   return modes;
 }
 
-function selectWeightedEnemyActionMode(modes, weights = ENEMY_ACTION_WEIGHTS) {
-  const weightedModes = modes
-    .map(mode => ({ mode, weight: Math.max(0, Number(weights[mode]) || 0) }))
+function getBossActionWeightsForBattle(battle) {
+  return supportsBossGrammarChallenges(battle)
+    ? BOSS_ACTION_BASE_WEIGHTS
+    : ENEMY_ACTION_WEIGHTS;
+}
+
+function getWeightedEnemyActionEntries(battle, modes, weights = getBossActionWeightsForBattle(battle)) {
+  const history = getEnemyActionHistory(battle);
+  return modes
+    .map(mode => {
+      let weight = Math.max(0, Number(weights[mode]) || 0);
+      if (
+        mode === "typing" &&
+        history.turnsSinceTyping >= BOSS_ACTION_FAIRNESS_CONFIG.pityEligibleTurns
+      ) {
+        weight += BOSS_ACTION_FAIRNESS_CONFIG.pityBoost;
+      }
+      if (
+        mode === "arrangement" &&
+        history.turnsSinceArrangement >= BOSS_ACTION_FAIRNESS_CONFIG.pityEligibleTurns
+      ) {
+        weight += BOSS_ACTION_FAIRNESS_CONFIG.pityBoost;
+      }
+      return { mode, weight };
+    })
     .filter(item => item.weight > 0);
+}
+
+function normalizeEnemyActionWeights(entries) {
+  const total = entries.reduce((sum, entry) => sum + entry.weight, 0);
+  if (!Number.isFinite(total) || total <= 0) {
+    return [];
+  }
+  return entries.map(entry => ({
+    ...entry,
+    weight: entry.weight / total
+  }));
+}
+
+function selectWeightedEnemyActionMode(battle, modes, weights = getBossActionWeightsForBattle(battle)) {
+  const safeModes = Array.isArray(modes) ? modes : [];
+  const weightedModes = safeModes.length
+    ? getWeightedEnemyActionEntries(battle, safeModes, weights)
+    : [];
   if (!weightedModes.length) {
-    return modes.includes("normalAttack") ? "normalAttack" : modes[0] || "normalAttack";
+    return safeModes.includes("normalAttack") ? "normalAttack" : safeModes[0] || "normalAttack";
   }
 
-  const total = weightedModes.reduce((sum, item) => sum + item.weight, 0);
-  const roll = Math.random() * total;
+  const normalizedModes = normalizeEnemyActionWeights(weightedModes);
+  if (!normalizedModes.length) {
+    return safeModes.includes("normalAttack") ? "normalAttack" : safeModes[0] || "normalAttack";
+  }
+
+  const roll = Math.random();
   let cumulative = 0;
-  for (const item of weightedModes) {
+  for (const item of normalizedModes) {
     cumulative += item.weight;
     if (roll < cumulative) {
       return item.mode;
     }
   }
-  return weightedModes[weightedModes.length - 1].mode;
+  return normalizedModes[normalizedModes.length - 1].mode;
 }
 
-function recordEnemyActionMode(battle, mode) {
+function recordEnemyActionMode(battle, mode, eligibleModes = []) {
   const history = getEnemyActionHistory(battle);
   if (history.lastMode === mode) {
     history.consecutiveCount += 1;
   } else {
     history.lastMode = mode;
     history.consecutiveCount = 1;
+  }
+  history.actions.push(mode);
+  if (history.actions.length > BOSS_ACTION_FAIRNESS_CONFIG.historyLimit) {
+    history.actions = history.actions.slice(-BOSS_ACTION_FAIRNESS_CONFIG.historyLimit);
+  }
+  if (eligibleModes.includes("typing")) {
+    history.turnsSinceTyping = mode === "typing" ? 0 : history.turnsSinceTyping + 1;
+  }
+  if (eligibleModes.includes("arrangement")) {
+    history.turnsSinceArrangement = mode === "arrangement" ? 0 : history.turnsSinceArrangement + 1;
   }
 }
 
@@ -12645,8 +12734,16 @@ function chooseActBossAction(battle) {
   }
 
   const eligibleModes = getEligibleEnemyActionModes(battle);
-  const selectedMode = selectWeightedEnemyActionMode(eligibleModes);
-  recordEnemyActionMode(battle, selectedMode);
+  const weightedEntries = getWeightedEnemyActionEntries(battle, eligibleModes);
+  const finalNormalizedWeights = normalizeEnemyActionWeights(weightedEntries);
+  const historyBeforeSelection = getEnemyActionHistory(battle);
+  const debugHistorySnapshot = {
+    turnsSinceTyping: historyBeforeSelection.turnsSinceTyping,
+    turnsSinceArrangement: historyBeforeSelection.turnsSinceArrangement,
+    actions: [...historyBeforeSelection.actions]
+  };
+  const selectedMode = selectWeightedEnemyActionMode(battle, eligibleModes);
+  recordEnemyActionMode(battle, selectedMode, eligibleModes);
   const pattern = selectedMode === "question" ? ["question"] : ["attack"];
 
   const action = {
@@ -12656,6 +12753,19 @@ function chooseActBossAction(battle) {
     enemyActionMode: selectedMode,
     grammarChallengeMode: selectedMode === "typing" || selectedMode === "arrangement" ? selectedMode : ""
   };
+  if (supportsBossGrammarChallenges(battle)) {
+    console.debug("[Boss Action] Weighted selection", {
+      stageId: battle.stage?.id,
+      bossKey,
+      eligibleActions: eligibleModes,
+      baseWeights: getBossActionWeightsForBattle(battle),
+      turnsSinceTyping: debugHistorySnapshot.turnsSinceTyping,
+      turnsSinceArrangement: debugHistorySnapshot.turnsSinceArrangement,
+      recentActions: debugHistorySnapshot.actions,
+      finalNormalizedWeights,
+      selectedAction: selectedMode
+    });
+  }
   action.sequence = action.sequence.map(step => step === "attack" ? chooseBossDefenseStep(action, battle) : step);
   return action;
 }
