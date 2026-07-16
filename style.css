@@ -6773,10 +6773,24 @@ h3 {
   text-align: left;
 }
 
+#battleScene .battlefield-stage .combatant::before,
+#battleScene .battlefield-stage .combatant::after {
+  content: none;
+  display: none;
+}
+
 #battleScene .battlefield-stage .combatant.is-active-turn {
   transform: none;
   background: transparent;
   box-shadow: none;
+}
+
+#battleScene .battlefield-stage #battleEnemy.is-active-turn {
+  z-index: 2;
+}
+
+#battleScene .battlefield-stage #battlePlayer.is-active-turn {
+  z-index: 3;
 }
 
 #battleScene .battlefield-stage #battleEnemy {
@@ -6785,7 +6799,8 @@ h3 {
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
   grid-template-rows: minmax(0, 0.95fr) minmax(0, 1.05fr);
   align-items: stretch;
-  z-index: auto;
+  pointer-events: none;
+  z-index: 2;
 }
 
 #battleScene .battlefield-stage #battlePlayer {
@@ -6794,7 +6809,8 @@ h3 {
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
   grid-template-rows: minmax(0, 0.95fr) minmax(0, 1.05fr);
   align-items: stretch;
-  z-index: auto;
+  pointer-events: none;
+  z-index: 3;
 }
 
 #battleScene .battlefield-stage .combat-text {
@@ -6848,15 +6864,15 @@ h3 {
 
 #battleScene .battlefield-stage .boss-model-motion {
   grid-column: 2;
-  grid-row: 1 / -1;
+  grid-row: 1;
   justify-self: end;
   align-self: start;
   display: grid;
   place-items: start end;
-  width: min(52%, 290px);
-  height: clamp(112px, 48%, 250px);
-  max-width: 52%;
-  max-height: 100%;
+  width: min(74%, 320px);
+  height: 100%;
+  max-width: 74%;
+  max-height: clamp(126px, 34dvh, 278px);
   transform: translate3d(0, 0, 0);
   pointer-events: none;
   user-select: none;
@@ -6901,22 +6917,22 @@ h3 {
 }
 
 #battleScene .battlefield-stage #battleEnemySprite.memory-breaker-gif {
-  --boss-img-scale: 1.16;
-  --boss-offset-x: -7%;
-  --boss-offset-y: -2%;
+  --boss-img-scale: 1.08;
+  --boss-offset-x: -5%;
+  --boss-offset-y: -8%;
 }
 
 #battleScene .battlefield-stage .player-model-motion {
   grid-column: 1;
-  grid-row: 1 / -1;
+  grid-row: 2;
   justify-self: start;
   align-self: end;
   display: grid;
   place-items: end start;
-  width: min(48%, 250px);
-  height: clamp(124px, 56%, 250px);
-  max-width: 48%;
-  max-height: 100%;
+  width: min(68%, 280px);
+  height: 100%;
+  max-width: 68%;
+  max-height: clamp(130px, 34dvh, 270px);
   transform: translate3d(0, 0, 0);
   pointer-events: none;
   user-select: none;
