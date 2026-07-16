@@ -374,7 +374,9 @@
 
         <div class="battle-stage battlefield-stage">
           <article id="battlePlayer" class="combatant player-side">
-            <img id="battlePlayerSprite" class="character-avatar wanderer-avatar main-character-gif small battle-player-model" data-character-view="battle-back" src="assets/characters/male_wanderer_back.png" alt="ผู้พเนจร" draggable="false">
+            <div class="player-model-motion">
+              <img id="battlePlayerSprite" class="character-avatar wanderer-avatar main-character-gif small battle-player-model" data-character-view="battle-back" src="assets/characters/male_wanderer_back.png" alt="ผู้พเนจร" draggable="false">
+            </div>
             <div class="combat-text player-status-panel">
               <h3>ผู้พเนจร</h3>
               <div class="hp-bar" aria-label="Player HP">
@@ -386,7 +388,9 @@
           </article>
 
           <article id="battleEnemy" class="combatant enemy-side">
-            <img id="battleEnemySprite" class="wisp-avatar enemy-memory-shade enemy-sprite boss-battle-model" src="assets/memory-shade.png" alt="Memory Shade">
+            <div class="boss-model-motion">
+              <img id="battleEnemySprite" class="wisp-avatar enemy-memory-shade enemy-sprite boss-battle-model" src="assets/memory-shade.png" alt="Memory Shade">
+            </div>
             <div class="combat-text boss-status-panel">
               <h3 id="battleEnemyName">Memory Shade</h3>
               <p id="battleEnemyDescription" class="enemy-description">เงาความทรงจำที่บิดเบือนคำกริยาในอดีต</p>

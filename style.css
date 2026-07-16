@@ -2907,12 +2907,12 @@ h3 {
   filter: none !important;
 }
 
-#battlePlayer.player-attack-motion {
-  animation: playerAttackMotion 520ms ease;
+#battlePlayer.player-attack-motion .player-model-motion {
+  animation: playerAttackMotion 380ms cubic-bezier(0.2, 0.72, 0.28, 1) both;
 }
 
-#battleEnemy.enemy-attack-motion {
-  animation: enemyAttackMotion 520ms ease;
+#battleEnemy.enemy-attack-motion .boss-model-motion {
+  animation: enemyAttackMotion 380ms cubic-bezier(0.2, 0.72, 0.28, 1) both;
 }
 
 @keyframes idleFloat {
@@ -2931,13 +2931,20 @@ h3 {
 }
 
 @keyframes playerAttackMotion {
-  0%, 100% { transform: translateX(0); }
-  45% { transform: translateX(14px); }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  35%, 55% { transform: translate3d(var(--player-attack-x, 18px), var(--player-attack-y, -10px), 0); }
 }
 
 @keyframes enemyAttackMotion {
-  0%, 100% { transform: translateX(0); }
-  45% { transform: translateX(-14px); }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  35%, 55% { transform: translate3d(var(--boss-attack-x, -18px), var(--boss-attack-y, 10px), 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #battlePlayer.player-attack-motion .player-model-motion,
+  #battleEnemy.enemy-attack-motion .boss-model-motion {
+    animation-duration: 120ms;
+  }
 }
 
 .enemy-side {
@@ -6667,6 +6674,10 @@ h3 {
 }
 
 #battleScene .battlefield-stage {
+  --player-attack-x: 18px;
+  --player-attack-y: -10px;
+  --boss-attack-x: -18px;
+  --boss-attack-y: 10px;
   position: relative;
   isolation: isolate;
   height: 100%;
@@ -6795,15 +6806,27 @@ h3 {
   justify-self: stretch;
 }
 
-#battleScene .battlefield-stage #battleEnemySprite {
+#battleScene .battlefield-stage .boss-model-motion {
   grid-column: 2;
   grid-row: 1 / -1;
   justify-self: end;
   align-self: start;
-  width: auto;
+  display: grid;
+  place-items: end;
+  width: 100%;
   height: clamp(150px, 29dvh, 300px);
   max-width: 100%;
   max-height: 74%;
+  transform: translate3d(0, 0, 0);
+  pointer-events: none;
+  user-select: none;
+}
+
+#battleScene .battlefield-stage #battleEnemySprite {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   object-position: center bottom;
   pointer-events: none;
@@ -6816,20 +6839,32 @@ h3 {
 #battleScene .battlefield-stage #battleEnemySprite.echo-trick-gif,
 #battleScene .battlefield-stage #battleEnemySprite.timedust-gif {
   width: auto;
-  height: clamp(165px, 31dvh, 330px);
+  height: 100%;
+}
+
+#battleScene .battlefield-stage .player-model-motion {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
+  align-self: end;
+  display: grid;
+  place-items: end start;
+  width: 100%;
+  height: clamp(150px, 27dvh, 270px);
+  max-width: 100%;
+  max-height: 86%;
+  transform: translate3d(0, 0, 0);
+  pointer-events: none;
+  user-select: none;
 }
 
 #battleScene .battlefield-stage #battlePlayerSprite.battle-player-model,
 #battleScene .battlefield-stage #battlePlayer .main-character-gif.small.battle-player-model,
 #battleScene .battlefield-stage #battlePlayer .main-character-gif-fallback.small.battle-player-model {
-  grid-column: 1;
-  grid-row: 1;
-  justify-self: start;
-  align-self: end;
   width: auto;
-  height: clamp(150px, 27dvh, 270px);
+  height: 100%;
   max-width: 100%;
-  max-height: 86%;
+  max-height: 100%;
   margin: 0;
   object-fit: contain;
   object-position: left bottom;
@@ -6949,18 +6984,19 @@ h3 {
     display: none;
   }
 
-  #battleScene .battlefield-stage #battleEnemySprite,
-  #battleScene .battlefield-stage #battleEnemySprite.memory-breaker-gif,
-  #battleScene .battlefield-stage #battleEnemySprite.yesterday-spirit-gif,
-  #battleScene .battlefield-stage #battleEnemySprite.echo-trick-gif,
-  #battleScene .battlefield-stage #battleEnemySprite.timedust-gif {
+  #battleScene .battlefield-stage {
+    --player-attack-x: 12px;
+    --player-attack-y: -7px;
+    --boss-attack-x: -12px;
+    --boss-attack-y: 7px;
+  }
+
+  #battleScene .battlefield-stage .boss-model-motion {
     height: clamp(108px, 25svh, 190px);
     max-height: 74%;
   }
 
-  #battleScene .battlefield-stage #battlePlayerSprite.battle-player-model,
-  #battleScene .battlefield-stage #battlePlayer .main-character-gif.small.battle-player-model,
-  #battleScene .battlefield-stage #battlePlayer .main-character-gif-fallback.small.battle-player-model {
+  #battleScene .battlefield-stage .player-model-motion {
     height: clamp(104px, 22svh, 170px);
     max-height: 84%;
   }
@@ -7034,17 +7070,11 @@ h3 {
     padding: 5px;
   }
 
-  #battleScene .battlefield-stage #battleEnemySprite,
-  #battleScene .battlefield-stage #battleEnemySprite.memory-breaker-gif,
-  #battleScene .battlefield-stage #battleEnemySprite.yesterday-spirit-gif,
-  #battleScene .battlefield-stage #battleEnemySprite.echo-trick-gif,
-  #battleScene .battlefield-stage #battleEnemySprite.timedust-gif {
+  #battleScene .battlefield-stage .boss-model-motion {
     height: clamp(96px, 24svh, 170px);
   }
 
-  #battleScene .battlefield-stage #battlePlayerSprite.battle-player-model,
-  #battleScene .battlefield-stage #battlePlayer .main-character-gif.small.battle-player-model,
-  #battleScene .battlefield-stage #battlePlayer .main-character-gif-fallback.small.battle-player-model {
+  #battleScene .battlefield-stage .player-model-motion {
     height: clamp(94px, 21svh, 152px);
   }
 }
@@ -7060,17 +7090,11 @@ h3 {
     max-height: none;
   }
 
-  #battleScene .battlefield-stage #battleEnemySprite,
-  #battleScene .battlefield-stage #battleEnemySprite.memory-breaker-gif,
-  #battleScene .battlefield-stage #battleEnemySprite.yesterday-spirit-gif,
-  #battleScene .battlefield-stage #battleEnemySprite.echo-trick-gif,
-  #battleScene .battlefield-stage #battleEnemySprite.timedust-gif {
+  #battleScene .battlefield-stage .boss-model-motion {
     height: clamp(84px, 22svh, 146px);
   }
 
-  #battleScene .battlefield-stage #battlePlayerSprite.battle-player-model,
-  #battleScene .battlefield-stage #battlePlayer .main-character-gif.small.battle-player-model,
-  #battleScene .battlefield-stage #battlePlayer .main-character-gif-fallback.small.battle-player-model {
+  #battleScene .battlefield-stage .player-model-motion {
     height: clamp(82px, 19svh, 132px);
   }
 }
