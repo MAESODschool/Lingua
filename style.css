@@ -300,11 +300,19 @@ body.parry-active {
   touch-action: manipulation;
 }
 
-.mute-button {
+.game-utility-controls {
   position: fixed;
   top: max(10px, env(safe-area-inset-top));
   right: 10px;
   z-index: 80;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.mute-button,
+.manual-save-button {
   min-height: 38px;
   padding: 8px 12px;
   border-radius: 999px;
@@ -315,6 +323,33 @@ body.parry-active {
   font-size: clamp(0.78rem, 2vw, 0.9rem);
   line-height: 1.18;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.manual-save-button {
+  min-width: 92px;
+  background: rgba(23, 47, 91, 0.88);
+  border-color: rgba(115, 246, 255, 0.7);
+  transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
+}
+
+.manual-save-button:hover {
+  transform: translateY(-1px);
+  background: rgba(33, 68, 126, 0.92);
+}
+
+.manual-save-button:disabled {
+  cursor: wait;
+  opacity: 0.82;
+}
+
+.manual-save-button.is-success {
+  background: rgba(29, 103, 73, 0.92);
+  border-color: rgba(112, 255, 177, 0.75);
+}
+
+.manual-save-button.is-error {
+  background: rgba(116, 34, 63, 0.92);
+  border-color: rgba(255, 142, 170, 0.85);
 }
 
 button {

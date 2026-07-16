@@ -7,7 +7,10 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <button id="muteButton" class="mute-button" type="button" aria-pressed="false">เสียง: เปิด</button>
+  <div class="game-utility-controls" aria-label="ตัวเลือกเกม">
+    <button id="muteButton" class="mute-button" type="button" aria-pressed="false">เสียง: เปิด</button>
+    <button id="manualSaveButton" class="manual-save-button hidden" type="button" aria-label="บันทึกความคืบหน้าปัจจุบัน">💾 บันทึก</button>
+  </div>
   <button id="logoutButton" class="logout-button hidden" type="button">Logout</button>
   <main class="game-shell">
     <section id="loginScene" class="scene active">

@@ -2505,6 +2505,7 @@ const state = {
   pointParry: null,
   timeDustTransitionComplete: false,
   isReturningToMainMenu: false,
+  manualSaveInProgress: false,
   nextDialogueHold: null,
   audioUnlocked: false,
   currentBgmKey: "",
@@ -2641,6 +2642,7 @@ dialogueTypeSfx.load();
 
 const els = {
   muteButton: document.getElementById("muteButton"),
+  manualSaveButton: document.getElementById("manualSaveButton"),
   logoutButton: document.getElementById("logoutButton"),
   showLoginPanelButton: document.getElementById("showLoginPanelButton"),
   showRegisterPanelButton: document.getElementById("showRegisterPanelButton"),
@@ -2811,6 +2813,7 @@ function showScene(name) {
   }
   scenes[name].classList.add("active");
   applyDebugButtonVisibility();
+  updateManualSaveButtonVisibility(name);
   playBgmForScene(name);
   renderBattleTurnIndicator();
 }
@@ -3316,6 +3319,7 @@ function runSceneTransition(message, onCovered) {
       setTimeout(() => {
         els.sceneTransition.classList.add("hidden");
         state.isTransitioning = false;
+        updateManualSaveButtonVisibility();
       }, 620);
     }, 160);
   }, 620);
@@ -3327,6 +3331,7 @@ function resetSceneTransitionOverlay() {
     els.sceneTransition.classList.add("hidden");
   }
   state.isTransitioning = false;
+  updateManualSaveButtonVisibility();
 }
 
 function runLessonUnitTransition(message, { onCovered, onFinished } = {}) {
@@ -5978,18 +5983,53 @@ function createDefaultPlayerData(user) {
   };
 }
 
-function savePlayerData() {
+let pendingProgressSave = Promise.resolve(true);
+
+function serializeProgressValue(value) {
+  if (value instanceof Set) {
+    return [...value].map(item => serializeProgressValue(item));
+  }
+  if (Array.isArray(value)) {
+    return value.map(item => serializeProgressValue(item));
+  }
+  if (value && typeof value === "object") {
+    const output = {};
+    Object.entries(value).forEach(([key, nestedValue]) => {
+      if (typeof nestedValue === "function" || typeof nestedValue === "undefined") {
+        return;
+      }
+      output[key] = serializeProgressValue(nestedValue);
+    });
+    return output;
+  }
+  return value;
+}
+
+function queuePlayerDataSave(snapshot, reason = "auto") {
+  pendingProgressSave = pendingProgressSave
+    .catch(() => false)
+    .then(() => progressService.saveProgress(snapshot.userId, snapshot))
+    .catch(error => {
+      console.warn(`[Progress] Failed to save player data (${reason})`, error);
+      setAuthStatus(AUTH_COPY.remoteAuthUnavailable);
+      return false;
+    });
+  return pendingProgressSave;
+}
+
+function flushPendingProgressSaves() {
+  return pendingProgressSave.catch(() => false);
+}
+
+function savePlayerData(reason = "auto") {
   if (!playerData) {
     return false;
   }
 
   ensurePlayerCharacterData(playerData);
   playerData.updatedAt = new Date().toISOString();
-  return progressService.saveProgress(playerData.userId, playerData).catch(error => {
-    console.warn("[Progress] Failed to save player data", error);
-    setAuthStatus(AUTH_COPY.remoteAuthUnavailable);
-    return false;
-  });
+  const snapshot = serializeProgressValue(playerData);
+  return queuePlayerDataSave(snapshot, reason);
 }
 
 function mergeDeep(target, source) {
@@ -6541,6 +6581,15 @@ function restoreSavedProgress() {
     return false;
   }
 
+  if (progress.finalBossDefeated || progress.currentScreen === "victory") {
+    completeActVictoryScene();
+    return true;
+  }
+
+  if (restoreResumeCheckpoint(progress.resumeCheckpoint)) {
+    return true;
+  }
+
   const restoredStage = getStageById(progress.currentStageId);
   if (
     progress.currentScreen === "lesson" &&
@@ -6552,11 +6601,6 @@ function restoreSavedProgress() {
       dialogueIndex: progress.currentDialogueIndex || 0
     });
     startPostBossDialogue(restoredStage, progress.currentDialogueIndex || 0);
-    return true;
-  }
-
-  if (progress.finalBossDefeated || progress.currentScreen === "victory") {
-    completeActVictoryScene();
     return true;
   }
 
@@ -7330,6 +7374,464 @@ function loadProgress() {
   return progress;
 }
 
+const RESUME_CHECKPOINT_VERSION = 1;
+let manualSaveStatusTimer = null;
+
+function getActiveSceneName() {
+  return Object.entries(scenes).find(([, scene]) => scene?.classList.contains("active"))?.[0] || "";
+}
+
+function isManualSaveScene(sceneName = getActiveSceneName()) {
+  return sceneName === "story" || sceneName === "battle";
+}
+
+function updateManualSaveButtonVisibility(sceneName = getActiveSceneName()) {
+  if (!els.manualSaveButton) {
+    return;
+  }
+  const hasSupportedContext = sceneName === "battle"
+    ? Boolean(state.actBattle)
+    : sceneName === "story" && Boolean(state.currentLessonStage || state.lessonStoryMode || state.lessonSteps.length);
+  const canShow = Boolean(playerData) &&
+    isManualSaveScene(sceneName) &&
+    hasSupportedContext &&
+    !state.isPrologueActive &&
+    !state.isTransitioning;
+  els.manualSaveButton.classList.toggle("hidden", !canShow);
+  if (!canShow) {
+    setManualSaveButtonState("normal");
+  }
+}
+
+function setManualSaveButtonState(status = "normal") {
+  if (!els.manualSaveButton) {
+    return;
+  }
+  window.clearTimeout(manualSaveStatusTimer);
+  els.manualSaveButton.classList.remove("is-success", "is-error");
+  els.manualSaveButton.disabled = status === "saving";
+  if (status === "saving") {
+    els.manualSaveButton.textContent = "กำลังบันทึก...";
+    return;
+  }
+  if (status === "success") {
+    els.manualSaveButton.textContent = "บันทึกแล้ว";
+    els.manualSaveButton.classList.add("is-success");
+    manualSaveStatusTimer = window.setTimeout(() => setManualSaveButtonState("normal"), 1800);
+    return;
+  }
+  if (status === "failure") {
+    els.manualSaveButton.textContent = "บันทึกไม่สำเร็จ";
+    els.manualSaveButton.classList.add("is-error");
+    manualSaveStatusTimer = window.setTimeout(() => setManualSaveButtonState("normal"), 2200);
+    return;
+  }
+  els.manualSaveButton.textContent = "💾 บันทึก";
+}
+
+function setToArray(value) {
+  return value instanceof Set ? [...value] : Array.isArray(value) ? value : [];
+}
+
+function restoreSet(value) {
+  return new Set(Array.isArray(value) ? value : []);
+}
+
+function getCheckpointStageId() {
+  return state.currentLessonStage?.id ||
+    state.actBattle?.stage?.id ||
+    getPlayableStages()[state.actStageIndex]?.id ||
+    ensureActProgress()?.currentStageId ||
+    DEFAULT_ACT_PROGRESS.currentStageId;
+}
+
+function captureLessonResumeCheckpoint(source, savedAt) {
+  if (!state.currentLessonStage && !state.lessonStoryMode && !state.lessonSteps.length) {
+    return null;
+  }
+  const stageId = getCheckpointStageId();
+  const stage = getStageById(stageId);
+  if (!stage || getActiveSceneName() !== "story") {
+    return null;
+  }
+
+  const phase = state.lessonStoryMode
+    ? (state.lessonStorySteps[state.lessonStoryStepIndex]?.phase || (stage.isPostBossDialogue ? "postBossDialogue" : "teacherExplanation"))
+    : (ensureActProgress()?.lessonPhase || "teacherExplanation");
+
+  return {
+    version: RESUME_CHECKPOINT_VERSION,
+    source,
+    savedAt,
+    scene: "lesson",
+    stageId: stage.id,
+    lesson: {
+      mode: phase === "postBossDialogue"
+        ? "postBossDialogue"
+        : state.lessonStoryMode ? "dialogue" : "activity",
+      phase,
+      dialogueIndex: Math.max(0, Number(state.lessonStoryStepIndex) || 0),
+      lessonStepIndex: Math.max(0, Number(state.lessonStepIndex) || 0),
+      isReplay: Boolean(state.activeReplayLessonId === stage.id),
+      replayReturnProgress: state.replayReturnProgress || null
+    },
+    battle: null
+  };
+}
+
+function getBattleResumeMode(battle) {
+  if (!battle) {
+    return "player-action-menu";
+  }
+  if (battle.bossGrammarChallenge?.active && battle.bossGrammarChallenge.mode === "typing") {
+    return "boss-typing";
+  }
+  if (battle.bossGrammarChallenge?.active && battle.bossGrammarChallenge.mode === "arrangement") {
+    return "boss-arrangement";
+  }
+  if (battle.bossQuestionState?.active && battle.currentBossQuestion) {
+    return "boss-question";
+  }
+  if (state.parry || state.pointParry?.active || battle.heavyAttackState?.active || battle.awaitingParry || battle.awaitingPrepare) {
+    return "boss-intent";
+  }
+  if (battle.pendingBossTurn && !els.bossIntentPanel?.classList.contains("hidden")) {
+    return "boss-intent";
+  }
+  if (battle.pendingBossTurn) {
+    return "boss-intent";
+  }
+  if (!els.continueBattleButton?.classList.contains("hidden")) {
+    return "continue";
+  }
+  if (battle.playerActionPhase === "skillSelect") {
+    return "skill-select";
+  }
+  if (battle.playerActionPhase === "charmSelect") {
+    return "charm-select";
+  }
+  if (battle.playerActionPhase === "charge") {
+    return "charge";
+  }
+  if (!els.questionPanel?.classList.contains("hidden") && battle.currentFocusQuestion) {
+    return "focus-question";
+  }
+  if (!els.questionPanel?.classList.contains("hidden") && battle.currentQuestion) {
+    return "player-question";
+  }
+  return "player-action-menu";
+}
+
+function captureBattleResumeCheckpoint(source, savedAt) {
+  const battle = state.actBattle;
+  const stage = battle?.stage;
+  if (!battle || !stage || getActiveSceneName() !== "battle" || isActBattleEnded(battle) || battle.victoryHandled) {
+    return null;
+  }
+
+  const battleSnapshot = serializeProgressValue({
+    ...battle,
+    stage: undefined,
+    stageId: stage.id,
+    resumeMode: getBattleResumeMode(battle),
+    usedQuestionIds: setToArray(battle.usedQuestionIds),
+    usedBossQuestionIds: setToArray(battle.usedBossQuestionIds),
+    usedFocusQuestionIds: setToArray(battle.usedFocusQuestionIds),
+    playerHp: state.playerHp,
+    enemyHp: state.enemyHp,
+    enemyMaxHp: state.enemyMaxHp,
+    grammaria: state.grammaria,
+    sparkBonus: state.sparkBonus,
+    shield: state.shield,
+    guardShield: state.guardShield,
+    battleActiveEffects: state.battleActiveEffects || {},
+    currentQuestion: battle.currentQuestion || null,
+    currentFocusQuestion: battle.currentFocusQuestion || null,
+    currentBossQuestion: battle.currentBossQuestion || null
+  });
+
+  return {
+    version: RESUME_CHECKPOINT_VERSION,
+    source,
+    savedAt,
+    scene: "battle",
+    stageId: stage.id,
+    lesson: null,
+    battle: battleSnapshot
+  };
+}
+
+function captureCurrentResumeCheckpoint({ source = "auto" } = {}) {
+  if (!playerData || state.isPrologueActive || state.isTransitioning) {
+    return null;
+  }
+  const savedAt = new Date().toISOString();
+  if (getActiveSceneName() === "battle") {
+    return captureBattleResumeCheckpoint(source, savedAt);
+  }
+  if (getActiveSceneName() === "story") {
+    return captureLessonResumeCheckpoint(source, savedAt);
+  }
+  return null;
+}
+
+function validateResumeCheckpoint(checkpoint) {
+  if (!checkpoint || checkpoint.version !== RESUME_CHECKPOINT_VERSION) {
+    return false;
+  }
+  if (checkpoint.scene !== "lesson" && checkpoint.scene !== "battle") {
+    return false;
+  }
+  const stage = getStageById(checkpoint.stageId);
+  if (!stage) {
+    return false;
+  }
+  if (checkpoint.scene === "battle") {
+    return Boolean(checkpoint.battle && !checkpoint.battle.victoryHandled && !checkpoint.battle.isDefeated);
+  }
+  return Boolean(checkpoint.lesson);
+}
+
+function restoreLessonResumeCheckpoint(checkpoint) {
+  const stage = getStageById(checkpoint.stageId);
+  const stageIndex = getStageIndexById(checkpoint.stageId);
+  if (!stage || stageIndex < 0) {
+    return false;
+  }
+
+  const lesson = checkpoint.lesson || {};
+  state.activeReplayLessonId = lesson.isReplay ? stage.id : null;
+  state.replayReturnProgress = lesson.replayReturnProgress || null;
+
+  if (lesson.mode === "postBossDialogue" || lesson.phase === "postBossDialogue") {
+    startPostBossDialogue(stage, lesson.dialogueIndex || 0);
+    return true;
+  }
+
+  if (lesson.mode === "activity") {
+    setActBackground(getAct1BackgroundKeyForStage(stage), { warnMissing: true });
+    state.actStageIndex = stageIndex;
+    state.currentLessonStage = stage;
+    state.lessonStoryMode = false;
+    state.lessonStorySteps = [];
+    state.lessonStoryStepIndex = 0;
+    state.lessonSteps = buildGuidedLessonSteps(stage);
+    state.lessonStepIndex = clamp(lesson.lessonStepIndex || 0, 0, Math.max(state.lessonSteps.length - 1, 0));
+    updateLessonChrome(stage, stageIndex, "lesson");
+    showScene("story");
+    renderLessonStep();
+    return true;
+  }
+
+  showStageLesson(stageIndex, {
+    dialogueIndex: lesson.dialogueIndex || 0,
+    lessonStepIndex: lesson.lessonStepIndex || 0,
+    isReplay: lesson.isReplay,
+    preserveReplayState: true
+  });
+  return true;
+}
+
+function createBattleStageFromCheckpoint(stageId) {
+  const stageConfig = getStageById(stageId);
+  if (!stageConfig) {
+    return null;
+  }
+  return {
+    ...stageConfig,
+    questions: filterQuestionsForStage(stageConfig.questions || [], stageConfig)
+  };
+}
+
+function hydrateBattleSnapshot(snapshot, stage) {
+  const battle = {
+    ...snapshot,
+    stage,
+    usedQuestionIds: restoreSet(snapshot.usedQuestionIds),
+    usedBossQuestionIds: restoreSet(snapshot.usedBossQuestionIds),
+    usedFocusQuestionIds: restoreSet(snapshot.usedFocusQuestionIds)
+  };
+  battle.isActive = true;
+  battle.isDefeated = false;
+  battle.victoryHandled = false;
+  return battle;
+}
+
+function renderRestoredPlayerQuestion() {
+  const battle = state.actBattle;
+  const question = battle?.currentQuestion;
+  if (!battle || !question) {
+    beginActPlayerTurn("กลับสู่เทิร์นของผู้พเนจร");
+    return;
+  }
+  setBattleTurnOwner("player");
+  els.continueBattleButton.classList.add("hidden");
+  els.battleMessage.textContent = `${battle.stage.title} - คำถาม ${battle.questionIndex + 1} / ${battle.stage.questions.length}`;
+  els.questionText.textContent = getQuestionText(question);
+  els.answerOptions.innerHTML = "";
+  question.options.forEach(option => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "answer-button";
+    button.textContent = option;
+    button.addEventListener("click", () => chooseActAnswer(option));
+    els.answerOptions.appendChild(button);
+  });
+  showOnlyBattlePanel(els.questionPanel);
+}
+
+function renderRestoredFocusQuestion() {
+  const battle = state.actBattle;
+  const question = battle?.currentFocusQuestion;
+  if (!battle || !question) {
+    beginActPlayerTurn("กลับสู่เทิร์นของผู้พเนจร");
+    return;
+  }
+  setBattleTurnOwner("player");
+  els.battleMessage.textContent = "ตั้งสมาธิ: ตอบคำถามสั้น ๆ เพื่อรวบรวม Grammaria และฟื้น AP";
+  els.questionText.textContent = getQuestionText(question);
+  els.answerOptions.innerHTML = "";
+  question.options.forEach(option => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "answer-button";
+    button.textContent = option;
+    button.addEventListener("click", () => chooseActFocusAnswer(option, question));
+    els.answerOptions.appendChild(button);
+  });
+  showOnlyBattlePanel(els.questionPanel);
+}
+
+function renderRestoredBossQuestion() {
+  const battle = state.actBattle;
+  const question = battle?.currentBossQuestion;
+  if (!battle || !question) {
+    showBossIntentPanel(battle?.pendingBossTurn);
+    return;
+  }
+  battle.bossQuestionState = {
+    active: true,
+    inputLocked: false,
+    resolved: false,
+    questionId: question.id || ""
+  };
+  showOnlyBattlePanel(els.questionPanel);
+  setBattleTurnOwner("enemy");
+  els.continueBattleButton.classList.add("hidden");
+  els.battleMessage.textContent = "บอส: “ถ้าเจ้าจำอดีตผิด ความทรงจำก็จะแตกสลาย... ตอบข้ามา!”";
+  els.questionText.textContent = getQuestionText(question);
+  els.answerOptions.innerHTML = "";
+  question.options.forEach(option => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "answer-button";
+    button.textContent = option;
+    button.addEventListener("click", () => chooseBossQuestionAnswer(option, question));
+    els.answerOptions.appendChild(button);
+  });
+}
+
+function renderRestoredBattleCheckpoint(resumeMode) {
+  const battle = state.actBattle;
+  if (!battle) {
+    return false;
+  }
+
+  switch (resumeMode) {
+    case "player-question":
+      renderRestoredPlayerQuestion();
+      return true;
+    case "focus-question":
+      renderRestoredFocusQuestion();
+      return true;
+    case "skill-select":
+      renderBattleSkillSelectionPanel();
+      return true;
+    case "charm-select":
+      renderBattleCharmSelectionPanel();
+      return true;
+    case "charge":
+      renderBattleChargePanel();
+      return true;
+    case "boss-typing":
+      showBossTypingChallenge();
+      return true;
+    case "boss-arrangement":
+      showBossArrangementChallenge();
+      return true;
+    case "boss-question":
+      renderRestoredBossQuestion();
+      return true;
+    case "boss-intent":
+      if (battle.pendingBossTurn) {
+        showBossIntentPanel(battle.pendingBossTurn);
+        return true;
+      }
+      break;
+    case "continue":
+      setBattleTurnOwner("player");
+      showOnlyBattlePanel(null);
+      showBattleContinueButton(
+        battle.questionIndex >= battle.stage.questions.length - 1 || state.enemyHp <= 0 ? "รับรางวัล" : "คำถามถัดไป",
+        continueActBattle
+      );
+      return true;
+    default:
+      break;
+  }
+  beginActPlayerTurn("กลับสู่เทิร์นของผู้พเนจร");
+  return true;
+}
+
+function restoreBattleResumeCheckpoint(checkpoint) {
+  const stage = createBattleStageFromCheckpoint(checkpoint.stageId);
+  const stageIndex = getStageIndexById(checkpoint.stageId);
+  if (!stage || stageIndex < 0 || !stage.questions.length) {
+    return false;
+  }
+
+  cleanupBossHeavyAttackChain({ clearParryUi: true });
+  cleanupBattleInputState();
+  resetVictorySceneMusicForBattle();
+  setActBackground(getAct1BackgroundKeyForStage(stage), { warnMissing: true });
+
+  const battle = hydrateBattleSnapshot(checkpoint.battle, stage);
+  state.actStageIndex = stageIndex;
+  state.currentLessonStage = stage;
+  state.actBattle = battle;
+  state.currentBattleStats = battle.grammariaStats || createBattleStats(stage);
+  state.playerHp = clamp(Number(checkpoint.battle.playerHp ?? state.playerHp), 0, 100);
+  state.enemyMaxHp = Math.max(1, Number(checkpoint.battle.enemyMaxHp || state.enemyMaxHp || 1));
+  state.enemyHp = clamp(Number(checkpoint.battle.enemyHp ?? state.enemyHp), 0, state.enemyMaxHp);
+  state.grammaria = Number(checkpoint.battle.grammaria ?? state.grammaria) || 0;
+  state.sparkBonus = Number(checkpoint.battle.sparkBonus ?? state.sparkBonus) || 0;
+  state.shield = Number(checkpoint.battle.shield ?? state.shield) || 0;
+  state.guardShield = Number(checkpoint.battle.guardShield ?? state.guardShield) || 0;
+  state.battleActiveEffects = checkpoint.battle.battleActiveEffects || {};
+
+  resetBattleContinueControls();
+  showScene("battle");
+  updateBattleEnemyVisual(stage);
+  updateBattleStats();
+  renderBattleTurnIndicator();
+  return renderRestoredBattleCheckpoint(checkpoint.battle.resumeMode || "player-action-menu");
+}
+
+function restoreResumeCheckpoint(checkpoint) {
+  if (!validateResumeCheckpoint(checkpoint)) {
+    return false;
+  }
+  try {
+    if (checkpoint.scene === "battle") {
+      return restoreBattleResumeCheckpoint(checkpoint);
+    }
+    return restoreLessonResumeCheckpoint(checkpoint);
+  } catch (error) {
+    console.warn("[Progress] Failed to restore resume checkpoint", error);
+    return false;
+  }
+}
+
 const MAIN_MENU_STAGE_LABELS = {
   "what-is-past": {
     lesson: "What is the Past?",
@@ -7749,7 +8251,7 @@ function openAccountSettingsModal() {
   });
 }
 
-function saveProgress(updateObject = {}) {
+function saveProgress(updateObject = {}, options = {}) {
   const progress = ensureActProgress();
   if (!progress) {
     return null;
@@ -7757,12 +8259,57 @@ function saveProgress(updateObject = {}) {
 
   mergeDeep(progress, updateObject);
   validateProgress(progress);
+  const shouldCaptureCheckpoint = options.captureCheckpoint === true ||
+    (options.captureCheckpoint !== false && isManualSaveScene());
+  if (shouldCaptureCheckpoint) {
+    const checkpoint = captureCurrentResumeCheckpoint({ source: options.source || "auto" });
+    if (checkpoint) {
+      progress.resumeCheckpoint = checkpoint;
+    } else if (options.requireCheckpoint) {
+      console.warn("[Progress] Unable to capture resume checkpoint", { source: options.source || "auto" });
+      return null;
+    }
+  }
   progress.lastUpdatedAt = new Date().toISOString();
   playerData.progress.currentScene = progress.currentScreen;
   ensureGrammariaState();
-  savePlayerData();
+  savePlayerData(options.source || "auto");
   console.log("[Progress] Saved:", progress);
   return progress;
+}
+
+async function manualSaveCurrentProgress(event = null) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  if (state.manualSaveInProgress || !playerData || !isManualSaveScene()) {
+    return;
+  }
+
+  state.manualSaveInProgress = true;
+  setManualSaveButtonState("saving");
+  try {
+    const progress = saveProgress({}, {
+      source: "manual",
+      captureCheckpoint: true,
+      requireCheckpoint: true
+    });
+    if (!progress?.resumeCheckpoint) {
+      throw new Error("No supported resume checkpoint for current scene");
+    }
+    const persisted = await flushPendingProgressSaves();
+    if (persisted === false) {
+      throw new Error("Persistence service returned false");
+    }
+    setManualSaveButtonState("success");
+  } catch (error) {
+    console.warn("[Progress] Manual save failed", error);
+    setManualSaveButtonState("failure");
+  } finally {
+    state.manualSaveInProgress = false;
+    updateManualSaveButtonVisibility();
+  }
 }
 
 function unlockStage(stageId) {
@@ -16694,6 +17241,7 @@ els.parryButton.addEventListener("keydown", event => {
 els.gameModalClose.addEventListener("click", closeGameModal);
 els.returnTitleButton.addEventListener("click", returnToTitleSafely);
 els.muteButton.addEventListener("click", toggleMute);
+els.manualSaveButton?.addEventListener("click", manualSaveCurrentProgress);
 
 document.addEventListener("pointerdown", handleButtonSfxPointer, true);
 document.addEventListener("keydown", handleButtonSfxKey, true);
