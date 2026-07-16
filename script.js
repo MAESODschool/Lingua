@@ -2717,6 +2717,7 @@ const els = {
   enemyHpText: document.getElementById("enemyHpText"),
   grammariaText: document.getElementById("grammariaText"),
   shieldText: document.getElementById("shieldText"),
+  bossStatusText: document.getElementById("bossStatusText"),
   battleTitle: document.getElementById("battleTitle"),
   battleExitButton: document.getElementById("battleExitButton"),
   battleTurnIndicator: document.getElementById("battleTurnIndicator"),
@@ -15388,6 +15389,47 @@ function updateBattleEnemyVisual(stage = null) {
   }
 }
 
+function getPlayerBattleStatusParts(playerStatus = getBattleStatus("player")) {
+  const statusParts = [];
+  if (playerStatus?.defenseShieldPercent > 0 && playerStatus.defenseShieldHits > 0) {
+    statusParts.push(`DEF ${Math.round(playerStatus.defenseShieldPercent * 100)}% x${playerStatus.defenseShieldHits}`);
+  }
+  if (playerStatus?.hitShieldStacks > 0) {
+    statusParts.push(`เกราะ x${playerStatus.hitShieldStacks}`);
+  }
+  if (playerStatus?.markedHits > 0) {
+    statusParts.push(`Marked +${Math.round(playerStatus.markDamageBonus * 100)}%`);
+  }
+  return statusParts;
+}
+
+function getBossBattleStatusParts(bossStatus = getBattleStatus("boss")) {
+  const threshold = bossStatus?.stunThreshold || STATUS_BALANCE_CONFIG.stun.defaultThreshold;
+  const statusParts = [`Stun ${Math.round(bossStatus?.stunGauge || 0)}/${threshold}`];
+  if (bossStatus?.stunnedTurns > 0) {
+    statusParts.push(`Stunned x${bossStatus.stunnedTurns}`);
+  }
+  if (bossStatus?.markedHits > 0) {
+    statusParts.push(`Marked +${Math.round(bossStatus.markDamageBonus * 100)}%`);
+  }
+  return statusParts;
+}
+
+function renderPlayerBattleStatuses(playerStatus = getBattleStatus("player")) {
+  if (!els.shieldText) {
+    return;
+  }
+  const playerStatusParts = getPlayerBattleStatusParts(playerStatus);
+  els.shieldText.textContent = playerStatusParts.length ? playerStatusParts.join(" | ") : "ไม่มี";
+}
+
+function renderBossBattleStatuses(bossStatus = getBattleStatus("boss")) {
+  if (!els.bossStatusText) {
+    return;
+  }
+  els.bossStatusText.textContent = getBossBattleStatusParts(bossStatus).join(" | ");
+}
+
 function updateBattleStats() {
   const playerPercent = (state.playerHp / 100) * 100;
   const enemyMaxHp = state.enemyMaxHp || 80;
@@ -15399,27 +15441,9 @@ function updateBattleStats() {
   els.enemyHpText.textContent = `พลังชีวิต ${state.enemyHp} / ${enemyMaxHp}`;
   els.grammariaText.textContent = state.grammaria;
 
-  if (els.shieldText) {
-    const playerStatus = getBattleStatus("player");
-    const bossStatus = getBattleStatus("boss");
-    const statusParts = [];
-    if (playerStatus?.defenseShieldPercent > 0 && playerStatus.defenseShieldHits > 0) {
-      statusParts.push(`DEF ${Math.round(playerStatus.defenseShieldPercent * 100)}% x${playerStatus.defenseShieldHits}`);
-    }
-    if (playerStatus?.hitShieldStacks > 0) {
-      statusParts.push(`เกราะ x${playerStatus.hitShieldStacks}`);
-    }
-    if (playerStatus?.markedHits > 0) {
-      statusParts.push(`Marked +${Math.round(playerStatus.markDamageBonus * 100)}%`);
-    }
-    if (bossStatus?.markedHits > 0) {
-      statusParts.push(`Boss Mark +${Math.round(bossStatus.markDamageBonus * 100)}%`);
-    }
-    if (bossStatus) {
-      statusParts.push(`Stun ${Math.round(bossStatus.stunGauge || 0)}/${bossStatus.stunThreshold || STATUS_BALANCE_CONFIG.stun.defaultThreshold}`);
-    }
-    els.shieldText.textContent = statusParts.length ? statusParts.join(" | ") : "ไม่มี";
-  }
+  const statuses = ensureBattleStatuses();
+  renderPlayerBattleStatuses(statuses?.player || null);
+  renderBossBattleStatuses(statuses?.boss || null);
 
   updateActAPUI();
 }
