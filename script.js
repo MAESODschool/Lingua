@@ -162,26 +162,7 @@ const BOSS_GRAMMAR_CHALLENGE_CONFIG = {
   counterDamageMax: 18
 };
 
-const BOSS_V2_CHALLENGE_WORDS = [
-  { id: "regular_play_played", group: "regular", v1: "play", v2: "played", lessonTags: ["regular-rule-1", "regular-rule-2"], hint: "เติม -ed ให้คำกริยาปกติ" },
-  { id: "regular_walk_walked", group: "regular", v1: "walk", v2: "walked", lessonTags: ["regular-rule-1", "regular-rule-2"], hint: "เติม -ed ให้คำกริยาปกติ" },
-  { id: "regular_clean_cleaned", group: "regular", v1: "clean", v2: "cleaned", lessonTags: ["regular-rule-1", "regular-rule-2"], hint: "เติม -ed ให้คำกริยาปกติ" },
-  { id: "regular_watch_watched", group: "regular", v1: "watch", v2: "watched", lessonTags: ["regular-rule-1", "regular-rule-2"], hint: "เติม -ed ให้คำกริยาปกติ" },
-  { id: "regular_love_loved", group: "regular", v1: "love", v2: "loved", lessonTags: ["regular-rule-2"], hint: "ลงท้ายด้วย e เติม -d" },
-  { id: "regular_live_lived", group: "regular", v1: "live", v2: "lived", lessonTags: ["regular-rule-2"], hint: "ลงท้ายด้วย e เติม -d" },
-  { id: "regular_try_tried", group: "regular", v1: "try", v2: "tried", lessonTags: ["regular-rule-3"], hint: "เปลี่ยน y เป็น i แล้วเติม -ed" },
-  { id: "regular_study_studied", group: "regular", v1: "study", v2: "studied", lessonTags: ["regular-rule-3"], hint: "เปลี่ยน y เป็น i แล้วเติม -ed" },
-  { id: "regular_stop_stopped", group: "regular", v1: "stop", v2: "stopped", lessonTags: ["regular-rule-4"], hint: "บางคำต้องเพิ่มพยัญชนะท้ายก่อนเติม -ed" },
-  { id: "regular_plan_planned", group: "regular", v1: "plan", v2: "planned", lessonTags: ["regular-rule-4"], hint: "บางคำต้องเพิ่มพยัญชนะท้ายก่อนเติม -ed" },
-  { id: "irregular_go_went", group: "irregular", v1: "go", v2: "went", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" },
-  { id: "irregular_eat_ate", group: "irregular", v1: "eat", v2: "ate", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" },
-  { id: "irregular_see_saw", group: "irregular", v1: "see", v2: "saw", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" },
-  { id: "irregular_buy_bought", group: "irregular", v1: "buy", v2: "bought", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" },
-  { id: "irregular_take_took", group: "irregular", v1: "take", v2: "took", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" },
-  { id: "irregular_speak_spoke", group: "irregular", v1: "speak", v2: "spoke", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" },
-  { id: "irregular_write_wrote", group: "irregular", v1: "write", v2: "wrote", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" },
-  { id: "irregular_break_broke", group: "irregular", v1: "break", v2: "broke", lessonTags: ["irregular-lesson"], hint: "Irregular Verb ต้องจำรูป V2" }
-];
+let BOSS_V2_CHALLENGE_WORDS = [];
 
 const DEFAULT_POINT_PARRY_CONFIG = {
   enabled: true,
@@ -716,7 +697,13 @@ const regularVerbBanks = {
     ["ask", "asked", ["askd", "askked", "askied"]],
     ["work", "worked", ["workd", "workked", "workied"]],
     ["look", "looked", ["lookd", "lookked", "lookied"]],
-    ["start", "started", ["startd", "startted", "startied"]]
+    ["start", "started", ["startd", "startted", "startied"]],
+    ["wash", "washed", ["washd", "washeed", "washied"]],
+    ["cook", "cooked", ["cookd", "cookked", "cookied"]],
+    ["talk", "talked", ["talkd", "talkked", "talkied"]],
+    ["rain", "rained", ["raind", "rainned", "rainied"]],
+    ["paint", "painted", ["paintd", "paintted", "paintied"]],
+    ["want", "wanted", ["wantd", "wantted", "wantied"]]
   ],
   endingE: [
     ["like", "liked", ["likeed", "likied", "likd"]],
@@ -737,6 +724,9 @@ const regularVerbBanks = {
     ["smile", "smiled", ["smileed", "smilied", "smild"]],
     ["bake", "baked", ["bakeed", "bakied", "bakd"]],
     ["invite", "invited", ["inviteed", "invitied", "invitd"]],
+    ["phone", "phoned", ["phoneed", "phonied", "phond"]],
+    ["share", "shared", ["shareed", "sharied", "shard"]],
+    ["care", "cared", ["careed", "caried", "card"]],
     ["agree", "agreed", ["agreeed", "agried", "agred"]],
     ["believe", "believed", ["believeed", "believied", "believd"]]
   ],
@@ -747,6 +737,10 @@ const regularVerbBanks = {
     ["obey", "obeyed", ["obeied", "obeyd", "obeyied"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
     ["delay", "delayed", ["delaied", "delayd", "delayied"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
     ["pray", "prayed", ["praied", "prayd", "prayied"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
+    ["annoy", "annoyed", ["annoied", "annoyd", "annoyied"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
+    ["survey", "surveyed", ["surveied", "surveyd", "surveyied"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
+    ["display", "displayed", ["displaied", "displayd", "displayied"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
+    ["relay", "relayed", ["relaied", "relayd", "relayied"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
     ["destroy", "destroyed", ["destroied", "destroyd", "destroyied"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
     ["employ", "employed", ["emploied", "employd", "employied"], "หน้า y เป็นสระ จึงเติม -ed ได้เลย"],
     ["study", "studied", ["studyed", "studyied", "studed"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
@@ -758,6 +752,8 @@ const regularVerbBanks = {
     ["worry", "worried", ["worryed", "worryied", "worred"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
     ["reply", "replied", ["replyed", "replyied", "repled"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
     ["apply", "applied", ["applyed", "applyied", "appled"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
+    ["tidy", "tidied", ["tidyed", "tidyied", "tidyd"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
+    ["spy", "spied", ["spyed", "spyied", "spyd"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
     ["dry", "dried", ["dryed", "dryied", "dryd"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
     ["fry", "fried", ["fryed", "fryied", "fryd"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"],
     ["marry", "married", ["marryed", "marryied", "marred"], "หน้า y เป็นพยัญชนะ จึงเปลี่ยน y เป็น i แล้วเติม -ed"]
@@ -766,6 +762,7 @@ const regularVerbBanks = {
     ["stop", "stopped", ["stoped", "stopied", "stopd"]],
     ["plan", "planned", ["planed", "planied", "pland"]],
     ["drop", "dropped", ["droped", "dropd", "dropied"]],
+    ["rob", "robbed", ["robed", "robd", "robied"]],
     ["clap", "clapped", ["claped", "clapd", "clapied"]],
     ["grab", "grabbed", ["grabed", "grabd", "grabied"]],
     ["hug", "hugged", ["huged", "hugd", "hugied"]],
@@ -774,7 +771,11 @@ const regularVerbBanks = {
     ["rub", "rubbed", ["rubed", "rubd", "rubied"]],
     ["nod", "nodded", ["noded", "nodd", "nodied"]],
     ["skip", "skipped", ["skiped", "skipd", "skipied"]],
+    ["slip", "slipped", ["sliped", "slipd", "slipied"]],
+    ["chat", "chatted", ["chated", "chatd", "chatied"]],
     ["shop", "shopped", ["shoped", "shopd", "shopied"]],
+    ["tap", "tapped", ["taped", "tapd", "tapied"]],
+    ["step", "stepped", ["steped", "stepd", "stepied"]],
     ["wrap", "wrapped", ["wraped", "wrapd", "wrapied"]],
     ["trim", "trimmed", ["trimed", "trimd", "trimied"]],
     ["drag", "dragged", ["draged", "dragd", "dragied"]],
@@ -993,8 +994,163 @@ const irregularVerbBank = [
   ["grow", "grew", ["growed", "grown", "grows"]],
   ["know", "knew", ["knowed", "known", "knows"]],
   ["throw", "threw", ["throwed", "thrown", "throws"]],
-  ["wear", "wore", ["weared", "worn", "wears"]]
+  ["wear", "wore", ["weared", "worn", "wears"]],
+  ["say", "said", ["sayed", "says", "saying"]],
+  ["tell", "told", ["telled", "telling", "tolded"]],
+  ["drive", "drove", ["drived", "driven", "driving"]],
+  ["win", "won", ["winned", "winning", "wan"]],
+  ["sleep", "slept", ["sleeped", "sleept", "sleeping"]],
+  ["stand", "stood", ["standed", "standing", "stands"]],
+  ["sell", "sold", ["selled", "selling", "salled"]],
+  ["hold", "held", ["holded", "holding", "hald"]],
+  ["pay", "paid", ["payed", "payd", "paying"]],
+  ["understand", "understood", ["understanded", "understanding", "understands"]]
 ];
+
+const BOSS_V2_REGULAR_RULE_SOURCES = [
+  {
+    bankKey: "addEd",
+    ruleId: "regular_ed",
+    lessonTags: ["regular-rule-1"],
+    hint: "คำกริยาทั่วไปเติม -ed"
+  },
+  {
+    bankKey: "endingE",
+    ruleId: "ending_e_add_d",
+    lessonTags: ["regular-rule-2"],
+    hint: "ลงท้ายด้วย e เติม -d"
+  },
+  {
+    bankKey: "endingY",
+    ruleId: "y_rule",
+    lessonTags: ["regular-rule-3"],
+    hint: "ดูตัวอักษรก่อน y แล้วใช้รูปอดีตให้ถูก"
+  },
+  {
+    bankKey: "doubleCvc",
+    ruleId: "cvc_double",
+    lessonTags: ["regular-rule-4"],
+    hint: "คำสั้นบางคำเพิ่มพยัญชนะท้ายก่อนเติม -ed"
+  }
+];
+
+function makeBossV2WordId(group, v1, v2) {
+  return `${group}_${v1}_${v2}`.replace(/[^a-z0-9_]+/g, "_");
+}
+
+function isBossV2ArrangementSafe(v1, v2) {
+  return /^[a-z]+$/.test(v1) &&
+    /^[a-z]+$/.test(v2) &&
+    v1 !== v2 &&
+    v2.length >= 3 &&
+    v2.length <= 10;
+}
+
+function buildBossV2ChallengeWords() {
+  const words = [];
+  BOSS_V2_REGULAR_RULE_SOURCES.forEach(source => {
+    (regularVerbBanks[source.bankKey] || []).forEach(([v1, v2]) => {
+      if (!isBossV2ArrangementSafe(v1, v2)) {
+        return;
+      }
+      words.push({
+        id: makeBossV2WordId("regular", v1, v2),
+        group: "regular",
+        ruleId: source.ruleId,
+        v1,
+        v2,
+        lessonTags: source.lessonTags,
+        hint: source.hint
+      });
+    });
+  });
+
+  irregularVerbBank.forEach(([v1, v2]) => {
+    if (!isBossV2ArrangementSafe(v1, v2)) {
+      return;
+    }
+    words.push({
+      id: makeBossV2WordId("irregular", v1, v2),
+      group: "irregular",
+      ruleId: "irregular_v2",
+      v1,
+      v2,
+      lessonTags: ["irregular-lesson"],
+      hint: "Irregular Verb ต้องจำรูป V2"
+    });
+  });
+
+  const seenIds = new Set();
+  return words.filter(word => {
+    if (seenIds.has(word.id)) {
+      console.warn("[Vocabulary] Duplicate boss V2 word id skipped", word.id);
+      return false;
+    }
+    seenIds.add(word.id);
+    return true;
+  });
+}
+
+BOSS_V2_CHALLENGE_WORDS = buildBossV2ChallengeWords();
+
+function getVocabularyCoverageReport() {
+  const bossWordsByGroup = BOSS_V2_CHALLENGE_WORDS.reduce((groups, word) => {
+    const key = word.group || "unknown";
+    groups[key] = (groups[key] || 0) + 1;
+    return groups;
+  }, {});
+  const bossWordsByRule = BOSS_V2_CHALLENGE_WORDS.reduce((groups, word) => {
+    const key = word.ruleId || "unknown";
+    groups[key] = (groups[key] || 0) + 1;
+    return groups;
+  }, {});
+  const ids = BOSS_V2_CHALLENGE_WORDS.map(word => word.id);
+  const pairs = BOSS_V2_CHALLENGE_WORDS.map(word => `${word.v1}->${word.v2}`);
+  return [
+    { sectionId: "regular-rule-1", totalWords: regularVerbBanks.addEd.length },
+    { sectionId: "regular-rule-2", totalWords: regularVerbBanks.endingE.length },
+    {
+      sectionId: "regular-rule-3-consonant-y",
+      totalWords: regularVerbBanks.endingY.filter(([verb]) => /[^aeiou]y$/.test(verb)).length
+    },
+    {
+      sectionId: "regular-rule-3-vowel-y",
+      totalWords: regularVerbBanks.endingY.filter(([verb]) => /[aeiou]y$/.test(verb)).length
+    },
+    { sectionId: "regular-rule-4", totalWords: regularVerbBanks.doubleCvc.length },
+    { sectionId: "irregular-lesson", totalWords: irregularVerbBank.length },
+    {
+      sectionId: "boss-v2-regular",
+      totalWords: bossWordsByGroup.regular || 0,
+      typingEligible: bossWordsByGroup.regular || 0,
+      arrangementEligible: bossWordsByGroup.regular || 0
+    },
+    {
+      sectionId: "boss-v2-irregular",
+      totalWords: bossWordsByGroup.irregular || 0,
+      typingEligible: bossWordsByGroup.irregular || 0,
+      arrangementEligible: bossWordsByGroup.irregular || 0
+    },
+    {
+      sectionId: "boss-v2-duplicates",
+      duplicateIds: ids.length - new Set(ids).size,
+      duplicatePairs: pairs.length - new Set(pairs).size
+    },
+    {
+      sectionId: "boss-v2-by-rule",
+      totalWords: BOSS_V2_CHALLENGE_WORDS.length,
+      regularEd: bossWordsByRule.regular_ed || 0,
+      endingE: bossWordsByRule.ending_e_add_d || 0,
+      yRule: bossWordsByRule.y_rule || 0,
+      cvcDouble: bossWordsByRule.cvc_double || 0,
+      irregular: bossWordsByRule.irregular_v2 || 0
+    }
+  ];
+}
+
+if (typeof window !== "undefined") {
+  window.getVocabularyCoverageReport = getVocabularyCoverageReport;
+}
 
 function makeIrregularQuestion([verb, answer, distractors]) {
   return {
