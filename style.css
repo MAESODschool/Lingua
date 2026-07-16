@@ -6786,7 +6786,7 @@ h3 {
 }
 
 #battleScene .battlefield-stage #battleEnemy.is-active-turn {
-  z-index: 2;
+  z-index: 4;
 }
 
 #battleScene .battlefield-stage #battlePlayer.is-active-turn {
@@ -6800,7 +6800,7 @@ h3 {
   grid-template-rows: minmax(0, 0.95fr) minmax(0, 1.05fr);
   align-items: stretch;
   pointer-events: none;
-  z-index: 2;
+  z-index: 4;
 }
 
 #battleScene .battlefield-stage #battlePlayer {
@@ -6850,7 +6850,7 @@ h3 {
   align-self: start;
   justify-self: stretch;
   position: relative;
-  z-index: 5;
+  z-index: 8;
 }
 
 #battleScene .battlefield-stage .player-status-panel {
@@ -6878,7 +6878,7 @@ h3 {
   user-select: none;
   overflow: visible;
   position: relative;
-  z-index: 3;
+  z-index: 7;
 }
 
 #battleScene .battlefield-stage #battleEnemySprite {
@@ -6929,10 +6929,10 @@ h3 {
   align-self: end;
   display: grid;
   place-items: end start;
-  width: min(68%, 280px);
+  width: min(62%, 248px);
   height: 100%;
-  max-width: 68%;
-  max-height: clamp(130px, 34dvh, 270px);
+  max-width: 62%;
+  max-height: clamp(122px, 30dvh, 242px);
   transform: translate3d(0, 0, 0);
   pointer-events: none;
   user-select: none;
@@ -6944,9 +6944,10 @@ h3 {
 #battleScene .battlefield-stage #battlePlayerSprite.battle-player-model,
 #battleScene .battlefield-stage #battlePlayer .main-character-gif.small.battle-player-model,
 #battleScene .battlefield-stage #battlePlayer .main-character-gif-fallback.small.battle-player-model {
+  --player-img-scale: 0.94;
   width: auto;
   height: 100%;
-  max-width: min(100%, 46dvh);
+  max-width: min(100%, 40dvh);
   max-height: 100%;
   margin: 0;
   object-fit: contain;
