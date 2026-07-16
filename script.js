@@ -138,10 +138,10 @@ const ENEMY_ACTION_WEIGHTS = {
 };
 
 const BOSS_ACTION_BASE_WEIGHTS = {
-  typing: 0.30,
-  arrangement: 0.30,
-  question: 0.25,
-  normalAttack: 0.15
+  typing: 0.35,
+  arrangement: 0.35,
+  question: 0.20,
+  normalAttack: 0.10
 };
 
 const BOSS_ACTION_FAIRNESS_CONFIG = {
