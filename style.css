@@ -6605,14 +6605,23 @@ h3 {
 
 /* Shared upper battlefield layout */
 #battleScene.active {
-  --battle-upper-min: clamp(280px, 42dvh, 500px);
+  --battle-upper-ratio: 1;
+  --battle-lower-ratio: 1;
 }
 
 #battleScene .lingua-battle-upper {
-  flex: 0 0 auto;
+  flex: var(--battle-upper-ratio) 1 0;
   min-height: 0;
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: clamp(6px, 1.1dvh, 10px);
+  overflow: hidden;
+}
+
+#battleScene .battle-panel {
+  flex: var(--battle-lower-ratio) 1 0;
+  max-height: none;
+  min-height: 0;
 }
 
 #battleScene .lingua-battle-upper .battle-turn-indicator {
@@ -6660,21 +6669,22 @@ h3 {
 #battleScene .battlefield-stage {
   position: relative;
   isolation: isolate;
-  min-height: clamp(250px, 34dvh, 410px);
+  height: 100%;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-rows: minmax(0, 0.95fr) minmax(0, 1.05fr);
-  gap: clamp(8px, 1.4dvh, 14px);
+  gap: clamp(6px, 1dvh, 10px);
   overflow: hidden;
-  padding: clamp(10px, 1.7dvh, 18px);
+  padding: clamp(7px, 1.2dvh, 12px);
   border: 1px solid rgba(226, 188, 102, 0.48);
   border-radius: 8px;
   background:
-    radial-gradient(ellipse at 30% 88%, rgba(98, 191, 234, 0.18), transparent 32%),
-    radial-gradient(ellipse at 78% 20%, rgba(157, 97, 255, 0.18), transparent 34%),
-    linear-gradient(180deg, rgba(7, 8, 28, 0.16), rgba(7, 8, 28, 0.48));
+    radial-gradient(ellipse at 30% 88%, rgba(98, 191, 234, 0.12), transparent 30%),
+    radial-gradient(ellipse at 78% 20%, rgba(157, 97, 255, 0.12), transparent 32%),
+    linear-gradient(180deg, rgba(7, 8, 28, 0.08), rgba(7, 8, 28, 0.26));
   box-shadow:
-    inset 0 0 34px rgba(4, 5, 20, 0.5),
+    inset 0 0 24px rgba(4, 5, 20, 0.34),
     0 0 20px rgba(83, 59, 169, 0.18);
 }
 
@@ -6688,12 +6698,11 @@ h3 {
 
 #battleScene .battlefield-stage::before {
   inset: auto 7% 7% 7%;
-  height: 34%;
+  height: 24%;
   border-radius: 50%;
   background:
-    radial-gradient(ellipse at 28% 58%, rgba(115, 246, 255, 0.22), transparent 32%),
-    radial-gradient(ellipse at 72% 46%, rgba(255, 213, 106, 0.14), transparent 38%);
-  filter: blur(1px);
+    radial-gradient(ellipse at 28% 58%, rgba(115, 246, 255, 0.16), transparent 32%),
+    radial-gradient(ellipse at 72% 46%, rgba(255, 213, 106, 0.1), transparent 38%);
 }
 
 #battleScene .battlefield-stage::after {
@@ -6726,16 +6735,20 @@ h3 {
 
 #battleScene .battlefield-stage #battleEnemy {
   grid-column: 1 / -1;
-  grid-row: 1;
+  grid-row: 1 / -1;
   grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   align-items: start;
+  z-index: 2;
 }
 
 #battleScene .battlefield-stage #battlePlayer {
   grid-column: 1 / -1;
-  grid-row: 2;
+  grid-row: 1 / -1;
   grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   align-items: end;
+  z-index: 3;
 }
 
 #battleScene .battlefield-stage .combat-text {
@@ -6750,7 +6763,6 @@ h3 {
     radial-gradient(circle at 50% 0%, rgba(98, 191, 234, 0.12), transparent 36%),
     linear-gradient(145deg, rgba(13, 16, 45, 0.78), rgba(7, 8, 28, 0.9));
   box-shadow: inset 0 0 12px rgba(98, 191, 234, 0.08), 0 8px 18px rgba(0, 0, 0, 0.22);
-  backdrop-filter: blur(3px);
 }
 
 #battleScene .battlefield-stage .combat-text h3,
@@ -6778,20 +6790,20 @@ h3 {
 
 #battleScene .battlefield-stage .player-status-panel {
   grid-column: 2;
-  grid-row: 1;
+  grid-row: 2;
   align-self: end;
   justify-self: stretch;
 }
 
 #battleScene .battlefield-stage #battleEnemySprite {
   grid-column: 2;
-  grid-row: 1;
+  grid-row: 1 / -1;
   justify-self: end;
-  align-self: end;
+  align-self: start;
   width: auto;
-  height: clamp(108px, 18dvh, 220px);
+  height: clamp(150px, 29dvh, 300px);
   max-width: 100%;
-  max-height: 100%;
+  max-height: 74%;
   object-fit: contain;
   object-position: center bottom;
   pointer-events: none;
@@ -6804,7 +6816,7 @@ h3 {
 #battleScene .battlefield-stage #battleEnemySprite.echo-trick-gif,
 #battleScene .battlefield-stage #battleEnemySprite.timedust-gif {
   width: auto;
-  height: clamp(118px, 20dvh, 236px);
+  height: clamp(165px, 31dvh, 330px);
 }
 
 #battleScene .battlefield-stage #battlePlayerSprite.battle-player-model,
@@ -6815,9 +6827,9 @@ h3 {
   justify-self: start;
   align-self: end;
   width: auto;
-  height: clamp(170px, 29dvh, 290px);
+  height: clamp(150px, 27dvh, 270px);
   max-width: 100%;
-  max-height: 100%;
+  max-height: 86%;
   margin: 0;
   object-fit: contain;
   object-position: left bottom;
@@ -6863,12 +6875,12 @@ h3 {
 
 @media (max-width: 768px) {
   #battleScene.active {
-    --battle-upper-min: clamp(238px, 41svh, 350px);
+    --battle-upper-ratio: 0.96;
+    --battle-lower-ratio: 1.04;
     gap: 5px;
   }
 
   #battleScene .lingua-battle-upper {
-    flex: 0 0 auto;
     gap: 5px;
   }
 
@@ -6909,9 +6921,9 @@ h3 {
   }
 
   #battleScene .battlefield-stage {
-    flex: 0 0 auto;
-    min-height: clamp(168px, 27svh, 250px);
-    max-height: clamp(168px, 27svh, 250px);
+    height: 100%;
+    min-height: 0;
+    max-height: none;
     gap: 5px;
     padding: 7px;
   }
@@ -6942,13 +6954,15 @@ h3 {
   #battleScene .battlefield-stage #battleEnemySprite.yesterday-spirit-gif,
   #battleScene .battlefield-stage #battleEnemySprite.echo-trick-gif,
   #battleScene .battlefield-stage #battleEnemySprite.timedust-gif {
-    height: clamp(78px, 15svh, 138px);
+    height: clamp(108px, 25svh, 190px);
+    max-height: 74%;
   }
 
   #battleScene .battlefield-stage #battlePlayerSprite.battle-player-model,
   #battleScene .battlefield-stage #battlePlayer .main-character-gif.small.battle-player-model,
   #battleScene .battlefield-stage #battlePlayer .main-character-gif-fallback.small.battle-player-model {
-    height: clamp(116px, 23svh, 178px);
+    height: clamp(104px, 22svh, 170px);
+    max-height: 84%;
   }
 
   #battleScene .battlefield-stage .hp-bar {
@@ -6985,10 +6999,35 @@ h3 {
   }
 }
 
+@media (max-height: 700px) {
+  #battleScene.active {
+    --battle-upper-ratio: 0.92;
+    --battle-lower-ratio: 1.08;
+  }
+
+  #battleScene .lingua-battle-upper {
+    gap: 4px;
+  }
+
+  #battleScene .lingua-battle-upper .battle-turn-indicator {
+    padding: 4px 6px;
+  }
+
+  #battleScene .battlefield-stage {
+    padding: 6px;
+    gap: 4px;
+  }
+
+  #battleScene .battle-resource-strip .stat-pill {
+    min-height: 26px;
+    padding-block: 4px;
+  }
+}
+
 @media (max-width: 430px) {
   #battleScene .battlefield-stage {
-    min-height: clamp(160px, 26svh, 228px);
-    max-height: clamp(160px, 26svh, 228px);
+    min-height: 0;
+    max-height: none;
   }
 
   #battleScene .battlefield-stage .combat-text {
@@ -7000,20 +7039,25 @@ h3 {
   #battleScene .battlefield-stage #battleEnemySprite.yesterday-spirit-gif,
   #battleScene .battlefield-stage #battleEnemySprite.echo-trick-gif,
   #battleScene .battlefield-stage #battleEnemySprite.timedust-gif {
-    height: clamp(68px, 14svh, 118px);
+    height: clamp(96px, 24svh, 170px);
   }
 
   #battleScene .battlefield-stage #battlePlayerSprite.battle-player-model,
   #battleScene .battlefield-stage #battlePlayer .main-character-gif.small.battle-player-model,
   #battleScene .battlefield-stage #battlePlayer .main-character-gif-fallback.small.battle-player-model {
-    height: clamp(104px, 22svh, 158px);
+    height: clamp(94px, 21svh, 152px);
   }
 }
 
 @media (max-width: 360px), (max-height: 620px) {
+  #battleScene.active {
+    --battle-upper-ratio: 0.9;
+    --battle-lower-ratio: 1.1;
+  }
+
   #battleScene .battlefield-stage {
-    min-height: clamp(148px, 24svh, 210px);
-    max-height: clamp(148px, 24svh, 210px);
+    min-height: 0;
+    max-height: none;
   }
 
   #battleScene .battlefield-stage #battleEnemySprite,
@@ -7021,12 +7065,12 @@ h3 {
   #battleScene .battlefield-stage #battleEnemySprite.yesterday-spirit-gif,
   #battleScene .battlefield-stage #battleEnemySprite.echo-trick-gif,
   #battleScene .battlefield-stage #battleEnemySprite.timedust-gif {
-    height: clamp(58px, 13svh, 98px);
+    height: clamp(84px, 22svh, 146px);
   }
 
   #battleScene .battlefield-stage #battlePlayerSprite.battle-player-model,
   #battleScene .battlefield-stage #battlePlayer .main-character-gif.small.battle-player-model,
   #battleScene .battlefield-stage #battlePlayer .main-character-gif-fallback.small.battle-player-model {
-    height: clamp(92px, 20svh, 138px);
+    height: clamp(82px, 19svh, 132px);
   }
 }
