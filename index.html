@@ -360,51 +360,53 @@
         <h2 id="battleTitle">The Memory Breaker</h2>
       </header>
 
-      <div id="battleTurnIndicator" class="battle-turn-indicator hidden" aria-live="polite">
-        <div id="battleCurrentTurn" class="battle-current-turn">
-          <span class="battle-turn-label">ตาปัจจุบัน</span>
-          <strong id="battleCurrentTurnActor">ตาของผู้เล่น</strong>
-        </div>
-        <div class="battle-upcoming-turns">
-          <span class="battle-turn-label">5 ตาถัดไป</span>
-          <div id="battleUpcomingTurnList" class="battle-upcoming-turn-list"></div>
-        </div>
-      </div>
-
-      <div class="battle-stage">
-        <article id="battlePlayer" class="combatant player-side">
-          <img class="character-avatar wanderer-avatar main-character-gif small" src="assets/characters/male_wanderer_idle.gif" alt="ผู้พเนจร" draggable="false">
-          <div class="combat-text">
-            <h3>ผู้พเนจร</h3>
-            <div class="hp-bar" aria-label="Player HP">
-              <span id="playerHpFill"></span>
-            </div>
-            <p id="playerHpText">พลังชีวิต 100 / 100</p>
-            <div id="playerApPips" class="ap-pips" aria-label="Action Points"></div>
+      <div class="lingua-battle-upper" aria-label="สนามต่อสู้">
+        <div id="battleTurnIndicator" class="battle-turn-indicator hidden" aria-live="polite">
+          <div id="battleCurrentTurn" class="battle-current-turn">
+            <span class="battle-turn-label">ตาปัจจุบัน</span>
+            <strong id="battleCurrentTurnActor">ตาของผู้เล่น</strong>
           </div>
-        </article>
-
-        <article id="battleEnemy" class="combatant enemy-side">
-          <img id="battleEnemySprite" class="wisp-avatar enemy-memory-shade enemy-sprite" src="assets/memory-shade.png" alt="Memory Shade">
-          <div class="combat-text">
-            <h3 id="battleEnemyName">Memory Shade</h3>
-            <p id="battleEnemyDescription" class="enemy-description">เงาความทรงจำที่บิดเบือนคำกริยาในอดีต</p>
-            <div class="hp-bar enemy" aria-label="Enemy HP">
-              <span id="enemyHpFill"></span>
-            </div>
-            <p id="enemyHpText">พลังชีวิต 80 / 80</p>
+          <div class="battle-upcoming-turns">
+            <span class="battle-turn-label">5 ตาถัดไป</span>
+            <div id="battleUpcomingTurnList" class="battle-upcoming-turn-list"></div>
           </div>
-        </article>
-      </div>
-
-      <div class="battle-dashboard">
-        <div class="stat-pill">
-          <span>แกรมมาเรีย</span>
-          <strong id="grammariaText">0</strong>
         </div>
-        <div class="stat-pill">
-          <span>โล่</span>
-          <strong id="shieldText">ไม่มี</strong>
+
+        <div class="battle-stage battlefield-stage">
+          <article id="battlePlayer" class="combatant player-side">
+            <img id="battlePlayerSprite" class="character-avatar wanderer-avatar main-character-gif small battle-player-model" data-character-view="battle-back" src="assets/characters/male_wanderer_back.png" alt="ผู้พเนจร" draggable="false">
+            <div class="combat-text player-status-panel">
+              <h3>ผู้พเนจร</h3>
+              <div class="hp-bar" aria-label="Player HP">
+                <span id="playerHpFill"></span>
+              </div>
+              <p id="playerHpText">พลังชีวิต 100 / 100</p>
+              <div id="playerApPips" class="ap-pips" aria-label="Action Points"></div>
+            </div>
+          </article>
+
+          <article id="battleEnemy" class="combatant enemy-side">
+            <img id="battleEnemySprite" class="wisp-avatar enemy-memory-shade enemy-sprite boss-battle-model" src="assets/memory-shade.png" alt="Memory Shade">
+            <div class="combat-text boss-status-panel">
+              <h3 id="battleEnemyName">Memory Shade</h3>
+              <p id="battleEnemyDescription" class="enemy-description">เงาความทรงจำที่บิดเบือนคำกริยาในอดีต</p>
+              <div class="hp-bar enemy" aria-label="Enemy HP">
+                <span id="enemyHpFill"></span>
+              </div>
+              <p id="enemyHpText">พลังชีวิต 80 / 80</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="battle-dashboard battle-resource-strip">
+          <div class="stat-pill battle-grammaria-status">
+            <span>แกรมมาเรีย</span>
+            <strong id="grammariaText">0</strong>
+          </div>
+          <div class="stat-pill battle-boss-effects">
+            <span>สถานะ</span>
+            <strong id="shieldText">ไม่มี</strong>
+          </div>
         </div>
       </div>
 
