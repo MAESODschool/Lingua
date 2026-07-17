@@ -6756,7 +6756,7 @@ h3 {
   --boss-attack-x: -18px;
   --boss-attack-y: 10px;
   --battle-boss-model-lift: clamp(92px, 30%, 156px);
-  --battle-boss-model-nudge-x: clamp(50px, 7.5vw, 88px);
+  --battle-boss-model-nudge-x: clamp(90px, 10vw, 136px);
   --battle-player-model-lift: clamp(108px, 34%, 168px);
   position: relative;
   isolation: isolate;
@@ -6920,10 +6920,10 @@ h3 {
   align-self: start;
   display: grid;
   place-items: end end;
-  width: min(39%, 158px);
-  height: clamp(78px, 39%, 157px);
-  max-width: 39%;
-  max-height: 42%;
+  width: min(35%, 140px);
+  height: clamp(69px, 35%, 140px);
+  max-width: 35%;
+  max-height: 37%;
   margin-top: 0;
   top: calc(-1 * var(--battle-boss-model-lift));
   right: var(--battle-boss-model-nudge-x);
@@ -7211,13 +7211,13 @@ h3 {
     --boss-attack-x: -12px;
     --boss-attack-y: 7px;
     --battle-boss-model-lift: clamp(52px, 20%, 92px);
-    --battle-boss-model-nudge-x: clamp(15px, 4vw, 28px);
+    --battle-boss-model-nudge-x: clamp(32px, 8vw, 50px);
     --battle-player-model-lift: clamp(60px, 23%, 96px);
   }
 
   #battleScene .battlefield-stage .boss-model-motion {
-    height: clamp(60px, 32%, 112px);
-    max-height: 36%;
+    height: clamp(49px, 26%, 92px);
+    max-height: 30%;
     margin-top: 0;
   }
 
@@ -7357,7 +7357,7 @@ h3 {
   }
 
   #battleScene .battlefield-stage .boss-model-motion {
-    height: clamp(52px, 29%, 94px);
+    height: clamp(43px, 24%, 77px);
     margin-top: 0;
   }
 
@@ -7376,12 +7376,12 @@ h3 {
     min-height: 0;
     max-height: none;
     --battle-boss-model-lift: clamp(34px, 16%, 62px);
-    --battle-boss-model-nudge-x: clamp(10px, 3vw, 18px);
+    --battle-boss-model-nudge-x: clamp(24px, 7vw, 36px);
     --battle-player-model-lift: clamp(40px, 18%, 68px);
   }
 
   #battleScene .battlefield-stage .boss-model-motion {
-    height: clamp(48px, 27%, 82px);
+    height: clamp(39px, 22%, 67px);
   }
 
   #battleScene .battlefield-stage .player-model-motion {
