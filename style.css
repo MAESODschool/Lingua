@@ -6921,7 +6921,7 @@ h3 {
   height: clamp(88px, 44%, 178px);
   max-width: 44%;
   max-height: 48%;
-  margin-top: clamp(18px, 14%, 44px);
+  margin-top: clamp(0px, 6%, 22px);
   transform: translate3d(0, 0, 0);
   pointer-events: none;
   user-select: none;
@@ -6982,6 +6982,7 @@ h3 {
   height: clamp(122px, 54%, 230px);
   max-width: 52%;
   max-height: 58%;
+  margin-bottom: clamp(16px, 6%, 30px);
   transform: translate3d(0, 0, 0);
   pointer-events: none;
   user-select: none;
@@ -7136,12 +7137,13 @@ h3 {
   #battleScene .battlefield-stage .boss-model-motion {
     height: clamp(70px, 38%, 132px);
     max-height: 42%;
-    margin-top: clamp(14px, 13%, 34px);
+    margin-top: clamp(0px, 7%, 18px);
   }
 
   #battleScene .battlefield-stage .player-model-motion {
     height: clamp(86px, 46%, 154px);
     max-height: 50%;
+    margin-bottom: clamp(8px, 4%, 16px);
   }
 
   #battleScene .battlefield-stage .hp-bar {
@@ -7215,11 +7217,12 @@ h3 {
 
   #battleScene .battlefield-stage .boss-model-motion {
     height: clamp(62px, 34%, 112px);
-    margin-top: clamp(12px, 12%, 28px);
+    margin-top: clamp(0px, 6%, 14px);
   }
 
   #battleScene .battlefield-stage .player-model-motion {
     height: clamp(76px, 42%, 134px);
+    margin-bottom: clamp(6px, 3%, 12px);
   }
 }
 
@@ -7240,5 +7243,6 @@ h3 {
 
   #battleScene .battlefield-stage .player-model-motion {
     height: clamp(68px, 40%, 118px);
+    margin-bottom: clamp(4px, 2.5%, 10px);
   }
 }
