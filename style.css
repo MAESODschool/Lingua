@@ -6758,7 +6758,7 @@ h3 {
   --player-attack-y: -10px;
   --boss-attack-x: -18px;
   --boss-attack-y: 10px;
-  --battle-boss-model-lift: clamp(92px, 30%, 156px);
+  --battle-boss-model-lift: clamp(42px, 18%, 94px);
   --battle-boss-model-nudge-x: clamp(112px, 12vw, 168px);
   --battle-player-model-lift: clamp(108px, 34%, 168px);
   position: relative;
@@ -7213,7 +7213,7 @@ h3 {
     --player-attack-y: -7px;
     --boss-attack-x: -12px;
     --boss-attack-y: 7px;
-    --battle-boss-model-lift: clamp(52px, 20%, 92px);
+    --battle-boss-model-lift: clamp(24px, 12%, 54px);
     --battle-boss-model-nudge-x: clamp(44px, 11vw, 72px);
     --battle-player-model-lift: clamp(60px, 23%, 96px);
   }
@@ -7378,7 +7378,7 @@ h3 {
   #battleScene .battlefield-stage {
     min-height: 0;
     max-height: none;
-    --battle-boss-model-lift: clamp(34px, 16%, 62px);
+    --battle-boss-model-lift: clamp(12px, 8%, 34px);
     --battle-boss-model-nudge-x: clamp(36px, 10vw, 54px);
     --battle-player-model-lift: clamp(40px, 18%, 68px);
   }
