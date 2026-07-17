@@ -2473,11 +2473,11 @@ h3 {
   min-height: var(--visible-viewport-height, 100dvh);
   display: flex;
   flex-direction: column;
-  gap: clamp(8px, 1.5dvh, 14px);
+  gap: clamp(4px, 0.8dvh, 8px);
   align-content: stretch;
   justify-content: stretch;
-  padding: clamp(10px, 1.8dvh, 18px);
-  padding-bottom: calc(clamp(10px, 1.8dvh, 18px) + env(safe-area-inset-bottom));
+  padding: clamp(6px, 1.1dvh, 12px);
+  padding-bottom: calc(clamp(6px, 1.1dvh, 12px) + env(safe-area-inset-bottom));
   overflow: hidden;
 }
 
@@ -2489,11 +2489,14 @@ h3 {
 
 #battleScene .scene-header {
   min-height: 0;
+  padding-block: 0;
+  line-height: 1;
 }
 
 #battleScene .scene-header h2,
 #battleScene .scene-header p {
   margin-block: 0;
+  line-height: 1.04;
 }
 
 #battleScene .battle-stage,
@@ -6698,7 +6701,7 @@ h3 {
   min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: clamp(6px, 1.1dvh, 10px);
+  gap: clamp(3px, 0.65dvh, 6px);
   overflow: hidden;
 }
 
@@ -6713,35 +6716,35 @@ h3 {
   min-height: 0;
   grid-template-columns: minmax(124px, 0.42fr) minmax(0, 1.58fr);
   align-items: stretch;
-  gap: 8px;
-  padding: 6px 8px;
+  gap: 6px;
+  padding: 4px 7px;
   border-radius: 8px;
 }
 
 #battleScene .lingua-battle-upper .battle-turn-label {
-  margin-bottom: 3px;
+  margin-bottom: 2px;
   font-size: clamp(0.62rem, 1.4vw, 0.72rem);
   line-height: 1.05;
 }
 
 #battleScene .lingua-battle-upper .battle-current-turn strong,
 #battleScene .lingua-battle-upper .battle-turn-slot {
-  min-height: 28px;
+  min-height: 24px;
   border-radius: 8px;
   font-size: clamp(0.72rem, 1.5vw, 0.9rem);
   line-height: 1.05;
 }
 
 #battleScene .lingua-battle-upper .battle-current-turn strong {
-  padding: 4px 8px;
+  padding: 3px 7px;
 }
 
 #battleScene .lingua-battle-upper .battle-upcoming-turn-list {
-  gap: 5px;
+  gap: 4px;
 }
 
 #battleScene .lingua-battle-upper .battle-turn-slot {
-  padding: 4px 5px;
+  padding: 3px 4px;
 }
 
 #battleScene .lingua-battle-upper .turn-order-number {
@@ -6765,9 +6768,9 @@ h3 {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
-  gap: clamp(6px, 1dvh, 10px);
+  gap: clamp(4px, 0.7dvh, 7px);
   overflow: hidden;
-  padding: clamp(7px, 1.2dvh, 12px);
+  padding: clamp(4px, 0.8dvh, 8px);
   border: 1px solid rgba(226, 188, 102, 0.48);
   border-radius: 8px;
   background:
@@ -7058,19 +7061,19 @@ h3 {
 
 @media (max-width: 768px) {
   body:has(#battleScene.active) .game-utility-controls {
-    top: max(34px, calc(env(safe-area-inset-top) + 34px));
+    top: max(28px, calc(env(safe-area-inset-top) + 28px));
     right: max(6px, env(safe-area-inset-right));
     flex-direction: row;
-    gap: 4px;
-    max-width: 52vw;
+    gap: 3px;
+    max-width: 54vw;
   }
 
   body:has(#battleScene.active) .mute-button,
   body:has(#battleScene.active) .manual-save-button,
   body:has(#battleScene.active) .logout-button {
     min-width: 0;
-    min-height: 28px;
-    padding: 4px 7px;
+    min-height: 26px;
+    padding: 3px 6px;
     border-width: 1px;
     font-size: clamp(0.62rem, 2.3vw, 0.74rem);
     line-height: 1.05;
@@ -7082,7 +7085,7 @@ h3 {
   }
 
   body:has(#battleScene.active) .logout-button {
-    top: max(34px, calc(env(safe-area-inset-top) + 34px));
+    top: max(28px, calc(env(safe-area-inset-top) + 28px));
     left: max(6px, env(safe-area-inset-left));
     right: auto;
     max-width: 42vw;
@@ -7097,16 +7100,16 @@ h3 {
     height: var(--visible-viewport-height, 100dvh);
     max-height: var(--visible-viewport-height, 100dvh);
     min-height: var(--visible-viewport-height, 100dvh);
-    gap: 4px;
-    padding: max(5px, env(safe-area-inset-top)) 6px max(6px, env(safe-area-inset-bottom));
+    gap: 3px;
+    padding: max(4px, env(safe-area-inset-top)) 6px max(5px, env(safe-area-inset-bottom));
     overflow: hidden;
   }
 
   #battleScene .scene-header {
     flex: 0 0 auto;
     max-height: none;
-    min-height: 60px;
-    padding: 0 86px 30px 6px;
+    min-height: 46px;
+    padding: 0 82px 18px 6px;
     overflow: visible;
     display: grid;
     align-content: start;
@@ -7124,8 +7127,8 @@ h3 {
   #battleScene .battle-exit-button {
     top: 0;
     right: 0;
-    min-height: 28px;
-    padding: 4px 7px;
+    min-height: 26px;
+    padding: 3px 6px;
     border-width: 1px;
     font-size: clamp(0.62rem, 2.3vw, 0.74rem);
     line-height: 1.05;
@@ -7133,8 +7136,8 @@ h3 {
 
   #battleScene .lingua-battle-upper {
     flex: var(--battle-upper-ratio) 1 0;
-    grid-template-rows: auto minmax(clamp(132px, 24dvh, 230px), 1fr) auto;
-    gap: 4px;
+    grid-template-rows: auto minmax(clamp(160px, 29dvh, 270px), 1fr) auto;
+    gap: 3px;
     min-height: 0;
     overflow: hidden;
   }
@@ -7142,8 +7145,8 @@ h3 {
   #battleScene .lingua-battle-upper .battle-turn-indicator {
     width: 100%;
     grid-template-columns: minmax(82px, 0.34fr) minmax(0, 1.66fr);
-    gap: 3px;
-    padding: 4px;
+    gap: 2px;
+    padding: 3px;
   }
 
   #battleScene .lingua-battle-upper .battle-turn-label {
@@ -7152,7 +7155,7 @@ h3 {
   }
 
   #battleScene .lingua-battle-upper .battle-current-turn strong {
-    min-height: 22px;
+    min-height: 20px;
     padding: 2px 4px;
     font-size: clamp(0.62rem, 2.25vw, 0.74rem);
   }
@@ -7162,7 +7165,7 @@ h3 {
   }
 
   #battleScene .lingua-battle-upper .battle-turn-slot {
-    min-height: 22px;
+    min-height: 20px;
     grid-template-columns: 1fr;
     justify-items: center;
     gap: 1px;
@@ -7180,8 +7183,8 @@ h3 {
     height: auto;
     min-height: 0;
     max-height: none;
-    gap: 4px;
-    padding: 5px;
+    gap: 3px;
+    padding: 4px;
   }
 
   #battleScene .battlefield-stage .combatant,
@@ -7308,8 +7311,8 @@ h3 {
   }
 
   #battleScene .scene-header {
-    min-height: 56px;
-    padding-bottom: 28px;
+    min-height: 42px;
+    padding-bottom: 16px;
   }
 
   body:has(#battleScene.active) .game-utility-controls {
