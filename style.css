@@ -6971,7 +6971,7 @@ h3 {
 }
 
 #battleScene .battlefield-stage #battleEnemySprite.memory-breaker-gif {
-  --boss-img-scale: 0.96;
+  --boss-img-scale: 0.86;
   --boss-offset-x: 0;
   --boss-offset-y: 0;
 }
