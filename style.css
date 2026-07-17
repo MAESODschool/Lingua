@@ -6755,6 +6755,8 @@ h3 {
   --player-attack-y: -10px;
   --boss-attack-x: -18px;
   --boss-attack-y: 10px;
+  --battle-boss-model-lift: clamp(40px, 14%, 76px);
+  --battle-player-model-lift: clamp(44px, 15%, 72px);
   position: relative;
   isolation: isolate;
   height: 100%;
@@ -6921,7 +6923,8 @@ h3 {
   height: clamp(88px, 44%, 178px);
   max-width: 44%;
   max-height: 48%;
-  margin-top: clamp(0px, 6%, 22px);
+  margin-top: 0;
+  top: calc(-1 * var(--battle-boss-model-lift));
   transform: translate3d(0, 0, 0);
   pointer-events: none;
   user-select: none;
@@ -6982,7 +6985,7 @@ h3 {
   height: clamp(122px, 54%, 230px);
   max-width: 52%;
   max-height: 58%;
-  margin-bottom: clamp(16px, 6%, 30px);
+  top: calc(-1 * var(--battle-player-model-lift));
   transform: translate3d(0, 0, 0);
   pointer-events: none;
   user-select: none;
@@ -7132,18 +7135,19 @@ h3 {
     --player-attack-y: -7px;
     --boss-attack-x: -12px;
     --boss-attack-y: 7px;
+    --battle-boss-model-lift: clamp(24px, 10%, 48px);
+    --battle-player-model-lift: clamp(26px, 11%, 50px);
   }
 
   #battleScene .battlefield-stage .boss-model-motion {
     height: clamp(70px, 38%, 132px);
     max-height: 42%;
-    margin-top: clamp(0px, 7%, 18px);
+    margin-top: 0;
   }
 
   #battleScene .battlefield-stage .player-model-motion {
     height: clamp(86px, 46%, 154px);
     max-height: 50%;
-    margin-bottom: clamp(8px, 4%, 16px);
   }
 
   #battleScene .battlefield-stage .hp-bar {
@@ -7217,12 +7221,11 @@ h3 {
 
   #battleScene .battlefield-stage .boss-model-motion {
     height: clamp(62px, 34%, 112px);
-    margin-top: clamp(0px, 6%, 14px);
+    margin-top: 0;
   }
 
   #battleScene .battlefield-stage .player-model-motion {
     height: clamp(76px, 42%, 134px);
-    margin-bottom: clamp(6px, 3%, 12px);
   }
 }
 
@@ -7235,6 +7238,8 @@ h3 {
   #battleScene .battlefield-stage {
     min-height: 0;
     max-height: none;
+    --battle-boss-model-lift: clamp(16px, 8%, 32px);
+    --battle-player-model-lift: clamp(18px, 9%, 34px);
   }
 
   #battleScene .battlefield-stage .boss-model-motion {
@@ -7243,6 +7248,5 @@ h3 {
 
   #battleScene .battlefield-stage .player-model-motion {
     height: clamp(68px, 40%, 118px);
-    margin-bottom: clamp(4px, 2.5%, 10px);
   }
 }
