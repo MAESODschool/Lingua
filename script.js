@@ -6184,8 +6184,72 @@ function buildStoryDialogue() {
   return lines;
 }
 
+function getSelectedPlayerDialogueGender(data = playerData) {
+  const avatarGender = data?.avatar?.gender;
+  if (avatarGender === "female" || avatarGender === "male" || avatarGender === "other") {
+    return avatarGender;
+  }
+
+  const characterId = data?.characterId || data?.avatar?.characterId || "";
+  if (characterId === "female_wanderer") {
+    return "female";
+  }
+  if (characterId === "male_wanderer") {
+    return "male";
+  }
+
+  return "";
+}
+
+function isPlayerDialogueSpeaker(lineOrSpeaker = {}) {
+  const line = typeof lineOrSpeaker === "object" && lineOrSpeaker !== null ? lineOrSpeaker : {};
+  const speaker = String(typeof lineOrSpeaker === "string" ? lineOrSpeaker : line.speaker || "").trim();
+  const speakerId = String(line.speakerId || line.speakerKey || line.characterId || line.actor || line.role || "").trim().toLowerCase();
+
+  if (line.isPlayerSpeaker === true || ["player", "wanderer", "hero", "protagonist", "male_wanderer", "female_wanderer"].includes(speakerId)) {
+    return true;
+  }
+
+  if (speaker.includes("ผู้พเนจร")) {
+    return true;
+  }
+
+  const playerNames = [
+    getCharacterName(),
+    playerData?.characterName,
+    playerData?.displayName,
+    state.currentUser?.displayName
+  ].map(name => String(name || "").trim()).filter(Boolean);
+
+  return Boolean(speaker && playerNames.includes(speaker));
+}
+
+function convertFemalePlayerThaiParticle(text) {
+  const value = String(text || "");
+  const trailingMarks = "[\\s\"'“”‘’»›)\\]\\}]*";
+  const questionParticlePattern = new RegExp(`ครับ(\\s*[?？]${trailingMarks})$`);
+  const statementParticlePattern = new RegExp(`ครับ([.!！。…]*${trailingMarks})$`);
+
+  if (questionParticlePattern.test(value)) {
+    return value.replace(questionParticlePattern, "คะ$1");
+  }
+
+  return value.replace(statementParticlePattern, "ค่ะ$1");
+}
+
+function resolvePlayerDialogueForGender(text, line = {}) {
+  const originalText = String(text || "");
+  // Limit particle conversion to player-spoken lines so narration, NPCs, and battle announcements stay unchanged.
+  if (!isPlayerDialogueSpeaker(line) || getSelectedPlayerDialogueGender() !== "female") {
+    return originalText;
+  }
+
+  return convertFemalePlayerThaiParticle(originalText);
+}
+
 function resolveDialogueText(line) {
-  return typeof line.text === "function" ? line.text() : line.text;
+  const text = typeof line.text === "function" ? line.text() : line.text;
+  return resolvePlayerDialogueForGender(text, line);
 }
 
 function showNamePrompt() {
@@ -9992,7 +10056,7 @@ function renderLessonStoryStep(options = {}) {
     : "ไปต่อ";
   els.nextDialogueButton.textContent = state.lessonStoryStepIndex >= state.lessonStorySteps.length - 1 ? finalButtonText : "ถัดไป";
   updatePreviousDialogueButton();
-  startTypewriter(step.text);
+  startTypewriter(resolveDialogueText(step));
 }
 
 function renderLessonStoryVisual(visual) {
@@ -10431,7 +10495,7 @@ function getLessonStepButtonText(step) {
 function renderLessonTextStep(step) {
   const card = document.createElement("div");
   card.className = `lesson-step-card ${step.type === "thought" ? "lesson-thought-bubble" : "speaker-verion"}`;
-  card.innerHTML = `<strong>${step.speaker || "บทเรียน"}</strong><span>${step.text}</span>`;
+  card.innerHTML = `<strong>${step.speaker || "บทเรียน"}</strong><span>${resolveDialogueText(step)}</span>`;
   els.wordGrid.appendChild(card);
 }
 
