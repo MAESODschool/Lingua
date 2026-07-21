@@ -8536,7 +8536,7 @@ function buildPastTeachingSteps() {
     {
       speaker: "มาสเตอร์เวรีออน",
       text: "ถ้าอย่างนั้น เจ้าคิดว่าข้อใดเป็นอดีต?",
-      lessonChoices: [
+      lessonChoices: createLessonQuizChoiceOrder([
         {
           text: "สิ่งที่กำลังเกิดขึ้นตอนนี้",
           correct: false,
@@ -8552,7 +8552,7 @@ function buildPastTeachingSteps() {
           correct: false,
           response: "ยังไม่ใช่ ลองจำไว้ว่า อดีตต้องเป็นสิ่งที่เกิดขึ้นแล้ว และจบลงแล้ว"
         }
-      ]
+      ])
     },
     {
       speaker: "มาสเตอร์เวรีออน",
@@ -8638,9 +8638,17 @@ function createSegmentNode(text, phase = "teacherExplanation", speaker = "มา
   };
 }
 
+function createLessonQuizChoiceOrder(choices = []) {
+  // Shuffle lesson quiz buttons once while building the step so rerenders and Previous keep the same order.
+  return shuffleArray(choices).map(choice => (
+    choice && typeof choice === "object" ? { ...choice } : choice
+  ));
+}
+
 function guidedPracticeNode(prompt, choices, correctAnswer, feedback) {
+  const shuffledChoices = createLessonQuizChoiceOrder(choices);
   return createSegmentNode(prompt, "guidedPractice", "มาสเตอร์เวรีออน", {
-    lessonChoices: choices.map(choice => ({
+    lessonChoices: shuffledChoices.map(choice => ({
       text: choice,
       correct: choice === correctAnswer,
       response: choice === correctAnswer
