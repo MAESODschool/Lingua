@@ -1933,16 +1933,21 @@ function assetPath(fileName) {
 
 const MAIN_CHARACTER_IMAGE_PATH = "assets/characters/male_wanderer_idle.gif";
 const MALE_WANDERER_BATTLE_BACK_IMAGE_PATH = "assets/characters/male_wanderer_back.png";
+const FEMALE_WANDERER_BATTLE_BACK_IMAGE_PATH = "assets/characters/female_wanderer_back.png";
 const MAIN_CHARACTER_FALLBACK_IMAGE_PATH = "assets/characters/main-character-idle-transparent-clean-optimized.webp";
 const TEACHER_CHARACTER_IMAGE_PATH = "assets/characters/master_verion_idle.gif";
 const TEACHER_CHARACTER_FALLBACK_IMAGE_PATH = assetPath("master-verion.png");
+const PLAYER_BATTLE_BACK_MODEL_BY_GENDER = Object.freeze({
+  male: MALE_WANDERER_BATTLE_BACK_IMAGE_PATH,
+  female: FEMALE_WANDERER_BATTLE_BACK_IMAGE_PATH
+});
 const PLAYER_CHARACTERS = {
   male_wanderer: {
     id: "male_wanderer",
     label: "ผู้พเนจรชาย",
     asset: MAIN_CHARACTER_IMAGE_PATH,
     fallbackAsset: MAIN_CHARACTER_FALLBACK_IMAGE_PATH,
-    battleAsset: MALE_WANDERER_BATTLE_BACK_IMAGE_PATH,
+    battleAsset: PLAYER_BATTLE_BACK_MODEL_BY_GENDER.male,
     battleFallbackAsset: MAIN_CHARACTER_IMAGE_PATH
   },
   female_wanderer: {
@@ -1950,8 +1955,8 @@ const PLAYER_CHARACTERS = {
     label: "ผู้พเนจรหญิง",
     asset: "assets/characters/female_wanderer_idle.gif",
     fallbackAsset: MAIN_CHARACTER_IMAGE_PATH,
-    battleAsset: "assets/characters/female_wanderer_idle.gif",
-    battleFallbackAsset: ""
+    battleAsset: PLAYER_BATTLE_BACK_MODEL_BY_GENDER.female,
+    battleFallbackAsset: PLAYER_BATTLE_BACK_MODEL_BY_GENDER.male
   }
 };
 const DIALOGUE_SPEAKER_PORTRAITS = {
@@ -2059,13 +2064,19 @@ function getPlayerCharacter(characterId = ensurePlayerCharacterData()) {
   return PLAYER_CHARACTERS[normalizePlayerCharacterId(characterId)] || PLAYER_CHARACTERS.male_wanderer;
 }
 
+function getPlayerBattleBackModelPath(characterId = ensurePlayerCharacterData()) {
+  const normalizedCharacterId = normalizePlayerCharacterId(characterId);
+  const gender = normalizedCharacterId === "female_wanderer" ? "female" : "male";
+  return PLAYER_BATTLE_BACK_MODEL_BY_GENDER[gender] || PLAYER_BATTLE_BACK_MODEL_BY_GENDER.male;
+}
+
 function applyPlayerCharacterImage(img, characterId = ensurePlayerCharacterData()) {
   if (!img) {
     return;
   }
   const character = getPlayerCharacter(characterId);
   const useBattleBackView = img.dataset.characterView === "battle-back";
-  const asset = useBattleBackView ? (character.battleAsset || character.asset) : character.asset;
+  const asset = useBattleBackView ? getPlayerBattleBackModelPath(character.id) : character.asset;
   const fallbackAsset = useBattleBackView ? (character.battleFallbackAsset || "") : character.fallbackAsset;
   img.className = img.className.replace(/\bmain-character-gif-fallback\b/g, "main-character-gif").trim();
   img.classList.remove("hidden");
