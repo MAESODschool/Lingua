@@ -5726,6 +5726,41 @@ h3 {
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.18);
 }
 
+#battleScene .answer-button.is-battle-correct,
+#battleScene .answer-button.is-battle-correct:disabled {
+  border-color: rgba(255, 213, 106, 0.98);
+  color: #2b1900;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 225, 0.46), transparent 36%),
+    linear-gradient(145deg, #ffe58b, #d89a1d 58%, #9d6110);
+  box-shadow:
+    0 0 20px rgba(255, 213, 106, 0.78),
+    0 0 8px rgba(255, 255, 255, 0.32) inset;
+  animation: battleCorrectGlow 650ms ease-in-out both;
+}
+
+#battleScene .answer-button .battle-correct-label {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.82em;
+  font-weight: 950;
+  letter-spacing: 0;
+  color: #fff9cc;
+  text-shadow: 0 1px 2px rgba(61, 34, 0, 0.92);
+}
+
+@keyframes battleCorrectGlow {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  45% {
+    transform: translateY(-1px) scale(1.025);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
 .primary-button,
 .secondary-button,
 .action-button,

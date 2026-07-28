@@ -10962,6 +10962,7 @@ function chooseActFocusAnswer(option, question) {
 
 function showActBattleQuestion() {
   const battle = state.actBattle;
+  battle.answerResolving = false;
   battle.advanceQuestionOnContinue = true;
   const rawQuestion = pickQuestion(
     battle.stage.questions,
@@ -11008,15 +11009,35 @@ function showActBattleQuestion() {
     button.type = "button";
     button.className = "answer-button";
     button.textContent = option;
-    button.addEventListener("click", () => chooseActAnswer(option));
+    button.addEventListener("click", () => chooseActAnswer(option, button));
     els.answerOptions.appendChild(button);
   });
 
   showOnlyBattlePanel(els.questionPanel);
 }
 
-function chooseActAnswer(option) {
+const BATTLE_CORRECT_FEEDBACK_DELAY_MS = 650;
+const BATTLE_CORRECT_SUCCESS_MESSAGE = "ถูกต้อง! พลังแกรมมาเรียตอบสนอง เตรียมเลือกสกิลโจมตี";
+
+function showBattleCorrectAnswerFeedback(button) {
+  if (!button) {
+    return;
+  }
+  button.classList.add("is-battle-correct");
+  if (!button.querySelector(".battle-correct-label")) {
+    const label = document.createElement("span");
+    label.className = "battle-correct-label";
+    label.textContent = "Correct!";
+    button.appendChild(label);
+  }
+}
+
+function chooseActAnswer(option, selectedButton = null) {
   const battle = state.actBattle;
+  if (!battle || battle.answerResolving) {
+    return;
+  }
+  battle.answerResolving = true;
   const question = battle.currentQuestion || prepareQuestion(battle.stage.questions[battle.questionIndex], battle.questionIndex);
   const isCorrect = option === (question.correctAnswer || question.answer);
   const feedback = document.createElement("div");
@@ -11033,6 +11054,7 @@ function chooseActAnswer(option) {
   });
 
   if (isCorrect) {
+    showBattleCorrectAnswerFeedback(selectedButton);
     setBattleTurnOwner("player");
     battle.correctAnswers += 1;
     recordCorrectAnswerForGrammaria();
@@ -11042,10 +11064,11 @@ function chooseActAnswer(option) {
       baseDamage: battle.damagePerCorrect,
       grammariaGain: 10 + bonusGrammaria
     };
-    feedback.innerHTML = `<strong>คำตอบถูกต้อง!</strong><br>${question.explanation}`;
+    feedback.innerHTML = `<strong>Correct!</strong><br>${question.explanation}`;
   } else {
     battle.correctStreak = 0;
     if (useBattleEffect("retry")) {
+      battle.answerResolving = false;
       els.answerOptions.querySelectorAll("button").forEach(button => {
         button.disabled = button.textContent === option;
         button.classList.remove("correct");
@@ -11072,6 +11095,11 @@ function chooseActAnswer(option) {
   }
 
   if (BATTLE_FLOW_V2_CONFIG?.enabled) {
+    if (isCorrect) {
+      els.battleMessage.textContent = BATTLE_CORRECT_SUCCESS_MESSAGE;
+      window.setTimeout(() => handleBattleFlowV2AnswerResolved(question, option, isCorrect), BATTLE_CORRECT_FEEDBACK_DELAY_MS);
+      return;
+    }
     handleBattleFlowV2AnswerResolved(question, option, isCorrect);
     return;
   }
@@ -11079,9 +11107,9 @@ function chooseActAnswer(option) {
   battle.pendingBossAction = chooseActBossAction(battle);
 
   if (isCorrect) {
-    els.battleMessage.textContent = "คำตอบถูกต้อง! เลือกเครื่องรางเพื่อเสริมพลังโจมตี";
+    els.battleMessage.textContent = BATTLE_CORRECT_SUCCESS_MESSAGE;
     els.continueBattleButton.classList.add("hidden");
-    setTimeout(showActCharmChoices, 650);
+    setTimeout(showActCharmChoices, BATTLE_CORRECT_FEEDBACK_DELAY_MS);
     return;
   }
 
@@ -11177,6 +11205,16 @@ function handleBattleFlowV2AnswerResolved(question, selectedAnswer, isCorrect) {
     baseDamage: battle.pendingPlayerAttack?.baseDamage || battle.damagePerCorrect,
     grammariaGain: isCorrect ? (battle.pendingPlayerAttack?.grammariaGain || 10) : 0
   };
+  if (!isCorrect) {
+    battle.pendingPlayerAttack = null;
+    battle.playerActionPhase = "enemyTurn";
+    battle.pendingBossAction = chooseActBossAction(battle);
+    setBattleTurnOwner("enemy");
+    battleFlowV2Log("wrong answer resolved, starting boss flow", battle.pendingPlayerAnswer);
+    startActBossWarning();
+    return;
+  }
+
   battle.playerActionPhase = "skillSelect";
   battle.selectedSkillId = "";
   battle.selectedCharmId = "";
