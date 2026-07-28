@@ -361,6 +361,16 @@ const PLAYER_SKILLS_V2 = [
     enabled: true
   }
 ];
+const PLAYER_SKILL_EFFECT_ASSETS = Object.freeze({
+  coreSpark: "assets/effects/skill_core_spark.png",
+  syntaxBlade: "assets/effects/skill_syntax_blade.png",
+  grammariaSurge: "assets/effects/skill_grammaria_surge.png"
+});
+const PLAYER_SKILL_EFFECT_CONFIG = Object.freeze({
+  coreSpark: { className: "skill-core-spark", width: 132, duration: 480, impactRatio: 0.82, scale: 0.9 },
+  syntaxBlade: { className: "skill-syntax-blade", width: 172, duration: 600, impactRatio: 0.84, scale: 1 },
+  grammariaSurge: { className: "skill-grammaria-surge", width: 226, duration: 760, impactRatio: 0.86, scale: 1.06 }
+});
 
 const PLAYER_CHARMS_V2 = [
   {
@@ -2829,6 +2839,9 @@ const els = {
 
 function showScene(name) {
   cleanupButtonsForSceneChange(name);
+  if (name !== "battle") {
+    cleanupBattleSkillEffects();
+  }
   if (name === "login" || name === "createCharacter") {
     stopTypewriter();
     state.isTypingDialogue = false;
@@ -11615,6 +11628,150 @@ function applyCharmPostAttackEffect(charm, context = {}) {
   return result;
 }
 
+function cleanupBattleSkillEffects() {
+  const layer = document.getElementById("battleSkillEffectLayer");
+  layer?.querySelectorAll(".skill-effect-projectile").forEach(effect => effect.remove());
+  els.battleEnemySprite?.classList.remove("boss-hit-flash", "boss-hit-flash-strong");
+  state.isSkillEffectPlaying = false;
+}
+
+function getBattleSkillEffectLayer() {
+  const stage = document.querySelector("#battleScene .battlefield-stage");
+  if (!stage) {
+    return null;
+  }
+  let layer = document.getElementById("battleSkillEffectLayer");
+  if (!layer) {
+    layer = document.createElement("div");
+    layer.id = "battleSkillEffectLayer";
+    layer.className = "battle-skill-effect-layer";
+    stage.appendChild(layer);
+  }
+  return layer;
+}
+
+function getBattleEffectPoint(element, layer, xRatio, yRatio) {
+  if (!element || !layer) {
+    return null;
+  }
+  const rect = element.getBoundingClientRect();
+  const layerRect = layer.getBoundingClientRect();
+  if (!rect.width || !rect.height || !layerRect.width || !layerRect.height) {
+    return null;
+  }
+  return {
+    x: rect.left - layerRect.left + rect.width * xRatio,
+    y: rect.top - layerRect.top + rect.height * yRatio
+  };
+}
+
+function triggerBattleBossHitFlash(skillId = "") {
+  const sprite = els.battleEnemySprite;
+  if (!sprite) {
+    return;
+  }
+  sprite.classList.remove("boss-hit-flash", "boss-hit-flash-strong");
+  void sprite.offsetWidth;
+  sprite.classList.add("boss-hit-flash");
+  if (skillId === "grammariaSurge") {
+    sprite.classList.add("boss-hit-flash-strong");
+  }
+  window.setTimeout(() => {
+    sprite.classList.remove("boss-hit-flash", "boss-hit-flash-strong");
+  }, skillId === "grammariaSurge" ? 260 : 220);
+}
+
+function playBattleSkillEffect(skillId = "") {
+  const assetPath = PLAYER_SKILL_EFFECT_ASSETS[skillId];
+  const config = PLAYER_SKILL_EFFECT_CONFIG[skillId] || PLAYER_SKILL_EFFECT_CONFIG.coreSpark;
+  const layer = getBattleSkillEffectLayer();
+  if (!assetPath || !layer || !els.battlePlayerSprite || !els.battleEnemySprite) {
+    return Promise.resolve(false);
+  }
+
+  cleanupBattleSkillEffects();
+  state.isSkillEffectPlaying = true;
+  const start = getBattleEffectPoint(els.battlePlayerSprite, layer, 0.58, 0.42);
+  const end = getBattleEffectPoint(els.battleEnemySprite, layer, 0.5, 0.5);
+  if (!start || !end) {
+    state.isSkillEffectPlaying = false;
+    return Promise.resolve(false);
+  }
+
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+  const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  const duration = reducedMotion ? 120 : config.duration;
+  const impactMs = Math.max(80, Math.round(duration * config.impactRatio));
+
+  const projectile = document.createElement("img");
+  projectile.className = `skill-effect-projectile ${config.className}`;
+  projectile.alt = "";
+  projectile.draggable = false;
+  projectile.style.width = `${config.width}px`;
+  projectile.style.left = `${start.x}px`;
+  projectile.style.top = `${start.y}px`;
+  projectile.style.setProperty("--skill-effect-angle", `${angle}deg`);
+  projectile.style.setProperty("--skill-effect-scale", String(config.scale || 1));
+
+  let impactResolved = false;
+  const resolveImpact = value => {
+    if (impactResolved) {
+      return;
+    }
+    impactResolved = true;
+    triggerBattleBossHitFlash(skillId);
+    return value;
+  };
+
+  return new Promise(resolve => {
+    projectile.addEventListener("error", () => {
+      console.warn("[BattleSkillEffect] missing or failed effect asset", assetPath);
+      projectile.remove();
+      state.isSkillEffectPlaying = false;
+      resolve(false);
+    }, { once: true });
+
+    projectile.addEventListener("load", () => {
+      const baseTransform = `translate(-50%, -50%) rotate(${angle}deg) scale(${config.scale || 1})`;
+      const introTransform = `translate(-50%, -50%) rotate(${angle}deg) scale(${(config.scale || 1) * 0.82})`;
+      const impactTransform = `translate(-50%, -50%) rotate(${angle}deg) scale(${(config.scale || 1) * 1.05})`;
+      const animation = projectile.animate([
+        { left: `${start.x}px`, top: `${start.y}px`, opacity: 0, transform: introTransform },
+        { left: `${start.x + dx * 0.12}px`, top: `${start.y + dy * 0.12}px`, opacity: 1, transform: baseTransform, offset: 0.16 },
+        { left: `${end.x}px`, top: `${end.y}px`, opacity: 0.96, transform: impactTransform, offset: config.impactRatio },
+        { left: `${end.x + dx * 0.05}px`, top: `${end.y + dy * 0.05}px`, opacity: 0, transform: impactTransform }
+      ], {
+        duration,
+        easing: "cubic-bezier(0.18, 0.78, 0.24, 1)",
+        fill: "forwards"
+      });
+
+      window.setTimeout(() => {
+        resolveImpact(true);
+        resolve(true);
+      }, impactMs);
+
+      animation.finished
+        .catch(() => false)
+        .finally(() => {
+          projectile.remove();
+          state.isSkillEffectPlaying = false;
+        });
+    }, { once: true });
+
+    projectile.src = assetPath;
+    layer.appendChild(projectile);
+    window.setTimeout(() => {
+      if (!impactResolved && document.body.contains(projectile)) {
+        resolveImpact(true);
+        resolve(true);
+      }
+    }, impactMs + 80);
+  });
+}
+
 function applyCharmParryEffect({ grade, damage, counterDamage, action, lines = [] }) {
   const effects = state.battleActiveEffects || {};
   const normalizedGrade = String(grade || "").toUpperCase();
@@ -11681,7 +11838,7 @@ function resetBattleFlowV2Selection({ phase = "bossTurn", cleanupCharge = true }
   }
 }
 
-function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) {
+async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) {
   const battle = state.actBattle;
   if (!battle || battle.skillFlowLocked || battle.isResolvingTurn) {
     return;
@@ -11721,6 +11878,14 @@ function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) {
 
   applyBattleFlowV2SkillEffects({ skill, charm, answerResult, damageResult });
   triggerMotion(els.battlePlayer, "player-attack-motion");
+  await playBattleSkillEffect(skill.id);
+  if (!state.actBattle || state.actBattle !== battle || isActBattleEnded(battle)) {
+    cleanupBattleSkillEffects();
+    battle.skillFlowLocked = false;
+    battle.isResolvingTurn = false;
+    battle.isAttacking = false;
+    return;
+  }
   const rawPlayerDamage = damageResult.finalDamage;
   const bossDamageModifiers = applyStatusDamageToTarget("boss", rawPlayerDamage, "battleFlowV2Skill", {
     skillId: skill.id,

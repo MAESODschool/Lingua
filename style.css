@@ -6842,6 +6842,71 @@ h3 {
   background: linear-gradient(90deg, transparent, rgba(226, 188, 102, 0.36), transparent);
 }
 
+#battleScene .battle-skill-effect-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  overflow: hidden;
+  contain: layout paint;
+}
+
+#battleScene .skill-effect-projectile {
+  position: absolute;
+  display: block;
+  height: auto;
+  max-width: min(40vw, 240px);
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+  transform-origin: center center;
+  will-change: left, top, opacity, transform;
+  filter: drop-shadow(0 0 14px rgba(255, 213, 106, 0.34)) drop-shadow(0 0 20px rgba(148, 92, 255, 0.28));
+}
+
+#battleScene .skill-effect-projectile.skill-core-spark {
+  max-width: min(30vw, 150px);
+}
+
+#battleScene .skill-effect-projectile.skill-syntax-blade {
+  max-width: min(34vw, 190px);
+}
+
+#battleScene .skill-effect-projectile.skill-grammaria-surge {
+  max-width: min(42vw, 250px);
+  filter: drop-shadow(0 0 18px rgba(255, 213, 106, 0.42)) drop-shadow(0 0 28px rgba(148, 92, 255, 0.38));
+}
+
+#battleScene .battlefield-stage #battleEnemySprite.boss-hit-flash {
+  animation: bossHitFlash 220ms ease-out both;
+  filter: brightness(2.9) saturate(0.2) drop-shadow(0 0 24px rgba(255, 255, 255, 0.82)) !important;
+}
+
+#battleScene .battlefield-stage #battleEnemySprite.boss-hit-flash-strong {
+  animation-duration: 260ms;
+}
+
+@keyframes bossHitFlash {
+  0%,
+  42% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #battleScene .skill-effect-projectile {
+    transition: none;
+  }
+
+  #battleScene .battlefield-stage #battleEnemySprite.boss-hit-flash {
+    animation-duration: 120ms;
+  }
+}
+
 #battleScene .battlefield-stage .combatant,
 #battleScene .battlefield-stage .enemy-side {
   min-width: 0;
