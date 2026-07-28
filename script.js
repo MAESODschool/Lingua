@@ -269,6 +269,23 @@ const EARLY_BOSS_BALANCE = {
   }
 };
 
+// Canonical Act 1 encounter durability. These values only set enemy max HP and must not scale player damage.
+const ACT1_ENCOUNTER_MAX_HP = Object.freeze({
+  "what-is-past": 160,
+  "what-is-tense": 180,
+  act1_phase1_unit3_was_were: 200,
+  act1_phase1_unit4_there_was_were: 220,
+  act1_phase1_unit5_had: 240,
+  "regular-rule-1": 280,
+  "regular-rule-2": 300,
+  "regular-rule-3": 340,
+  "regular-rule-4": 360,
+  "ed-mini-boss": 520,
+  "irregular-lesson": 380,
+  "irregular-mini-boss": 600,
+  "final-boss": 800
+});
+
 const PHASE1_STARTER_STAGE_IDS = new Set([
   "what-is-past",
   "what-is-tense",
@@ -4147,11 +4164,15 @@ function normalizeBossBalanceKey(stage) {
 }
 
 function getBalancedBossMaxHp(stage, baseHp = 100) {
+  const configuredHp = ACT1_ENCOUNTER_MAX_HP[String(stage?.id || "")];
+  if (Number.isFinite(configuredHp) && configuredHp > 0) {
+    return configuredHp;
+  }
+  const normalizedBaseHp = Math.max(1, Number(stage?.enemyMaxHp || stage?.maxHp || stage?.hp || baseHp) || baseHp);
   if (isFinalBossStage(stage)) {
-    return baseHp;
+    return normalizedBaseHp;
   }
 
-  const normalizedBaseHp = Math.max(1, Number(stage?.enemyMaxHp || stage?.maxHp || stage?.hp || baseHp) || baseHp);
   if (PHASE1_STARTER_STAGE_IDS.has(stage?.id)) {
     return normalizedBaseHp;
   }
