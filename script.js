@@ -2092,6 +2092,8 @@ function applyPlayerCharacterImage(img, characterId = ensurePlayerCharacterData(
   const asset = useBattleBackView ? getPlayerBattleBackModelPath(character.id) : character.asset;
   const fallbackAsset = useBattleBackView ? (character.battleFallbackAsset || "") : character.fallbackAsset;
   img.className = img.className.replace(/\bmain-character-gif-fallback\b/g, "main-character-gif").trim();
+  img.classList.toggle("female-battle-back-model", useBattleBackView && character.id === "female_wanderer");
+  img.classList.toggle("male-battle-back-model", useBattleBackView && character.id === "male_wanderer");
   img.classList.remove("hidden");
   img.dataset.characterId = character.id;
   img.dataset.fallbackApplied = "false";

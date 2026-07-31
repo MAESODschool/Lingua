@@ -7148,6 +7148,11 @@ h3 {
   filter: drop-shadow(0 18px 20px rgba(0, 0, 0, 0.36)) drop-shadow(0 0 12px rgba(115, 246, 255, 0.2)) !important;
 }
 
+#battleScene .battlefield-stage #battlePlayerSprite.battle-player-model.female-battle-back-model {
+  --player-img-scale: 0.86;
+  --player-img-offset-y: 4%;
+}
+
 #battleScene .battlefield-stage .hp-bar {
   height: 9px;
   margin-block: 7px 5px;
