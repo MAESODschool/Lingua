@@ -367,9 +367,9 @@ const PLAYER_SKILL_EFFECT_ASSETS = Object.freeze({
   grammariaSurge: "assets/effects/skill_grammaria_surge.png"
 });
 const PLAYER_SKILL_EFFECT_CONFIG = Object.freeze({
-  coreSpark: { className: "skill-core-spark", width: 132, duration: 480, impactRatio: 0.82, scale: 0.9 },
-  syntaxBlade: { className: "skill-syntax-blade", width: 172, duration: 600, impactRatio: 0.84, scale: 1 },
-  grammariaSurge: { className: "skill-grammaria-surge", width: 226, duration: 760, impactRatio: 0.86, scale: 1.06 }
+  coreSpark: { className: "skill-core-spark", width: "clamp(120px, 18vw, 260px)", duration: 520, impactRatio: 0.82, scale: 0.9 },
+  syntaxBlade: { className: "skill-syntax-blade", width: "clamp(180px, 24vw, 340px)", duration: 640, impactRatio: 0.84, scale: 1 },
+  grammariaSurge: { className: "skill-grammaria-surge", width: "clamp(240px, 32vw, 460px)", duration: 800, impactRatio: 0.86, scale: 1.06 }
 });
 
 const PLAYER_CHARMS_V2 = [
@@ -11686,6 +11686,9 @@ function playBattleSkillEffect(skillId = "") {
   const config = PLAYER_SKILL_EFFECT_CONFIG[skillId] || PLAYER_SKILL_EFFECT_CONFIG.coreSpark;
   const layer = getBattleSkillEffectLayer();
   if (!assetPath || !layer || !els.battlePlayerSprite || !els.battleEnemySprite) {
+    if (skillId && !assetPath) {
+      console.warn("[BattleSkillEffect] unknown skill effect id", skillId);
+    }
     return Promise.resolve(false);
   }
 
@@ -11709,13 +11712,16 @@ function playBattleSkillEffect(skillId = "") {
   projectile.className = `skill-effect-projectile ${config.className}`;
   projectile.alt = "";
   projectile.draggable = false;
-  projectile.style.width = `${config.width}px`;
+  projectile.decoding = "async";
+  projectile.style.width = typeof config.width === "number" ? `${config.width}px` : config.width;
   projectile.style.left = `${start.x}px`;
   projectile.style.top = `${start.y}px`;
   projectile.style.setProperty("--skill-effect-angle", `${angle}deg`);
   projectile.style.setProperty("--skill-effect-scale", String(config.scale || 1));
 
   let impactResolved = false;
+  let finishedResolved = false;
+  let started = false;
   const resolveImpact = value => {
     if (impactResolved) {
       return;
@@ -11724,51 +11730,82 @@ function playBattleSkillEffect(skillId = "") {
     triggerBattleBossHitFlash(skillId);
     return value;
   };
+  const finishEffect = value => {
+    if (finishedResolved) {
+      return;
+    }
+    finishedResolved = true;
+    projectile.remove();
+    state.isSkillEffectPlaying = false;
+    return value;
+  };
 
   return new Promise(resolve => {
-    projectile.addEventListener("error", () => {
-      console.warn("[BattleSkillEffect] missing or failed effect asset", assetPath);
-      projectile.remove();
-      state.isSkillEffectPlaying = false;
-      resolve(false);
-    }, { once: true });
-
-    projectile.addEventListener("load", () => {
+    const startAnimation = () => {
+      if (started || !document.body.contains(projectile)) {
+        return;
+      }
+      started = true;
       const baseTransform = `translate(-50%, -50%) rotate(${angle}deg) scale(${config.scale || 1})`;
       const introTransform = `translate(-50%, -50%) rotate(${angle}deg) scale(${(config.scale || 1) * 0.82})`;
       const impactTransform = `translate(-50%, -50%) rotate(${angle}deg) scale(${(config.scale || 1) * 1.05})`;
-      const animation = projectile.animate([
+      const keyframes = [
         { left: `${start.x}px`, top: `${start.y}px`, opacity: 0, transform: introTransform },
         { left: `${start.x + dx * 0.12}px`, top: `${start.y + dy * 0.12}px`, opacity: 1, transform: baseTransform, offset: 0.16 },
         { left: `${end.x}px`, top: `${end.y}px`, opacity: 0.96, transform: impactTransform, offset: config.impactRatio },
         { left: `${end.x + dx * 0.05}px`, top: `${end.y + dy * 0.05}px`, opacity: 0, transform: impactTransform }
-      ], {
-        duration,
-        easing: "cubic-bezier(0.18, 0.78, 0.24, 1)",
-        fill: "forwards"
-      });
+      ];
 
       window.setTimeout(() => {
         resolveImpact(true);
         resolve(true);
       }, impactMs);
 
-      animation.finished
-        .catch(() => false)
-        .finally(() => {
-          projectile.remove();
-          state.isSkillEffectPlaying = false;
+      if (typeof projectile.animate === "function") {
+        const animation = projectile.animate(keyframes, {
+          duration,
+          easing: "cubic-bezier(0.18, 0.78, 0.24, 1)",
+          fill: "forwards"
         });
+        animation.finished
+          .catch(() => false)
+          .finally(() => finishEffect(true));
+      } else {
+        projectile.style.transition = `left ${duration}ms cubic-bezier(0.18, 0.78, 0.24, 1), top ${duration}ms cubic-bezier(0.18, 0.78, 0.24, 1), opacity ${duration}ms ease-out, transform ${duration}ms ease-out`;
+        projectile.style.opacity = "1";
+        projectile.style.transform = baseTransform;
+        window.requestAnimationFrame(() => {
+          projectile.style.left = `${end.x}px`;
+          projectile.style.top = `${end.y}px`;
+          projectile.style.transform = impactTransform;
+        });
+        window.setTimeout(() => finishEffect(true), duration + 40);
+      }
+    };
+
+    projectile.addEventListener("error", () => {
+      console.warn("[BattleSkillEffect] missing or failed effect asset", assetPath);
+      finishEffect(false);
+      resolve(false);
     }, { once: true });
 
-    projectile.src = assetPath;
+    projectile.addEventListener("load", () => {
+      window.requestAnimationFrame(() => startAnimation());
+    }, { once: true });
+
     layer.appendChild(projectile);
+    projectile.src = assetPath;
+    if (projectile.complete && projectile.naturalWidth > 0) {
+      window.requestAnimationFrame(() => startAnimation());
+    }
     window.setTimeout(() => {
-      if (!impactResolved && document.body.contains(projectile)) {
-        resolveImpact(true);
-        resolve(true);
+      if (!started && !impactResolved && document.body.contains(projectile)) {
+        console.warn("[BattleSkillEffect] effect asset did not become ready in time", assetPath);
+        resolveImpact(false);
+        resolve(false);
+        finishEffect(false);
       }
-    }, impactMs + 80);
+    }, Math.max(duration + 300, 1600));
   });
 }
 

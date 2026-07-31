@@ -6804,7 +6804,7 @@ h3 {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
   gap: clamp(4px, 0.7dvh, 7px);
-  overflow: hidden;
+  overflow: visible;
   padding: clamp(4px, 0.8dvh, 8px);
   border: 1px solid rgba(226, 188, 102, 0.48);
   border-radius: 8px;
@@ -6847,15 +6847,17 @@ h3 {
   inset: 0;
   z-index: 6;
   pointer-events: none;
-  overflow: hidden;
-  contain: layout paint;
+  overflow: visible;
+  contain: none;
 }
 
 #battleScene .skill-effect-projectile {
   position: absolute;
   display: block;
   height: auto;
-  max-width: min(40vw, 240px);
+  max-width: min(52vw, 460px);
+  min-width: 96px;
+  opacity: 0;
   object-fit: contain;
   object-position: center;
   pointer-events: none;
@@ -6866,15 +6868,15 @@ h3 {
 }
 
 #battleScene .skill-effect-projectile.skill-core-spark {
-  max-width: min(30vw, 150px);
+  max-width: min(36vw, 260px);
 }
 
 #battleScene .skill-effect-projectile.skill-syntax-blade {
-  max-width: min(34vw, 190px);
+  max-width: min(44vw, 340px);
 }
 
 #battleScene .skill-effect-projectile.skill-grammaria-surge {
-  max-width: min(42vw, 250px);
+  max-width: min(52vw, 460px);
   filter: drop-shadow(0 0 18px rgba(255, 213, 106, 0.42)) drop-shadow(0 0 28px rgba(148, 92, 255, 0.38));
 }
 
