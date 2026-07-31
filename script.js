@@ -326,6 +326,7 @@ const PLAYER_SKILLS_V2 = [
     name: "Core Spark",
     thaiName: "ประกายแกนไวยากรณ์",
     apCost: 1,
+    cooldownTurns: 1,
     damageMultiplier: 1,
     description: "ปล่อยประกายพลังเล็ก ๆ จากเศษ Grammar Core ใช้โจมตีพื้นฐาน",
     effectText: "โจมตีพื้นฐาน ใช้ AP น้อย เหมาะสำหรับเก็บจังหวะ",
@@ -339,6 +340,7 @@ const PLAYER_SKILLS_V2 = [
     name: "Syntax Blade",
     thaiName: "คมวากยสัมพันธ์",
     apCost: 2,
+    cooldownTurns: 2,
     damageMultiplier: 1.35,
     description: "หลอมโครงสร้างภาษาให้กลายเป็นคมดาบเวทจาก Grammar Core",
     effectText: "ถ้าตอบถูก ดาเมจเพิ่มอีก 10%",
@@ -352,6 +354,7 @@ const PLAYER_SKILLS_V2 = [
     name: "Grammaria Surge",
     thaiName: "คลื่นแกรมมาเรีย",
     apCost: 3,
+    cooldownTurns: 3,
     damageMultiplier: 1.7,
     description: "ปลดคลื่นพลังเข้มข้นจากเศษ Grammar Core โจมตีอย่างรุนแรง",
     effectText: "ถ้าตอบถูก ดาเมจเพิ่ม 12% เพิ่มประสิทธิภาพการชาร์จ และทำให้บอสอ่อนแรงเล็กน้อย",
@@ -4392,7 +4395,7 @@ function chooseActPlayerActionOnce(actionHandler) {
   return true;
 }
 
-function beginActPlayerTurn(message = "") {
+function beginActPlayerTurn(message = "", options = {}) {
   const battle = getActBattle();
   if (!battle) {
     return;
@@ -4403,6 +4406,10 @@ function beginActPlayerTurn(message = "") {
   }
 
   setBattleTurnOwner("player");
+  ensureBattleSkillCooldownState(battle);
+  if (!options.preservePlayerTurnCounter) {
+    battle.playerTurnCounter = Math.max(0, Number(battle.playerTurnCounter) || 0) + 1;
+  }
   battle.pendingPlayerAttack = null;
   if (BATTLE_FLOW_V2_CONFIG.enabled) {
     resetBattleFlowV2Selection({ phase: "question", cleanupCharge: true });
@@ -7644,6 +7651,10 @@ function captureBattleResumeCheckpoint(source, savedAt) {
     stage: undefined,
     stageId: stage.id,
     resumeMode: getBattleResumeMode(battle),
+    skillCooldowns: { ...(ensureBattleSkillCooldownState(battle)?.skillCooldowns || createInitialSkillCooldowns()) },
+    skillCooldownStartedTurn: { ...(battle.skillCooldownStartedTurn || {}) },
+    skillCooldownLastTickPlayerTurn: Math.max(0, Number(battle.skillCooldownLastTickPlayerTurn) || 0),
+    playerTurnCounter: Math.max(0, Number(battle.playerTurnCounter) || 0),
     usedQuestionIds: setToArray(battle.usedQuestionIds),
     usedBossQuestionIds: setToArray(battle.usedBossQuestionIds),
     usedFocusQuestionIds: setToArray(battle.usedFocusQuestionIds),
@@ -7764,6 +7775,7 @@ function hydrateBattleSnapshot(snapshot, stage) {
   battle.isActive = true;
   battle.isDefeated = false;
   battle.victoryHandled = false;
+  ensureBattleSkillCooldownState(battle);
   return battle;
 }
 
@@ -7771,7 +7783,7 @@ function renderRestoredPlayerQuestion() {
   const battle = state.actBattle;
   const question = battle?.currentQuestion;
   if (!battle || !question) {
-    beginActPlayerTurn("กลับสู่เทิร์นของผู้พเนจร");
+    beginActPlayerTurn("กลับสู่เทิร์นของผู้พเนจร", { preservePlayerTurnCounter: true });
     return;
   }
   setBattleTurnOwner("player");
@@ -7794,7 +7806,7 @@ function renderRestoredFocusQuestion() {
   const battle = state.actBattle;
   const question = battle?.currentFocusQuestion;
   if (!battle || !question) {
-    beginActPlayerTurn("กลับสู่เทิร์นของผู้พเนจร");
+    beginActPlayerTurn("กลับสู่เทิร์นของผู้พเนจร", { preservePlayerTurnCounter: true });
     return;
   }
   setBattleTurnOwner("player");
@@ -7889,7 +7901,7 @@ function renderRestoredBattleCheckpoint(resumeMode) {
     default:
       break;
   }
-  beginActPlayerTurn("กลับสู่เทิร์นของผู้พเนจร");
+  beginActPlayerTurn("กลับสู่เทิร์นของผู้พเนจร", { preservePlayerTurnCounter: true });
   return true;
 }
 
@@ -10764,6 +10776,10 @@ function startActBattle(stageIndex) {
     selectedSkillId: "",
     selectedCharmId: "",
     selectedChargePercent: 0,
+    skillCooldowns: createInitialSkillCooldowns(),
+    skillCooldownStartedTurn: {},
+    skillCooldownLastTickPlayerTurn: 0,
+    playerTurnCounter: 0,
     pendingAttackData: null,
     skillFlowLocked: false,
     heavyAttackState: null,
@@ -10962,6 +10978,7 @@ function chooseActFocusAnswer(option, question) {
   els.answerOptions.appendChild(feedback);
   updateBattleStats();
   syncBattleStateToPlayerData();
+  completePlayerSkillCooldownTurn(battle);
   if (!isCorrect && resolvePlayerDefeat("HP เหลือ 0")) {
     return;
   }
@@ -11170,6 +11187,90 @@ function getBattleFlowV2Skill(skillId) {
   return PLAYER_SKILLS_V2.find(skill => skill.id === skillId && skill.enabled);
 }
 
+function createInitialSkillCooldowns() {
+  return PLAYER_SKILLS_V2.reduce((cooldowns, skill) => {
+    if (skill.enabled) {
+      cooldowns[skill.id] = 0;
+    }
+    return cooldowns;
+  }, {});
+}
+
+function ensureBattleSkillCooldownState(battle = state.actBattle) {
+  if (!battle) {
+    return null;
+  }
+  if (!battle.skillCooldowns || typeof battle.skillCooldowns !== "object" || Array.isArray(battle.skillCooldowns)) {
+    battle.skillCooldowns = createInitialSkillCooldowns();
+  }
+  if (!battle.skillCooldownStartedTurn || typeof battle.skillCooldownStartedTurn !== "object" || Array.isArray(battle.skillCooldownStartedTurn)) {
+    battle.skillCooldownStartedTurn = {};
+  }
+  PLAYER_SKILLS_V2.filter(skill => skill.enabled).forEach(skill => {
+    const remaining = Math.max(0, Number(battle.skillCooldowns[skill.id]) || 0);
+    battle.skillCooldowns[skill.id] = remaining;
+    if (remaining <= 0 && battle.skillCooldownStartedTurn[skill.id] !== undefined) {
+      delete battle.skillCooldownStartedTurn[skill.id];
+    }
+  });
+  battle.playerTurnCounter = Math.max(0, Number(battle.playerTurnCounter) || 0);
+  battle.skillCooldownLastTickPlayerTurn = Math.max(0, Number(battle.skillCooldownLastTickPlayerTurn) || 0);
+  return battle;
+}
+
+function getRemainingSkillCooldown(skillId, battle = state.actBattle) {
+  const activeBattle = ensureBattleSkillCooldownState(battle);
+  if (!activeBattle || !skillId) {
+    return 0;
+  }
+  return Math.max(0, Number(activeBattle.skillCooldowns[skillId]) || 0);
+}
+
+function applySkillCooldownAfterUse(skillId, battle = state.actBattle) {
+  const activeBattle = ensureBattleSkillCooldownState(battle);
+  const skill = getBattleFlowV2Skill(skillId);
+  if (!activeBattle || !skill) {
+    return;
+  }
+  const cooldownTurns = Math.max(0, Number(skill.cooldownTurns) || 0);
+  if (cooldownTurns <= 0) {
+    return;
+  }
+  activeBattle.skillCooldowns[skill.id] = cooldownTurns;
+  activeBattle.skillCooldownStartedTurn[skill.id] = Math.max(0, Number(activeBattle.playerTurnCounter) || 0);
+}
+
+function tickPlayerSkillCooldowns(battle = state.actBattle) {
+  const activeBattle = ensureBattleSkillCooldownState(battle);
+  if (!activeBattle) {
+    return;
+  }
+  const currentTurn = Math.max(0, Number(activeBattle.playerTurnCounter) || 0);
+  if (!currentTurn || activeBattle.skillCooldownLastTickPlayerTurn === currentTurn) {
+    return;
+  }
+
+  PLAYER_SKILLS_V2.filter(skill => skill.enabled).forEach(skill => {
+    const remaining = getRemainingSkillCooldown(skill.id, activeBattle);
+    if (remaining <= 0) {
+      return;
+    }
+    const startedTurn = Math.max(0, Number(activeBattle.skillCooldownStartedTurn[skill.id]) || 0);
+    if (startedTurn === currentTurn) {
+      return;
+    }
+    activeBattle.skillCooldowns[skill.id] = Math.max(0, remaining - 1);
+    if (activeBattle.skillCooldowns[skill.id] <= 0) {
+      delete activeBattle.skillCooldownStartedTurn[skill.id];
+    }
+  });
+  activeBattle.skillCooldownLastTickPlayerTurn = currentTurn;
+}
+
+function completePlayerSkillCooldownTurn(battle = state.actBattle) {
+  tickPlayerSkillCooldowns(battle);
+}
+
 function getBattleFlowV2Charm(charmId) {
   return actAttackCharms.find(charm => charm.id === charmId) ||
     PLAYER_CHARMS_V2.find(charm => charm.id === charmId && charm.enabled);
@@ -11221,6 +11322,7 @@ function handleBattleFlowV2AnswerResolved(question, selectedAnswer, isCorrect) {
   if (!isCorrect) {
     battle.pendingPlayerAttack = null;
     battle.playerActionPhase = "enemyTurn";
+    completePlayerSkillCooldownTurn(battle);
     battle.pendingBossAction = chooseActBossAction(battle);
     setBattleTurnOwner("enemy");
     battleFlowV2Log("wrong answer resolved, starting boss flow", battle.pendingPlayerAnswer);
@@ -11268,11 +11370,18 @@ function renderBattleSkillSelectionPanel() {
   optionGrid.className = "battle-flow-v2-card-grid battle-skill-grid";
 
   PLAYER_SKILLS_V2.filter(skill => skill.enabled).forEach(skill => {
-    const canUse = currentAp >= skill.apCost;
+    const remainingCooldown = getRemainingSkillCooldown(skill.id, battle);
+    const isCoolingDown = remainingCooldown > 0;
+    const hasEnoughAp = currentAp >= skill.apCost;
+    const canUse = !isCoolingDown && hasEnoughAp;
+    const unavailableNote = isCoolingDown
+      ? `<small class="skill-unavailable-note skill-cooldown-badge">คูลดาวน์ ${remainingCooldown} เทิร์น</small>`
+      : (!hasEnoughAp ? `<small class="skill-unavailable-note">AP ไม่พอ</small>` : "");
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `skill-card battle-flow-v3-skill-card${canUse ? "" : " is-disabled"}`;
-    button.disabled = !canUse;
+    button.className = `skill-card battle-flow-v3-skill-card${canUse ? "" : " is-disabled"}${isCoolingDown ? " is-skill-cooling-down" : ""}`;
+    button.disabled = !canUse && !isCoolingDown;
+    button.setAttribute("aria-disabled", canUse ? "false" : "true");
     button.innerHTML = `
       <span class="skill-card-topline">
         <strong>${skill.thaiName}</strong>
@@ -11280,6 +11389,7 @@ function renderBattleSkillSelectionPanel() {
       </span>
       <span>${skill.description}</span>
       <small>${skill.effectText}</small>
+      ${unavailableNote}
     `;
     button.addEventListener("click", () => selectBattleSkill(skill.id));
     optionGrid.appendChild(button);
@@ -11305,6 +11415,12 @@ function selectBattleSkill(skillId) {
   const skill = getBattleFlowV2Skill(skillId);
   if (!skill) {
     console.warn("[BattleFlowV2] skill not found", skillId);
+    return;
+  }
+
+  const remainingCooldown = getRemainingSkillCooldown(skill.id, battle);
+  if (remainingCooldown > 0) {
+    els.battleMessage.textContent = `สกิลนี้ยังคูลดาวน์อยู่ ต้องรออีก ${remainingCooldown} เทิร์น`;
     return;
   }
 
@@ -11903,6 +12019,7 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
     renderBattleSkillSelectionPanel();
     return;
   }
+  applySkillCooldownAfterUse(skill.id, battle);
 
   const baseDamage = getBattleFlowV2BaseDamage(answerResult);
   const damageResult = calculateBattleFlowV2Damage({
@@ -11975,6 +12092,7 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
   });
 
   if (state.enemyHp <= 0) {
+    completePlayerSkillCooldownTurn(battle);
     battle.skillFlowLocked = false;
     battle.isResolvingTurn = false;
     battle.isAttacking = false;
@@ -11983,6 +12101,7 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
   }
 
   if (postEffectResult.extraTurn) {
+    completePlayerSkillCooldownTurn(battle);
     battle.skillFlowLocked = false;
     battle.isResolvingTurn = false;
     battle.isAttacking = false;
@@ -11995,6 +12114,7 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
     return;
   }
 
+  completePlayerSkillCooldownTurn(battle);
   battle.skillFlowLocked = false;
   battle.isResolvingTurn = false;
   battle.isAttacking = false;

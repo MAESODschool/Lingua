@@ -4108,6 +4108,31 @@ h3 {
   filter: grayscale(0.45);
 }
 
+.skill-card.is-skill-cooling-down {
+  border-color: rgba(255, 196, 87, 0.5);
+  opacity: 0.66;
+  filter: grayscale(0.28);
+}
+
+.skill-card.is-skill-cooling-down:not(:disabled) {
+  cursor: pointer;
+}
+
+.skill-card .skill-unavailable-note {
+  color: #ffd77a;
+  font-weight: 900;
+}
+
+.skill-card .skill-cooldown-badge {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 7px;
+  padding: 3px 7px;
+  border: 1px solid rgba(255, 215, 122, 0.42);
+  border-radius: 999px;
+  background: rgba(88, 52, 7, 0.54);
+}
+
 .battle-flow-v3-skill-card {
   min-height: 74px;
   padding: 11px 12px;
@@ -7492,4 +7517,12 @@ h3 {
   #battleScene .battlefield-stage .player-model-motion {
     height: clamp(68px, 40%, 118px);
   }
+}
+
+#battleScene .battle-flow-v3-skill-card .skill-cooldown-badge {
+  display: inline-flex;
+  width: fit-content;
+  overflow: visible;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: initial;
 }
