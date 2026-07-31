@@ -7618,6 +7618,9 @@ function getBattleResumeMode(battle) {
   if (battle.pendingBossTurn) {
     return "boss-intent";
   }
+  if (battle.playerActionPhase === "correctAnswerFeedback") {
+    return "correct-answer-feedback";
+  }
   if (!els.continueBattleButton?.classList.contains("hidden")) {
     return "continue";
   }
@@ -7789,14 +7792,14 @@ function renderRestoredPlayerQuestion() {
   setBattleTurnOwner("player");
   els.continueBattleButton.classList.add("hidden");
   els.battleMessage.textContent = `${battle.stage.title} - คำถาม ${battle.questionIndex + 1} / ${battle.stage.questions.length}`;
-  els.questionText.textContent = getQuestionText(question);
+  els.questionText.textContent = resolveBattleQuestionPrompt(question);
   els.answerOptions.innerHTML = "";
   question.options.forEach(option => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "answer-button";
     button.textContent = option;
-    button.addEventListener("click", () => chooseActAnswer(option));
+    button.addEventListener("click", () => chooseActAnswer(option, button));
     els.answerOptions.appendChild(button);
   });
   showOnlyBattlePanel(els.questionPanel);
@@ -7841,7 +7844,7 @@ function renderRestoredBossQuestion() {
   setBattleTurnOwner("enemy");
   els.continueBattleButton.classList.add("hidden");
   els.battleMessage.textContent = "บอส: “ถ้าเจ้าจำอดีตผิด ความทรงจำก็จะแตกสลาย... ตอบข้ามา!”";
-  els.questionText.textContent = getQuestionText(question);
+  els.questionText.textContent = resolveBattleQuestionPrompt(question);
   els.answerOptions.innerHTML = "";
   question.options.forEach(option => {
     const button = document.createElement("button");
@@ -7867,6 +7870,21 @@ function renderRestoredBattleCheckpoint(resumeMode) {
       renderRestoredFocusQuestion();
       return true;
     case "skill-select":
+      renderBattleSkillSelectionPanel();
+      return true;
+    case "correct-answer-feedback":
+      if (!battle.pendingPlayerAnswer && battle.currentQuestion) {
+        const correctAnswer = battle.currentQuestion.correctAnswer || battle.currentQuestion.answer;
+        battle.pendingPlayerAnswer = buildBattleFlowV2AnswerState(battle.currentQuestion, correctAnswer, true);
+      }
+      if (!battle.pendingPlayerAttack) {
+        battle.pendingPlayerAttack = {
+          baseDamage: battle.damagePerCorrect,
+          grammariaGain: 10
+        };
+      }
+      battle.playerActionPhase = "skillSelect";
+      battle.correctAnswerFeedbackAdvanced = true;
       renderBattleSkillSelectionPanel();
       return true;
     case "charm-select":
@@ -10727,6 +10745,84 @@ function getQuestionText(question) {
   return phase + (question.sentence || question.prompt);
 }
 
+function localizeBattleQuestionText(text, question = {}) {
+  const rawText = String(text || "").trim();
+  if (!rawText) {
+    return "เลือกคำตอบที่ถูกต้อง";
+  }
+
+  const exactTranslations = {
+    "Which one is a past time expression?": "ข้อใดเป็นคำบอกเวลาในอดีต?",
+    "Which one is NOT a past time expression?": "ข้อใดไม่ใช่คำบอกเวลาในอดีต?",
+    "Choose the past time expression.": "เลือกคำบอกเวลาในอดีต",
+    "Which phrase can begin a story about the past?": "วลีใดใช้เริ่มเรื่องเล่าในอดีต?",
+    "Which phrase shows a finished time?": "วลีใดบอกเวลาที่จบไปแล้ว?",
+    "Which sentence should use Past Simple?": "ประโยคใดควรใช้ Past Simple?",
+    "Which phrase means ก่อนเข้าเรียน?": "วลีใดหมายถึง “ก่อนเข้าเรียน”?",
+    "When I was a child talks about:": "When I was a child พูดถึงเวลาใด?",
+    "Which phrase shows the past?": "วลีใดบอกอดีต?",
+    "Which phrase means something happened before now?": "วลีใดหมายถึงสิ่งที่เกิดขึ้นก่อนตอนนี้?",
+    "Which sentence talks about the past?": "ประโยคใดพูดถึงอดีต?",
+    "Many years ago means:": "Many years ago หมายถึงอะไร?",
+    "Which one is NOT a past time clue?": "ข้อใดไม่ใช่คำใบ้เวลาในอดีต?",
+    "Which phrase is used in stories to talk about the past?": "วลีใดใช้เล่าเรื่องในอดีต?",
+    "Which phrase shows a past date?": "วลีใดบอกวันที่ในอดีต?",
+    "Choose the correct sentence.": "เลือกประโยคที่ถูกต้อง",
+    "Which one is Past Simple?": "ข้อใดเป็นรูป Past Simple?",
+    "Which one is V2?": "ข้อใดเป็นกริยาช่องที่ 2?",
+    "Which spelling is correct?": "การสะกดข้อใดถูกต้อง?",
+    "Choose the correct past form.": "เลือกรูปกริยาอดีตที่ถูกต้อง",
+    "Which sentence is correct?": "ประโยคใดถูกต้อง?",
+    "Fill in the blank.": "เติมคำในช่องว่างให้ถูกต้อง",
+    "Choose the correct answer.": "เลือกคำตอบที่ถูกต้อง"
+  };
+
+  if (exactTranslations[rawText]) {
+    return exactTranslations[rawText];
+  }
+
+  const arrowMatch = rawText.match(/^(.+?)\s*(?:->|→)\s*$/);
+  if (arrowMatch) {
+    return `เลือกรูปอดีตที่ถูกต้องของ ${arrowMatch[1].trim()}`;
+  }
+
+  const correctPastMatch = rawText.match(/^Choose the correct past form of (.+?)\.?$/i);
+  if (correctPastMatch) {
+    return `เลือกรูปอดีตที่ถูกต้องของ ${correctPastMatch[1].trim()}`;
+  }
+
+  const pastFormMatch = rawText.match(/^What is the past form of (.+?)\??$/i);
+  if (pastFormMatch) {
+    return `รูปอดีตของ ${pastFormMatch[1].trim()} คือข้อใด?`;
+  }
+
+  if (rawText.includes("____")) {
+    return `เติมคำในช่องว่างให้ถูกต้อง: ${rawText}`;
+  }
+
+  if (/[\u0E00-\u0E7F]/.test(rawText)) {
+    return rawText;
+  }
+
+  const type = String(question?.type || "");
+  if (type.includes("sentence") || type.includes("fill")) {
+    return `เติมคำในช่องว่างให้ถูกต้อง: ${rawText}`;
+  }
+  if (type.includes("correct")) {
+    return "เลือกประโยคที่ถูกต้อง";
+  }
+  if (type.includes("irregular") || type.includes("regular") || type.includes("mixed-rule")) {
+    return `เลือกรูปอดีตที่ถูกต้องของ ${question?.baseVerb || rawText}`;
+  }
+
+  return rawText;
+}
+
+function resolveBattleQuestionPrompt(question) {
+  const phase = question?.phase ? `[${question.phase}] ` : "";
+  return phase + localizeBattleQuestionText(question?.sentence || question?.prompt, question);
+}
+
 function startActBattle(stageIndex) {
   cleanupBossHeavyAttackChain({ clearParryUi: true });
   const stageConfig = getPlayableStages()[stageIndex];
@@ -10772,6 +10868,7 @@ function startActBattle(stageIndex) {
     pendingPlayerAttack: null,
     playerActionPhase: "question",
     pendingPlayerAnswer: null,
+    correctAnswerFeedbackAdvanced: false,
     actionChoiceLocked: false,
     selectedSkillId: "",
     selectedCharmId: "",
@@ -10863,6 +10960,7 @@ function startActAttackAction() {
     battle.selectedChargePercent = 0;
     battle.pendingAttackData = null;
     battle.skillFlowLocked = false;
+    battle.correctAnswerFeedbackAdvanced = false;
     showActBattleQuestion();
     return;
   }
@@ -10993,6 +11091,7 @@ function chooseActFocusAnswer(option, question) {
 function showActBattleQuestion() {
   const battle = state.actBattle;
   battle.answerResolving = false;
+  battle.correctAnswerFeedbackAdvanced = false;
   battle.advanceQuestionOnContinue = true;
   const rawQuestion = pickQuestion(
     battle.stage.questions,
@@ -11008,7 +11107,7 @@ function showActBattleQuestion() {
   setBattleTurnOwner("player");
   els.continueBattleButton.classList.add("hidden");
   els.battleMessage.textContent = `${battle.stage.title} - คำถาม ${battle.questionIndex + 1} / ${battle.stage.questions.length}`;
-  els.questionText.textContent = getQuestionText(question);
+  els.questionText.textContent = resolveBattleQuestionPrompt(question);
   els.answerOptions.innerHTML = "";
 
   let visibleOptions = [...question.options];
@@ -11046,8 +11145,7 @@ function showActBattleQuestion() {
   showOnlyBattlePanel(els.questionPanel);
 }
 
-const BATTLE_CORRECT_FEEDBACK_DELAY_MS = 650;
-const BATTLE_CORRECT_SUCCESS_MESSAGE = "ถูกต้อง! พลังแกรมมาเรียตอบสนอง เตรียมเลือกสกิลโจมตี";
+const BATTLE_CORRECT_SUCCESS_MESSAGE = "ถูกต้อง! พลังแกรมมาเรียตอบสนอง กดไปต่อเพื่อเลือกสกิลโจมตี";
 
 function showBattleCorrectAnswerFeedback(button) {
   if (!button) {
@@ -11060,6 +11158,39 @@ function showBattleCorrectAnswerFeedback(button) {
     label.textContent = "Correct!";
     button.appendChild(label);
   }
+}
+
+function buildBattleFlowV2AnswerState(question, selectedAnswer, isCorrect) {
+  return {
+    questionId: question?.id || "",
+    isCorrect: Boolean(isCorrect),
+    selectedAnswer,
+    correctAnswer: question?.answer || question?.correctAnswer || "",
+    baseVerb: question?.baseVerb || "",
+    ruleId: question?.ruleId || "",
+    answeredAt: Date.now()
+  };
+}
+
+function continueBattleCorrectAnswerFeedback(question, selectedAnswer) {
+  const battle = state.actBattle;
+  if (!battle || battle.playerActionPhase !== "correctAnswerFeedback") {
+    return false;
+  }
+  if (battle.correctAnswerFeedbackAdvanced) {
+    return false;
+  }
+
+  battle.correctAnswerFeedbackAdvanced = true;
+  els.continueBattleButton.classList.add("hidden");
+
+  if (BATTLE_FLOW_V2_CONFIG?.enabled) {
+    handleBattleFlowV2AnswerResolved(question, selectedAnswer, true);
+  } else {
+    battle.pendingBossAction = chooseActBossAction(battle);
+    showActCharmChoices();
+  }
+  return true;
 }
 
 function chooseActAnswer(option, selectedButton = null) {
@@ -11090,6 +11221,7 @@ function chooseActAnswer(option, selectedButton = null) {
     recordCorrectAnswerForGrammaria();
     battle.correctStreak = (battle.correctStreak || 0) + 1;
     const bonusGrammaria = consumeBattleEffectValue("nextCorrectBonusGrammaria", 0);
+    battle.pendingPlayerAnswer = buildBattleFlowV2AnswerState(question, option, true);
     battle.pendingPlayerAttack = {
       baseDamage: battle.damagePerCorrect,
       grammariaGain: 10 + bonusGrammaria
@@ -11126,8 +11258,10 @@ function chooseActAnswer(option, selectedButton = null) {
 
   if (BATTLE_FLOW_V2_CONFIG?.enabled) {
     if (isCorrect) {
+      battle.playerActionPhase = "correctAnswerFeedback";
+      battle.correctAnswerFeedbackAdvanced = false;
       els.battleMessage.textContent = BATTLE_CORRECT_SUCCESS_MESSAGE;
-      window.setTimeout(() => handleBattleFlowV2AnswerResolved(question, option, isCorrect), BATTLE_CORRECT_FEEDBACK_DELAY_MS);
+      showBattleContinueButton("ไปต่อ", () => continueBattleCorrectAnswerFeedback(question, option));
       return;
     }
     handleBattleFlowV2AnswerResolved(question, option, isCorrect);
@@ -11137,9 +11271,10 @@ function chooseActAnswer(option, selectedButton = null) {
   battle.pendingBossAction = chooseActBossAction(battle);
 
   if (isCorrect) {
+    battle.playerActionPhase = "correctAnswerFeedback";
+    battle.correctAnswerFeedbackAdvanced = false;
     els.battleMessage.textContent = BATTLE_CORRECT_SUCCESS_MESSAGE;
-    els.continueBattleButton.classList.add("hidden");
-    setTimeout(showActCharmChoices, BATTLE_CORRECT_FEEDBACK_DELAY_MS);
+    showBattleContinueButton("ไปต่อ", () => continueBattleCorrectAnswerFeedback(question, option));
     return;
   }
 
@@ -11306,15 +11441,7 @@ function handleBattleFlowV2AnswerResolved(question, selectedAnswer, isCorrect) {
     return;
   }
 
-  battle.pendingPlayerAnswer = {
-    questionId: question?.id || "",
-    isCorrect: Boolean(isCorrect),
-    selectedAnswer,
-    correctAnswer: question?.answer || question?.correctAnswer || "",
-    baseVerb: question?.baseVerb || "",
-    ruleId: question?.ruleId || "",
-    answeredAt: Date.now()
-  };
+  battle.pendingPlayerAnswer = buildBattleFlowV2AnswerState(question, selectedAnswer, isCorrect);
   battle.pendingPlayerAttack = {
     baseDamage: battle.pendingPlayerAttack?.baseDamage || battle.damagePerCorrect,
     grammariaGain: isCorrect ? (battle.pendingPlayerAttack?.grammariaGain || 10) : 0
@@ -11331,6 +11458,7 @@ function handleBattleFlowV2AnswerResolved(question, selectedAnswer, isCorrect) {
   }
 
   battle.playerActionPhase = "skillSelect";
+  battle.correctAnswerFeedbackAdvanced = true;
   battle.selectedSkillId = "";
   battle.selectedCharmId = "";
   battle.selectedChargePercent = 0;
@@ -14982,7 +15110,7 @@ function showBossQuestionStep() {
   setBattleTurnOwner("enemy");
   els.continueBattleButton.classList.add("hidden");
   els.battleMessage.textContent = "บอส: “ถ้าเจ้าจำอดีตผิด ความทรงจำก็จะแตกสลาย... ตอบข้ามา!”";
-  els.questionText.textContent = getQuestionText(question);
+  els.questionText.textContent = resolveBattleQuestionPrompt(question);
   els.answerOptions.innerHTML = "";
 
   question.options.forEach(option => {
