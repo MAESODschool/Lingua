@@ -4378,10 +4378,92 @@ function updateActActionMenuState() {
 
   const ap = getActAP();
   const canChoose = !battle.actionChoiceLocked && !isActBattleEnded(battle);
-  setButtonEnabled(els.attackButton, canChoose && ap >= 1);
+  setButtonEnabled(els.attackButton, canChoose && ap >= 1 && !battle.attackQuestionsExhausted);
   setButtonEnabled(els.itemButton, canChoose);
   setButtonEnabled(els.focusButton, canChoose);
   els.focusButton.classList.toggle("is-focus-hint", ap <= 0);
+}
+
+function clearBattleRecoveryActions() {
+  els.actionMenu?.querySelectorAll(".battle-recovery-action").forEach(button => button.remove());
+}
+
+function addBattleRecoveryAction(label, onClick, className = "action-button") {
+  if (!els.actionMenu) {
+    return;
+  }
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `${className} battle-recovery-action`;
+  button.textContent = label;
+  button.addEventListener("click", event => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (button.disabled) {
+      return;
+    }
+    button.disabled = true;
+    onClick();
+  });
+  els.actionMenu.appendChild(button);
+}
+
+function restartCurrentActBattle() {
+  const battle = state.actBattle;
+  const stage = battle?.stage;
+  const stageIndex = getStageIndexById(stage?.id);
+  if (!battle || !stage || stageIndex < 0) {
+    return;
+  }
+
+  const returnContext = battle.returnContext || createFallbackBattleReturnContext(stage, {
+    stageId: stage.id,
+    reviewDialogueIndex: battle.reviewDialogueIndex,
+    reviewLessonStepIndex: battle.reviewLessonStepIndex
+  });
+  state.pendingBattleReturnContext = returnContext;
+  cleanupBossHeavyAttackChain({ clearParryUi: true });
+  cleanupBattleInputState();
+  cleanupBattleSkillEffects();
+  resetBattleContinueControls();
+  resetBattleActiveEffects();
+  clearBattleRecoveryActions();
+  state.actBattle = null;
+  state.currentBattleStats = null;
+  state.currentQuestion = null;
+  state.parryAttack = null;
+  runSceneTransition("เริ่ม battle ใหม่...", () => startActBattle(stageIndex));
+}
+
+function showBattleQuestionExhaustedRecovery(message = "") {
+  const battle = state.actBattle;
+  if (!battle) {
+    return;
+  }
+
+  battle.advanceQuestionOnContinue = false;
+  battle.actionChoiceLocked = false;
+  battle.currentQuestion = null;
+  battle.currentFocusQuestion = null;
+  battle.attackQuestionsExhausted = true;
+  setBattleTurnOwner("player");
+  showOnlyBattlePanel(els.actionMenu);
+  clearBattleRecoveryActions();
+  els.battleMessage.textContent = message ||
+    "โจทย์โจมตีใน battle นี้ถูกใช้ครบแล้ว ไม่มีการวนคำถามซ้ำ เลือกตั้งสมาธิ สู้ใหม่ หรือกลับไปบทเรียน";
+  if (els.activityFeedback) {
+    els.activityFeedback.textContent = "ระบบยังไม่วนโจทย์ซ้ำใน battle เดิม แต่มีทางเลือกให้กู้สถานการณ์ได้";
+  }
+
+  addBattleRecoveryAction("ตั้งสมาธิ", () => {
+    battle.actionChoiceLocked = false;
+    chooseActPlayerActionOnce(startActFocusAction);
+  });
+  addBattleRecoveryAction("เริ่ม battle ใหม่", restartCurrentActBattle);
+  addBattleRecoveryAction("กลับไปบทเรียน", () => {
+    runSceneTransition("กลับสู่บทเรียน...", exitBattleToReturnContext);
+  });
+  updateActActionMenuState();
 }
 
 function canChooseActPlayerAction() {
@@ -4435,6 +4517,15 @@ function beginActPlayerTurn(message = "", options = {}) {
   battle.awaitingParry = false;
   battle.awaitingPrepare = false;
   battle.playerActionPhase = "question";
+  battle.currentQuestion = null;
+  battle.currentFocusQuestion = null;
+  battle.attackQuestionsExhausted = !hasAvailableBattleQuestion(battle.stage, "attack");
+  if (battle.attackQuestionsExhausted) {
+    showBattleQuestionExhaustedRecovery("โจทย์โจมตีใน battle นี้ถูกใช้ครบแล้ว ไม่มีการวนคำถามซ้ำ เลือกตั้งสมาธิ สู้ใหม่ หรือกลับไปบทเรียน");
+    updateBattleStats();
+    return;
+  }
+  clearBattleRecoveryActions();
   showOnlyBattlePanel(els.actionMenu);
   resetBattleContinueControls();
   els.continueBattleButton.classList.add("hidden");
@@ -4595,7 +4686,7 @@ function markBattleQuestionIdsAsUsed(ids, battle = state.actBattle) {
   });
 }
 
-function pickUnusedBattleQuestion(pool, {
+function pickUnusedBattleQuestionEntry(pool, {
   battle = state.actBattle,
   usedSet = null,
   lastBaseVerb = "",
@@ -4625,7 +4716,288 @@ function pickUnusedBattleQuestion(pool, {
     return !baseWord || baseWord !== normalizedLastBaseVerb;
   });
   const finalCandidates = withoutSameVerb.length ? withoutSameVerb : candidates;
-  return sample(finalCandidates.map(item => item.question), 1)[0] || null;
+  return sample(finalCandidates, 1)[0] || null;
+}
+
+function pickUnusedBattleQuestion(pool, options = {}) {
+  return pickUnusedBattleQuestionEntry(pool, options)?.question || null;
+}
+
+function makeStageReviewQuestion(stageId, ruleId, id, prompt, options, answer, explanation = "") {
+  return {
+    id: `review-${stageId}-${id}`,
+    lessonId: stageId,
+    ruleId,
+    prompt,
+    options,
+    answer,
+    explanation
+  };
+}
+
+function getStageTopicReviewQuestions(stage) {
+  const stageId = stage?.id || "";
+  const reviewBanks = {
+    "what-is-past": [
+      makeStageReviewQuestion(stageId, "pastMeaning", "finished-1", "ข้อใดพูดถึงสิ่งที่เกิดขึ้นแล้ว?", ["yesterday", "tomorrow", "next week", "soon"], "yesterday", "yesterday ใช้พูดถึงอดีต"),
+      makeStageReviewQuestion(stageId, "pastMeaning", "finished-2", "Past หมายถึงอะไร?", ["เกิดขึ้นแล้ว", "กำลังเกิด", "ยังไม่เกิด", "จะเกิดพรุ่งนี้"], "เกิดขึ้นแล้ว", "Past คือสิ่งที่เกิดขึ้นแล้ว"),
+      makeStageReviewQuestion(stageId, "pastMeaning", "finished-3", "Which sentence is about the past?", ["I played yesterday.", "I will play tomorrow.", "I play every day.", "I am playing now."], "I played yesterday.", "yesterday บอกว่าเหตุการณ์เกิดขึ้นแล้ว"),
+      makeStageReviewQuestion(stageId, "pastMeaning", "finished-4", "คำว่า ago มักใช้กับเวลาใด?", ["อดีต", "อนาคต", "ตอนนี้", "ทุกวัน"], "อดีต", "ago เป็นสัญญาณของอดีต"),
+      makeStageReviewQuestion(stageId, "pastMeaning", "finished-5", "ข้อใดเป็น finished time?", ["last night", "now", "soon", "next month"], "last night", "last night เป็นเวลาที่ผ่านไปแล้ว"),
+      makeStageReviewQuestion(stageId, "pastMeaning", "finished-6", "Long ago ใช้เล่าเรื่องเวลาใด?", ["อดีต", "ปัจจุบัน", "อนาคต", "ทุกเช้า"], "อดีต", "Long ago แปลว่านานมาแล้ว"),
+      makeStageReviewQuestion(stageId, "pastMeaning", "finished-7", "ข้อใดเกิดก่อนตอนนี้?", ["I cooked breakfast this morning.", "I will cook tonight.", "I am cooking now.", "I cook every day."], "I cooked breakfast this morning.", "cooked this morning บอกว่าเกิดแล้ว"),
+      makeStageReviewQuestion(stageId, "pastMeaning", "finished-8", "อดีตใช้เล่าเหตุการณ์แบบใด?", ["จบแล้ว", "ยังไม่เริ่ม", "กำลังทำตอนนี้", "จะทำพรุ่งนี้"], "จบแล้ว", "อดีตคือเหตุการณ์ที่จบแล้ว"),
+      makeStageReviewQuestion(stageId, "pastMeaning", "finished-9", "Which word often shows a past story?", ["once", "soon", "now", "tomorrow"], "once", "once ใช้เปิดเรื่องเล่าในอดีตได้"),
+      makeStageReviewQuestion(stageId, "pastMeaning", "finished-10", "ข้อใดไม่ใช่อดีต?", ["next summer", "last summer", "yesterday", "two hours ago"], "next summer", "next summer เป็นอนาคต")
+    ],
+    "what-is-tense": [
+      makeStageReviewQuestion(stageId, "pastTimeWords", "time-1", "ข้อใดเป็นคำบอกเวลาอดีต?", ["last week", "next week", "now", "soon"], "last week", "last week เป็นอดีต"),
+      makeStageReviewQuestion(stageId, "pastTimeWords", "time-2", "Which one shows past time?", ["two days ago", "tomorrow", "next year", "right now"], "two days ago", "ago บอกว่าเกิดขึ้นแล้ว"),
+      makeStageReviewQuestion(stageId, "pastTimeWords", "time-3", "Yesterday evening คือเวลาใด?", ["อดีต", "อนาคต", "ตอนนี้", "ทุกวัน"], "อดีต", "yesterday evening คือเมื่อวานตอนเย็น"),
+      makeStageReviewQuestion(stageId, "pastTimeWords", "time-4", "ข้อใดไม่ใช่ past time expression?", ["next Friday", "last summer", "long ago", "in 2020"], "next Friday", "next Friday เป็นอนาคต"),
+      makeStageReviewQuestion(stageId, "pastTimeWords", "time-5", "in 2018 ใช้เล่าเรื่องเวลาใด?", ["อดีต", "อนาคต", "ตอนนี้", "ทุกวัน"], "อดีต", "ปี 2018 ผ่านไปแล้ว"),
+      makeStageReviewQuestion(stageId, "pastTimeWords", "time-6", "When I was a child พูดถึงเวลาใด?", ["อดีต", "อนาคต", "ตอนนี้", "พรุ่งนี้"], "อดีต", "วลีนี้พูดถึงช่วงวัยเด็กที่ผ่านมาแล้ว"),
+      makeStageReviewQuestion(stageId, "pastTimeWords", "time-7", "ข้อใดแปลว่า เมื่อวาน?", ["yesterday", "tomorrow", "today", "soon"], "yesterday", "yesterday แปลว่าเมื่อวาน"),
+      makeStageReviewQuestion(stageId, "pastTimeWords", "time-8", "ข้อใดแปลว่า เมื่อคืน?", ["last night", "next night", "tonight", "every night"], "last night", "last night แปลว่าเมื่อคืน"),
+      makeStageReviewQuestion(stageId, "pastTimeWords", "time-9", "ข้อใดใช้กับ Past Simple ได้?", ["last Monday", "next Monday", "now", "soon"], "last Monday", "last Monday เป็นเวลาที่ผ่านไปแล้ว"),
+      makeStageReviewQuestion(stageId, "pastTimeWords", "time-10", "ago แปลว่าอะไรโดยรวม?", ["มาแล้ว", "ต่อไป", "ตอนนี้", "ทุกครั้ง"], "มาแล้ว", "ago แปลว่า ผ่านมาแล้ว")
+    ],
+    "act1_phase1_unit3_was_were": [
+      makeStageReviewQuestion(stageId, "wasWere", "was-1", "ตั้งสมาธิ: he/she/it ใช้อะไรในอดีต?", ["was", "were", "are", "am"], "was", "he/she/it ใช้ was"),
+      makeStageReviewQuestion(stageId, "wasWere", "was-2", "ตั้งสมาธิ: you/we/they ใช้อะไรในอดีต?", ["were", "was", "is", "am"], "were", "you/we/they ใช้ were"),
+      makeStageReviewQuestion(stageId, "wasWere", "was-3", "She ____ happy yesterday.", ["was", "were", "are", "am"], "was", "She ใช้ was"),
+      makeStageReviewQuestion(stageId, "wasWere", "was-4", "They ____ late last night.", ["were", "was", "is", "am"], "were", "They ใช้ were"),
+      makeStageReviewQuestion(stageId, "wasWere", "was-5", "I ____ at home yesterday.", ["was", "were", "are", "be"], "was", "I ใช้ was ในอดีต"),
+      makeStageReviewQuestion(stageId, "wasWere", "was-6", "ข้อใดถูกต้อง?", ["We were ready.", "We was ready.", "We is ready.", "We am ready."], "We were ready.", "We ใช้ were"),
+      makeStageReviewQuestion(stageId, "wasWere", "was-7", "He ____ at school last week.", ["was", "were", "are", "am"], "was", "He ใช้ was"),
+      makeStageReviewQuestion(stageId, "wasWere", "was-8", "You ____ brave yesterday.", ["were", "was", "is", "am"], "were", "You ใช้ were"),
+      makeStageReviewQuestion(stageId, "wasWere", "was-9", "The crystal ____ bright.", ["was", "were", "are", "be"], "was", "The crystal เป็นสิ่งเดียว ใช้ was"),
+      makeStageReviewQuestion(stageId, "wasWere", "was-10", "The students ____ quiet.", ["were", "was", "is", "am"], "were", "The students มีหลายคน ใช้ were")
+    ],
+    "act1_phase1_unit4_there_was_were": [
+      makeStageReviewQuestion(stageId, "thereWasWere", "there-1", "There ____ one key on the table.", ["was", "were", "are", "be"], "was", "one key เป็นสิ่งเดียว ใช้ was"),
+      makeStageReviewQuestion(stageId, "thereWasWere", "there-2", "There ____ many books in the hall.", ["were", "was", "is", "am"], "were", "many books เป็นหลายสิ่ง ใช้ were"),
+      makeStageReviewQuestion(stageId, "thereWasWere", "there-3", "There was ใช้กับอะไร?", ["สิ่งเดียว", "หลายสิ่ง", "อนาคต", "ทุกวัน"], "สิ่งเดียว", "There was ใช้กับเอกพจน์ในอดีต"),
+      makeStageReviewQuestion(stageId, "thereWasWere", "there-4", "There were ใช้กับอะไร?", ["หลายสิ่ง", "สิ่งเดียว", "I", "he"], "หลายสิ่ง", "There were ใช้กับพหูพจน์ในอดีต"),
+      makeStageReviewQuestion(stageId, "thereWasWere", "there-5", "ข้อใดถูกต้อง?", ["There were two doors.", "There was two doors.", "There is two doors.", "There am two doors."], "There were two doors.", "two doors มีหลายบาน"),
+      makeStageReviewQuestion(stageId, "thereWasWere", "there-6", "ข้อใดถูกต้อง?", ["There was a lantern.", "There were a lantern.", "There are a lantern.", "There be a lantern."], "There was a lantern.", "a lantern เป็นสิ่งเดียว"),
+      makeStageReviewQuestion(stageId, "thereWasWere", "there-7", "There ____ three clocks.", ["were", "was", "is", "be"], "were", "three clocks มีหลายเรือน"),
+      makeStageReviewQuestion(stageId, "thereWasWere", "there-8", "There ____ a small cave.", ["was", "were", "are", "be"], "was", "a small cave เป็นสิ่งเดียว"),
+      makeStageReviewQuestion(stageId, "thereWasWere", "there-9", "ข้อใดใช้กับ many stars?", ["There were many stars.", "There was many stars.", "There is many stars.", "There am many stars."], "There were many stars.", "many stars เป็นพหูพจน์"),
+      makeStageReviewQuestion(stageId, "thereWasWere", "there-10", "ข้อใดใช้กับ one scroll?", ["There was one scroll.", "There were one scroll.", "There are one scroll.", "There be one scroll."], "There was one scroll.", "one scroll เป็นเอกพจน์")
+    ],
+    "act1_phase1_unit5_had": [
+      makeStageReviewQuestion(stageId, "hadPast", "had-1", "have ในอดีตคืออะไร?", ["had", "haved", "has", "having"], "had", "have ในอดีตใช้ had"),
+      makeStageReviewQuestion(stageId, "hadPast", "had-2", "has ในอดีตคืออะไร?", ["had", "hased", "have", "having"], "had", "has ในอดีตก็ใช้ had"),
+      makeStageReviewQuestion(stageId, "hadPast", "had-3", "She ____ a map yesterday.", ["had", "has", "have", "having"], "had", "yesterday เป็นอดีต จึงใช้ had"),
+      makeStageReviewQuestion(stageId, "hadPast", "had-4", "They ____ lunch last Monday.", ["had", "have", "has", "having"], "had", "ทุกประธานใช้ had ในอดีต"),
+      makeStageReviewQuestion(stageId, "hadPast", "had-5", "had ใช้กับประธานใดในอดีต?", ["ทุกประธาน", "เฉพาะ he", "เฉพาะ they", "เฉพาะ I"], "ทุกประธาน", "ในอดีตใช้ had ได้กับทุกประธาน"),
+      makeStageReviewQuestion(stageId, "hadPast", "had-6", "ข้อใดถูกต้อง?", ["We had a test yesterday.", "We has a test yesterday.", "We have a test yesterday.", "We having a test yesterday."], "We had a test yesterday.", "yesterday บอกอดีต ใช้ had"),
+      makeStageReviewQuestion(stageId, "hadPast", "had-7", "He ____ a blue crystal last night.", ["had", "has", "have", "having"], "had", "last night เป็นอดีต ใช้ had"),
+      makeStageReviewQuestion(stageId, "hadPast", "had-8", "I ____ a small bag yesterday.", ["had", "have", "has", "having"], "had", "I ในอดีตใช้ had"),
+      makeStageReviewQuestion(stageId, "hadPast", "had-9", "has/have ใน Past Simple เปลี่ยนเป็นอะไร?", ["had", "haved", "has", "have"], "had", "ทั้ง has และ have ใช้ had ในอดีต"),
+      makeStageReviewQuestion(stageId, "hadPast", "had-10", "ข้อใดถูกต้อง?", ["They had a key.", "They has a key.", "They have a key yesterday.", "They having a key."], "They had a key.", "ในอดีตใช้ had")
+    ]
+  };
+  if (reviewBanks[stageId]) {
+    return reviewBanks[stageId];
+  }
+
+  const makeVerbReviewQuestions = (items, ruleId, limit = 12) =>
+    (items || []).slice(0, limit).map(([verb, answer, distractors = []], index) =>
+      makeStageReviewQuestion(
+        stageId,
+        ruleId,
+        `${ruleId}-${verb}-${index}`,
+        `ตั้งสมาธิ: ${verb} เปลี่ยนเป็นอดีตอย่างไร?`,
+        [answer, ...distractors].slice(0, 4),
+        answer,
+        `${verb} ในอดีตคือ ${answer}`
+      )
+    );
+
+  const dynamicReviewBanks = {
+    "regular-rule-1": () => makeVerbReviewQuestions(regularVerbBanks.addEd, "regular_ed"),
+    "regular-rule-2": () => makeVerbReviewQuestions(regularVerbBanks.endingE, "ending_e_add_d"),
+    "regular-rule-3": () => makeVerbReviewQuestions(regularVerbBanks.endingY, "y_rule"),
+    "regular-rule-4": () => makeVerbReviewQuestions(regularVerbBanks.doubleCvc, "cvc_double"),
+    "ed-mini-boss": () => [
+      ...makeVerbReviewQuestions(regularVerbBanks.addEd, "regular_ed", 8),
+      ...makeVerbReviewQuestions(regularVerbBanks.endingE, "ending_e_add_d", 8),
+      ...makeVerbReviewQuestions(regularVerbBanks.endingY, "y_rule", 8),
+      ...makeVerbReviewQuestions(regularVerbBanks.doubleCvc, "cvc_double", 8)
+    ],
+    "irregular-lesson": () => makeVerbReviewQuestions(irregularVerbBank, "irregular_v2", 18),
+    "irregular-mini-boss": () => makeVerbReviewQuestions(irregularVerbBank.slice(10), "irregular_v2", 32),
+    "final-boss": () => [
+      ...makeVerbReviewQuestions(regularVerbBanks.addEd, "regular_ed", 8),
+      ...makeVerbReviewQuestions(regularVerbBanks.endingE, "ending_e_add_d", 8),
+      ...makeVerbReviewQuestions(regularVerbBanks.endingY, "y_rule", 8),
+      ...makeVerbReviewQuestions(regularVerbBanks.doubleCvc, "cvc_double", 8),
+      ...makeVerbReviewQuestions(irregularVerbBank, "irregular_v2", 28)
+    ]
+  };
+  if (dynamicReviewBanks[stageId]) {
+    return dynamicReviewBanks[stageId]();
+  }
+  return reviewBanks[stageId] || [];
+}
+
+function normalizeBattleQuestionPool(pool, stage, source) {
+  const stageId = stage?.id || "stage";
+  const seenIds = new Set();
+  return filterQuestionsForStage(pool || [], stage).map((question, index) => {
+    const baseId = question.id || getQuestionId(question, index, `${source}-${stageId}`);
+    const id = seenIds.has(baseId) ? `${baseId}-${index}` : baseId;
+    seenIds.add(id);
+    return { ...question, id };
+  });
+}
+
+function getExpandedStageQuestionPool(stage, context = "attack") {
+  if (!stage) {
+    return [];
+  }
+  const stageId = stage.id || "";
+  const banksByStage = {
+    "what-is-past": [phase1PastMeaningQuestions, phase1PastTimeWordsQuestions, getStageTopicReviewQuestions(stage)],
+    "what-is-tense": [phase1PastTimeWordsQuestions, phase1PastMeaningQuestions, getStageTopicReviewQuestions(stage)],
+    "act1_phase1_unit3_was_were": [phase1WasWereQuestions, getStageTopicReviewQuestions(stage)],
+    "act1_phase1_unit4_there_was_were": [phase1ThereWasWereQuestions, getStageTopicReviewQuestions(stage)],
+    "act1_phase1_unit5_had": [phase1HadQuestions, getStageTopicReviewQuestions(stage)],
+    "regular-rule-1": [regularRuleOneQuestions, sentenceQuestionBanks.regularEd],
+    "regular-rule-2": [regularRuleTwoQuestions, sentenceQuestionBanks.endingE],
+    "regular-rule-3": [regularRuleThreeQuestions, sentenceQuestionBanks.endingY],
+    "regular-rule-4": [regularRuleFourQuestions, sentenceQuestionBanks.doubleCvc],
+    "ed-mini-boss": [edForgerQuestions, bossQuestionBanks.edForger],
+    "irregular-lesson": [irregularPracticeQuestions, sentenceQuestionBanks.irregular],
+    "irregular-mini-boss": [irregularWraithQuestions, bossQuestionBanks.irregularWraith],
+    "final-boss": [
+      finalBossQuestions,
+      bossQuestionBanks.memoryBreaker,
+      regularRuleOneQuestions,
+      regularRuleTwoQuestions,
+      regularRuleThreeQuestions,
+      regularRuleFourQuestions,
+      irregularPracticeQuestions,
+      irregularWraithQuestions,
+      bossQuestionBanks.edForger,
+      bossQuestionBanks.irregularWraith
+    ]
+  };
+  const rawPool = (banksByStage[stageId] || [stage.questions || [], getStageTopicReviewQuestions(stage)])
+    .flat()
+    .filter(Boolean);
+  return normalizeBattleQuestionPool(rawPool, stage, `${context}-reserve`);
+}
+
+function getStageBattleQuestionPool(stage, context = "attack") {
+  if (!stage) {
+    return [];
+  }
+  const rawPool = Array.isArray(stage.questions) ? stage.questions : [];
+  return normalizeBattleQuestionPool(rawPool, stage, `${context}-stage`);
+}
+
+function getStageFocusQuestionPool(stage) {
+  if (!stage) {
+    return [];
+  }
+  const bossKey = getBossKey(stage);
+  const bossBank = bossKey && bossQuestionBanks[bossKey] ? bossQuestionBanks[bossKey] : [];
+  return normalizeBattleQuestionPool([
+    ...getStageTopicReviewQuestions(stage),
+    ...getExpandedStageQuestionPool(stage, "focus"),
+    ...bossBank
+  ], stage, "focus");
+}
+
+function pickBattleQuestionWithFallback(stage, context = "attack") {
+  const battle = state.actBattle;
+  if (!battle || !stage) {
+    return {
+      question: null,
+      index: -1,
+      source: "none",
+      prefix: `${context}-none`,
+      exhausted: true
+    };
+  }
+
+  const sources = [
+    {
+      source: "stage",
+      prefix: `${context}-stage-${stage.id || "stage"}`,
+      questions: getStageBattleQuestionPool(stage, context)
+    },
+    {
+      source: "reserve",
+      prefix: `${context}-reserve-${stage.id || "stage"}`,
+      questions: getExpandedStageQuestionPool(stage, context)
+    }
+  ];
+
+  if (context === "focus") {
+    sources.unshift({
+      source: "focus-review",
+      prefix: `focus-review-${stage.id || "stage"}`,
+      questions: getStageFocusQuestionPool(stage)
+    });
+  }
+
+  const usedSet = context === "focus" ? battle.usedFocusQuestionIds : battle.usedQuestionIds;
+  const lastBaseVerb = context === "focus" ? battle.lastFocusQuestionBaseVerb : battle.lastQuestionBaseVerb;
+
+  for (const sourceData of sources) {
+    const entry = pickUnusedBattleQuestionEntry(sourceData.questions, {
+      battle,
+      usedSet,
+      lastBaseVerb: lastBaseVerb || "",
+      prefix: sourceData.prefix
+    });
+    if (entry?.question) {
+      return {
+        question: entry.question,
+        index: entry.index,
+        source: sourceData.source,
+        prefix: sourceData.prefix,
+        exhausted: false
+      };
+    }
+  }
+
+  return {
+    question: null,
+    index: -1,
+    source: "exhausted",
+    prefix: `${context}-exhausted-${stage.id || "stage"}`,
+    exhausted: true
+  };
+}
+
+function hasAvailableBattleQuestion(stage, context = "attack") {
+  return Boolean(pickBattleQuestionWithFallback(stage, context)?.question);
+}
+
+function getFocusRecoveryQuestion(stage) {
+  const battle = state.actBattle;
+  const recoveryPool = normalizeBattleQuestionPool(getStageTopicReviewQuestions(stage), stage, "focus-recovery");
+  if (!battle || !recoveryPool.length) {
+    return null;
+  }
+
+  if (!Array.isArray(battle.recentFocusRecoveryIds)) {
+    battle.recentFocusRecoveryIds = [];
+  }
+
+  const preferred = recoveryPool.filter(question => question.id !== battle.lastFocusRecoveryQuestionId);
+  const pool = preferred.length ? preferred : recoveryPool;
+  const question = sample(pool, 1)[0];
+  return question ? {
+    ...question,
+    isFocusRecoveryFallback: true,
+    skipBattleHistoryMark: true
+  } : null;
 }
 
 function pickQuestion(pool, usedSet, lastBaseVerb = "") {
@@ -11347,13 +11719,16 @@ function startActBattle(stageIndex) {
     usedQuestionIds: new Set(),
     lastQuestionBaseVerb: "",
     currentQuestion: null,
+    attackQuestionsExhausted: false,
     usedBossQuestionIds: new Set(),
     lastBossQuestionBaseVerb: "",
     usedFocusQuestionIds: new Set(),
     lastFocusQuestionId: "",
     lastFocusQuestionBaseVerb: "",
+    lastFocusRecoveryQuestionId: "",
     focusQuestionIndex: 0,
     recentFocusQuestionIds: [],
+    recentFocusRecoveryIds: [],
     simpleIrregularStreak: 0,
     bossStunned: false,
     bossWasStunnedLastTurn: false,
@@ -11413,6 +11788,11 @@ function startActAttackAction() {
     return;
   }
 
+  if (!hasAvailableBattleQuestion(battle.stage, "attack")) {
+    showBattleQuestionExhaustedRecovery("โจทย์โจมตีใน battle นี้ถูกใช้ครบแล้ว ไม่มีการวนคำถามซ้ำ เลือกตั้งสมาธิ สู้ใหม่ หรือกลับไปบทเรียน");
+    return;
+  }
+
   if (BATTLE_FLOW_V2_CONFIG.enabled) {
     battle.playerActionPhase = "question";
     battle.pendingPlayerAnswer = null;
@@ -11458,16 +11838,28 @@ function startActFocusAction() {
 
   const rawFocusQuestion = getFocusQuestion(battle.stage);
   if (!rawFocusQuestion) {
-    els.battleMessage.textContent = "สมาธิยังไม่ก่อรูป ไม่มีคำถามสำหรับรวบรวม Grammaria ในตอนนี้";
-    beginActPlayerTurn("ไม่มีคำถามสำหรับนั่งสมาธิ ลองเลือกการกระทำอื่น");
+    battle.actionChoiceLocked = false;
+    showBattleQuestionExhaustedRecovery("ระบบคำถามตั้งสมาธิขัดข้องชั่วคราว เลือกสู้ใหม่หรือกลับไปบทเรียน");
     return;
   }
 
   const focusQuestion = prepareQuestion(rawFocusQuestion, battle.focusQuestionIndex || 0);
   battle.currentFocusQuestion = focusQuestion;
-  markBattleQuestionUsed(focusQuestion, battle, battle.focusQuestionIndex || 0, "focus");
+  const focusPrefix = rawFocusQuestion.isFocusRecoveryFallback
+    ? `focus-recovery-${battle.stage?.id || "stage"}`
+    : `focus-${battle.stage?.id || "stage"}`;
+  if (!rawFocusQuestion.skipBattleHistoryMark) {
+    markBattleQuestionUsed(focusQuestion, battle, battle.focusQuestionIndex || 0, focusPrefix);
+  }
   battle.usedFocusQuestionIds.add(focusQuestion.id);
   battle.lastFocusQuestionId = focusQuestion.id;
+  if (rawFocusQuestion.isFocusRecoveryFallback) {
+    battle.lastFocusRecoveryQuestionId = focusQuestion.id;
+    battle.recentFocusRecoveryIds = [
+      ...(battle.recentFocusRecoveryIds || []),
+      focusQuestion.id
+    ].slice(-5);
+  }
   battle.lastFocusQuestionBaseVerb = getQuestionBaseWord(focusQuestion);
   battle.focusQuestionIndex = (battle.focusQuestionIndex || 0) + 1;
   battle.recentFocusQuestionIds = [
@@ -11563,29 +11955,18 @@ function showActBattleQuestion() {
   battle.answerResolving = false;
   battle.correctAnswerFeedbackAdvanced = false;
   battle.advanceQuestionOnContinue = true;
-  const rawQuestion = pickUnusedBattleQuestion(battle.stage.questions, {
-    battle,
-    usedSet: battle.usedQuestionIds,
-    lastBaseVerb: battle.lastQuestionBaseVerb || "",
-    prefix: `player-${battle.stage.id || "stage"}`
-  });
+  clearBattleRecoveryActions();
+  const picked = pickBattleQuestionWithFallback(battle.stage, "attack");
+  const rawQuestion = picked.question;
   if (!rawQuestion) {
-    battle.advanceQuestionOnContinue = false;
-    battle.actionChoiceLocked = false;
-    battle.currentQuestion = null;
-    showOnlyBattlePanel(els.actionMenu);
-    setBattleTurnOwner("player");
-    els.battleMessage.textContent = "โจทย์ใหม่ใน battle นี้ถูกใช้ครบแล้ว ไม่มีการวนคำถามซ้ำ เลือกการกระทำอื่นหรือกลับมาเริ่ม battle ใหม่";
-    if (els.activityFeedback) {
-      els.activityFeedback.textContent = "ระบบกันคำถามซ้ำกำลังป้องกันไม่ให้เจอโจทย์เดิมใน battle เดียวกัน";
-    }
-    updateActActionMenuState();
+    showBattleQuestionExhaustedRecovery("โจทย์โจมตีใน battle นี้ถูกใช้ครบแล้ว ไม่มีการวนคำถามซ้ำ เลือกตั้งสมาธิ สู้ใหม่ หรือกลับไปบทเรียน");
     return;
   }
-  const rawQuestionIndex = battle.stage.questions.indexOf(rawQuestion);
+  battle.attackQuestionsExhausted = false;
+  const rawQuestionIndex = Math.max(0, picked.index);
   const question = prepareQuestion(rawQuestion, rawQuestionIndex);
   battle.currentQuestion = question;
-  markBattleQuestionUsed(question, battle, rawQuestionIndex, `player-${battle.stage.id || "stage"}`);
+  markBattleQuestionUsed(question, battle, rawQuestionIndex, picked.prefix || `player-${battle.stage.id || "stage"}`);
   battle.lastQuestionBaseVerb = question.baseVerb || "";
   battle.usedQuestionIds.add(question.id);
   battle.pendingPlayerAttack = null;
@@ -13513,25 +13894,6 @@ function getFocusQuestion(stage) {
     return null;
   }
 
-  const stageQuestions = Array.isArray(stage.questions) ? stage.questions : [];
-  const bossKey = getBossKey(stage);
-  const bossBank = bossKey && bossQuestionBanks[bossKey]
-    ? filterQuestionsForStage(bossQuestionBanks[bossKey], stage)
-    : [];
-  const rawPool = [...stageQuestions, ...bossBank].filter(Boolean);
-
-  if (!rawPool.length) {
-    return null;
-  }
-
-  const seenIds = new Set();
-  const normalizedPool = rawPool.map((question, index) => {
-    const baseId = getQuestionId(question, index, `focus-${stage.id || "stage"}`);
-    const id = seenIds.has(baseId) ? `${baseId}-${index}` : baseId;
-    seenIds.add(id);
-    return { ...question, id };
-  });
-
   if (!battle.usedFocusQuestionIds) {
     battle.usedFocusQuestionIds = new Set();
   }
@@ -13539,12 +13901,12 @@ function getFocusQuestion(stage) {
     battle.recentFocusQuestionIds = [];
   }
 
-  return pickUnusedBattleQuestion(normalizedPool, {
-    battle,
-    usedSet: battle.usedFocusQuestionIds,
-    lastBaseVerb: battle.lastFocusQuestionBaseVerb || "",
-    prefix: `focus-${stage.id || "stage"}`
-  });
+  const picked = pickBattleQuestionWithFallback(stage, "focus");
+  if (picked.question) {
+    return picked.question;
+  }
+
+  return getFocusRecoveryQuestion(stage);
 }
 
 function normalizeEnemyQuestionBank(questions, stage, source) {
