@@ -8,8 +8,10 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 import {
   getFirestore,
+  collection,
   doc,
   getDoc,
+  getDocs,
   setDoc,
   updateDoc,
   serverTimestamp
@@ -20,6 +22,7 @@ const scenes = {
   login: document.getElementById("loginScene"),
   mainMenu: document.getElementById("mainMenuScene"),
   createCharacter: document.getElementById("createCharacterScene"),
+  teacherDashboard: document.getElementById("teacherDashboardScene"),
   title: document.getElementById("titleScene"),
   story: document.getElementById("storyScene"),
   battle: document.getElementById("battleScene"),
@@ -2393,6 +2396,11 @@ const AUTH_COPY = {
   remoteLoginFailed: "ไม่พบบัญชีนี้ หรือ PIN ไม่ถูกต้อง"
 };
 
+// Phase 1 classroom lock only. For production, replace with role-based
+// authentication and Firestore Security Rules.
+const TEACHER_DASHBOARD_PASSWORD_SHA256 = "a7de104f0b12981b915fa47aeaf20917a92e3908269dafb9de1ecd819b2f8df8";
+let teacherDashboardStudents = [];
+
 function isRemoteAuthConfigured() {
   return Boolean(
     REMOTE_AUTH_CONFIG.enabled &&
@@ -2416,6 +2424,130 @@ function getRegisterBetaCodeValue() {
     return els.registerBetaCode?.value || "";
   }
   return AUTH_CONFIG.betaCode;
+}
+
+function createTimestampIso() {
+  return new Date().toISOString();
+}
+
+function normalizeClassGroupKey(classLevel = "", room = "") {
+  const levelNumber = String(classLevel).replace(/[^\d]/g, "");
+  return levelNumber && room ? `m${levelNumber}_${room}` : "";
+}
+
+function buildClassGroup(classLevel = "", room = "") {
+  return classLevel && room ? `${classLevel}/${room}` : "";
+}
+
+function buildStudentProfile({
+  fullName,
+  classLevel,
+  room,
+  studentNo,
+  existingProfile = {}
+}) {
+  const cleanFullName = (fullName || "").trim();
+  const cleanClassLevel = (classLevel || "").trim();
+  const cleanRoom = String(room || "").trim();
+  const studentSortKey = Number(studentNo);
+  const now = createTimestampIso();
+  return {
+    ...(existingProfile || {}),
+    fullName: cleanFullName,
+    classLevel: cleanClassLevel,
+    room: cleanRoom,
+    studentNo: String(studentSortKey),
+    classGroup: buildClassGroup(cleanClassLevel, cleanRoom),
+    classGroupKey: normalizeClassGroupKey(cleanClassLevel, cleanRoom),
+    studentSortKey,
+    createdAt: existingProfile?.createdAt || now,
+    updatedAt: now
+  };
+}
+
+function hasCompleteStudentProfile(profile = null) {
+  const studentNo = Number(profile?.studentSortKey ?? profile?.studentNo);
+  return Boolean(
+    profile?.fullName &&
+    profile?.classLevel &&
+    profile?.room &&
+    Number.isInteger(studentNo) &&
+    studentNo >= 1 &&
+    studentNo <= 60
+  );
+}
+
+function formatStudentInfoLine(profile = null) {
+  if (!hasCompleteStudentProfile(profile)) {
+    return "";
+  }
+  return `${profile.classGroup} เลขที่ ${Number(profile.studentSortKey ?? profile.studentNo)}`;
+}
+
+function getStudentProfileFromPlayer(data = playerData) {
+  return data?.studentProfile || data?.progress?.playerProfile?.studentProfile || null;
+}
+
+function validateStudentProfileForm() {
+  const fullName = (els.studentFullNameInput?.value || "").trim();
+  const classLevel = els.studentClassLevelSelect?.value || "";
+  const room = els.studentRoomSelect?.value || "";
+  const studentNoRaw = (els.studentNoInput?.value || "").trim();
+  const studentNo = Number(studentNoRaw);
+  const characterName = (els.characterNameInput?.value || "").trim();
+  const characterChoice = document.querySelector("input[name=\"avatarGender\"]:checked");
+
+  if (!fullName) {
+    return { valid: false, message: "กรุณากรอกชื่อ-สกุล" };
+  }
+  if (!classLevel) {
+    return { valid: false, message: "กรุณาเลือกระดับชั้น" };
+  }
+  if (!room) {
+    return { valid: false, message: "กรุณาเลือกห้อง" };
+  }
+  if (!studentNoRaw || !Number.isInteger(studentNo)) {
+    return { valid: false, message: "กรุณากรอกเลขที่ให้ถูกต้อง" };
+  }
+  if (studentNo < 1 || studentNo > 60) {
+    return { valid: false, message: "เลขที่ต้องอยู่ระหว่าง 1 ถึง 60" };
+  }
+  if (!characterName) {
+    return { valid: false, message: "กรุณากรอกชื่อในเกม" };
+  }
+  if (!characterChoice) {
+    return { valid: false, message: "กรุณาเลือกตัวละคร" };
+  }
+
+  return {
+    valid: true,
+    profile: buildStudentProfile({
+      fullName,
+      classLevel,
+      room,
+      studentNo,
+      existingProfile: getStudentProfileFromPlayer()
+    }),
+    characterName
+  };
+}
+
+async function sha256Hex(input) {
+  const cryptoApi = globalThis.crypto;
+  if (!cryptoApi?.subtle) {
+    let hash = 2166136261;
+    for (let index = 0; index < input.length; index += 1) {
+      hash ^= input.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return `fallback_${(hash >>> 0).toString(16)}`;
+  }
+  const digest = await cryptoApi.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function verifyTeacherDashboardPassword(input) {
+  return sha256Hex((input || "").trim()).then(hash => hash === TEACHER_DASHBOARD_PASSWORD_SHA256);
 }
 
 function getAuthModeLabel() {
@@ -2706,6 +2838,7 @@ const els = {
   mainMenuAvatar: document.getElementById("mainMenuAvatar"),
   mainMenuPlayerName: document.getElementById("mainMenuPlayerName"),
   mainMenuPlayerTitle: document.getElementById("mainMenuPlayerTitle"),
+  mainMenuStudentInfo: document.getElementById("mainMenuStudentInfo"),
   mainMenuCurrentAct: document.getElementById("mainMenuCurrentAct"),
   mainMenuGrammaria: document.getElementById("mainMenuGrammaria"),
   mainMenuCurrentLesson: document.getElementById("mainMenuCurrentLesson"),
@@ -2719,6 +2852,7 @@ const els = {
   lessonMapButton: document.getElementById("lessonMapButton"),
   assessmentResultButton: document.getElementById("assessmentResultButton"),
   accountSettingsButton: document.getElementById("accountSettingsButton"),
+  teacherDashboardButton: document.getElementById("teacherDashboardButton"),
   mainMenuLogoutButton: document.getElementById("mainMenuLogoutButton"),
   loginUsername: document.getElementById("loginUsername"),
   loginPin: document.getElementById("loginPin"),
@@ -2728,6 +2862,11 @@ const els = {
   registerConfirmPin: document.getElementById("registerConfirmPin"),
   registerBetaCode: document.getElementById("registerBetaCode"),
   loginStatus: document.getElementById("loginStatus"),
+  studentFullNameInput: document.getElementById("studentFullNameInput"),
+  studentClassLevelSelect: document.getElementById("studentClassLevelSelect"),
+  studentRoomSelect: document.getElementById("studentRoomSelect"),
+  studentNoInput: document.getElementById("studentNoInput"),
+  characterNameInput: document.getElementById("characterNameInput"),
   classNameSelect: document.getElementById("classNameSelect"),
   keyStageSelect: document.getElementById("keyStageSelect"),
   roomInput: document.getElementById("roomInput"),
@@ -2844,7 +2983,14 @@ const els = {
   gameModalTitle: document.getElementById("gameModalTitle"),
   gameModalBody: document.getElementById("gameModalBody"),
   gameModalContent: document.getElementById("gameModalContent"),
-  gameModalActions: document.getElementById("gameModalActions")
+  gameModalActions: document.getElementById("gameModalActions"),
+  teacherDashboardBackButton: document.getElementById("teacherDashboardBackButton"),
+  teacherDashboardSummary: document.getElementById("teacherDashboardSummary"),
+  teacherClassLevelFilter: document.getElementById("teacherClassLevelFilter"),
+  teacherRoomFilter: document.getElementById("teacherRoomFilter"),
+  teacherStudentSearchInput: document.getElementById("teacherStudentSearchInput"),
+  teacherDashboardTableBody: document.getElementById("teacherDashboardTableBody"),
+  teacherDashboardEmptyState: document.getElementById("teacherDashboardEmptyState")
 };
 
 function showScene(name) {
@@ -5666,12 +5812,15 @@ function getPlayerDocRef(uid) {
 
 function createFirestorePlayerDoc(sessionUser, progress) {
   ensurePlayerCharacterData(progress);
+  const studentProfile = getStudentProfileFromPlayer(progress);
   return {
     uid: sessionUser.uid,
     username: sessionUser.username,
     displayName: sessionUser.displayName,
     mode: "registered",
     characterId: progress.characterId,
+    characterName: progress.characterName || "",
+    studentProfile: sanitizeForFirestore(studentProfile || {}),
     hasSeenPrologue: Boolean(progress.hasSeenPrologue),
     progress: sanitizeForFirestore(progress),
     settings: {
@@ -6062,6 +6211,14 @@ const progressService = {
       }
       const data = snapshot.data();
       const remoteProgress = createRemotePlayerData(sessionUser, data.progress || {});
+      const savedStudentProfile = data.studentProfile || data.progress?.studentProfile || data.progress?.progress?.playerProfile?.studentProfile || null;
+      if (savedStudentProfile && typeof savedStudentProfile === "object") {
+        remoteProgress.studentProfile = savedStudentProfile;
+        remoteProgress.progress.playerProfile = {
+          ...(remoteProgress.progress.playerProfile || {}),
+          studentProfile: savedStudentProfile
+        };
+      }
       remoteProgress.hasSeenPrologue = Boolean(data.hasSeenPrologue || remoteProgress.hasSeenPrologue);
       remoteProgress.displayName = data.displayName || remoteProgress.displayName;
       playerData = remoteProgress;
@@ -6088,17 +6245,21 @@ const progressService = {
       const nextProgress = {
         ...progress,
         updatedAt: now,
+        lastActiveAt: now,
         progress: {
           ...progress.progress,
           lastUpdatedAt: now
         }
       };
+      const studentProfile = getStudentProfileFromPlayer(nextProgress);
       await setDoc(getPlayerDocRef(userId), {
         uid: userId,
         username: nextProgress.username,
         displayName: nextProgress.displayName,
         mode: "registered",
         characterId: nextProgress.characterId,
+        characterName: nextProgress.characterName || "",
+        studentProfile: sanitizeForFirestore(studentProfile || {}),
         hasSeenPrologue: Boolean(nextProgress.hasSeenPrologue),
         progress: sanitizeForFirestore(nextProgress),
         settings: {
@@ -6479,6 +6640,7 @@ function createDefaultPlayerData(user) {
     isGuest: Boolean(user.isGuest),
     characterId: "male_wanderer",
     characterName: "",
+    studentProfile: null,
     className: "",
     room: "",
     keyStage: user.keyStage || "",
@@ -6514,7 +6676,8 @@ function createDefaultPlayerData(user) {
       playerProfile: {
         keyStage: user.keyStage || "",
         className: "",
-        room: ""
+        room: "",
+        studentProfile: null
       },
       pastFragmentAct: {
         ...DEFAULT_ACT_PROGRESS,
@@ -6592,7 +6755,9 @@ function savePlayerData(reason = "auto") {
   }
 
   ensurePlayerCharacterData(playerData);
-  playerData.updatedAt = new Date().toISOString();
+  const now = createTimestampIso();
+  playerData.updatedAt = now;
+  playerData.lastActiveAt = now;
   const snapshot = serializeProgressValue(playerData);
   return queuePlayerDataSave(snapshot, reason);
 }
@@ -6647,31 +6812,35 @@ async function createCharacterFromForm() {
     return;
   }
 
-  const className = els.classNameSelect.value;
-  const keyStage = els.keyStageSelect?.value || getKeyStageFromClassName(className);
-  const room = els.roomInput.value.trim();
+  const validation = validateStudentProfileForm();
+  if (!validation.valid) {
+    els.createStatus.textContent = validation.message;
+    return;
+  }
+
+  const className = validation.profile.classLevel;
+  const keyStage = "lowerSecondary";
+  const room = validation.profile.room;
   const avatarChoice = document.querySelector("input[name=\"avatarType\"]:checked");
   const genderChoice = document.querySelector("input[name=\"avatarGender\"]:checked");
   const bodyTypeChoice = document.querySelector("input[name=\"avatarBodyType\"]:checked");
   const selectedGender = genderChoice ? genderChoice.value : "other";
   const characterId = getCharacterIdFromGender(selectedGender);
 
-  if (!room) {
-    els.createStatus.textContent = "กรุณากรอกห้องเรียน";
-    return;
-  }
-
   playerData = createDefaultPlayerData(user);
   playerData.characterId = characterId;
-  playerData.characterName = "";
+  playerData.characterName = validation.characterName;
   playerData.className = className;
   playerData.keyStage = keyStage;
   playerData.room = room;
+  playerData.studentProfile = validation.profile;
+  playerData.lastActiveAt = createTimestampIso();
   playerData.progress.playerProfile = {
     ...(playerData.progress.playerProfile || {}),
     keyStage,
     className,
-    room
+    room,
+    studentProfile: validation.profile
   };
   playerData.avatar = {
     characterId,
@@ -8723,6 +8892,15 @@ function safeDisplayText(value, fallback = "ยังไม่มีข้อม
   return text;
 }
 
+function escapeHtml(value) {
+  return safeDisplayText(value, "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\"", "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function hasMeaningfulSavedProgress(progress) {
   if (!progress) {
     return false;
@@ -8875,11 +9053,13 @@ function buildMainMenuViewModel() {
   const progressPercent = calculateMainMenuActProgress(progress);
   const hasSave = hasMeaningfulSavedProgress(progress);
   const character = getPlayerCharacter(ensurePlayerCharacterData());
+  const studentProfile = getStudentProfileFromPlayer();
 
   return {
     playerName,
     accountType,
     title: playerData?.level && playerData.level > 1 ? `Level ${playerData.level} Wordmage` : "Novice Wordmage",
+    studentInfoLine: formatStudentInfoLine(studentProfile),
     avatarSrc: character.asset,
     characterId: character.id,
     characterLabel: character.label,
@@ -8933,6 +9113,10 @@ function renderMainMenu() {
   }
   els.mainMenuPlayerName.textContent = view.playerName;
   els.mainMenuPlayerTitle.textContent = view.title;
+  if (els.mainMenuStudentInfo) {
+    els.mainMenuStudentInfo.textContent = view.studentInfoLine;
+    els.mainMenuStudentInfo.classList.toggle("hidden", !view.studentInfoLine);
+  }
   els.mainMenuCurrentAct.textContent = view.currentActLabel;
   els.mainMenuGrammaria.textContent = view.grammariaPoints.toLocaleString("en-US");
   els.mainMenuCurrentLesson.textContent = view.currentLessonLabel;
@@ -8947,12 +9131,280 @@ function renderMainMenu() {
   setButtonAction(els.lessonMapButton, "แผนที่บทเรียน", openMainMenuLessonMap, { lock: false });
   setButtonAction(els.assessmentResultButton, "ผลการประเมิน", openMainMenuAssessmentResult, { lock: false });
   setButtonAction(els.accountSettingsButton, "ตั้งค่าบัญชี", openAccountSettingsModal, { lock: false });
+  setButtonAction(els.teacherDashboardButton, "Teacher Dashboard", openTeacherDashboardPasswordModal, { lock: false });
   setButtonAction(els.mainMenuLogoutButton, "ออกจากระบบ", logoutCurrentUser, { lock: true });
 }
 
 function showMainMenu() {
+  if (playerData && !hasCompleteStudentProfile(getStudentProfileFromPlayer())) {
+    els.createStatus.textContent = "กรุณากรอกข้อมูลนักเรียนให้ครบก่อนเข้าสู่เมนูผู้เล่น";
+    showScene("createCharacter");
+    return;
+  }
+  if (playerData) {
+    playerData.lastActiveAt = createTimestampIso();
+    savePlayerData("enter-main-menu");
+  }
   renderMainMenu();
   showScene("mainMenu");
+}
+
+function getTeacherStudentProfile(record = {}) {
+  const progressSnapshot = record.progress && typeof record.progress === "object" ? record.progress : {};
+  return record.studentProfile ||
+    progressSnapshot.studentProfile ||
+    progressSnapshot.progress?.playerProfile?.studentProfile ||
+    progressSnapshot.playerProfile?.studentProfile ||
+    null;
+}
+
+function getTeacherStudentProgress(record = {}) {
+  const progressSnapshot = record.progress && typeof record.progress === "object" ? record.progress : {};
+  return progressSnapshot.progress?.pastFragmentAct ||
+    progressSnapshot.pastFragmentAct ||
+    record.pastFragmentAct ||
+    {};
+}
+
+function getTeacherStudentGrammaria(record = {}) {
+  const progressSnapshot = record.progress && typeof record.progress === "object" ? record.progress : {};
+  const grammaria = progressSnapshot.progress?.grammaria || progressSnapshot.grammaria || record.grammaria || {};
+  return Number(grammaria.total ?? progressSnapshot.grammaria ?? record.grammaria ?? 0) || 0;
+}
+
+function getTeacherStudentLastActive(record = {}) {
+  const progressSnapshot = record.progress && typeof record.progress === "object" ? record.progress : {};
+  const value = record.lastActiveAt || progressSnapshot.lastActiveAt || record.lastLoginAt || progressSnapshot.updatedAt || record.updatedAt;
+  if (!value) {
+    return "";
+  }
+  if (typeof value?.toDate === "function") {
+    return value.toDate().toLocaleString("th-TH");
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString("th-TH");
+}
+
+function normalizeTeacherStudentRecord(record = {}, sourceId = "") {
+  const progressSnapshot = record.progress && typeof record.progress === "object" ? record.progress : {};
+  const profile = getTeacherStudentProfile(record);
+  if (!hasCompleteStudentProfile(profile)) {
+    return null;
+  }
+  const actProgress = getTeacherStudentProgress(record);
+  const labels = getMainMenuStageLabels(actProgress);
+  const defeatedBosses = Array.isArray(actProgress.defeatedBosses) ? actProgress.defeatedBosses : [];
+  const progressPercent = calculateMainMenuActProgress(actProgress);
+  const characterId = record.characterId || progressSnapshot.characterId || progressSnapshot.avatar?.characterId || "male_wanderer";
+  const character = getPlayerCharacter(characterId);
+
+  return {
+    sourceId,
+    profile,
+    uid: record.uid || progressSnapshot.uid || progressSnapshot.userId || sourceId,
+    displayName: record.displayName || progressSnapshot.displayName || "",
+    characterName: record.characterName || progressSnapshot.characterName || record.displayName || progressSnapshot.displayName || "",
+    characterId: character.id,
+    characterAsset: character.asset,
+    currentLesson: labels.lesson,
+    progressPercent,
+    grammaria: getTeacherStudentGrammaria(record),
+    bossesDefeated: defeatedBosses.length,
+    lastActiveText: getTeacherStudentLastActive(record)
+  };
+}
+
+async function loadTeacherDashboardRecords() {
+  if (getAuthMode() === "firebase") {
+    try {
+      const snapshot = await getDocs(collection(firestoreDb, "players"));
+      return snapshot.docs
+        .map(docSnapshot => normalizeTeacherStudentRecord(docSnapshot.data(), docSnapshot.id))
+        .filter(Boolean);
+    } catch (error) {
+      console.warn("[TeacherDashboard] Failed to read Firestore players. Falling back to local records.", error);
+    }
+  }
+
+  const students = [];
+  if (playerData) {
+    const current = normalizeTeacherStudentRecord(playerData, playerData.userId || "current");
+    if (current) {
+      students.push(current);
+    }
+  }
+  Object.values(readLocalUsers()).forEach(user => {
+    const saved = playerStorage.get(getPlayerStorageKey(user.id));
+    if (!saved) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(saved);
+      const record = normalizeTeacherStudentRecord(parsed, user.id);
+      if (record && !students.some(student => student.uid === record.uid)) {
+        students.push(record);
+      }
+    } catch (error) {
+      console.warn("[TeacherDashboard] Failed to parse local student progress", error);
+    }
+  });
+  return students;
+}
+
+function getFilteredTeacherDashboardStudents() {
+  const classLevel = els.teacherClassLevelFilter?.value || "all";
+  const room = els.teacherRoomFilter?.value || "all";
+  const search = (els.teacherStudentSearchInput?.value || "").trim().toLowerCase();
+  return teacherDashboardStudents
+    .filter(student => classLevel === "all" || student.profile.classLevel === classLevel)
+    .filter(student => room === "all" || String(student.profile.room) === room)
+    .filter(student => {
+      if (!search) {
+        return true;
+      }
+      return [
+        student.profile.fullName,
+        student.profile.studentNo,
+        student.characterName,
+        student.displayName,
+        student.profile.classGroup
+      ].some(value => String(value || "").toLowerCase().includes(search));
+    })
+    .sort((left, right) =>
+      String(left.profile.classGroupKey).localeCompare(String(right.profile.classGroupKey), "th") ||
+      Number(left.profile.studentSortKey) - Number(right.profile.studentSortKey) ||
+      String(left.profile.fullName).localeCompare(String(right.profile.fullName), "th") ||
+      String(left.characterName).localeCompare(String(right.characterName), "th")
+    );
+}
+
+function renderTeacherDashboardSummary(students) {
+  if (!els.teacherDashboardSummary) {
+    return;
+  }
+  const total = students.length;
+  const active = students.filter(student => student.lastActiveText).length;
+  const averageProgress = total ? Math.round(students.reduce((sum, student) => sum + student.progressPercent, 0) / total) : 0;
+  const averageGrammaria = total ? Math.round(students.reduce((sum, student) => sum + student.grammaria, 0) / total) : 0;
+  const completedAct1 = students.filter(student => student.progressPercent >= 100).length;
+  const cards = [
+    ["นักเรียนทั้งหมด", total],
+    ["เข้าใช้งานแล้ว", active],
+    ["ความคืบหน้าเฉลี่ย", `${averageProgress}%`],
+    ["Grammaria เฉลี่ย", averageGrammaria],
+    ["จบ Act 1 แล้ว", completedAct1]
+  ];
+  els.teacherDashboardSummary.innerHTML = cards.map(([label, value]) => `
+    <div class="teacher-summary-card">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </div>
+  `).join("");
+}
+
+function createTeacherAvatarCell(student) {
+  const cell = document.createElement("td");
+  const wrap = document.createElement("div");
+  wrap.className = "teacher-avatar-cell";
+  if (student.characterAsset) {
+    const img = document.createElement("img");
+    img.src = student.characterAsset;
+    img.alt = student.characterName || "ตัวละคร";
+    img.draggable = false;
+    wrap.appendChild(img);
+  } else {
+    const fallback = document.createElement("span");
+    fallback.title = "ยังไม่มีข้อมูลตัวละคร";
+    fallback.textContent = "?";
+    wrap.appendChild(fallback);
+  }
+  cell.appendChild(wrap);
+  return cell;
+}
+
+function appendTeacherTableCell(row, text) {
+  const cell = document.createElement("td");
+  cell.textContent = text;
+  row.appendChild(cell);
+}
+
+function renderTeacherDashboardTable() {
+  if (!els.teacherDashboardTableBody || !els.teacherDashboardEmptyState) {
+    return;
+  }
+  const students = getFilteredTeacherDashboardStudents();
+  els.teacherDashboardTableBody.innerHTML = "";
+  els.teacherDashboardEmptyState.classList.toggle("hidden", students.length > 0);
+  students.forEach(student => {
+    const row = document.createElement("tr");
+    row.appendChild(createTeacherAvatarCell(student));
+    appendTeacherTableCell(row, String(student.profile.studentSortKey));
+    appendTeacherTableCell(row, student.profile.fullName);
+    appendTeacherTableCell(row, safeDisplayText(student.characterName || student.displayName, "ยังไม่มีชื่อในเกม"));
+    appendTeacherTableCell(row, student.profile.classGroup);
+    appendTeacherTableCell(row, student.currentLesson);
+    appendTeacherTableCell(row, `${student.progressPercent}%`);
+    appendTeacherTableCell(row, String(student.grammaria));
+    appendTeacherTableCell(row, String(student.bossesDefeated));
+    appendTeacherTableCell(row, safeDisplayText(student.lastActiveText, "ยังไม่มีข้อมูล"));
+    els.teacherDashboardTableBody.appendChild(row);
+  });
+}
+
+async function showTeacherDashboard() {
+  closeGameModal();
+  showScene("teacherDashboard");
+  renderTeacherDashboardSummary([]);
+  if (els.teacherDashboardTableBody) {
+    els.teacherDashboardTableBody.innerHTML = "";
+  }
+  if (els.teacherDashboardEmptyState) {
+    els.teacherDashboardEmptyState.textContent = "กำลังโหลดข้อมูลนักเรียน...";
+    els.teacherDashboardEmptyState.classList.remove("hidden");
+  }
+  teacherDashboardStudents = await loadTeacherDashboardRecords();
+  renderTeacherDashboardSummary(teacherDashboardStudents);
+  if (els.teacherDashboardEmptyState) {
+    els.teacherDashboardEmptyState.textContent = "ยังไม่พบข้อมูลนักเรียน";
+  }
+  renderTeacherDashboardTable();
+}
+
+function openTeacherDashboardPasswordModal() {
+  const content = document.createElement("div");
+  content.className = "teacher-password-panel";
+  const input = document.createElement("input");
+  input.type = "password";
+  input.placeholder = "รหัสผ่านครู";
+  input.autocomplete = "current-password";
+  const error = document.createElement("p");
+  error.className = "form-status teacher-password-error";
+  content.append(input, error);
+  openGameModal({
+    title: "Teacher Dashboard",
+    body: "กรอกรหัสผ่านครูเพื่อดูภาพรวมการเรียนของนักเรียน",
+    content,
+    actions: [
+      { label: "ยกเลิก", onClick: closeGameModal },
+      {
+        label: "เข้าสู่ Teacher Dashboard",
+        primary: true,
+        onClick: async () => {
+          const ok = await verifyTeacherDashboardPassword(input.value);
+          if (!ok) {
+            error.textContent = "รหัสผ่านไม่ถูกต้อง กรุณาลองอีกครั้ง";
+            els.gameModal.dataset.modalLocked = "false";
+            els.gameModalActions.querySelectorAll("button").forEach(actionButton => setButtonEnabled(actionButton, true));
+            setButtonEnabled(els.gameModalClose, true);
+            input.focus();
+            return;
+          }
+          showTeacherDashboard();
+        }
+      }
+    ]
+  });
+  requestAnimationFrame(() => input.focus());
 }
 
 function continueJourneyFromMainMenu() {

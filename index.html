@@ -91,6 +91,7 @@
               <span>Player / ผู้เล่น</span>
               <h2 id="mainMenuPlayerName">นักเดินทางแห่ง Lingua</h2>
               <p id="mainMenuPlayerTitle">Novice Wordmage</p>
+              <p id="mainMenuStudentInfo" class="main-menu-student-info hidden"></p>
               <div class="profile-stat-row">
                 <span>Current Act</span>
                 <strong id="mainMenuCurrentAct">Act 1: Past Fragment</strong>
@@ -141,6 +142,7 @@
             <button id="lessonMapButton" class="secondary-button main-menu-button" type="button">แผนที่บทเรียน</button>
             <button id="assessmentResultButton" class="secondary-button main-menu-button" type="button">ผลการประเมิน</button>
             <button id="accountSettingsButton" class="secondary-button main-menu-button" type="button">ตั้งค่าบัญชี</button>
+            <button id="teacherDashboardButton" class="secondary-button main-menu-button" type="button">Teacher Dashboard</button>
             <button id="mainMenuLogoutButton" class="secondary-button main-menu-button danger-button" type="button">ออกจากระบบ</button>
           </section>
         </div>
@@ -152,6 +154,41 @@
         <p class="eyebrow">ผู้เล่นใหม่</p>
         <h2>สร้างตัวละคร</h2>
         <div class="form-grid">
+          <div class="student-profile-form">
+            <label>
+              <span>ชื่อ-สกุล</span>
+              <input id="studentFullNameInput" type="text" placeholder="เช่น เด็กชายภาษา ใจดี" autocomplete="name">
+            </label>
+            <label>
+              <span>ระดับชั้น</span>
+              <select id="studentClassLevelSelect">
+                <option value="">เลือกระดับชั้น</option>
+                <option value="ม.1">ม.1</option>
+                <option value="ม.2">ม.2</option>
+                <option value="ม.3">ม.3</option>
+              </select>
+            </label>
+            <label>
+              <span>ห้อง</span>
+              <select id="studentRoomSelect">
+                <option value="">เลือกห้อง</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+              </select>
+            </label>
+            <label>
+              <span>เลขที่</span>
+              <input id="studentNoInput" type="number" min="1" max="60" inputmode="numeric" placeholder="1-60">
+            </label>
+            <label class="student-game-name-field">
+              <span>ชื่อในเกม</span>
+              <input id="characterNameInput" type="text" maxlength="24" placeholder="ชื่อนักเดินทางใน Lingua">
+            </label>
+          </div>
           <div class="two-column-form">
             <label>
               <span>ระดับชั้น</span>
@@ -229,6 +266,70 @@
           <button id="createCharacterButton" class="primary-button">เริ่มการเดินทาง</button>
         </div>
         <p id="createStatus" class="form-status">สร้างตัวละครเพื่อเริ่มบันทึกความก้าวหน้า</p>
+      </div>
+    </section>
+
+    <section id="teacherDashboardScene" class="scene teacher-dashboard-scene">
+      <div class="teacher-dashboard-shell">
+        <header class="teacher-dashboard-header">
+          <div>
+            <p class="eyebrow">Teacher Dashboard</p>
+            <h2>ภาพรวมการเรียนของนักเรียน</h2>
+            <p>ดูข้อมูลผู้เล่นจริงจากระบบเท่านั้น โดยไม่แก้ไขความคืบหน้าของนักเรียน</p>
+          </div>
+          <button id="teacherDashboardBackButton" class="secondary-button" type="button">กลับหน้าหลัก</button>
+        </header>
+
+        <div id="teacherDashboardSummary" class="teacher-summary-grid" aria-live="polite"></div>
+
+        <div class="teacher-dashboard-filters">
+          <label>
+            <span>ระดับชั้น</span>
+            <select id="teacherClassLevelFilter">
+              <option value="all">ทุกระดับชั้น</option>
+              <option value="ม.1">ม.1</option>
+              <option value="ม.2">ม.2</option>
+              <option value="ม.3">ม.3</option>
+            </select>
+          </label>
+          <label>
+            <span>ห้อง</span>
+            <select id="teacherRoomFilter">
+              <option value="all">ทุกห้อง</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+            </select>
+          </label>
+          <label>
+            <span>ค้นหา</span>
+            <input id="teacherStudentSearchInput" type="search" placeholder="ค้นหาชื่อ / เลขที่">
+          </label>
+        </div>
+
+        <div class="teacher-dashboard-table-wrap">
+          <table class="teacher-dashboard-table">
+            <thead>
+              <tr>
+                <th>ตัวละคร</th>
+                <th>เลขที่</th>
+                <th>ชื่อ-สกุล</th>
+                <th>ชื่อในเกม</th>
+                <th>ชั้น/ห้อง</th>
+                <th>บทเรียนปัจจุบัน</th>
+                <th>ความคืบหน้า</th>
+                <th>Grammaria</th>
+                <th>บอสที่ผ่าน</th>
+                <th>เข้าเล่นล่าสุด</th>
+              </tr>
+            </thead>
+            <tbody id="teacherDashboardTableBody"></tbody>
+          </table>
+          <p id="teacherDashboardEmptyState" class="teacher-dashboard-empty hidden">ยังไม่พบข้อมูลนักเรียน</p>
+        </div>
       </div>
     </section>
 
