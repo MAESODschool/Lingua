@@ -2540,6 +2540,7 @@ const state = {
   postBossDialogueStage: null,
   activeReplayLessonId: null,
   replayReturnProgress: null,
+  pendingBattleReturnContext: null,
   lessonStoryMode: false,
   lessonStorySteps: [],
   lessonStoryStepIndex: 0,
@@ -7809,6 +7810,7 @@ function captureBattleResumeCheckpoint(source, savedAt) {
     shield: state.shield,
     guardShield: state.guardShield,
     battleActiveEffects: state.battleActiveEffects || {},
+    returnContext: battle.returnContext || null,
     currentQuestion: battle.currentQuestion || null,
     currentFocusQuestion: battle.currentFocusQuestion || null,
     currentBossQuestion: battle.currentBossQuestion || null
@@ -7896,6 +7898,137 @@ function restoreLessonResumeCheckpoint(checkpoint) {
   return true;
 }
 
+function getCurrentLessonPhaseForReturn(stage) {
+  if (state.lessonStoryMode) {
+    return state.lessonStorySteps[state.lessonStoryStepIndex]?.phase ||
+      (stage?.isPostBossDialogue ? "postBossDialogue" : "teacherExplanation");
+  }
+  return ensureActProgress()?.lessonPhase || "teacherExplanation";
+}
+
+function createBattleReturnContext(stage = state.currentLessonStage, overrides = {}) {
+  const resolvedStage = stage || getPlayableStages()[state.actStageIndex] || getStageById(ensureActProgress()?.currentStageId);
+  if (!resolvedStage) {
+    return null;
+  }
+
+  const stageIndex = getStageIndexById(resolvedStage.id);
+  const progress = ensureActProgress();
+  const isReplay = typeof overrides.isReplay === "boolean"
+    ? overrides.isReplay
+    : Boolean(state.activeReplayLessonId === resolvedStage.id);
+  const source = overrides.source || (isReplay ? "replay" : getActiveSceneName() === "battle" ? "battle" : "lesson");
+  const mode = overrides.mode || (state.lessonStoryMode ? "dialogue" : state.lessonSteps.length ? "activity" : "dialogue");
+  const dialogueIndex = Number.isFinite(Number(overrides.dialogueIndex))
+    ? Number(overrides.dialogueIndex)
+    : state.lessonStoryMode
+      ? state.lessonStoryStepIndex
+      : Number(progress?.currentDialogueIndex || 0);
+  const lessonStepIndex = Number.isFinite(Number(overrides.lessonStepIndex))
+    ? Number(overrides.lessonStepIndex)
+    : Number(state.lessonStepIndex || progress?.currentLessonStepIndex || 0);
+
+  return serializeProgressValue({
+    source,
+    returnTo: overrides.returnTo || "",
+    stageId: resolvedStage.id,
+    stageIndex: stageIndex >= 0 ? stageIndex : state.actStageIndex,
+    lessonId: resolvedStage.id,
+    mode,
+    phase: overrides.phase || getCurrentLessonPhaseForReturn(resolvedStage),
+    dialogueIndex: Math.max(0, dialogueIndex),
+    lessonStepIndex: Math.max(0, lessonStepIndex),
+    isReplay,
+    replayReturnProgress: state.replayReturnProgress || overrides.replayReturnProgress || null,
+    progressSnapshot: overrides.progressSnapshot || null
+  });
+}
+
+function createFallbackBattleReturnContext(stage, snapshot = {}) {
+  const resolvedStage = stage || getStageById(snapshot.stageId);
+  if (!resolvedStage) {
+    return null;
+  }
+
+  return serializeProgressValue({
+    source: "oldSaveFallback",
+    returnTo: "",
+    stageId: resolvedStage.id,
+    stageIndex: getStageIndexById(resolvedStage.id),
+    lessonId: resolvedStage.id,
+    mode: "dialogue",
+    phase: "teacherExplanation",
+    dialogueIndex: Math.max(0, Number(snapshot.reviewDialogueIndex || 0)),
+    lessonStepIndex: Math.max(0, Number(snapshot.reviewLessonStepIndex || 0)),
+    isReplay: false,
+    replayReturnProgress: null,
+    progressSnapshot: null
+  });
+}
+
+function buildLessonCheckpointFromBattleReturnContext(context, stageFallback = null) {
+  const stageId = context?.stageId || stageFallback?.id;
+  const stage = getStageById(stageId);
+  if (!stage) {
+    return null;
+  }
+
+  const phase = context?.phase || "teacherExplanation";
+  const mode = phase === "postBossDialogue"
+    ? "postBossDialogue"
+    : context?.mode === "activity" ? "activity" : "dialogue";
+
+  return {
+    version: RESUME_CHECKPOINT_VERSION,
+    source: "battleExit",
+    savedAt: new Date().toISOString(),
+    scene: "lesson",
+    stageId: stage.id,
+    lesson: {
+      mode,
+      phase,
+      dialogueIndex: Math.max(0, Number(context?.dialogueIndex || 0)),
+      lessonStepIndex: Math.max(0, Number(context?.lessonStepIndex || 0)),
+      isReplay: Boolean(context?.isReplay),
+      replayReturnProgress: context?.replayReturnProgress || null
+    },
+    battle: null
+  };
+}
+
+function restoreProgressAfterBattleExit(progressSnapshot) {
+  if (!playerData || !progressSnapshot) {
+    return;
+  }
+  saveProgress({
+    ...progressSnapshot,
+    resumeCheckpoint: progressSnapshot.resumeCheckpoint || null
+  }, {
+    source: "battleExit",
+    captureCheckpoint: false
+  });
+}
+
+function restoreBattleReturnContext(context, stageFallback = null) {
+  if (!context) {
+    return false;
+  }
+
+  if (context.returnTo === "mainMenu" || context.source === "directBattle" || context.source === "replay") {
+    restoreProgressAfterBattleExit(context.progressSnapshot || context.replayReturnProgress);
+    showMainMenu();
+    state.activeReplayLessonId = null;
+    state.replayReturnProgress = null;
+    return true;
+  }
+
+  const checkpoint = buildLessonCheckpointFromBattleReturnContext(context, stageFallback);
+  if (!checkpoint) {
+    return false;
+  }
+  return restoreLessonResumeCheckpoint(checkpoint);
+}
+
 function createBattleStageFromCheckpoint(stageId) {
   const stageConfig = getStageById(stageId);
   if (!stageConfig) {
@@ -7911,6 +8044,7 @@ function hydrateBattleSnapshot(snapshot, stage) {
   const battle = {
     ...snapshot,
     stage,
+    returnContext: snapshot.returnContext || createFallbackBattleReturnContext(stage, snapshot),
     usedQuestionKeys: restoreSet(snapshot.usedQuestionKeys),
     usedQuestionIds: restoreSet(snapshot.usedQuestionIds),
     usedBossQuestionIds: restoreSet(snapshot.usedBossQuestionIds),
@@ -10566,6 +10700,18 @@ function advanceLessonStoryStep() {
 
 function finishPastDialogueLesson() {
   const stage = state.currentLessonStage;
+  const lastStoryStepIndex = Math.max(0, state.lessonStorySteps.length - 1);
+  const lastStoryStep = state.lessonStorySteps[lastStoryStepIndex] || null;
+  const battleReturnContext = stage?.questions?.length
+    ? createBattleReturnContext(stage, {
+      source: isReplayingStage(stage) ? "replay" : "lesson",
+      mode: "dialogue",
+      phase: lastStoryStep?.phase || "preBossDialogue",
+      dialogueIndex: lastStoryStepIndex,
+      lessonStepIndex: 0,
+      returnTo: isReplayingStage(stage) ? "mainMenu" : ""
+    })
+    : null;
   state.lessonStoryMode = false;
   state.lessonStorySteps = [];
   state.lessonStoryStepIndex = 0;
@@ -10600,6 +10746,7 @@ function finishPastDialogueLesson() {
     return;
   }
   if (stage && stage.questions && stage.questions.length) {
+    state.pendingBattleReturnContext = battleReturnContext;
     startBattleFromActivity();
     return;
   }
@@ -10933,6 +11080,13 @@ function chooseLessonStepAnswer(choice, step = null) {
 function advanceLessonStep() {
   const step = state.lessonSteps[state.lessonStepIndex];
   if (step && step.type === "battle-intro") {
+    state.pendingBattleReturnContext = createBattleReturnContext(state.currentLessonStage, {
+      source: isReplayingStage(state.currentLessonStage) ? "replay" : "lesson",
+      mode: "activity",
+      phase: "battleIntro",
+      lessonStepIndex: state.lessonStepIndex,
+      returnTo: isReplayingStage(state.currentLessonStage) ? "mainMenu" : ""
+    });
     startBattleFromActivity();
     return;
   }
@@ -11029,6 +11183,12 @@ function completeNonBattleStage(stage) {
 
 function startBattleFromActivity() {
   const stage = getPlayableStages()[state.actStageIndex] || getPlayableStages()[0];
+  if (!state.pendingBattleReturnContext) {
+    state.pendingBattleReturnContext = createBattleReturnContext(stage, {
+      source: isReplayingStage(stage) ? "replay" : "lesson",
+      returnTo: isReplayingStage(stage) ? "mainMenu" : ""
+    });
+  }
   runSceneTransition(`${stage.enemy} ปรากฏตัว!`, () => startActBattle(state.actStageIndex));
 }
 
@@ -11135,10 +11295,18 @@ function startActBattle(stageIndex) {
   resetVictorySceneMusicForBattle();
   const baseEnemyMaxHp = isFinalBossStage(stage) ? 140 : 100;
   const enemyMaxHp = getBalancedBossMaxHp(stage, baseEnemyMaxHp);
+  const returnContext = state.pendingBattleReturnContext ||
+    state.actBattle?.returnContext ||
+    createBattleReturnContext(stage, {
+      source: getActiveSceneName() === "battle" ? "battle" : "lesson"
+    }) ||
+    createFallbackBattleReturnContext(stage);
+  state.pendingBattleReturnContext = null;
   state.timeDustTransitionComplete = false;
   state.actStageIndex = stageIndex;
   state.actBattle = {
     stage,
+    returnContext,
     questionIndex: 0,
     correctAnswers: 0,
     damagePerCorrect: Math.ceil(baseEnemyMaxHp / questionCount),
@@ -17718,6 +17886,49 @@ function handleLessonBack() {
   showActInfoScreen();
 }
 
+function cleanupManualBattleExitState() {
+  clearEnemyTurnTimer();
+  stopTimer("charge");
+  stopParryCountdown();
+  cleanupPointParryRingUI();
+  cleanupBossHeavyAttackChain({ clearParryUi: true });
+  cleanupBattleInputState();
+  cleanupBattleSkillEffects();
+  resetBattleContinueControls();
+  showOnlyBattlePanel(null);
+  state.actBattle = null;
+  state.currentBattleStats = null;
+  state.currentQuestion = null;
+  state.parryAttack = null;
+  state.pendingBattleReturnContext = null;
+  state.battleActiveEffects = {};
+}
+
+function exitBattleToReturnContext() {
+  const battle = state.actBattle;
+  const stage = battle?.stage || getPlayableStages()[state.actStageIndex] || null;
+  const returnContext = battle?.returnContext || createFallbackBattleReturnContext(stage, {
+    stageId: stage?.id,
+    reviewDialogueIndex: battle?.reviewDialogueIndex,
+    reviewLessonStepIndex: battle?.reviewLessonStepIndex
+  });
+
+  cleanupManualBattleExitState();
+
+  const restored = restoreBattleReturnContext(returnContext, stage);
+  if (restored) {
+    return;
+  }
+
+  const fallbackIndex = getStageIndexById(stage?.id);
+  if (fallbackIndex >= 0) {
+    showStageLesson(fallbackIndex, { lessonStepIndex: 0, dialogueIndex: 0 });
+    return;
+  }
+
+  showMainMenu();
+}
+
 function confirmExitBattle() {
   openGameModal({
     title: "ออกจากการต่อสู้นี้หรือไม่?",
@@ -17732,21 +17943,7 @@ function confirmExitBattle() {
         primary: true,
         onClick: () => {
           closeGameModal();
-          clearEnemyTurnTimer();
-          stopTimer("charge");
-          stopParryCountdown();
-          state.actBattle = null;
-          state.parryAttack = null;
-          if (state.activeReplayLessonId) {
-            showMainMenu();
-            state.activeReplayLessonId = null;
-            state.replayReturnProgress = null;
-            return;
-          }
-          runSceneTransition("กลับสู่แผนที่บทเรียน...", () => {
-            showScene("story");
-            showActInfoScreen();
-          });
+          runSceneTransition("กลับสู่บทเรียน...", exitBattleToReturnContext);
         }
       }
     ]
@@ -17998,6 +18195,24 @@ function startBattleByEnemy(enemyId) {
   }
 
   const stage = stages[stageIndex];
+  const progress = loadProgress();
+  state.pendingBattleReturnContext = createBattleReturnContext(stage, {
+    source: "directBattle",
+    mode: "dialogue",
+    dialogueIndex: 0,
+    lessonStepIndex: 0,
+    returnTo: "mainMenu",
+    progressSnapshot: progress ? {
+      currentStageId: progress.currentStageId,
+      currentLessonId: progress.currentLessonId,
+      currentScreen: progress.currentScreen,
+      lastSafeScreen: progress.lastSafeScreen,
+      lessonPhase: progress.lessonPhase,
+      currentDialogueIndex: progress.currentDialogueIndex,
+      currentLessonStepIndex: progress.currentLessonStepIndex,
+      resumeCheckpoint: progress.resumeCheckpoint || null
+    } : null
+  });
   state.actStageIndex = stageIndex;
   state.currentLessonStage = stage;
   state.lessonStoryMode = false;
