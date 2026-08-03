@@ -2398,7 +2398,7 @@ const AUTH_COPY = {
 
 // Phase 1 classroom lock only. For production, replace with role-based
 // authentication and Firestore Security Rules.
-const TEACHER_DASHBOARD_PASSWORD_SHA256 = "a7de104f0b12981b915fa47aeaf20917a92e3908269dafb9de1ecd819b2f8df8";
+const TEACHER_DASHBOARD_PASSWORD_SHA256 = "bf2498d5fe9c5972e341a4e5ea0b61d4f013f3b133196d771201e6c3f70f94e1";
 let teacherDashboardStudents = [];
 
 function isRemoteAuthConfigured() {
@@ -2867,9 +2867,6 @@ const els = {
   studentRoomSelect: document.getElementById("studentRoomSelect"),
   studentNoInput: document.getElementById("studentNoInput"),
   characterNameInput: document.getElementById("characterNameInput"),
-  classNameSelect: document.getElementById("classNameSelect"),
-  keyStageSelect: document.getElementById("keyStageSelect"),
-  roomInput: document.getElementById("roomInput"),
   avatarPreview: document.getElementById("avatarPreview"),
   avatarPreviewText: document.getElementById("avatarPreviewText"),
   createCharacterButton: document.getElementById("createCharacterButton"),
@@ -6654,6 +6651,9 @@ function createDefaultPlayerData(user) {
     },
     level: 1,
     grammaria: 0,
+    rewardClaims: {
+      grammaria: {}
+    },
     coins: 0,
     hp: 100,
     maxHp: 100,
@@ -6755,6 +6755,7 @@ function savePlayerData(reason = "auto") {
   }
 
   ensurePlayerCharacterData(playerData);
+  ensureRewardClaims(playerData);
   const now = createTimestampIso();
   playerData.updatedAt = now;
   playerData.lastActiveAt = now;
@@ -6817,6 +6818,7 @@ async function createCharacterFromForm() {
     els.createStatus.textContent = validation.message;
     return;
   }
+  // TODO: Add a cross-account duplicate student number check when the teacher roster source is finalized.
 
   const className = validation.profile.classLevel;
   const keyStage = "lowerSecondary";
@@ -7557,6 +7559,36 @@ function createDefaultGrammariaState() {
   };
 }
 
+function ensureRewardClaims(data = playerData) {
+  if (!data) {
+    return { grammaria: {} };
+  }
+  data.rewardClaims = data.rewardClaims && typeof data.rewardClaims === "object" ? data.rewardClaims : {};
+  data.rewardClaims.grammaria = data.rewardClaims.grammaria && typeof data.rewardClaims.grammaria === "object"
+    ? data.rewardClaims.grammaria
+    : {};
+  return data.rewardClaims;
+}
+
+function getGrammariaRewardSourceId(stage, stats = getCurrentBattleStats()) {
+  return stage?.id || stats?.bossId || getBossProgressId(stage) || "unknown-stage";
+}
+
+function markGrammariaRewardClaim(stage, amount, stats = getCurrentBattleStats(), claimedAt = createTimestampIso()) {
+  const claims = ensureRewardClaims();
+  const rewardSourceId = getGrammariaRewardSourceId(stage, stats);
+  if (!claims.grammaria[rewardSourceId]) {
+    claims.grammaria[rewardSourceId] = {
+      claimed: true,
+      amount: Number(amount) || 0,
+      claimedAt,
+      sourceType: isTrueBossStage(stage) ? "boss" : "stage",
+      sourceTitle: stage?.thaiTitle || stage?.title || stats?.bossName || "Lingua Stage"
+    };
+  }
+  return claims.grammaria[rewardSourceId];
+}
+
 function getKeyStageFromClassName(className = "") {
   if (/ป\.[1-3]/.test(className)) {
     return "lowerPrimary";
@@ -7768,29 +7800,35 @@ function awardBossGrammaria(stage, stats = getCurrentBattleStats()) {
 
   const bossId = stats?.bossId || getBossProgressId(stage) || stage.id;
   const bossName = stats?.bossName || stage.thaiEnemy || stage.enemy || stage.title;
+  const rewardSourceId = getGrammariaRewardSourceId(stage, stats);
+  const rewardClaim = ensureRewardClaims().grammaria[rewardSourceId];
   const saved = progressState.earnedByBoss[bossId];
-  if (saved) {
+  if (saved || rewardClaim?.claimed) {
+    if (saved && !rewardClaim?.claimed) {
+      markGrammariaRewardClaim(stage, saved.earned || 0, stats, saved.completedAt || createTimestampIso());
+    }
     const duplicateResult = {
-      ...saved,
+      ...(saved || {}),
       bossId,
       bossName,
+      rewardSourceId,
       duplicate: true,
-      earned: saved.earned || 0,
+      earned: 0,
       totalAfter: progressState.total,
-      correctAnswers: stats?.correctAnswers || saved.correctAnswers || 0,
-      wrongAnswers: stats?.wrongAnswers || saved.wrongAnswers || 0,
-      parryCount: stats?.parryCount || saved.parryCount || 0,
-      grammariaChargeCount: stats?.grammariaChargeCount || saved.grammariaChargeCount || 0,
-      playerDamageDealt: stats?.playerDamageDealt || saved.playerDamageDealt || 0,
-      bossDamageDealt: stats?.bossDamageDealt || saved.bossDamageDealt || 0,
-      parryCounterDamage: stats?.parryCounterDamage || saved.parryCounterDamage || 0,
-      chargeBonusDamageTotal: stats?.chargeBonusDamageTotal || saved.chargeBonusDamageTotal || 0,
-      highestDamage: stats?.highestDamage || saved.highestDamage || 0,
+      correctAnswers: stats?.correctAnswers || saved?.correctAnswers || 0,
+      wrongAnswers: stats?.wrongAnswers || saved?.wrongAnswers || 0,
+      parryCount: stats?.parryCount || saved?.parryCount || 0,
+      grammariaChargeCount: stats?.grammariaChargeCount || saved?.grammariaChargeCount || 0,
+      playerDamageDealt: stats?.playerDamageDealt || saved?.playerDamageDealt || 0,
+      bossDamageDealt: stats?.bossDamageDealt || saved?.bossDamageDealt || 0,
+      parryCounterDamage: stats?.parryCounterDamage || saved?.parryCounterDamage || 0,
+      chargeBonusDamageTotal: stats?.chargeBonusDamageTotal || saved?.chargeBonusDamageTotal || 0,
+      highestDamage: stats?.highestDamage || saved?.highestDamage || 0,
       damageEvents: Array.isArray(stats?.damageEvents)
         ? stats.damageEvents.slice(-20)
-        : (Array.isArray(saved.damageEvents) ? saved.damageEvents.slice(-20) : []),
-      rewardFragment: stage?.reward?.fragment || saved.rewardFragment || "",
-      rewardBadge: stage?.reward?.badge || saved.rewardBadge || ""
+        : (Array.isArray(saved?.damageEvents) ? saved.damageEvents.slice(-20) : []),
+      rewardFragment: stage?.reward?.fragment || saved?.rewardFragment || "",
+      rewardBadge: stage?.reward?.badge || saved?.rewardBadge || ""
     };
     state.lastGrammariaResult = duplicateResult;
     return duplicateResult;
@@ -7820,6 +7858,7 @@ function awardBossGrammaria(stage, stats = getCurrentBattleStats()) {
     correctPoints: points.correctPoints,
     parryPoints: points.parryPoints,
     chargePoints: points.chargePoints,
+    rewardSourceId,
     earned: points.total,
     completedAt,
     duplicate: false,
@@ -7829,6 +7868,7 @@ function awardBossGrammaria(stage, stats = getCurrentBattleStats()) {
   progressState.total = result.totalAfter;
   progressState.earnedByBoss[bossId] = result;
   progressState.history.push(result);
+  markGrammariaRewardClaim(stage, points.total, stats, completedAt);
   playerData.grammaria = progressState.total;
   state.grammaria = progressState.total;
   state.lastGrammariaResult = result;
@@ -7910,7 +7950,7 @@ function renderBossGrammariaResult(result, onContinue) {
       ${result.rewardBadge ? `<div class="grammaria-breakdown-row"><span>Badge ที่ได้รับ</span><strong>${result.rewardBadge}</strong></div>` : ""}
     </div>
     ${result.replay ? "<p class=\"grammaria-result-note\">คุณได้ทบทวนบทเรียนนี้แล้ว ไม่มีการรับ Grammaria หรือรางวัลซ้ำในโหมดเรียนซ้ำ</p>" : ""}
-    ${result.duplicate && !result.replay ? "<p class=\"grammaria-result-note\">บอสนี้เคยให้ Grammaria แล้ว จึงไม่เพิ่มคะแนนซ้ำ แต่ยังแสดงผลการต่อสู้ให้ดูได้</p>" : ""}
+    ${result.duplicate && !result.replay ? "<p class=\"grammaria-result-note\">เคยรับ Grammaria จากบอส/ด่านนี้แล้ว จึงไม่ได้รับ Grammaria เพิ่ม แต่ยังสามารถเล่นซ้ำเพื่อฝึกฝนได้</p>" : ""}
   `;
 
   console.log("[BossResult] finalizing", {
@@ -7923,7 +7963,7 @@ function renderBossGrammariaResult(result, onContinue) {
 
   openGameModal({
     title: result.replay ? "เรียนซ้ำสำเร็จ" : `ชัยชนะเหนือ ${result.bossName || "บอสแห่ง Lingua"}`,
-    body: result.replay ? "ไม่มีการรับ Grammaria หรือรางวัลซ้ำในโหมดเรียนซ้ำ" : "สรุปผลการต่อสู้และรางวัลที่ได้รับ",
+    body: result.replay || result.duplicate ? "ไม่มีการรับ Grammaria หรือรางวัลซ้ำในโหมดเรียนซ้ำ" : "สรุปผลการต่อสู้และรางวัลที่ได้รับ",
     content: panel,
     actions: [
       {
@@ -9372,6 +9412,7 @@ async function showTeacherDashboard() {
 
 function openTeacherDashboardPasswordModal() {
   const content = document.createElement("div");
+  content.id = "teacherDashboardPasswordModal";
   content.className = "teacher-password-panel";
   const input = document.createElement("input");
   input.type = "password";
@@ -19115,6 +19156,10 @@ document.addEventListener("keydown", event => {
   }
 });
 els.createCharacterButton.addEventListener("click", createCharacterFromForm);
+els.teacherDashboardBackButton?.addEventListener("click", showMainMenu);
+els.teacherClassLevelFilter?.addEventListener("change", renderTeacherDashboardTable);
+els.teacherRoomFilter?.addEventListener("change", renderTeacherDashboardTable);
+els.teacherStudentSearchInput?.addEventListener("input", renderTeacherDashboardTable);
 els.confirmNameButton.addEventListener("click", confirmStoryName);
 els.storyNameInput.addEventListener("keydown", event => {
   if (event.key === "Enter") {
