@@ -2834,6 +2834,7 @@ const els = {
   skipBattleButton: document.getElementById("skipBattleButton"),
   lessonActLabel: document.getElementById("lessonActLabel"),
   lessonLocationLabel: document.getElementById("lessonLocationLabel"),
+  lessonProgressCard: document.getElementById("lessonProgressCard"),
   lessonProgressText: document.getElementById("lessonProgressText"),
   battlePlayer: document.getElementById("battlePlayer"),
   battleEnemy: document.getElementById("battleEnemy"),
@@ -4092,6 +4093,13 @@ function showTimeDustNextLessonFallback(stage) {
 }
 
 function transitionToRegularEdLessonAfterTimeDust(stage) {
+  if (isReplayingStage(stage)) {
+    console.log("[TimeDust] Replay complete; returning to replay reward summary");
+    state.timeDustTransitionComplete = false;
+    showStageReward(stage);
+    return;
+  }
+
   if (state.timeDustTransitionComplete && !state.actBattle) {
     console.log("[TimeDust] Transition already completed");
     return;
@@ -8110,6 +8118,79 @@ function getMainMenuStageLabels(progress) {
   };
 }
 
+function findPlayableStageIndexById(stageId, stages = getPlayableStages()) {
+  if (!stageId) {
+    return -1;
+  }
+  return stages.findIndex(stage => stage.id === stageId);
+}
+
+function getFurthestReachedPlayableStageIndex(progress = loadProgress()) {
+  const stages = getPlayableStages();
+  if (!stages.length) {
+    return -1;
+  }
+  if (progress?.finalBossDefeated || progress?.currentScreen === "victory" || progress?.currentScreen === "pastFragmentVictory") {
+    return stages.length - 1;
+  }
+
+  const candidateIds = new Set([
+    progress?.currentStageId,
+    progress?.currentLessonId,
+    ...(progress?.completedLessons || []),
+    ...(progress?.completedStages || []),
+    ...(progress?.unlockedStages || [])
+  ].filter(Boolean));
+
+  if (!state.activeReplayLessonId && state.currentLessonStage?.id) {
+    candidateIds.add(state.currentLessonStage.id);
+  }
+  if (state.activeReplayLessonId && state.replayReturnProgress) {
+    candidateIds.add(state.replayReturnProgress.currentStageId);
+    candidateIds.add(state.replayReturnProgress.currentLessonId);
+  }
+
+  let furthestIndex = 0;
+  candidateIds.forEach(stageId => {
+    const index = findPlayableStageIndexById(stageId, stages);
+    if (index > furthestIndex) {
+      furthestIndex = index;
+    }
+  });
+  return clamp(furthestIndex, 0, stages.length - 1);
+}
+
+function buildReachedLessonReviewEntries(progress = loadProgress()) {
+  const stages = getPlayableStages();
+  const furthestIndex = getFurthestReachedPlayableStageIndex(progress);
+  const completed = new Set([...(progress?.completedLessons || []), ...(progress?.completedStages || [])]);
+  const unlocked = new Set(progress?.unlockedStages || []);
+  const currentStageId = state.activeReplayLessonId && state.replayReturnProgress
+    ? (state.replayReturnProgress.currentStageId || state.replayReturnProgress.currentLessonId)
+    : (state.currentLessonStage?.id || progress?.currentStageId || progress?.currentLessonId);
+
+  return stages
+    .map((stage, index) => {
+      const isCompleted = completed.has(stage.id);
+      const isCurrent = stage.id === currentStageId;
+      const isVisible = index <= furthestIndex || isCompleted || isCurrent || unlocked.has(stage.id);
+      if (!isVisible) {
+        return null;
+      }
+      const shouldReplay = isCompleted || index < furthestIndex || (state.activeReplayLessonId && stage.id !== currentStageId);
+      return {
+        stage,
+        stageIndex: index,
+        number: index + 1,
+        isCompleted,
+        isCurrent,
+        shouldReplay,
+        status: isCompleted ? "เรียนแล้ว" : isCurrent ? "บทปัจจุบัน" : "เปิดแล้ว"
+      };
+    })
+    .filter(Boolean);
+}
+
 function calculateMainMenuActProgress(progress) {
   if (!progress) {
     return 0;
@@ -8371,6 +8452,70 @@ function confirmReplayLesson(stage, stageIndex) {
       }
     ]
   });
+}
+
+function handleLessonReviewEntryClick(entry, button) {
+  if (!entry || state.isTransitioning || button?.dataset.reviewLocked === "true") {
+    return;
+  }
+  if (button) {
+    button.dataset.reviewLocked = "true";
+    setButtonEnabled(button, false);
+  }
+  if (entry.shouldReplay) {
+    confirmReplayLesson(entry.stage, entry.stageIndex);
+    return;
+  }
+  startLessonFromLessonMap(entry.stage, entry.stageIndex);
+}
+
+function openLessonProgressReviewModal(event = null) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  if (!scenes.story?.classList.contains("active") || state.isTransitioning) {
+    return;
+  }
+
+  const progress = loadProgress();
+  const entries = buildReachedLessonReviewEntries(progress);
+  const content = document.createElement("div");
+  content.className = "lesson-select-grid lesson-progress-review-grid";
+
+  if (!entries.length) {
+    const empty = document.createElement("p");
+    empty.className = "lesson-progress-review-empty";
+    empty.textContent = "ยังไม่พบบทเรียนที่เปิดให้ทบทวน";
+    content.appendChild(empty);
+  }
+
+  entries.forEach(entry => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `lesson-select-card lesson-review-card ${entry.isCompleted ? "is-completed" : ""} ${entry.isCurrent ? "is-current" : ""}`;
+    button.innerHTML = `
+      <strong>บทเรียน ${entry.number}</strong>
+      <span>${entry.stage.title || "Untitled Lesson"}</span>
+      <span>${entry.stage.thaiTitle || entry.stage.title || "บทเรียน"}</span>
+      <em>สถานะ: ${entry.status}${entry.shouldReplay ? " / เรียนซ้ำได้" : " / เล่นต่อ"}</em>
+    `;
+    button.addEventListener("click", () => handleLessonReviewEntryClick(entry, button));
+    content.appendChild(button);
+  });
+
+  openGameModal({
+    title: "เลือกบทเรียนที่เคยเรียนแล้ว",
+    body: "เลือกบทเรียนเพื่อทบทวนเนื้อหา บทเรียนอนาคตจะไม่แสดงในรายการนี้",
+    content,
+    actions: [{ label: "ปิด", onClick: closeGameModal }]
+  });
+}
+
+function handleLessonProgressBadgeKeydown(event) {
+  if (event.key === "Enter" || event.key === " ") {
+    openLessonProgressReviewModal(event);
+  }
 }
 
 function openAccountSettingsModal() {
@@ -10093,15 +10238,17 @@ function startLessonDialogueSequence(stage, steps, resumeDialogueIndex = 0) {
   els.storyNameForm.classList.add("hidden");
   els.nextDialogueButton.textContent = "ถัดไป";
   showScene("story");
-  saveProgress({
-    currentStageId: stage.id,
-    currentLessonId: stage.id,
-    currentScreen: "lesson",
-    lastSafeScreen: "lesson",
-    lessonPhase: steps[state.lessonStoryStepIndex]?.phase || (stage.isPostBossDialogue ? "postBossDialogue" : "teacherExplanation"),
-    currentDialogueIndex: state.lessonStoryStepIndex,
-    currentLessonStepIndex: 0
-  });
+  if (!isReplayingStage(stage)) {
+    saveProgress({
+      currentStageId: stage.id,
+      currentLessonId: stage.id,
+      currentScreen: "lesson",
+      lastSafeScreen: "lesson",
+      lessonPhase: steps[state.lessonStoryStepIndex]?.phase || (stage.isPostBossDialogue ? "postBossDialogue" : "teacherExplanation"),
+      currentDialogueIndex: state.lessonStoryStepIndex,
+      currentLessonStepIndex: 0
+    });
+  }
   renderLessonStoryStep();
 }
 
@@ -10120,7 +10267,7 @@ function renderLessonStoryStep(options = {}) {
     return;
   }
 
-  if (state.currentLessonStage && !options.suppressProgressSave && !step.optionalMasterTemp) {
+  if (state.currentLessonStage && !options.suppressProgressSave && !step.optionalMasterTemp && !isReplayingStage(state.currentLessonStage)) {
     saveProgress({
       currentStageId: state.currentLessonStage.id,
       currentLessonId: state.currentLessonStage.id,
@@ -10269,7 +10416,7 @@ function chooseLessonStoryChoice(choice) {
 
 function advanceLessonStoryStep() {
   state.lessonStoryStepIndex += 1;
-  if (!state.lessonStorySteps[state.lessonStoryStepIndex]?.optionalMasterTemp) {
+  if (!state.lessonStorySteps[state.lessonStoryStepIndex]?.optionalMasterTemp && !isReplayingStage(state.currentLessonStage)) {
     saveProgress({
       currentDialogueIndex: state.lessonStoryStepIndex,
       currentScreen: "lesson",
@@ -10305,6 +10452,12 @@ function finishPastDialogueLesson() {
       isFinalBoss: isFinalBossStage(completedStage)
     });
     if (isFinalBossStage(completedStage)) {
+      if (isReplayingStage(completedStage)) {
+        state.activeReplayLessonId = null;
+        state.replayReturnProgress = null;
+        showMainMenu();
+        return;
+      }
       console.log("[FinalBoss] showActEnding");
       showActEnding();
       return;
@@ -17786,6 +17939,8 @@ els.nextDialogueButton.addEventListener("pointercancel", cancelNextDialogueHold)
 els.explanationCloseButton.addEventListener("click", closeExplanationPanel);
 els.lessonBackButton.addEventListener("click", returnToPlayerMainMenuFromLesson);
 els.lessonSelectButton.addEventListener("click", openLessonSelectModal);
+els.lessonProgressCard?.addEventListener("click", openLessonProgressReviewModal);
+els.lessonProgressCard?.addEventListener("keydown", handleLessonProgressBadgeKeydown);
 els.battleExitButton.addEventListener("click", confirmExitBattle);
 els.lessonDictionaryButton.addEventListener("click", () => {
   openGameModal({

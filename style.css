@@ -266,6 +266,10 @@
   border-color: rgba(40, 158, 94, 0.65);
 }
 
+.lesson-select-card.is-current {
+  border-color: rgba(255, 213, 106, 0.78);
+}
+
 .lesson-select-card.is-locked {
   opacity: 0.55;
 }
@@ -2340,6 +2344,9 @@ h3 {
   color: white;
   background: linear-gradient(180deg, #4c2c92, #6d31a3 58%, #361858);
   box-shadow: 0 4px 0 rgba(96, 52, 13, 0.78), inset 0 0 18px rgba(115, 246, 255, 0.16);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .lesson-progress-card span {
@@ -2352,6 +2359,28 @@ h3 {
 .lesson-progress-card strong {
   font-size: clamp(1.24rem, 4.8vw, 1.62rem);
   line-height: 1.08;
+}
+
+.lesson-progress-card small {
+  color: rgba(255, 247, 216, 0.86);
+  font-size: clamp(0.58rem, 2.3vw, 0.7rem);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.lesson-progress-card:hover,
+.lesson-progress-card:focus-visible {
+  border-color: rgba(255, 238, 151, 0.98);
+  box-shadow:
+    0 4px 0 rgba(96, 52, 13, 0.78),
+    inset 0 0 18px rgba(115, 246, 255, 0.22),
+    0 0 18px rgba(255, 213, 106, 0.34);
+  transform: translateY(-1px);
+}
+
+.lesson-progress-card:focus-visible {
+  outline: 3px solid rgba(115, 246, 255, 0.62);
+  outline-offset: 3px;
 }
 
 .lesson-progress-track {
@@ -5620,11 +5649,29 @@ h3 {
     0 0 16px rgba(98, 191, 234, 0.16);
 }
 
+.lesson-select-card.is-current {
+  border-color: rgba(255, 213, 106, 0.9);
+  box-shadow:
+    var(--lingua-frame-shadow-compact),
+    0 0 18px rgba(255, 213, 106, 0.2);
+}
+
 .lesson-select-card:not(.is-locked):hover {
   border-color: rgba(243, 220, 145, 0.9);
   box-shadow:
     var(--lingua-frame-shadow-compact),
     0 0 18px rgba(140, 99, 232, 0.25);
+}
+
+.lesson-progress-review-empty {
+  margin: 0;
+  padding: 14px;
+  border: 1px solid rgba(215, 179, 90, 0.34);
+  border-radius: var(--lingua-radius-small);
+  color: #fff7d8;
+  background: rgba(255, 255, 255, 0.08);
+  text-align: center;
+  font-weight: 800;
 }
 
 #battleScene .combatant {
