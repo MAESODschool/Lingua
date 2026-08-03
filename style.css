@@ -7531,3 +7531,38 @@ h3 {
   -webkit-box-orient: initial;
   -webkit-line-clamp: initial;
 }
+
+#battleScene.active .battlefield-stage #battlePlayer.has-female-battle-model .player-model-motion {
+  height: clamp(96px, 42%, 188px);
+  max-height: 48%;
+  top: calc(-1 * (var(--battle-player-model-lift) + clamp(48px, 18%, 64px)));
+}
+
+#battleScene.active .battlefield-stage #battlePlayer.has-female-battle-model #battlePlayerSprite.battle-player-model.female-battle-back-model {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  transform: translate3d(var(--player-img-offset-x, 0), -8%, 0) scale(0.72) !important;
+  transform-origin: center bottom;
+}
+
+@media (max-width: 768px) {
+  #battleScene.active .battlefield-stage #battlePlayer.has-female-battle-model .player-model-motion {
+    height: clamp(70px, 36%, 132px);
+    max-height: 42%;
+    top: calc(-1 * (var(--battle-player-model-lift) + clamp(18px, 8%, 32px)));
+  }
+
+  #battleScene.active .battlefield-stage #battlePlayer.has-female-battle-model #battlePlayerSprite.battle-player-model.female-battle-back-model {
+    transform: translate3d(var(--player-img-offset-x, 0), -10%, 0) scale(0.68) !important;
+  }
+}
+
+@media (max-width: 360px), (max-width: 768px) and (max-height: 620px) {
+  #battleScene.active .battlefield-stage #battlePlayer.has-female-battle-model .player-model-motion {
+    top: calc(-1 * (var(--battle-player-model-lift) + clamp(36px, 14%, 44px)));
+  }
+}
