@@ -4504,24 +4504,150 @@ function prepareQuestion(rawQuestion, index = 0) {
   };
 }
 
+function normalizeBattleQuestionKeyPart(value = "") {
+  return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function getBattleQuestionAnswer(question = {}) {
+  return question.correctAnswer ?? question.answer ?? question.correct ?? question.v2 ?? "";
+}
+
+function getBattleQuestionPromptSource(question = {}) {
+  return question.prompt ?? question.text ?? question.sentence ?? question.question ?? "";
+}
+
+function getBattleQuestionBaseSource(question = {}) {
+  return question.baseVerb ?? question.targetWord ?? question.v1 ?? question.word?.v1 ?? "";
+}
+
+function getBattleQuestionKeys(question, index = 0, prefix = "battle") {
+  if (!question) {
+    return [];
+  }
+
+  const keys = [];
+  const addKey = (type, ...parts) => {
+    const normalizedParts = parts.map(normalizeBattleQuestionKeyPart).filter(Boolean);
+    if (!normalizedParts.length) {
+      return;
+    }
+    const key = `${type}:${normalizedParts.join("=>")}`;
+    if (!keys.includes(key)) {
+      keys.push(key);
+    }
+  };
+
+  addKey("id", question.id);
+  addKey("questionId", question.questionId);
+  addKey("generatedId", getQuestionId(question, index, prefix));
+
+  const answer = getBattleQuestionAnswer(question);
+  const prompt = getBattleQuestionPromptSource(question);
+  const baseWord = getBattleQuestionBaseSource(question);
+  addKey("prompt-answer", prompt, answer);
+  addKey("base-answer", baseWord, answer);
+  addKey("sentence-answer", question.sentence, answer);
+  addKey("word-answer", question.v1, question.v2);
+
+  if (!keys.length) {
+    addKey("fallback", JSON.stringify({
+      prompt,
+      baseWord,
+      answer,
+      type: question.type || "",
+      ruleId: question.ruleId || "",
+      lessonId: question.lessonId || ""
+    }));
+  }
+
+  return keys;
+}
+
+function ensureBattleQuestionHistory(battle = state.actBattle) {
+  if (!battle) {
+    return new Set();
+  }
+  if (!(battle.usedQuestionKeys instanceof Set)) {
+    battle.usedQuestionKeys = restoreSet(battle.usedQuestionKeys);
+  }
+  return battle.usedQuestionKeys;
+}
+
+function hasUsedBattleQuestion(question, battle = state.actBattle, index = 0, prefix = "battle") {
+  const usedKeys = ensureBattleQuestionHistory(battle);
+  return getBattleQuestionKeys(question, index, prefix).some(key => usedKeys.has(key));
+}
+
+function markBattleQuestionUsed(question, battle = state.actBattle, index = 0, prefix = "battle") {
+  const usedKeys = ensureBattleQuestionHistory(battle);
+  getBattleQuestionKeys(question, index, prefix).forEach(key => usedKeys.add(key));
+}
+
+function markBattleQuestionIdsAsUsed(ids, battle = state.actBattle) {
+  const usedKeys = ensureBattleQuestionHistory(battle);
+  (ids || []).forEach(id => {
+    const normalizedId = normalizeBattleQuestionKeyPart(id);
+    if (normalizedId) {
+      usedKeys.add(`id:${normalizedId}`);
+      usedKeys.add(`generatedId:${normalizedId}`);
+    }
+  });
+}
+
+function pickUnusedBattleQuestion(pool, {
+  battle = state.actBattle,
+  usedSet = null,
+  lastBaseVerb = "",
+  prefix = "battle"
+} = {}) {
+  if (!pool || !pool.length) {
+    return null;
+  }
+
+  const normalizedLastBaseVerb = normalizeBattleQuestionKeyPart(lastBaseVerb);
+  const candidates = pool
+    .map((question, index) => ({ question, index }))
+    .filter(({ question, index }) => {
+      const generatedId = getQuestionId(question, index, prefix);
+      if (usedSet?.has(generatedId)) {
+        return false;
+      }
+      return !hasUsedBattleQuestion(question, battle, index, prefix);
+    });
+
+  if (!candidates.length) {
+    return null;
+  }
+
+  const withoutSameVerb = candidates.filter(({ question }) => {
+    const baseWord = normalizeBattleQuestionKeyPart(getQuestionBaseWord(question) || getBattleQuestionBaseSource(question));
+    return !baseWord || baseWord !== normalizedLastBaseVerb;
+  });
+  const finalCandidates = withoutSameVerb.length ? withoutSameVerb : candidates;
+  return sample(finalCandidates.map(item => item.question), 1)[0] || null;
+}
+
 function pickQuestion(pool, usedSet, lastBaseVerb = "") {
   if (!pool || !pool.length) {
     return null;
   }
 
-  const usageLimit = Math.ceil(pool.length * 0.2);
-  let available = pool.filter((question, index) => !usedSet.has(getQuestionId(question, index)));
-  if (available.length <= usageLimit) {
-    usedSet.clear();
-    available = [...pool];
+  const activeBattle = state.actBattle || null;
+  if (activeBattle) {
+    return pickUnusedBattleQuestion(pool, {
+      battle: activeBattle,
+      usedSet,
+      lastBaseVerb
+    });
   }
 
+  let available = pool.filter((question, index) => !usedSet.has(getQuestionId(question, index)));
   const withoutSameVerb = available.filter(question => !question.baseVerb || question.baseVerb !== lastBaseVerb);
   if (withoutSameVerb.length) {
     available = withoutSameVerb;
   }
 
-  return sample(available, 1)[0] || pool[0];
+  return sample(available, 1)[0] || null;
 }
 
 function getAllowedRuleIdsForStage(stage) {
@@ -7671,6 +7797,7 @@ function captureBattleResumeCheckpoint(source, savedAt) {
     skillCooldownStartedTurn: { ...(battle.skillCooldownStartedTurn || {}) },
     skillCooldownLastTickPlayerTurn: Math.max(0, Number(battle.skillCooldownLastTickPlayerTurn) || 0),
     playerTurnCounter: Math.max(0, Number(battle.playerTurnCounter) || 0),
+    usedQuestionKeys: setToArray(ensureBattleQuestionHistory(battle)),
     usedQuestionIds: setToArray(battle.usedQuestionIds),
     usedBossQuestionIds: setToArray(battle.usedBossQuestionIds),
     usedFocusQuestionIds: setToArray(battle.usedFocusQuestionIds),
@@ -7784,10 +7911,17 @@ function hydrateBattleSnapshot(snapshot, stage) {
   const battle = {
     ...snapshot,
     stage,
+    usedQuestionKeys: restoreSet(snapshot.usedQuestionKeys),
     usedQuestionIds: restoreSet(snapshot.usedQuestionIds),
     usedBossQuestionIds: restoreSet(snapshot.usedBossQuestionIds),
     usedFocusQuestionIds: restoreSet(snapshot.usedFocusQuestionIds)
   };
+  markBattleQuestionIdsAsUsed(snapshot.usedQuestionIds, battle);
+  markBattleQuestionIdsAsUsed(snapshot.usedBossQuestionIds, battle);
+  markBattleQuestionIdsAsUsed(snapshot.usedFocusQuestionIds, battle);
+  markBattleQuestionUsed(battle.currentQuestion, battle, 0, "resume-current");
+  markBattleQuestionUsed(battle.currentBossQuestion, battle, 0, "resume-boss");
+  markBattleQuestionUsed(battle.currentFocusQuestion, battle, 0, "resume-focus");
   battle.isActive = true;
   battle.isDefeated = false;
   battle.victoryHandled = false;
@@ -11041,6 +11175,7 @@ function startActBattle(stageIndex) {
     lastHeavyAttackTurn: -999,
     bossTurnCount: 0,
     recentCharmIds: [],
+    usedQuestionKeys: new Set(),
     usedQuestionIds: new Set(),
     lastQuestionBaseVerb: "",
     currentQuestion: null,
@@ -11162,6 +11297,15 @@ function startActFocusAction() {
 
   const focusQuestion = prepareQuestion(rawFocusQuestion, battle.focusQuestionIndex || 0);
   battle.currentFocusQuestion = focusQuestion;
+  markBattleQuestionUsed(focusQuestion, battle, battle.focusQuestionIndex || 0, "focus");
+  battle.usedFocusQuestionIds.add(focusQuestion.id);
+  battle.lastFocusQuestionId = focusQuestion.id;
+  battle.lastFocusQuestionBaseVerb = getQuestionBaseWord(focusQuestion);
+  battle.focusQuestionIndex = (battle.focusQuestionIndex || 0) + 1;
+  battle.recentFocusQuestionIds = [
+    ...(battle.recentFocusQuestionIds || []),
+    focusQuestion.id
+  ].slice(-5);
   battle.advanceQuestionOnContinue = false;
   showOnlyBattlePanel(els.questionPanel);
   setBattleTurnOwner("player");
@@ -11251,14 +11395,29 @@ function showActBattleQuestion() {
   battle.answerResolving = false;
   battle.correctAnswerFeedbackAdvanced = false;
   battle.advanceQuestionOnContinue = true;
-  const rawQuestion = pickQuestion(
-    battle.stage.questions,
-    battle.usedQuestionIds,
-    battle.lastQuestionBaseVerb || ""
-  ) || battle.stage.questions[battle.questionIndex];
+  const rawQuestion = pickUnusedBattleQuestion(battle.stage.questions, {
+    battle,
+    usedSet: battle.usedQuestionIds,
+    lastBaseVerb: battle.lastQuestionBaseVerb || "",
+    prefix: `player-${battle.stage.id || "stage"}`
+  });
+  if (!rawQuestion) {
+    battle.advanceQuestionOnContinue = false;
+    battle.actionChoiceLocked = false;
+    battle.currentQuestion = null;
+    showOnlyBattlePanel(els.actionMenu);
+    setBattleTurnOwner("player");
+    els.battleMessage.textContent = "โจทย์ใหม่ใน battle นี้ถูกใช้ครบแล้ว ไม่มีการวนคำถามซ้ำ เลือกการกระทำอื่นหรือกลับมาเริ่ม battle ใหม่";
+    if (els.activityFeedback) {
+      els.activityFeedback.textContent = "ระบบกันคำถามซ้ำกำลังป้องกันไม่ให้เจอโจทย์เดิมใน battle เดียวกัน";
+    }
+    updateActActionMenuState();
+    return;
+  }
   const rawQuestionIndex = battle.stage.questions.indexOf(rawQuestion);
   const question = prepareQuestion(rawQuestion, rawQuestionIndex);
   battle.currentQuestion = question;
+  markBattleQuestionUsed(question, battle, rawQuestionIndex, `player-${battle.stage.id || "stage"}`);
   battle.lastQuestionBaseVerb = question.baseVerb || "";
   battle.usedQuestionIds.add(question.id);
   battle.pendingPlayerAttack = null;
@@ -12496,6 +12655,22 @@ function addRecentBossV2Word(challenge, wordId) {
   }
 }
 
+function createBossV2ChallengeQuestion(word) {
+  if (!word) {
+    return null;
+  }
+  return {
+    id: `boss-v2-${word.id || `${word.v1}-${word.v2}`}`,
+    prompt: `v1-to-v2-${word.v1}`,
+    baseVerb: word.v1,
+    answer: word.v2,
+    correctAnswer: word.v2,
+    v1: word.v1,
+    v2: word.v2,
+    type: "boss-v2-word"
+  };
+}
+
 function resetActiveBossGrammarChallenge({ keepSession = true } = {}) {
   const challenge = state.actBattle?.bossGrammarChallenge;
   if (!challenge) {
@@ -12553,6 +12728,7 @@ function hasTaughtBossV2Word(word, completedSet, stage) {
 
 function getEligibleBossV2Words(stage, challenge) {
   const bossKey = getBossKey(stage);
+  const battle = state.actBattle;
   if (!BOSS_GRAMMAR_CHALLENGE_CONFIG.enabled || !bossKey) {
     return [];
   }
@@ -12576,8 +12752,17 @@ function getEligibleBossV2Words(stage, challenge) {
   }
 
   const recentIds = new Set(challenge?.recentWordIds || []);
-  const freshWords = taughtWords.filter(word => !recentIds.has(word.id));
-  return freshWords.length ? freshWords : taughtWords;
+  const freshWords = taughtWords.filter(word =>
+    !recentIds.has(word.id) &&
+    !hasUsedBattleQuestion(createBossV2ChallengeQuestion(word), battle, 0, "boss-v2")
+  );
+  if (freshWords.length) {
+    return freshWords;
+  }
+
+  return taughtWords.filter(word =>
+    !hasUsedBattleQuestion(createBossV2ChallengeQuestion(word), battle, 0, "boss-v2")
+  );
 }
 
 function chooseBossV2ChallengeWord(stage, challenge) {
@@ -12761,6 +12946,7 @@ function startBossGrammarChallengeIfEligible() {
   });
   challenge.consecutiveSpecialCount = (challenge.consecutiveSpecialCount || 0) + 1;
   addRecentBossV2Word(challenge, word.id);
+  markBattleQuestionUsed(createBossV2ChallengeQuestion(word), battle, 0, "boss-v2");
 
   if (mode === "typing") {
     showBossTypingChallenge();
@@ -13185,45 +13371,12 @@ function getFocusQuestion(stage) {
     battle.recentFocusQuestionIds = [];
   }
 
-  const lastId = battle.lastFocusQuestionId || "";
-  const lastBaseVerb = battle.lastFocusQuestionBaseVerb || "";
-  let pool = normalizedPool.filter(question =>
-    !battle.usedFocusQuestionIds.has(question.id) &&
-    question.id !== lastId &&
-    (!getQuestionBaseWord(question) || getQuestionBaseWord(question) !== lastBaseVerb)
-  );
-
-  if (!pool.length) {
-    pool = normalizedPool.filter(question =>
-      !battle.usedFocusQuestionIds.has(question.id) &&
-      question.id !== lastId
-    );
-  }
-
-  if (!pool.length) {
-    battle.usedFocusQuestionIds.clear();
-    pool = normalizedPool.filter(question => question.id !== lastId);
-  }
-
-  if (!pool.length) {
-    pool = normalizedPool;
-  }
-
-  const question = sample(pool, 1)[0];
-  if (!question) {
-    return null;
-  }
-
-  battle.usedFocusQuestionIds.add(question.id);
-  battle.lastFocusQuestionId = question.id;
-  battle.lastFocusQuestionBaseVerb = getQuestionBaseWord(question);
-  battle.focusQuestionIndex = (battle.focusQuestionIndex || 0) + 1;
-  battle.recentFocusQuestionIds = [
-    ...(battle.recentFocusQuestionIds || []),
-    question.id
-  ].slice(-5);
-
-  return question;
+  return pickUnusedBattleQuestion(normalizedPool, {
+    battle,
+    usedSet: battle.usedFocusQuestionIds,
+    lastBaseVerb: battle.lastFocusQuestionBaseVerb || "",
+    prefix: `focus-${stage.id || "stage"}`
+  });
 }
 
 function normalizeEnemyQuestionBank(questions, stage, source) {
@@ -13293,7 +13446,7 @@ function getBossQuestion(stage) {
     return sample(bank, 1)[0];
   }
 
-  if (!battle.usedBossQuestionIds || battle.usedBossQuestionIds.size > Math.floor(bank.length * 0.8)) {
+  if (!battle.usedBossQuestionIds) {
     battle.usedBossQuestionIds = new Set();
   }
 
@@ -13304,6 +13457,7 @@ function getBossQuestion(stage) {
     ? bank.filter(question =>
       question.difficulty === preferredDifficulty &&
       !battle.usedBossQuestionIds.has(question.id) &&
+      !hasUsedBattleQuestion(question, battle, 0, `boss-${stage?.id || "stage"}`) &&
       getQuestionBaseWord(question) !== battle.lastBossQuestionBaseVerb
     )
     : [];
@@ -13315,21 +13469,24 @@ function getBossQuestion(stage) {
   if (!pool.length) {
     pool = bank.filter(question =>
       !battle.usedBossQuestionIds.has(question.id) &&
+      !hasUsedBattleQuestion(question, battle, 0, `boss-${stage?.id || "stage"}`) &&
       getQuestionBaseWord(question) !== battle.lastBossQuestionBaseVerb
     );
   }
 
   if (!pool.length) {
-    pool = bank.filter(question => !battle.usedBossQuestionIds.has(question.id));
-  }
-
-  if (!pool.length) {
-    battle.usedBossQuestionIds.clear();
-    pool = [...bank];
+    pool = bank.filter((question, index) =>
+      !battle.usedBossQuestionIds.has(question.id) &&
+      !hasUsedBattleQuestion(question, battle, index, `boss-${stage?.id || "stage"}`)
+    );
   }
 
   const question = sample(pool, 1)[0];
+  if (!question) {
+    return null;
+  }
   battle.usedBossQuestionIds.add(question.id);
+  markBattleQuestionUsed(question, battle, bank.indexOf(question), `boss-${stage?.id || "stage"}`);
   battle.lastBossQuestionBaseVerb = getQuestionBaseWord(question) || "";
   battle.bossQuestionIndex += 1;
 
@@ -16201,6 +16358,11 @@ function updateBattleStats() {
 function startAttack() {
   setBattleTurnOwner("player");
   const rawQuestion = pickQuestion(questions, state.usedGeneralQuestionIds, state.lastGeneralQuestionBaseVerb);
+  if (!rawQuestion) {
+    els.battleMessage.textContent = "คำถามใหม่ใน battle นี้ถูกใช้ครบแล้ว ไม่มีการวนคำถามซ้ำ";
+    showOnlyBattlePanel(els.actionMenu);
+    return;
+  }
   state.currentQuestion = prepareQuestion(rawQuestion);
   state.usedGeneralQuestionIds.add(state.currentQuestion.id);
   state.lastGeneralQuestionBaseVerb = state.currentQuestion.baseVerb || "";
