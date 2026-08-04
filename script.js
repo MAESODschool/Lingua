@@ -1269,6 +1269,154 @@ const phase1WasWereQuestions = [
   { id: "phase1-was-were-8", prompt: "The doors ____ open last night.", options: ["were", "was", "is"], answer: "were", explanation: "The doors มีหลายบาน ใช้ were" }
 ];
 
+const extraWasWereQuestions = [
+  {
+    id: "was-were-extra-01",
+    prompt: "Which word completes the sentence: I ____ at school yesterday.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: เมื่อวานฉันอยู่ที่โรงเรียน",
+    choices: ["were", "was", "am", "are"],
+    answer: "was",
+    explanation: "ใช้ was กับประธาน I เมื่อพูดถึงอดีต"
+  },
+  {
+    id: "was-were-extra-02",
+    prompt: "Which word completes the sentence: They ____ happy last night.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: พวกเขามีความสุขเมื่อคืนนี้",
+    choices: ["were", "was", "is", "am"],
+    answer: "were",
+    explanation: "ใช้ were กับประธาน they"
+  },
+  {
+    id: "was-were-extra-03",
+    prompt: "Which word completes the sentence: She ____ tired after the game.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: เธอเหนื่อยหลังจากการแข่งขัน",
+    choices: ["were", "are", "am", "was"],
+    answer: "was",
+    explanation: "ใช้ was กับประธาน she"
+  },
+  {
+    id: "was-were-extra-04",
+    prompt: "Which word completes the sentence: We ____ in the classroom this morning.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: พวกเราอยู่ในห้องเรียนเมื่อเช้านี้",
+    choices: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "ใช้ were กับประธาน we"
+  },
+  {
+    id: "was-were-extra-05",
+    prompt: "Which sentence is correct?",
+    promptTh: "ประโยคใดถูกต้อง",
+    choices: [
+      "He were at home yesterday.",
+      "He was at home yesterday.",
+      "He are at home yesterday.",
+      "He am at home yesterday."
+    ],
+    answer: "He was at home yesterday.",
+    explanation: "ใช้ was กับ he ในประโยคอดีต"
+  },
+  {
+    id: "was-were-extra-06",
+    prompt: "Which sentence is correct?",
+    promptTh: "ประโยคใดถูกต้อง",
+    choices: [
+      "You was late yesterday.",
+      "You is late yesterday.",
+      "You am late yesterday.",
+      "You were late yesterday."
+    ],
+    answer: "You were late yesterday.",
+    explanation: "ใช้ were กับ you"
+  },
+  {
+    id: "was-were-extra-07",
+    prompt: "Which word completes the sentence: The cat ____ under the table.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: แมวอยู่ใต้โต๊ะ",
+    choices: ["was", "were", "are", "am"],
+    answer: "was",
+    explanation: "The cat เป็นคำนามเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-extra-08",
+    prompt: "Which word completes the sentence: The students ____ in the library.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: นักเรียนหลายคนอยู่ในห้องสมุด",
+    choices: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "The students เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-extra-09",
+    prompt: "Which word completes the sentence: My mother ____ busy yesterday.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: แม่ของฉันยุ่งเมื่อวานนี้",
+    choices: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "My mother เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-extra-10",
+    prompt: "Which word completes the sentence: My friends ____ at the park last Sunday.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: เพื่อน ๆ ของฉันอยู่ที่สวนสาธารณะเมื่อวันอาทิตย์ที่แล้ว",
+    choices: ["was", "is", "am", "were"],
+    answer: "were",
+    explanation: "My friends เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-extra-11",
+    prompt: "Which word completes the sentence: It ____ very cold last night.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: เมื่อคืนนี้อากาศหนาวมาก",
+    choices: ["was", "were", "are", "am"],
+    answer: "was",
+    explanation: "ใช้ was กับ it"
+  },
+  {
+    id: "was-were-extra-12",
+    prompt: "Which word completes the sentence: The books ____ on the desk.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: หนังสือหลายเล่มอยู่บนโต๊ะ",
+    choices: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "The books เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-extra-13",
+    prompt: "Which sentence is NOT correct?",
+    promptTh: "ประโยคใดไม่ถูกต้อง",
+    choices: [
+      "She was at school.",
+      "They were happy.",
+      "I was tired.",
+      "We was in the room."
+    ],
+    answer: "We was in the room.",
+    explanation: "We ต้องใช้ were ไม่ใช่ was"
+  },
+  {
+    id: "was-were-extra-14",
+    prompt: "Which sentence is NOT correct?",
+    promptTh: "ประโยคใดไม่ถูกต้อง",
+    choices: [
+      "It was sunny yesterday.",
+      "They was at home.",
+      "You were late.",
+      "He was hungry."
+    ],
+    answer: "They was at home.",
+    explanation: "They ต้องใช้ were ไม่ใช่ was"
+  },
+  {
+    id: "was-were-extra-15",
+    prompt: "Which word completes the question: ____ you at school yesterday?",
+    promptTh: "คำใดเติมคำถามนี้ได้ถูกต้อง: เมื่อวานคุณอยู่ที่โรงเรียนไหม",
+    choices: ["Was", "Am", "Were", "Is"],
+    answer: "Were",
+    explanation: "คำถามที่ใช้กับ you ในอดีตต้องขึ้นต้นด้วย Were"
+  }
+];
+
+phase1WasWereQuestions.push(...extraWasWereQuestions.map(({ choices = [], ...question }) => ({
+  ...question,
+  options: question.options || choices
+})));
+
 const phase1ThereWasWereQuestions = [
   { id: "phase1-there-1", prompt: "____ a book on the desk.", options: ["There was", "There were", "There are"], answer: "There was", explanation: "a book เป็นสิ่งเดียว จึงใช้ There was" },
   { id: "phase1-there-2", prompt: "____ three birds in the sky.", options: ["There were", "There was", "There is"], answer: "There were", explanation: "three birds มีหลายตัว จึงใช้ There were" },
@@ -1290,6 +1438,61 @@ const phase1HadQuestions = [
   { id: "phase1-had-7", prompt: "have ในอดีตเปลี่ยนเป็นอะไร", options: ["had", "haved", "has"], answer: "had", explanation: "have เป็น Irregular Verb รูปอดีตคือ had" },
   { id: "phase1-had-8", prompt: "has ในอดีตเปลี่ยนเป็นอะไร", options: ["had", "hased", "have"], answer: "had", explanation: "has ในอดีตก็ใช้ had" }
 ];
+
+const MASTER_PROMPT_TH_BY_PROMPT = {
+  "What is a past time word?": "คำบอกเวลาในอดีตคือข้อใด",
+  "Which one is a past time expression?": "ข้อใดเป็นคำบอกเวลาในอดีต",
+  "Which word shows the past?": "คำใดบอกเวลาในอดีต",
+  "Which phrase shows the past?": "วลีใดบอกเวลาในอดีต",
+  "Which phrase means something happened before now?": "วลีใดหมายถึงสิ่งที่เกิดขึ้นก่อนตอนนี้",
+  "Which sentence talks about the past?": "ประโยคใดกล่าวถึงเหตุการณ์ในอดีต",
+  "Which verb is in the past form?": "คำกริยาข้อใดอยู่ในรูปอดีต",
+  "Which one is correct?": "ข้อใดถูกต้อง",
+  "Which form is correct for he/she/it in the past?": "รูปใดถูกต้องสำหรับ he/she/it ในอดีต",
+  "Which form is correct for you/we/they in the past?": "รูปใดถูกต้องสำหรับ you/we/they ในอดีต",
+  "Which verb is the past form of go?": "คำใดคือรูปอดีตของ go",
+  "What is the past form of study?": "รูปอดีตของ study คือข้อใด",
+  "Which sentence is correct?": "ประโยคใดถูกต้อง",
+  "Which answer uses was correctly?": "ข้อใดใช้ was ได้ถูกต้อง",
+  "Which answer uses were correctly?": "ข้อใดใช้ were ได้ถูกต้อง",
+  "What is the past form of walk?": "รูปอดีตของ walk คือข้อใด",
+  "What is the past form of go?": "รูปอดีตของ go คือข้อใด",
+  "Which one is NOT a past time expression?": "ข้อใดไม่ใช่คำบอกเวลาในอดีต",
+  "Choose the past time expression.": "เลือกคำบอกเวลาในอดีต",
+  "Which phrase can begin a story about the past?": "วลีใดใช้เริ่มเรื่องเล่าในอดีต",
+  "Which phrase shows a finished time?": "วลีใดบอกเวลาที่จบไปแล้ว",
+  "Which sentence should use Past Simple?": "ประโยคใดควรใช้ Past Simple",
+  "Which phrase means ก่อนเข้าเรียน?": "วลีใดหมายถึงก่อนเข้าเรียน",
+  "When I was a child talks about:": "When I was a child พูดถึงเวลาใด",
+  "Which one is NOT a past time clue?": "ข้อใดไม่ใช่คำใบ้เวลาในอดีต",
+  "Which phrase is used in stories to talk about the past?": "วลีใดใช้เล่าเรื่องในอดีต",
+  "Which phrase shows a past date?": "วลีใดบอกวันที่ในอดีต",
+  "Many years ago means:": "Many years ago หมายถึงอะไร"
+};
+
+function applyMasterPromptTranslations(questions = []) {
+  questions.forEach(question => {
+    const prompt = String(question?.prompt || "").trim();
+    if (prompt && MASTER_PROMPT_TH_BY_PROMPT[prompt] && !question.promptTh) {
+      question.promptTh = MASTER_PROMPT_TH_BY_PROMPT[prompt];
+    }
+  });
+  return questions;
+}
+
+[
+  phase1PastMeaningQuestions,
+  phase1PastTimeWordsQuestions,
+  phase1WasWereQuestions,
+  phase1ThereWasWereQuestions,
+  phase1HadQuestions,
+  regularRuleOneQuestions,
+  regularRuleTwoQuestions,
+  regularRuleThreeQuestions,
+  regularRuleFourQuestions,
+  irregularPracticeQuestions,
+  finalBossQuestions
+].forEach(applyMasterPromptTranslations);
 
 normalizeQuestionMeta(regularRuleOneQuestions, "regular-rule-1", "regular_ed");
 normalizeQuestionMeta(regularRuleTwoQuestions, "regular-rule-2", "ending_e_add_d");
@@ -9996,6 +10199,17 @@ function createSegmentNode(text, phase = "teacherExplanation", speaker = "มา
   };
 }
 
+function formatMasterQuestionPrompt(question) {
+  const prompt = String(question?.prompt || question?.text || "").trim();
+  const promptTh = String(question?.promptTh || "").trim();
+
+  if (prompt && promptTh) {
+    return `${prompt} (${promptTh})`;
+  }
+
+  return prompt;
+}
+
 function createLessonQuizChoiceOrder(choices = []) {
   // Shuffle lesson quiz buttons once while building the step so rerenders and Previous keep the same order.
   return shuffleArray(choices).map(choice => (
@@ -10003,9 +10217,11 @@ function createLessonQuizChoiceOrder(choices = []) {
   ));
 }
 
-function guidedPracticeNode(prompt, choices, correctAnswer, feedback) {
+function guidedPracticeNode(prompt, choices, correctAnswer, feedback, promptTh = "") {
   const shuffledChoices = createLessonQuizChoiceOrder(choices);
   return createSegmentNode(prompt, "guidedPractice", "มาสเตอร์เวรีออน", {
+    prompt,
+    promptTh,
     lessonChoices: shuffledChoices.map(choice => ({
       text: choice,
       correct: choice === correctAnswer,
@@ -11239,7 +11455,7 @@ function buildLessonSegmentDialogue(stage) {
     steps.push(createSegmentNode(`ตัวอย่างที่ ${index + 1}: ${text}`, "teacherExamples"));
   });
   (segment.guidedPractice || []).forEach(practice => {
-    steps.push(guidedPracticeNode(practice.prompt, practice.choices, practice.answer, practice.feedback));
+    steps.push(guidedPracticeNode(practice.prompt, practice.choices, practice.answer, practice.feedback, practice.promptTh));
   });
   appendLessonSegmentLines(steps, segment.preBossDialogue, "preBossDialogue");
   if (stage.questions && stage.questions.length) {
@@ -11908,7 +12124,7 @@ function renderLessonCheckStep(step) {
   renderLessonTextStep({
     type: "dialogue",
     speaker: step.speaker || "มาสเตอร์เวรีออน",
-    text: step.prompt || step.text
+    text: formatMasterQuestionPrompt(step)
   });
   step.choices.forEach(choice => {
     const choiceText = typeof choice === "string" ? choice : choice.text;
@@ -17276,6 +17492,11 @@ function updateBattleEnemyVisual(stage = null) {
   const isEchoTrick = enemyName === "Echo Tick";
   const isYesterdaySpirit = enemyName === "Yesterday Sprite";
   const isMemoryBreaker = enemyName === "The Memory Breaker" || enemyName === "ผู้ทำลายความทรงจำ";
+  const isWasWereWisp = stage?.id === "act1_phase1_unit3_was_were" || enemyName === "Was-Were Wisp" || thaiName === "วิสป์ was-were";
+
+  if (els.battleEnemy) {
+    els.battleEnemy.classList.toggle("was-were-wisp-battle", isWasWereWisp);
+  }
 
   if (els.battleEnemySprite) {
     els.battleEnemySprite.onerror = null;
@@ -17283,6 +17504,7 @@ function updateBattleEnemyVisual(stage = null) {
     els.battleEnemySprite.classList.toggle("echo-trick-gif", isEchoTrick);
     els.battleEnemySprite.classList.toggle("yesterday-spirit-gif", isYesterdaySpirit);
     els.battleEnemySprite.classList.toggle("memory-breaker-gif", isMemoryBreaker);
+    els.battleEnemySprite.classList.toggle("was-were-wisp-battle-sprite", isWasWereWisp);
     if (isTimeDust || isEchoTrick || isYesterdaySpirit || isMemoryBreaker) {
       const specialEnemyClass = isTimeDust
         ? "timedust-gif"

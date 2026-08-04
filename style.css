@@ -7350,6 +7350,19 @@ h3 {
   --boss-offset-y: 0;
 }
 
+#battleScene .battlefield-stage #battleEnemy.was-were-wisp-battle .boss-model-motion {
+  height: clamp(64px, 32%, 124px);
+  max-height: 34%;
+  top: calc(-1 * clamp(6px, 4%, 18px));
+  right: clamp(128px, 13vw, 184px);
+}
+
+#battleScene .battlefield-stage #battleEnemySprite.was-were-wisp-battle-sprite {
+  --boss-img-scale: 1.02;
+  --boss-offset-x: -4%;
+  --boss-offset-y: 10%;
+}
+
 #battleScene .battlefield-stage .player-model-motion {
   grid-column: 1;
   grid-row: 1 / -1;
@@ -7357,11 +7370,12 @@ h3 {
   align-self: end;
   display: grid;
   place-items: end start;
-  width: min(52%, 210px);
-  height: clamp(122px, 54%, 230px);
-  max-width: 52%;
-  max-height: 58%;
-  top: calc(-1 * var(--battle-player-model-lift));
+  width: min(49%, 198px);
+  height: clamp(116px, 51%, 220px);
+  max-width: 49%;
+  max-height: 55%;
+  top: calc(-1 * (var(--battle-player-model-lift) + clamp(4px, 2%, 12px)));
+  left: clamp(8px, 2vw, 18px);
   transform: translate3d(0, 0, 0);
   pointer-events: none;
   user-select: none;
@@ -7373,8 +7387,9 @@ h3 {
 #battleScene .battlefield-stage #battlePlayerSprite.battle-player-model,
 #battleScene .battlefield-stage #battlePlayer .main-character-gif.small.battle-player-model,
 #battleScene .battlefield-stage #battlePlayer .main-character-gif-fallback.small.battle-player-model {
-  --player-img-scale: 1;
-  --player-img-offset-y: 18%;
+  --player-img-scale: 0.96;
+  --player-img-offset-x: 5%;
+  --player-img-offset-y: 4%;
   width: auto;
   height: 100%;
   max-width: 100%;
@@ -7600,9 +7615,21 @@ h3 {
     margin-top: 0;
   }
 
+  #battleScene .battlefield-stage #battleEnemy.was-were-wisp-battle .boss-model-motion {
+    height: clamp(46px, 25%, 86px);
+    max-height: 28%;
+    top: calc(-1 * clamp(3px, 2.5%, 12px));
+    right: clamp(48px, 12vw, 78px);
+  }
+
+  #battleScene .battlefield-stage #battleEnemySprite.was-were-wisp-battle-sprite {
+    --boss-offset-y: 8%;
+  }
+
   #battleScene .battlefield-stage .player-model-motion {
-    height: clamp(86px, 46%, 154px);
-    max-height: 50%;
+    height: clamp(82px, 43%, 146px);
+    max-height: 47%;
+    left: clamp(5px, 1.8vw, 10px);
   }
 
   #battleScene .battlefield-stage .hp-bar {
@@ -7740,8 +7767,13 @@ h3 {
     margin-top: 0;
   }
 
+  #battleScene .battlefield-stage #battleEnemy.was-were-wisp-battle .boss-model-motion {
+    height: clamp(40px, 23%, 72px);
+    right: clamp(42px, 12vw, 64px);
+  }
+
   #battleScene .battlefield-stage .player-model-motion {
-    height: clamp(76px, 42%, 134px);
+    height: clamp(72px, 39%, 126px);
   }
 }
 
@@ -7763,8 +7795,14 @@ h3 {
     height: clamp(39px, 22%, 67px);
   }
 
+  #battleScene .battlefield-stage #battleEnemy.was-were-wisp-battle .boss-model-motion {
+    height: clamp(36px, 21%, 62px);
+    right: clamp(34px, 10vw, 50px);
+  }
+
   #battleScene .battlefield-stage .player-model-motion {
-    height: clamp(68px, 40%, 118px);
+    height: clamp(62px, 37%, 108px);
+    left: 5px;
   }
 }
 
