@@ -375,6 +375,43 @@ button {
   -webkit-overflow-scrolling: touch;
 }
 
+.developer-credit {
+  position: fixed;
+  left: 50%;
+  bottom: max(6px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 60;
+  width: min(92vw, 900px);
+  margin: 0;
+  color: rgba(255, 232, 160, 0.72);
+  font-size: clamp(0.62rem, 1.8vw, 0.78rem);
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.75);
+  pointer-events: none;
+}
+
+body:has(#storyScene.active) .developer-credit,
+body:has(#battleScene.active) .developer-credit {
+  display: none;
+}
+
+#loginScene,
+.main-menu-scene,
+#createCharacterScene,
+.teacher-dashboard-scene,
+.tutorial-guide-scene,
+#victoryScene {
+  padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
+}
+
+@media (max-height: 640px) {
+  .developer-credit {
+    display: none;
+  }
+}
+
 .scene {
   display: none;
   width: 100%;
