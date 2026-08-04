@@ -383,6 +383,7 @@ button {
   z-index: 60;
   width: min(92vw, 900px);
   margin: 0;
+  padding: 2px 8px;
   color: rgba(255, 232, 160, 0.72);
   font-size: clamp(0.62rem, 1.8vw, 0.78rem);
   font-weight: 700;
@@ -392,8 +393,7 @@ button {
   pointer-events: none;
 }
 
-body:has(#storyScene.active) .developer-credit,
-body:has(#battleScene.active) .developer-credit {
+.developer-credit.is-hidden {
   display: none;
 }
 

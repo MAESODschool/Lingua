@@ -3297,6 +3297,14 @@ function returnToMainMenuFromTutorial() {
   showScene("mainMenu");
 }
 
+function updateDeveloperCreditVisibility(sceneName) {
+  const credit = document.getElementById("developerCredit");
+  if (!credit) {
+    return;
+  }
+  credit.classList.toggle("is-hidden", sceneName === "story" || sceneName === "battle");
+}
+
 function showScene(name) {
   cleanupButtonsForSceneChange(name);
   if (name !== "battle") {
@@ -3314,6 +3322,7 @@ function showScene(name) {
     refreshPlayerCharacterSprites();
   }
   scenes[name].classList.add("active");
+  updateDeveloperCreditVisibility(name);
   applyDebugButtonVisibility();
   updateManualSaveButtonVisibility(name);
   playBgmForScene(name);
