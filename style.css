@@ -402,6 +402,7 @@ button {
 #createCharacterScene,
 .teacher-dashboard-scene,
 .tutorial-guide-scene,
+.creator-credits-scene,
 #victoryScene {
   padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
 }
@@ -1211,6 +1212,113 @@ button {
   width: min(320px, 100%);
 }
 
+.creator-credits-scene {
+  min-height: 100dvh;
+  padding: clamp(14px, 3vw, 32px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(116, 218, 255, 0.16), transparent 34%),
+    radial-gradient(circle at 92% 18%, rgba(157, 97, 255, 0.18), transparent 32%),
+    linear-gradient(145deg, rgba(8, 12, 38, 0.97), rgba(29, 18, 62, 0.96) 58%, rgba(9, 9, 30, 0.98)),
+    url("assets/backgrounds/grammar-hall-animated.gif") center / cover no-repeat;
+}
+
+.creator-credits-scene.active {
+  align-content: start;
+}
+
+.creator-credits-scene::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(4, 6, 20, 0.62), rgba(4, 6, 20, 0.36)),
+    radial-gradient(circle at 50% 42%, transparent 18%, rgba(2, 4, 16, 0.4) 100%);
+}
+
+.creator-credits-shell {
+  position: relative;
+  z-index: 1;
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: clamp(10px, 2dvh, 18px);
+}
+
+.creator-credits-header {
+  display: grid;
+  gap: 4px;
+  text-align: center;
+  color: #f8f0d2;
+}
+
+.creator-credits-header h2,
+.creator-credits-header p {
+  margin: 0;
+}
+
+.creator-credits-header h2 {
+  color: #ffe39a;
+  font-size: clamp(2rem, 6vw, 4rem);
+  line-height: 1;
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.72), 0 0 18px rgba(226, 188, 102, 0.28);
+}
+
+.creator-credits-header p:not(.eyebrow) {
+  color: #dceeff;
+  font-weight: 900;
+}
+
+.creator-credits-panel {
+  display: grid;
+  gap: clamp(12px, 2dvh, 18px);
+  padding: clamp(10px, 2vw, 18px);
+  border: 1px solid rgba(226, 188, 102, 0.62);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(22, 28, 70, 0.86), rgba(8, 11, 34, 0.94)),
+    rgba(10, 14, 42, 0.92);
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.34),
+    inset 0 0 0 1px rgba(255, 241, 190, 0.08),
+    inset 0 0 30px rgba(116, 218, 255, 0.06);
+}
+
+.creator-credits-image-frame {
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  padding: clamp(8px, 1.8vw, 14px);
+  border: 1px solid rgba(116, 218, 255, 0.34);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(116, 218, 255, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(5, 9, 28, 0.74), rgba(6, 8, 26, 0.94));
+  box-shadow: inset 0 0 22px rgba(0, 0, 0, 0.28);
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+.creator-credits-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: none;
+  object-fit: contain;
+  object-position: center top;
+  border-radius: 10px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
+}
+
+.creator-credits-back-button {
+  justify-self: center;
+  width: min(320px, 100%);
+  min-height: 48px;
+}
+
 @media (max-width: 640px) {
   .tutorial-guide-scene {
     padding: 12px;
@@ -1250,6 +1358,24 @@ button {
 
   .tutorial-guide-nav-button {
     flex: 1 1 min(160px, 46%);
+  }
+
+  .creator-credits-scene {
+    padding: 12px;
+  }
+
+  .creator-credits-panel {
+    border-radius: 14px;
+    padding: 8px;
+  }
+
+  .creator-credits-image-frame {
+    min-height: 190px;
+    padding: 8px;
+  }
+
+  .creator-credits-image {
+    border-radius: 8px;
   }
 }
 

@@ -22,6 +22,7 @@ const scenes = {
   login: document.getElementById("loginScene"),
   mainMenu: document.getElementById("mainMenuScene"),
   tutorialGuide: document.getElementById("tutorialGuideScene"),
+  creatorCredits: document.getElementById("creatorCreditsScene"),
   createCharacter: document.getElementById("createCharacterScene"),
   teacherDashboard: document.getElementById("teacherDashboardScene"),
   title: document.getElementById("titleScene"),
@@ -3058,7 +3059,10 @@ const els = {
   tutorialGuideButton: document.getElementById("tutorialGuideButton"),
   accountSettingsButton: document.getElementById("accountSettingsButton"),
   teacherDashboardButton: document.getElementById("teacherDashboardButton"),
+  creatorCreditsButton: document.getElementById("creatorCreditsButton"),
   mainMenuLogoutButton: document.getElementById("mainMenuLogoutButton"),
+  creatorCreditsImage: document.getElementById("creatorCreditsImage"),
+  creatorCreditsBackButton: document.getElementById("creatorCreditsBackButton"),
   tutorialGuideImage: document.getElementById("tutorialGuideImage"),
   tutorialGuidePlaceholder: document.getElementById("tutorialGuidePlaceholder"),
   tutorialGuideTitle: document.getElementById("tutorialGuideTitle"),
@@ -3297,12 +3301,21 @@ function returnToMainMenuFromTutorial() {
   showScene("mainMenu");
 }
 
+function openCreatorCredits() {
+  showScene("creatorCredits");
+}
+
+function returnToMainMenuFromCreatorCredits() {
+  renderMainMenu();
+  showScene("mainMenu");
+}
+
 function updateDeveloperCreditVisibility(sceneName) {
   const credit = document.getElementById("developerCredit");
   if (!credit) {
     return;
   }
-  credit.classList.toggle("is-hidden", sceneName === "story" || sceneName === "battle");
+  credit.classList.toggle("is-hidden", ["story", "battle", "creatorCredits"].includes(sceneName));
 }
 
 function showScene(name) {
@@ -9489,6 +9502,7 @@ function renderMainMenu() {
   setButtonAction(els.tutorialGuideButton, "วิธีเล่น", openTutorialGuide, { lock: false });
   setButtonAction(els.accountSettingsButton, "ตั้งค่าบัญชี", openAccountSettingsModal, { lock: false });
   setButtonAction(els.teacherDashboardButton, "Teacher Dashboard", openTeacherDashboardPasswordModal, { lock: false });
+  setButtonAction(els.creatorCreditsButton, "เครดิตผู้สร้าง", openCreatorCredits, { lock: false });
   setButtonAction(els.mainMenuLogoutButton, "ออกจากระบบ", logoutCurrentUser, { lock: true });
 }
 
@@ -19499,6 +19513,7 @@ els.teacherStudentSearchInput?.addEventListener("input", renderTeacherDashboardT
 els.tutorialPreviousButton?.addEventListener("click", previousTutorialSlide);
 els.tutorialNextButton?.addEventListener("click", nextTutorialSlide);
 els.tutorialBackButton?.addEventListener("click", returnToMainMenuFromTutorial);
+els.creatorCreditsBackButton?.addEventListener("click", returnToMainMenuFromCreatorCredits);
 els.confirmNameButton.addEventListener("click", confirmStoryName);
 els.storyNameInput.addEventListener("keydown", event => {
   if (event.key === "Enter") {
