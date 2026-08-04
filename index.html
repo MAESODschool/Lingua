@@ -141,11 +141,42 @@
             <button id="continueJourneyButton" class="primary-button main-menu-button" type="button">เดินทางต่อ</button>
             <button id="lessonMapButton" class="secondary-button main-menu-button" type="button">แผนที่บทเรียน</button>
             <button id="assessmentResultButton" class="secondary-button main-menu-button" type="button">ผลการประเมิน</button>
+            <button id="tutorialGuideButton" class="secondary-button main-menu-button" type="button">วิธีเล่น</button>
             <button id="accountSettingsButton" class="secondary-button main-menu-button" type="button">ตั้งค่าบัญชี</button>
             <button id="teacherDashboardButton" class="secondary-button main-menu-button" type="button">Teacher Dashboard</button>
             <button id="mainMenuLogoutButton" class="secondary-button main-menu-button danger-button" type="button">ออกจากระบบ</button>
           </section>
         </div>
+      </div>
+    </section>
+
+    <section id="tutorialGuideScene" class="scene tutorial-guide-scene">
+      <div class="tutorial-guide-shell">
+        <header class="tutorial-guide-header">
+          <p class="eyebrow">Tutorial Guide</p>
+          <h2>วิธีเล่น Lingua</h2>
+          <p>คู่มือการใช้งานเกมสำหรับนักเรียน</p>
+        </header>
+
+        <article class="tutorial-guide-card" aria-live="polite">
+          <div class="tutorial-guide-copy">
+            <h3 id="tutorialGuideTitle">ระบบสมัครสมาชิก เก็บคะแนน และติดตามคะแนน</h3>
+            <p id="tutorialGuideDescription">อธิบายการเข้าสู่ระบบ การสะสม Grammaria และการติดตามความก้าวหน้าจากหน้าเมนู</p>
+          </div>
+
+          <div class="tutorial-guide-image-frame">
+            <img id="tutorialGuideImage" class="tutorial-guide-image" src="assets/tutorial/tutorial_01_account_score_menu.png" alt="คู่มือวิธีเล่น Lingua: ระบบสมัครสมาชิก เก็บคะแนน และติดตามคะแนน" draggable="false">
+            <div id="tutorialGuidePlaceholder" class="tutorial-guide-placeholder hidden">ยังไม่มีภาพคู่มือในส่วนนี้</div>
+          </div>
+
+          <div class="tutorial-guide-controls">
+            <button id="tutorialPreviousButton" class="secondary-button tutorial-guide-nav-button" type="button">ก่อนหน้า</button>
+            <span id="tutorialGuideCounter" class="tutorial-guide-counter">1 / 3</span>
+            <button id="tutorialNextButton" class="secondary-button tutorial-guide-nav-button" type="button">ถัดไป</button>
+          </div>
+
+          <button id="tutorialBackButton" class="primary-button tutorial-guide-back-button" type="button">กลับหน้าหลัก</button>
+        </article>
       </div>
     </section>
 

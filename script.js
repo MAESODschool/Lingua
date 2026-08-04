@@ -21,6 +21,7 @@ import {
 const scenes = {
   login: document.getElementById("loginScene"),
   mainMenu: document.getElementById("mainMenuScene"),
+  tutorialGuide: document.getElementById("tutorialGuideScene"),
   createCharacter: document.getElementById("createCharacterScene"),
   teacherDashboard: document.getElementById("teacherDashboardScene"),
   title: document.getElementById("titleScene"),
@@ -3054,9 +3055,18 @@ const els = {
   continueJourneyButton: document.getElementById("continueJourneyButton"),
   lessonMapButton: document.getElementById("lessonMapButton"),
   assessmentResultButton: document.getElementById("assessmentResultButton"),
+  tutorialGuideButton: document.getElementById("tutorialGuideButton"),
   accountSettingsButton: document.getElementById("accountSettingsButton"),
   teacherDashboardButton: document.getElementById("teacherDashboardButton"),
   mainMenuLogoutButton: document.getElementById("mainMenuLogoutButton"),
+  tutorialGuideImage: document.getElementById("tutorialGuideImage"),
+  tutorialGuidePlaceholder: document.getElementById("tutorialGuidePlaceholder"),
+  tutorialGuideTitle: document.getElementById("tutorialGuideTitle"),
+  tutorialGuideDescription: document.getElementById("tutorialGuideDescription"),
+  tutorialGuideCounter: document.getElementById("tutorialGuideCounter"),
+  tutorialPreviousButton: document.getElementById("tutorialPreviousButton"),
+  tutorialNextButton: document.getElementById("tutorialNextButton"),
+  tutorialBackButton: document.getElementById("tutorialBackButton"),
   loginUsername: document.getElementById("loginUsername"),
   loginPin: document.getElementById("loginPin"),
   registerDisplayName: document.getElementById("registerDisplayName"),
@@ -3192,6 +3202,100 @@ const els = {
   teacherDashboardTableBody: document.getElementById("teacherDashboardTableBody"),
   teacherDashboardEmptyState: document.getElementById("teacherDashboardEmptyState")
 };
+
+const tutorialSlides = [
+  {
+    title: "ระบบสมัครสมาชิก เก็บคะแนน และติดตามคะแนน",
+    description: "อธิบายการเข้าสู่ระบบ การสะสม Grammaria และการติดตามความก้าวหน้าจากหน้าเมนู",
+    image: "assets/tutorial/tutorial_01_account_score_menu.png"
+  },
+  {
+    title: "หน้า Lesson",
+    description: "อธิบายการอ่านบทเรียน การกดถัดไป ย้อนกลับ ดูคำอธิบาย และทบทวนเนื้อหา",
+    image: "assets/tutorial/tutorial_02_lesson.png"
+  },
+  {
+    title: "หน้าต่อสู้",
+    description: "อธิบายข้อมูลบอส ผู้เล่น เทิร์น คำถาม สกิล ชาม Grammaria และการป้องกัน",
+    image: "assets/tutorial/tutorial_03_battle.png"
+  }
+];
+
+let currentTutorialSlideIndex = 0;
+
+function getTutorialSlide(index = currentTutorialSlideIndex) {
+  return tutorialSlides[index] || tutorialSlides[0] || {
+    title: "วิธีเล่น Lingua",
+    description: "คู่มือการใช้งานเกมสำหรับนักเรียน",
+    image: ""
+  };
+}
+
+function renderTutorialSlide() {
+  const slideCount = tutorialSlides.length;
+  const maxIndex = Math.max(0, slideCount - 1);
+  currentTutorialSlideIndex = Math.min(Math.max(0, currentTutorialSlideIndex), maxIndex);
+  const slide = getTutorialSlide();
+  const readableIndex = slideCount ? currentTutorialSlideIndex + 1 : 0;
+
+  if (els.tutorialGuideTitle) {
+    els.tutorialGuideTitle.textContent = slide.title || "วิธีเล่น Lingua";
+  }
+  if (els.tutorialGuideDescription) {
+    els.tutorialGuideDescription.textContent = slide.description || "";
+  }
+  if (els.tutorialGuideCounter) {
+    els.tutorialGuideCounter.textContent = `${readableIndex} / ${slideCount}`;
+  }
+
+  const hasImage = Boolean(slide.image);
+  if (els.tutorialGuidePlaceholder) {
+    els.tutorialGuidePlaceholder.classList.toggle("hidden", hasImage);
+  }
+  if (els.tutorialGuideImage) {
+    els.tutorialGuideImage.onload = () => {
+      els.tutorialGuideImage.classList.remove("hidden");
+      els.tutorialGuidePlaceholder?.classList.add("hidden");
+    };
+    els.tutorialGuideImage.onerror = () => {
+      els.tutorialGuideImage.classList.add("hidden");
+      els.tutorialGuidePlaceholder?.classList.remove("hidden");
+    };
+    els.tutorialGuideImage.alt = `คู่มือวิธีเล่น Lingua: ${slide.title || "วิธีเล่น"}`;
+    els.tutorialGuideImage.classList.toggle("hidden", !hasImage);
+    els.tutorialGuideImage.src = hasImage ? slide.image : "";
+  }
+
+  setButtonEnabled(els.tutorialPreviousButton, currentTutorialSlideIndex > 0);
+  setButtonEnabled(els.tutorialNextButton, currentTutorialSlideIndex < maxIndex);
+}
+
+function openTutorialGuide() {
+  currentTutorialSlideIndex = 0;
+  renderTutorialSlide();
+  showScene("tutorialGuide");
+}
+
+function nextTutorialSlide() {
+  if (currentTutorialSlideIndex >= tutorialSlides.length - 1) {
+    return;
+  }
+  currentTutorialSlideIndex += 1;
+  renderTutorialSlide();
+}
+
+function previousTutorialSlide() {
+  if (currentTutorialSlideIndex <= 0) {
+    return;
+  }
+  currentTutorialSlideIndex -= 1;
+  renderTutorialSlide();
+}
+
+function returnToMainMenuFromTutorial() {
+  renderMainMenu();
+  showScene("mainMenu");
+}
 
 function showScene(name) {
   cleanupButtonsForSceneChange(name);
@@ -9373,6 +9477,7 @@ function renderMainMenu() {
   setButtonAction(els.continueJourneyButton, view.canContinue ? "เดินทางต่อ" : "เริ่มการเดินทาง", continueJourneyFromMainMenu, { lock: true });
   setButtonAction(els.lessonMapButton, "แผนที่บทเรียน", openMainMenuLessonMap, { lock: false });
   setButtonAction(els.assessmentResultButton, "ผลการประเมิน", openMainMenuAssessmentResult, { lock: false });
+  setButtonAction(els.tutorialGuideButton, "วิธีเล่น", openTutorialGuide, { lock: false });
   setButtonAction(els.accountSettingsButton, "ตั้งค่าบัญชี", openAccountSettingsModal, { lock: false });
   setButtonAction(els.teacherDashboardButton, "Teacher Dashboard", openTeacherDashboardPasswordModal, { lock: false });
   setButtonAction(els.mainMenuLogoutButton, "ออกจากระบบ", logoutCurrentUser, { lock: true });
@@ -19382,6 +19487,9 @@ els.teacherDashboardBackButton?.addEventListener("click", showMainMenu);
 els.teacherClassLevelFilter?.addEventListener("change", renderTeacherDashboardTable);
 els.teacherRoomFilter?.addEventListener("change", renderTeacherDashboardTable);
 els.teacherStudentSearchInput?.addEventListener("input", renderTeacherDashboardTable);
+els.tutorialPreviousButton?.addEventListener("click", previousTutorialSlide);
+els.tutorialNextButton?.addEventListener("click", nextTutorialSlide);
+els.tutorialBackButton?.addEventListener("click", returnToMainMenuFromTutorial);
 els.confirmNameButton.addEventListener("click", confirmStoryName);
 els.storyNameInput.addEventListener("keydown", event => {
   if (event.key === "Enter") {
