@@ -2655,7 +2655,7 @@ const AUTH_COPY = {
 
 // Phase 1 classroom lock only. For production, replace with role-based
 // authentication and Firestore Security Rules.
-const TEACHER_DASHBOARD_PASSWORD_SHA256 = "bf2498d5fe9c5972e341a4e5ea0b61d4f013f3b133196d771201e6c3f70f94e1";
+const TEACHER_DASHBOARD_PASSWORD_SHA256 = "b687b757bd658e9ae5624be7705283c8d3a560d9dc488f8413d3bd91aa183d5e";
 let teacherDashboardStudents = [];
 let teacherDashboardLoadError = "";
 
@@ -2805,7 +2805,7 @@ async function sha256Hex(input) {
 }
 
 async function verifyTeacherDashboardPassword(input) {
-  return sha256Hex((input || "").trim()).then(hash => hash === TEACHER_DASHBOARD_PASSWORD_SHA256);
+  return sha256Hex(input || "").then(hash => hash === TEACHER_DASHBOARD_PASSWORD_SHA256);
 }
 
 function getAuthModeLabel() {
