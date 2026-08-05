@@ -13,7 +13,6 @@ import {
   getDoc,
   getDocs,
   setDoc,
-  updateDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 
@@ -2638,6 +2637,8 @@ const AUTH_STORAGE_KEYS = {
   userPrologueSeenPrefix: "lingua_user_"
 };
 
+const STUDENT_DASHBOARD_COLLECTION = "players";
+
 const AUTH_COPY = {
   localModeLabel: "Close Beta: Local Test Mode",
   remoteModeLabel: "Close Beta: Online Account Mode",
@@ -2656,6 +2657,7 @@ const AUTH_COPY = {
 // authentication and Firestore Security Rules.
 const TEACHER_DASHBOARD_PASSWORD_SHA256 = "bf2498d5fe9c5972e341a4e5ea0b61d4f013f3b133196d771201e6c3f70f94e1";
 let teacherDashboardStudents = [];
+let teacherDashboardLoadError = "";
 
 function isRemoteAuthConfigured() {
   return Boolean(
@@ -6230,7 +6232,7 @@ function sanitizeForFirestore(value) {
 }
 
 function getPlayerDocRef(uid) {
-  return doc(firestoreDb, "players", uid);
+  return doc(firestoreDb, STUDENT_DASHBOARD_COLLECTION, uid);
 }
 
 function createFirestorePlayerDoc(sessionUser, progress) {
@@ -6238,17 +6240,30 @@ function createFirestorePlayerDoc(sessionUser, progress) {
   const studentProfile = getStudentProfileFromPlayer(progress);
   const profileCompleted = hasCompleteStudentProfile(studentProfile);
   const characterCreated = profileCompleted && Boolean(progress.characterName);
+  const actProgress = progress?.progress?.pastFragmentAct || progress?.pastFragmentAct || {};
+  const labels = profileCompleted
+    ? getMainMenuStageLabels(actProgress)
+    : { lesson: "ยังไม่เริ่ม", area: "ยังไม่เริ่ม", goal: "เริ่มสร้างตัวละคร" };
+  const defeatedBosses = Array.isArray(actProgress.defeatedBosses) ? actProgress.defeatedBosses : [];
+  const grammariaState = progress?.progress?.grammaria || progress?.grammaria || {};
+  const grammariaTotal = Number(grammariaState?.total ?? progress?.grammaria ?? 0) || 0;
+  const studentSortKey = Number.isFinite(Number(studentProfile?.studentSortKey))
+    ? Number(studentProfile.studentSortKey)
+    : 9999;
   return {
     uid: sessionUser.uid,
     username: sessionUser.username,
+    loginEmail: sessionUser.email || "",
     displayName: sessionUser.displayName,
     mode: "registered",
     accountMode: "online",
+    role: "student",
     profileCompleted,
     characterCreated,
-    characterId: progress.characterId,
-    characterName: progress.characterName || "",
-    characterGender: progress.avatar?.gender || "",
+    characterId: characterCreated ? progress.characterId : "",
+    characterName: characterCreated ? progress.characterName || "" : "",
+    characterGender: characterCreated ? progress.avatar?.gender || "" : "",
+    avatarId: characterCreated ? progress.avatar?.characterId || progress.characterId || "" : "",
     studentProfile: sanitizeForFirestore(studentProfile || {}),
     studentFullName: studentProfile?.fullName || "",
     classLevel: studentProfile?.classLevel || "",
@@ -6256,7 +6271,13 @@ function createFirestorePlayerDoc(sessionUser, progress) {
     studentNo: studentProfile?.studentNo || "",
     classGroup: studentProfile?.classGroup || "",
     classGroupKey: studentProfile?.classGroupKey || "",
-    studentSortKey: Number.isFinite(Number(studentProfile?.studentSortKey)) ? Number(studentProfile.studentSortKey) : null,
+    studentSortKey,
+    currentLessonTitle: labels.lesson || "ยังไม่เริ่ม",
+    currentAreaTitle: labels.area || "ยังไม่เริ่ม",
+    nextGoalTitle: labels.goal || "เริ่มสร้างตัวละคร",
+    progressPercent: profileCompleted ? calculateMainMenuActProgress(actProgress) : 0,
+    grammaria: profileCompleted ? grammariaTotal : 0,
+    bossesDefeated: profileCompleted ? defeatedBosses.length : 0,
     hasSeenPrologue: Boolean(progress.hasSeenPrologue),
     progress: sanitizeForFirestore(progress),
     settings: {
@@ -6265,6 +6286,93 @@ function createFirestorePlayerDoc(sessionUser, progress) {
       language: "th"
     }
   };
+}
+
+function createDefaultStudentDashboardFields(sessionUser) {
+  return {
+    uid: sessionUser.uid,
+    username: sessionUser.username || sessionUser.email || sessionUser.uid,
+    loginEmail: sessionUser.email || "",
+    displayName: sessionUser.displayName || sessionUser.username || "Lingua Player",
+    mode: "registered",
+    accountMode: "online",
+    role: "student",
+    profileCompleted: false,
+    characterCreated: false,
+    studentFullName: "",
+    classLevel: "",
+    room: "",
+    studentNo: "",
+    classGroup: "",
+    classGroupKey: "",
+    studentSortKey: 9999,
+    characterName: "",
+    characterGender: "",
+    avatarId: "",
+    currentLessonTitle: "ยังไม่เริ่ม",
+    currentAreaTitle: "ยังไม่เริ่ม",
+    nextGoalTitle: "เริ่มสร้างตัวละคร",
+    progressPercent: 0,
+    grammaria: 0,
+    bossesDefeated: 0
+  };
+}
+
+function buildMissingStudentDashboardFields(existingData = {}, sessionUser) {
+  const defaults = createDefaultStudentDashboardFields(sessionUser);
+  return Object.entries(defaults).reduce((repair, [key, value]) => {
+    if (typeof existingData[key] === "undefined") {
+      repair[key] = value;
+    }
+    return repair;
+  }, {});
+}
+
+async function ensureStudentDashboardDocument(firebaseUser, fallbackUsername = "", progress = null, options = {}) {
+  if (!firebaseUser?.uid) {
+    throw new Error(AUTH_COPY.remoteAuthUnavailable);
+  }
+  const username = normalizeUsername(fallbackUsername || firebaseUser.email?.split("@")[0] || firebaseUser.uid);
+  const sessionUser = options.sessionUser || createSessionUser({
+    uid: firebaseUser.uid,
+    id: firebaseUser.uid,
+    username,
+    email: firebaseUser.email,
+    displayName: options.displayName || username || "Lingua Player",
+    mode: "registered"
+  });
+  const playerRef = getPlayerDocRef(firebaseUser.uid);
+  const snapshot = await getDoc(playerRef);
+  if (!snapshot.exists()) {
+    const defaultProgress = progress || createDefaultPlayerData(sessionUser);
+    await setDoc(playerRef, {
+      ...createFirestorePlayerDoc(sessionUser, defaultProgress),
+      createdAt: serverTimestamp(),
+      lastLoginAt: serverTimestamp(),
+      lastActiveAt: serverTimestamp()
+    }, { merge: true });
+    return sessionUser;
+  }
+
+  const data = snapshot.data() || {};
+  const repairFields = buildMissingStudentDashboardFields(data, sessionUser);
+  await setDoc(playerRef, {
+    ...repairFields,
+    uid: firebaseUser.uid,
+    loginEmail: firebaseUser.email || data.loginEmail || "",
+    accountMode: data.accountMode || "online",
+    role: data.role || "student",
+    lastActiveAt: serverTimestamp(),
+    ...(options.updateLoginAt ? { lastLoginAt: serverTimestamp() } : {})
+  }, { merge: true });
+  return createSessionUser({
+    uid: firebaseUser.uid,
+    id: firebaseUser.uid,
+    username: data.username || sessionUser.username,
+    email: firebaseUser.email,
+    displayName: data.displayName || sessionUser.displayName || "Lingua Player",
+    mode: "registered"
+  });
 }
 
 function createRemotePlayerData(sessionUser, savedProgress = null) {
@@ -6309,6 +6417,7 @@ function mapFirebaseAuthError(error) {
 
 async function loadRemoteSessionUser(firebaseUser, fallbackUsername = "") {
   const playerRef = getPlayerDocRef(firebaseUser.uid);
+  await ensureStudentDashboardDocument(firebaseUser, fallbackUsername, null, { updateLoginAt: true });
   const snapshot = await getDoc(playerRef);
   if (snapshot.exists()) {
     const data = snapshot.data();
@@ -6323,7 +6432,7 @@ async function loadRemoteSessionUser(firebaseUser, fallbackUsername = "") {
   }
 
   const username = normalizeUsername(fallbackUsername || firebaseUser.email?.split("@")[0] || firebaseUser.uid);
-  const sessionUser = createSessionUser({
+  return createSessionUser({
     uid: firebaseUser.uid,
     id: firebaseUser.uid,
     username,
@@ -6331,14 +6440,6 @@ async function loadRemoteSessionUser(firebaseUser, fallbackUsername = "") {
     displayName: username || "Lingua Player",
     mode: "registered"
   });
-  const defaultProgress = createDefaultPlayerData(sessionUser);
-  await setDoc(playerRef, {
-    ...createFirestorePlayerDoc(sessionUser, defaultProgress),
-    createdAt: serverTimestamp(),
-    lastLoginAt: serverTimestamp(),
-    lastActiveAt: serverTimestamp()
-  });
-  return sessionUser;
 }
 
 const localAuthProvider = {
@@ -6495,12 +6596,15 @@ const remoteAuthProvider = {
       });
       const defaultProgress = createDefaultPlayerData(sessionUser);
       defaultProgress.hasSeenPrologue = false;
-      await setDoc(getPlayerDocRef(sessionUser.uid), {
-        ...createFirestorePlayerDoc(sessionUser, defaultProgress),
-        createdAt: serverTimestamp(),
-        lastLoginAt: serverTimestamp(),
-        lastActiveAt: serverTimestamp()
-      });
+      try {
+        await ensureStudentDashboardDocument(credential.user, normalizedUsername, defaultProgress, {
+          sessionUser,
+          updateLoginAt: true
+        });
+      } catch (firestoreError) {
+        console.error("[Lingua Register] Failed to create Firestore student document", firestoreError);
+        throw firestoreError;
+      }
       console.log("[Firestore] player profile saved:", sessionUser.uid);
       state.currentUser = sessionUser;
       playerData = defaultProgress;
@@ -6529,10 +6633,10 @@ const remoteAuthProvider = {
       state.currentUser = sessionUser;
       playerStorage.set(AUTH_STORAGE_KEYS.currentUser, JSON.stringify(sessionUser));
       await progressService.loadProgress(sessionUser.uid);
-      await updateDoc(getPlayerDocRef(sessionUser.uid), {
+      await setDoc(getPlayerDocRef(sessionUser.uid), {
         lastLoginAt: serverTimestamp(),
         lastActiveAt: serverTimestamp()
-      });
+      }, { merge: true });
       return sessionUser;
     } catch (error) {
       if (error instanceof Error && !error.code) {
@@ -6636,11 +6740,9 @@ const progressService = {
       const snapshot = await getDoc(getPlayerDocRef(userId));
       if (!snapshot.exists()) {
         const defaultProgress = createDefaultPlayerData(sessionUser);
-        await setDoc(getPlayerDocRef(userId), {
-          ...createFirestorePlayerDoc(sessionUser, defaultProgress),
-          createdAt: serverTimestamp(),
-          lastLoginAt: serverTimestamp(),
-          lastActiveAt: serverTimestamp()
+        await ensureStudentDashboardDocument(firebaseUser, sessionUser.username, defaultProgress, {
+          sessionUser,
+          updateLoginAt: true
         });
         playerData = defaultProgress;
         return playerData;
@@ -6687,35 +6789,16 @@ const progressService = {
           lastUpdatedAt: now
         }
       };
-      const studentProfile = getStudentProfileFromPlayer(nextProgress);
-      const profileCompleted = hasCompleteStudentProfile(studentProfile);
-      const characterCreated = profileCompleted && Boolean(nextProgress.characterName);
-      await setDoc(getPlayerDocRef(userId), {
+      const sessionUser = getCurrentUser() || createSessionUser({
         uid: userId,
-        username: nextProgress.username,
-        displayName: nextProgress.displayName,
-        mode: "registered",
-        accountMode: "online",
-        profileCompleted,
-        characterCreated,
-        characterId: nextProgress.characterId,
-        characterName: nextProgress.characterName || "",
-        characterGender: nextProgress.avatar?.gender || "",
-        studentProfile: sanitizeForFirestore(studentProfile || {}),
-        studentFullName: studentProfile?.fullName || "",
-        classLevel: studentProfile?.classLevel || "",
-        room: studentProfile?.room || "",
-        studentNo: studentProfile?.studentNo || "",
-        classGroup: studentProfile?.classGroup || "",
-        classGroupKey: studentProfile?.classGroupKey || "",
-        studentSortKey: Number.isFinite(Number(studentProfile?.studentSortKey)) ? Number(studentProfile.studentSortKey) : null,
-        hasSeenPrologue: Boolean(nextProgress.hasSeenPrologue),
-        progress: sanitizeForFirestore(nextProgress),
-        settings: {
-          soundEnabled: nextProgress.settings?.sound !== false,
-          musicEnabled: true,
-          language: nextProgress.settings?.language || "th"
-        },
+        id: userId,
+        username: nextProgress.username || userId,
+        email: nextProgress.email || userId,
+        displayName: nextProgress.displayName || nextProgress.username || "Lingua Player",
+        mode: "registered"
+      });
+      await setDoc(getPlayerDocRef(userId), {
+        ...createFirestorePlayerDoc(sessionUser, nextProgress),
         lastActiveAt: serverTimestamp()
       }, { merge: true });
       return true;
@@ -9707,22 +9790,44 @@ function createIncompleteTeacherProfile() {
   };
 }
 
+function getDirectTeacherProfile(record = {}) {
+  const savedProfile = getTeacherStudentProfile(record) || {};
+  const classLevel = record.classLevel || savedProfile.classLevel || "";
+  const room = record.room || savedProfile.room || "";
+  return {
+    fullName: record.studentFullName || savedProfile.fullName || savedProfile.studentFullName || "",
+    classLevel,
+    room,
+    studentNo: record.studentNo || savedProfile.studentNo || "",
+    classGroup: record.classGroup || savedProfile.classGroup || (classLevel && room ? `${classLevel}/${room}` : ""),
+    classGroupKey: record.classGroupKey || savedProfile.classGroupKey || "",
+    studentSortKey: Number.isFinite(Number(record.studentSortKey))
+      ? Number(record.studentSortKey)
+      : savedProfile.studentSortKey
+  };
+}
+
 function normalizeTeacherStudentRecord(record = {}, sourceId = "") {
   const progressSnapshot = record.progress && typeof record.progress === "object" ? record.progress : {};
   if (isGuestTeacherRecord(record)) {
     return null;
   }
-  const rawProfile = getTeacherStudentProfile(record);
+  const rawProfile = getDirectTeacherProfile(record);
   const profileCompleted = hasCompleteStudentProfile(rawProfile);
   const profile = profileCompleted ? rawProfile : createIncompleteTeacherProfile();
   const actProgress = getTeacherStudentProgress(record);
   const labels = profileCompleted ? getMainMenuStageLabels(actProgress) : { lesson: "ยังไม่เริ่ม" };
   const defeatedBosses = Array.isArray(actProgress.defeatedBosses) ? actProgress.defeatedBosses : [];
-  const progressPercent = profileCompleted ? calculateMainMenuActProgress(actProgress) : 0;
+  const savedProgressPercent = Number(record.progressPercent);
+  const progressPercent = Number.isFinite(savedProgressPercent)
+    ? clamp(Math.round(savedProgressPercent), 0, 100)
+    : (profileCompleted ? calculateMainMenuActProgress(actProgress) : 0);
   const characterId = record.characterId || progressSnapshot.characterId || progressSnapshot.avatar?.characterId || "male_wanderer";
   const characterCreated = Boolean(record.characterCreated ?? (profileCompleted && (record.characterName || progressSnapshot.characterName)));
   const character = characterCreated ? getPlayerCharacter(characterId) : null;
   const username = record.username || progressSnapshot.username || sourceId;
+  const savedGrammaria = Number(record.grammaria);
+  const savedBossesDefeated = Number(record.bossesDefeated);
 
   return {
     sourceId,
@@ -9738,23 +9843,29 @@ function normalizeTeacherStudentRecord(record = {}, sourceId = "") {
       : "ยังไม่ได้สร้างตัวละคร",
     characterId: character?.id || "",
     characterAsset: character?.asset || "",
-    currentLesson: labels.lesson,
+    currentLesson: safeDisplayText(record.currentLessonTitle || labels.lesson, "ยังไม่เริ่ม"),
     progressPercent,
-    grammaria: profileCompleted ? getTeacherStudentGrammaria(record) : 0,
-    bossesDefeated: profileCompleted ? defeatedBosses.length : 0,
+    grammaria: Number.isFinite(savedGrammaria)
+      ? savedGrammaria
+      : (profileCompleted ? getTeacherStudentGrammaria(record) : 0),
+    bossesDefeated: Number.isFinite(savedBossesDefeated)
+      ? savedBossesDefeated
+      : (profileCompleted ? defeatedBosses.length : 0),
     lastActiveText: getTeacherStudentLastActive(record)
   };
 }
 
 async function loadTeacherDashboardRecords() {
+  teacherDashboardLoadError = "";
   if (getAuthMode() === "firebase") {
     try {
-      const snapshot = await getDocs(collection(firestoreDb, "players"));
+      const snapshot = await getDocs(collection(firestoreDb, STUDENT_DASHBOARD_COLLECTION));
       return snapshot.docs
         .map(docSnapshot => normalizeTeacherStudentRecord(docSnapshot.data(), docSnapshot.id))
         .filter(Boolean);
     } catch (error) {
-      console.warn("[TeacherDashboard] Failed to read Firestore players. Falling back to local records.", error);
+      teacherDashboardLoadError = "ไม่สามารถอ่านข้อมูลนักเรียนจาก Firestore ได้";
+      console.error("[TeacherDashboard] Failed to read Firestore student dashboard records", error);
     }
   }
 
@@ -9912,7 +10023,7 @@ async function showTeacherDashboard() {
   teacherDashboardStudents = await loadTeacherDashboardRecords();
   renderTeacherDashboardSummary(teacherDashboardStudents);
   if (els.teacherDashboardEmptyState) {
-    els.teacherDashboardEmptyState.textContent = "ยังไม่พบข้อมูลนักเรียน";
+    els.teacherDashboardEmptyState.textContent = teacherDashboardLoadError || "ยังไม่พบข้อมูลนักเรียน";
   }
   renderTeacherDashboardTable();
 }
