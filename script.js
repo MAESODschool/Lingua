@@ -278,7 +278,7 @@ const EARLY_BOSS_BALANCE = {
 const ACT1_ENCOUNTER_MAX_HP = Object.freeze({
   "what-is-past": 128,
   "what-is-tense": 144,
-  act1_phase1_unit3_was_were: 155,
+  act1_phase1_unit3_was_were: 100,
   act1_phase1_unit4_there_was_were: 176,
   act1_phase1_unit5_had: 192,
   "regular-rule-1": 224,
@@ -1261,14 +1261,14 @@ const phase1PastTimeWordsQuestions = [
 ];
 
 const phase1WasWereQuestions = [
-  { id: "phase1-was-were-1", prompt: "He ____ sick yesterday.", options: ["was", "were", "is"], answer: "was", explanation: "He ใช้ was ในอดีต" },
-  { id: "phase1-was-were-2", prompt: "We ____ at the market last Sunday.", options: ["were", "was", "are"], answer: "were", explanation: "We ใช้ were" },
-  { id: "phase1-was-were-3", prompt: "The cat ____ under the chair last night.", options: ["was", "were", "are"], answer: "was", explanation: "The cat เป็นสิ่งเดียว ใช้ was" },
-  { id: "phase1-was-were-4", prompt: "You ____ late yesterday.", options: ["were", "was", "am"], answer: "were", explanation: "You ใช้ were" },
-  { id: "phase1-was-were-5", prompt: "My friends ____ happy after the game.", options: ["were", "was", "is"], answer: "were", explanation: "My friends เป็นหลายคน ใช้ were" },
-  { id: "phase1-was-were-6", prompt: "ข้อใดถูกต้อง", options: ["She was angry.", "She were angry.", "She is angry yesterday."], answer: "She was angry.", explanation: "She ใช้ was ในอดีต" },
-  { id: "phase1-was-were-7", prompt: "It ____ dark in the cave.", options: ["was", "were", "are"], answer: "was", explanation: "It ใช้ was" },
-  { id: "phase1-was-were-8", prompt: "The doors ____ open last night.", options: ["were", "was", "is"], answer: "were", explanation: "The doors มีหลายบาน ใช้ were" }
+  { id: "phase1-was-were-1", prompt: "He ____ sick yesterday.", promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: เขาป่วยเมื่อวานนี้", options: ["was", "were", "is"], answer: "was", explanation: "He ใช้ was ในอดีต" },
+  { id: "phase1-was-were-2", prompt: "We ____ at the market last Sunday.", promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: พวกเราอยู่ที่ตลาดเมื่อวันอาทิตย์ที่แล้ว", options: ["were", "was", "are"], answer: "were", explanation: "We ใช้ were" },
+  { id: "phase1-was-were-3", prompt: "The cat ____ under the chair last night.", promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: แมวอยู่ใต้เก้าอี้เมื่อคืนนี้", options: ["was", "were", "are"], answer: "was", explanation: "The cat เป็นสิ่งเดียว ใช้ was" },
+  { id: "phase1-was-were-4", prompt: "You ____ late yesterday.", promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: คุณมาสายเมื่อวานนี้", options: ["were", "was", "am"], answer: "were", explanation: "You ใช้ were" },
+  { id: "phase1-was-were-5", prompt: "My friends ____ happy after the game.", promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: เพื่อน ๆ ของฉันมีความสุขหลังเกม", options: ["were", "was", "is"], answer: "were", explanation: "My friends เป็นหลายคน ใช้ were" },
+  { id: "phase1-was-were-6", prompt: "ข้อใดถูกต้อง", promptTh: "เลือกประโยคที่ใช้ was / were ได้ถูกต้อง", options: ["She was angry.", "She were angry.", "She is angry yesterday."], answer: "She was angry.", explanation: "She ใช้ was ในอดีต" },
+  { id: "phase1-was-were-7", prompt: "It ____ dark in the cave.", promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: ในถ้ำนั้นมืด", options: ["was", "were", "are"], answer: "was", explanation: "It ใช้ was" },
+  { id: "phase1-was-were-8", prompt: "The doors ____ open last night.", promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: ประตูหลายบานเปิดอยู่เมื่อคืนนี้", options: ["were", "was", "is"], answer: "were", explanation: "The doors มีหลายบาน ใช้ were" }
 ];
 
 const extraWasWereQuestions = [
@@ -1306,7 +1306,7 @@ const extraWasWereQuestions = [
   },
   {
     id: "was-were-extra-05",
-    prompt: "Which sentence is correct?",
+    prompt: "Which sentence is correct for he?",
     promptTh: "ประโยคใดถูกต้อง",
     choices: [
       "He were at home yesterday.",
@@ -1319,7 +1319,7 @@ const extraWasWereQuestions = [
   },
   {
     id: "was-were-extra-06",
-    prompt: "Which sentence is correct?",
+    prompt: "Which sentence is correct for you?",
     promptTh: "ประโยคใดถูกต้อง",
     choices: [
       "You was late yesterday.",
@@ -1380,7 +1380,7 @@ const extraWasWereQuestions = [
   },
   {
     id: "was-were-extra-13",
-    prompt: "Which sentence is NOT correct?",
+    prompt: "Which sentence is NOT correct for we?",
     promptTh: "ประโยคใดไม่ถูกต้อง",
     choices: [
       "She was at school.",
@@ -1393,7 +1393,7 @@ const extraWasWereQuestions = [
   },
   {
     id: "was-were-extra-14",
-    prompt: "Which sentence is NOT correct?",
+    prompt: "Which sentence is NOT correct for they?",
     promptTh: "ประโยคใดไม่ถูกต้อง",
     choices: [
       "It was sunny yesterday.",
@@ -1411,6 +1411,22 @@ const extraWasWereQuestions = [
     choices: ["Was", "Am", "Were", "Is"],
     answer: "Were",
     explanation: "คำถามที่ใช้กับ you ในอดีตต้องขึ้นต้นด้วย Were"
+  },
+  {
+    id: "was-were-extra-16",
+    prompt: "Which word completes the sentence: The children ____ excited at the party.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: เด็ก ๆ ตื่นเต้นในงานเลี้ยง",
+    choices: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "The children เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-extra-17",
+    prompt: "Which word completes the question: ____ your sister at home yesterday?",
+    promptTh: "คำใดเติมคำถามนี้ได้ถูกต้อง: เมื่อวานพี่สาวหรือน้องสาวของคุณอยู่บ้านไหม",
+    choices: ["Were", "Are", "Was", "Am"],
+    answer: "Was",
+    explanation: "your sister เป็นเอกพจน์ จึงใช้ Was ในคำถามอดีต"
   }
 ];
 
@@ -6205,14 +6221,27 @@ function getPlayerDocRef(uid) {
 function createFirestorePlayerDoc(sessionUser, progress) {
   ensurePlayerCharacterData(progress);
   const studentProfile = getStudentProfileFromPlayer(progress);
+  const profileCompleted = hasCompleteStudentProfile(studentProfile);
+  const characterCreated = profileCompleted && Boolean(progress.characterName);
   return {
     uid: sessionUser.uid,
     username: sessionUser.username,
     displayName: sessionUser.displayName,
     mode: "registered",
+    accountMode: "online",
+    profileCompleted,
+    characterCreated,
     characterId: progress.characterId,
     characterName: progress.characterName || "",
+    characterGender: progress.avatar?.gender || "",
     studentProfile: sanitizeForFirestore(studentProfile || {}),
+    studentFullName: studentProfile?.fullName || "",
+    classLevel: studentProfile?.classLevel || "",
+    room: studentProfile?.room || "",
+    studentNo: studentProfile?.studentNo || "",
+    classGroup: studentProfile?.classGroup || "",
+    classGroupKey: studentProfile?.classGroupKey || "",
+    studentSortKey: Number.isFinite(Number(studentProfile?.studentSortKey)) ? Number(studentProfile.studentSortKey) : null,
     hasSeenPrologue: Boolean(progress.hasSeenPrologue),
     progress: sanitizeForFirestore(progress),
     settings: {
@@ -6644,14 +6673,27 @@ const progressService = {
         }
       };
       const studentProfile = getStudentProfileFromPlayer(nextProgress);
+      const profileCompleted = hasCompleteStudentProfile(studentProfile);
+      const characterCreated = profileCompleted && Boolean(nextProgress.characterName);
       await setDoc(getPlayerDocRef(userId), {
         uid: userId,
         username: nextProgress.username,
         displayName: nextProgress.displayName,
         mode: "registered",
+        accountMode: "online",
+        profileCompleted,
+        characterCreated,
         characterId: nextProgress.characterId,
         characterName: nextProgress.characterName || "",
+        characterGender: nextProgress.avatar?.gender || "",
         studentProfile: sanitizeForFirestore(studentProfile || {}),
+        studentFullName: studentProfile?.fullName || "",
+        classLevel: studentProfile?.classLevel || "",
+        room: studentProfile?.room || "",
+        studentNo: studentProfile?.studentNo || "",
+        classGroup: studentProfile?.classGroup || "",
+        classGroupKey: studentProfile?.classGroupKey || "",
+        studentSortKey: Number.isFinite(Number(studentProfile?.studentSortKey)) ? Number(studentProfile.studentSortKey) : null,
         hasSeenPrologue: Boolean(nextProgress.hasSeenPrologue),
         progress: sanitizeForFirestore(nextProgress),
         settings: {
@@ -9622,31 +9664,62 @@ function getTeacherStudentLastActive(record = {}) {
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString("th-TH");
 }
 
+function isGuestTeacherRecord(record = {}) {
+  const progressSnapshot = record.progress && typeof record.progress === "object" ? record.progress : {};
+  return record.mode === "guest" ||
+    record.isGuest === true ||
+    progressSnapshot.mode === "guest" ||
+    progressSnapshot.isGuest === true ||
+    record.uid === "guest" ||
+    progressSnapshot.userId === "guest";
+}
+
+function createIncompleteTeacherProfile() {
+  return {
+    fullName: "ยังไม่ได้กรอกข้อมูล",
+    classLevel: "",
+    room: "",
+    studentNo: "-",
+    classGroup: "-",
+    classGroupKey: "zz_incomplete",
+    studentSortKey: Number.MAX_SAFE_INTEGER
+  };
+}
+
 function normalizeTeacherStudentRecord(record = {}, sourceId = "") {
   const progressSnapshot = record.progress && typeof record.progress === "object" ? record.progress : {};
-  const profile = getTeacherStudentProfile(record);
-  if (!hasCompleteStudentProfile(profile)) {
+  if (isGuestTeacherRecord(record)) {
     return null;
   }
+  const rawProfile = getTeacherStudentProfile(record);
+  const profileCompleted = hasCompleteStudentProfile(rawProfile);
+  const profile = profileCompleted ? rawProfile : createIncompleteTeacherProfile();
   const actProgress = getTeacherStudentProgress(record);
-  const labels = getMainMenuStageLabels(actProgress);
+  const labels = profileCompleted ? getMainMenuStageLabels(actProgress) : { lesson: "ยังไม่เริ่ม" };
   const defeatedBosses = Array.isArray(actProgress.defeatedBosses) ? actProgress.defeatedBosses : [];
-  const progressPercent = calculateMainMenuActProgress(actProgress);
+  const progressPercent = profileCompleted ? calculateMainMenuActProgress(actProgress) : 0;
   const characterId = record.characterId || progressSnapshot.characterId || progressSnapshot.avatar?.characterId || "male_wanderer";
-  const character = getPlayerCharacter(characterId);
+  const characterCreated = Boolean(record.characterCreated ?? (profileCompleted && (record.characterName || progressSnapshot.characterName)));
+  const character = characterCreated ? getPlayerCharacter(characterId) : null;
+  const username = record.username || progressSnapshot.username || sourceId;
 
   return {
     sourceId,
     profile,
+    profileCompleted,
+    characterCreated,
     uid: record.uid || progressSnapshot.uid || progressSnapshot.userId || sourceId,
-    displayName: record.displayName || progressSnapshot.displayName || "",
-    characterName: record.characterName || progressSnapshot.characterName || record.displayName || progressSnapshot.displayName || "",
-    characterId: character.id,
-    characterAsset: character.asset,
+    username,
+    displayName: record.displayName || progressSnapshot.displayName || username || "",
+    characterName: characterCreated
+      ? record.characterName || progressSnapshot.characterName || record.displayName || progressSnapshot.displayName || ""
+      : "ยังไม่ได้สร้างตัวละคร",
+    characterId: character?.id || "",
+    characterAsset: character?.asset || "",
     currentLesson: labels.lesson,
     progressPercent,
-    grammaria: getTeacherStudentGrammaria(record),
-    bossesDefeated: defeatedBosses.length,
+    grammaria: profileCompleted ? getTeacherStudentGrammaria(record) : 0,
+    bossesDefeated: profileCompleted ? defeatedBosses.length : 0,
     lastActiveText: getTeacherStudentLastActive(record)
   };
 }
@@ -9704,6 +9777,7 @@ function getFilteredTeacherDashboardStudents() {
         student.profile.studentNo,
         student.characterName,
         student.displayName,
+        student.username,
         student.profile.classGroup
       ].some(value => String(value || "").toLowerCase().includes(search));
     })
@@ -9775,7 +9849,7 @@ function renderTeacherDashboardTable() {
   students.forEach(student => {
     const row = document.createElement("tr");
     row.appendChild(createTeacherAvatarCell(student));
-    appendTeacherTableCell(row, String(student.profile.studentSortKey));
+    appendTeacherTableCell(row, String(student.profile.studentNo || "-"));
     appendTeacherTableCell(row, student.profile.fullName);
     appendTeacherTableCell(row, safeDisplayText(student.characterName || student.displayName, "ยังไม่มีชื่อในเกม"));
     appendTeacherTableCell(row, student.profile.classGroup);
