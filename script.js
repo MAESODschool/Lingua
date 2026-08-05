@@ -276,19 +276,19 @@ const EARLY_BOSS_BALANCE = {
 
 // Canonical Act 1 encounter durability. These values only set enemy max HP and must not scale player damage.
 const ACT1_ENCOUNTER_MAX_HP = Object.freeze({
-  "what-is-past": 160,
-  "what-is-tense": 180,
-  act1_phase1_unit3_was_were: 200,
-  act1_phase1_unit4_there_was_were: 220,
-  act1_phase1_unit5_had: 240,
-  "regular-rule-1": 280,
-  "regular-rule-2": 300,
-  "regular-rule-3": 340,
-  "regular-rule-4": 360,
-  "ed-mini-boss": 520,
-  "irregular-lesson": 380,
-  "irregular-mini-boss": 600,
-  "final-boss": 800
+  "what-is-past": 128,
+  "what-is-tense": 144,
+  act1_phase1_unit3_was_were: 155,
+  act1_phase1_unit4_there_was_were: 176,
+  act1_phase1_unit5_had: 192,
+  "regular-rule-1": 224,
+  "regular-rule-2": 240,
+  "regular-rule-3": 272,
+  "regular-rule-4": 288,
+  "ed-mini-boss": 425,
+  "irregular-lesson": 304,
+  "irregular-mini-boss": 490,
+  "final-boss": 700
 });
 
 const PHASE1_STARTER_STAGE_IDS = new Set([
@@ -1915,6 +1915,8 @@ const actAttackCharms = [
   makeCharm("c_confidence", "แต้มแห่งความมั่นใจ", "C", "reward", "nextCorrectBonusGrammaria", 3, "ตอบถูกครั้งถัดไป ได้ Grammaria เพิ่ม +3", { duration: 1 }),
   makeCharm("c_light_echo", "แรงสะท้อนเบา", "C", "attack", "echoDamage", 0.10, "หลังโจมตีหลัก ทำดาเมจซ้ำอีก 10%"),
   makeCharm("c_wanderer_breath", "ลมหายใจผู้พเนจร", "C", "heal", "conditionalHeal", 5, "ถ้า HP ต่ำกว่า 50% ฟื้นเพิ่ม 5", { condition: "hpBelow50" }),
+  makeCharm("ap_core_cup", "ชามแกนพลัง Grammar Core", "C", "ap", "battleStartApBonus", 1, "เริ่มการต่อสู้ด้วย AP เพิ่มขึ้น 1 หน่วย ช่วยให้ผู้เล่นเปิดเกมด้วยสกิลได้เร็วขึ้น"),
+  makeCharm("cd_clock_chip", "ชามเศษนาฬิกาเร่งจังหวะ", "C", "cooldown", "skillCooldownEveryThirdPlayerTurn", 1, "ทุก ๆ 3 เทิร์นของผู้เล่น ลดคูลดาวน์ของสกิลที่กำลังรอนานที่สุดลง 1 เทิร์น", { interval: 3 }),
 
   makeCharm("b_attack_rune", "รูนโจมตี", "B", "attack", "damageMultiplier", 1.25, "เพิ่มดาเมจ 25%"),
   makeCharm("b_guard_word", "โล่คำพิทักษ์", "B", "defense", "nextDamageReduction", 0.30, "ลดดาเมจบอสครั้งถัดไป 30%", { duration: 1 }),
@@ -1931,6 +1933,9 @@ const actAttackCharms = [
   makeCharm("b_syntax_veil", "ม่านวากยสัมพันธ์", "B", "defense", "addDefenseShield", 0.30, "ลดดาเมจบอสครั้งถัดไป 30%", { hits: 1 }),
   makeCharm("b_counter_power", "พลังตอบโต้", "B", "counter", "counterOnGoodParry", 0.15, "ถ้า Good หรือ Perfect Parry สำเร็จ โจมตีสวน 15%", { duration: 1 }),
   makeCharm("b_opening_rune", "รูนเริ่มศึก", "B", "attack", "firstTurnDamageBonus", 1.35, "ถ้าเป็นเทิร์นแรกของการต่อสู้ ดาเมจเพิ่ม 35%"),
+  makeCharm("ap_mana_bowl", "ชามมานาแห่งถ้อยคำ", "B", "ap", "maxApBonus", 1, "เพิ่มจำนวน AP สูงสุดของผู้เล่น 1 หน่วย ทำให้วางแผนใช้สกิลได้ยืดหยุ่นขึ้น"),
+  makeCharm("ap_focus_tea", "ชามชาสมาธิสีฟ้า", "B", "ap", "focusSuccessApBonus", 1, "เมื่อตั้งสมาธิสำเร็จ ผู้เล่นได้รับ AP เพิ่มอีก 1 หน่วย เหมาะสำหรับผู้เล่นที่ชอบเตรียมจังหวะก่อนโจมตี"),
+  makeCharm("cd_focus_hourglass", "ชามทรายสมาธิย้อนเวลา", "B", "cooldown", "focusCooldownReduction", 1, "เมื่อตั้งสมาธิสำเร็จ ลดคูลดาวน์ของสกิลทั้งหมดที่กำลังรออยู่ลง 1 เทิร์น"),
 
   makeCharm("a_echo_strike", "ประกายโจมตีสะท้อน", "A", "attack", "echoDamage", 0.25, "หลังโจมตีหลัก ทำดาเมจซ้ำอีก 25%"),
   makeCharm("a_memory_pierce", "แทงทะลุความทรงจำ", "A", "attack", "memoryEnemyBonus", 1.40, "เพิ่มดาเมจ 40% ใส่ศัตรูสายความทรงจำหรือกาลเวลา"),
@@ -1946,6 +1951,9 @@ const actAttackCharms = [
   makeCharm("a_stack_circle", "วงเวทสะสมพลัง", "A", "stack", "stackingCorrectDamage", 0.05, "ทุกครั้งที่ตอบถูก ดาเมจเพิ่ม 5% ซ้อนสูงสุด 5 ครั้ง", { maxStacks: 5 }),
   makeCharm("a_combo_echo", "Echo Strike", "A", "attack", "comboCorrectEcho", 0.30, "ถ้าตอบถูกติดกัน 2 ครั้ง โจมตีซ้ำอีก 30%", { condition: "twoCorrectInRow" }),
   makeCharm("a_grammar_break", "Grammar Break", "A", "break", "bossQuestionBreak", 1, "เพิ่มดาเมจ 15% และทำให้การโจมตีเจาะจังหวะ Guard ของบอส"),
+  makeCharm("ap_correct_spark", "ชามประกายคำตอบถูก", "A", "ap", "correctBasicAttackApChance", 0.35, "เมื่อตอบคำถามจากการโจมตีพื้นฐานถูกต้อง มีโอกาส 35% ที่จะฟื้น AP 1 หน่วย", { apGain: 1 }),
+  makeCharm("cd_syntax_gear", "ชามเฟืองวากยสัมพันธ์", "A", "cooldown", "reduceOwnCooldown2Ap", 1, "เมื่อใช้สกิลที่ใช้ 2 AP ลดคูลดาวน์ของสกิลนั้นลง 1 เทิร์น ช่วยให้กลับมาใช้สกิลกลางได้เร็วขึ้น"),
+  makeCharm("cd_surge_rune", "ชามรูนคลื่นแกรมมาเรีย", "A", "cooldown", "reduceOwnCooldown3Ap", 1, "เมื่อใช้สกิลที่ใช้ 3 AP ลดคูลดาวน์ของสกิลนั้นลง 1 เทิร์น เหมาะสำหรับผู้เล่นที่ชอบใช้สกิลใหญ่"),
 
   makeCharm("s_crystal_charge", "ชาร์จผลึก", "S", "charge", "crystalCharge", 1, "สะสม 1 ชาร์จ ครบ 3 ครั้ง ดาเมจถัดไป x2", { threshold: 3 }),
   makeCharm("s_time_echo", "เวทสะท้อนเวลา", "S", "attack", "delayedEchoDamage", 0.30, "ดาเมจที่ทำในเทิร์นนี้ 30% จะย้อนกลับไปโดนบอสอีกครั้งในเทิร์นถัดไป"),
@@ -1957,6 +1965,8 @@ const actAttackCharms = [
   makeCharm("s_time_skip", "Time Skip", "S", "turn", "extraTurnChance", 0.35, "หลังโจมตี มีโอกาส 35% ได้เล่นต่อทันที 1 เทิร์น"),
   makeCharm("s_grammar_roulette", "Grammar Roulette", "S", "gamble", "rouletteDamage", null, "ดาเมจสุ่ม 70% หรือ 180% ของดาเมจปกติ", { values: [0.70, 1.80] }),
   makeCharm("s_absolute_parry", "Absolute Parry", "S", "parry", "upgradeNextParry", 1, "Parry ครั้งถัดไป ถ้าโดนช่องสีใดก็ตาม จะอัปเกรดผลขึ้น 1 ระดับ", { duration: 1 }),
+  makeCharm("ap_comeback_chalice", "ชามพลังฮึดของนักเวท", "S", "ap", "lowHpApRestoreOnce", 2, "เมื่อพลังชีวิตของผู้เล่นเหลือ 50% หรือน้อยกว่า จะฟื้น AP 2 หน่วย ใช้ได้เพียง 1 ครั้งต่อการต่อสู้", { hpThreshold: 0.5, oncePerBattle: true }),
+  makeCharm("cd_perfect_timing", "ชามจังหวะสมบูรณ์แบบ", "S", "cooldown", "correctStreakCooldownReduction", 1, "เมื่อตอบคำถามถูกติดต่อกัน 3 ครั้ง ลดคูลดาวน์ของสกิลทั้งหมดลง 1 เทิร์น เป็นรางวัลสำหรับการตอบอย่างแม่นยำ", { threshold: 3 }),
 
   makeCharm("ss_past_fragment", "เศษเสี้ยว Past Fragment", "SS", "attack", "damageAndReward", null, "ดาเมจ x2 และได้ Grammaria เพิ่ม +15", { damageMultiplier: 2.00, bonusGrammaria: 15 }),
   makeCharm("ss_v2_judgement", "ประกาศิตแห่ง V2", "SS", "attack-debuff", "v2Judgement", null, "ถ้าตอบถูก ดาเมจหนักมาก และบอสติด Weak 1 เทิร์น", { damageMultiplier: 1.85, applyWeak: 0.30, duration: 1 }),
@@ -2017,7 +2027,17 @@ const CHARM_EFFECT_HANDLERS = {
   perfectTimeline: { category: "parry", timing: "parry", requiresValue: false },
   surviveFatalOnce: { category: "revive", timing: "setup", requiresValue: true },
   applyMark: { category: "mark", timing: "setup", requiresValue: true },
-  shieldAndGuard: { category: "shield", timing: "setup", requiresValue: false }
+  shieldAndGuard: { category: "shield", timing: "setup", requiresValue: false },
+  battleStartApBonus: { category: "ap", timing: "setup", requiresValue: true },
+  maxApBonus: { category: "ap", timing: "setup", requiresValue: true },
+  focusSuccessApBonus: { category: "ap", timing: "focusSuccess", requiresValue: true },
+  correctBasicAttackApChance: { category: "ap", timing: "postAttack", requiresValue: true },
+  lowHpApRestoreOnce: { category: "ap", timing: "playerDamage", requiresValue: true },
+  skillCooldownEveryThirdPlayerTurn: { category: "cooldown", timing: "turn", requiresValue: true },
+  focusCooldownReduction: { category: "cooldown", timing: "focusSuccess", requiresValue: true },
+  reduceOwnCooldown2Ap: { category: "cooldown", timing: "skillUse", requiresValue: true },
+  reduceOwnCooldown3Ap: { category: "cooldown", timing: "skillUse", requiresValue: true },
+  correctStreakCooldownReduction: { category: "cooldown", timing: "postAttack", requiresValue: true }
 };
 
 function normalizeCharmEffect(charm) {
@@ -4785,9 +4805,38 @@ function getActBattle() {
   return state.actBattle;
 }
 
+function ensureBattleCharmEffectState(battle = getActBattle()) {
+  if (!battle) {
+    return null;
+  }
+  if (!battle.charmEffectState || typeof battle.charmEffectState !== "object" || Array.isArray(battle.charmEffectState)) {
+    battle.charmEffectState = {};
+  }
+  battle.bonusMaxAp = Math.max(0, Number(battle.bonusMaxAp) || 0);
+  battle.charmEffectState.battleStartApApplied = Boolean(battle.charmEffectState.battleStartApApplied);
+  battle.charmEffectState.maxApBonusApplied = Boolean(battle.charmEffectState.maxApBonusApplied);
+  battle.charmEffectState.comebackApTriggered = Boolean(battle.charmEffectState.comebackApTriggered);
+  battle.charmEffectState.focusSuccessApBonus = Math.max(0, Number(battle.charmEffectState.focusSuccessApBonus) || 0);
+  battle.charmEffectState.focusCooldownReduction = Math.max(0, Number(battle.charmEffectState.focusCooldownReduction) || 0);
+  battle.charmEffectState.turnCooldownInterval = Math.max(0, Number(battle.charmEffectState.turnCooldownInterval) || 0);
+  battle.charmEffectState.turnCooldownReduction = Math.max(0, Number(battle.charmEffectState.turnCooldownReduction) || 0);
+  battle.charmEffectState.lastTurnCooldownTrigger = Math.max(0, Number(battle.charmEffectState.lastTurnCooldownTrigger) || 0);
+  battle.charmEffectState.lowHpApRestore = Math.max(0, Number(battle.charmEffectState.lowHpApRestore) || 0);
+  battle.charmEffectState.lowHpApThreshold = Math.max(0, Number(battle.charmEffectState.lowHpApThreshold) || 0);
+  return battle.charmEffectState;
+}
+
+function getActMaxAP(battle = getActBattle()) {
+  if (!battle) {
+    return ACT_MAX_AP;
+  }
+  ensureBattleCharmEffectState(battle);
+  return Math.max(ACT_MAX_AP, ACT_MAX_AP + Math.max(0, Number(battle.bonusMaxAp) || 0));
+}
+
 function getActAP() {
   const battle = getActBattle();
-  return battle ? clamp(Number(battle.ap || 0), 0, ACT_MAX_AP) : 0;
+  return battle ? clamp(Number(battle.ap ?? battle.playerAp ?? 0), 0, getActMaxAP(battle)) : 0;
 }
 
 function setActAP(value) {
@@ -4796,7 +4845,11 @@ function setActAP(value) {
     updateActAPUI();
     return;
   }
-  battle.ap = clamp(Number(value || 0), 0, ACT_MAX_AP);
+  const nextAp = clamp(Number(value || 0), 0, getActMaxAP(battle));
+  battle.ap = nextAp;
+  if (typeof battle.playerAp === "number") {
+    battle.playerAp = nextAp;
+  }
   updateActAPUI();
   updateActActionMenuState();
 }
@@ -4834,8 +4887,9 @@ function updateActAPUI() {
 
   els.playerApPips.classList.remove("hidden");
   const ap = getActAP();
+  const maxAp = getActMaxAP(state.actBattle);
   els.playerApPips.innerHTML = "";
-  for (let index = 0; index < ACT_MAX_AP; index += 1) {
+  for (let index = 0; index < maxAp; index += 1) {
     const pip = document.createElement("span");
     pip.className = `ap-pip${index < ap ? " is-filled" : ""}`;
     els.playerApPips.appendChild(pip);
@@ -4978,6 +5032,7 @@ function beginActPlayerTurn(message = "", options = {}) {
   if (!options.preservePlayerTurnCounter) {
     battle.playerTurnCounter = Math.max(0, Number(battle.playerTurnCounter) || 0) + 1;
   }
+  const playerTurnCharmLines = applyPlayerTurnCooldownCharmEffects(battle);
   battle.pendingPlayerAttack = null;
   if (BATTLE_FLOW_V2_CONFIG.enabled) {
     resetBattleFlowV2Selection({ phase: "question", cleanupCharge: true });
@@ -5001,9 +5056,12 @@ function beginActPlayerTurn(message = "", options = {}) {
   showOnlyBattlePanel(els.actionMenu);
   resetBattleContinueControls();
   els.continueBattleButton.classList.add("hidden");
-  els.battleMessage.textContent = message || (getActAP() <= 0
+  const baseMessage = message || (getActAP() <= 0
     ? "AP หมดชั่วคราว ใช้ตั้งสมาธิเพื่อฟื้น AP"
     : `${battle.stage.title} - เลือกการกระทำ`);
+  els.battleMessage.textContent = playerTurnCharmLines.length
+    ? `${baseMessage}\n${playerTurnCharmLines.join("\n")}`
+    : baseMessage;
   updateBattleStats();
   updateActActionMenuState();
 }
@@ -5959,6 +6017,13 @@ function applyStatusDamageToTarget(target, rawDamage, source = "", context = {})
   } else {
     state.playerHp = clamp(state.playerHp - damage, 0, 100);
     recordBossDamage(damage, source, { statusDamageResult: damageResult, ...context });
+    if (damage > 0) {
+      const charmLines = [];
+      applyLowHpComebackCharmEffect(charmLines);
+      if (charmLines.length) {
+        damageResult.charmLines = charmLines;
+      }
+    }
   }
   return damageResult;
 }
@@ -5979,6 +6044,7 @@ function appendDamageModifierLines(lines, target, result) {
   if (result.absorbedByHitShield) {
     addBattleMessageLine(lines, `${target === "boss" ? "บอส" : "ผู้เล่น"}ใช้ Hit Shield กันดาเมจ`);
   }
+  (result.charmLines || []).forEach(line => addBattleMessageLine(lines, line));
 }
 
 function applyBossMarkOnPlayerIfHit(action, finalDamage, lines = []) {
@@ -12542,6 +12608,8 @@ function startActBattle(stageIndex) {
     selectedSkillId: "",
     selectedCharmId: "",
     selectedChargePercent: 0,
+    bonusMaxAp: 0,
+    charmEffectState: {},
     skillCooldowns: createInitialSkillCooldowns(),
     skillCooldownStartedTurn: {},
     skillCooldownLastTickPlayerTurn: 0,
@@ -12746,12 +12814,17 @@ function chooseActFocusAnswer(option, question) {
     gainActAP(apGain);
     const focusResult = applyFocusBuffFromMeditation();
     const focusBonusPercent = focusResult?.focusBuff?.bonusPercent || FOCUS_BALANCE_CONFIG.focusDamageBonusPercent;
+    const focusCharmLines = [];
+    applyFocusSuccessCharmEffects(focusCharmLines);
     feedback.innerHTML = focusResult?.hadActiveBuff
-      ? `<strong>ตั้งสมาธิสำเร็จ!</strong><br>สมาธิของเจ้ายังคงมั่นคง โบนัสเดิมถูกรีเฟรช แต่จะไม่ซ้อนทับ<br>${question.explanation || ""}`
-      : `<strong>ตั้งสมาธิสำเร็จ!</strong><br>ได้รับ AP +${apGain} และพลังโจมตีครั้งถัดไปเพิ่มขึ้น ${focusBonusPercent}%<br>${question.explanation || ""}`;
+      ? `<strong>ตั้งสมาธิสำเร็จ!</strong><br>สมาธิของเจ้ายังคงมั่นคง โบนัสเดิมถูกรีเฟรช แต่จะไม่ซ้อนทับ${focusCharmLines.length ? `<br>${focusCharmLines.join("<br>")}` : ""}<br>${question.explanation || ""}`
+      : `<strong>ตั้งสมาธิสำเร็จ!</strong><br>ได้รับ AP +${apGain} และพลังโจมตีครั้งถัดไปเพิ่มขึ้น ${focusBonusPercent}%${focusCharmLines.length ? `<br>${focusCharmLines.join("<br>")}` : ""}<br>${question.explanation || ""}`;
     els.battleMessage.textContent = focusResult?.hadActiveBuff
       ? "สมาธิของเจ้ายังคงมั่นคง โบนัสเดิมถูกรีเฟรช แต่จะไม่ซ้อนทับ"
       : `สมาธิของเจ้าสงบลง ได้รับ AP +${apGain} และพลังโจมตีครั้งถัดไปเพิ่มขึ้น ${focusBonusPercent}%`;
+    if (focusCharmLines.length) {
+      els.battleMessage.textContent += `\n${focusCharmLines.join("\n")}`;
+    }
     console.log("[FocusBalance] meditation result", {
       correct: true,
       apGain,
@@ -12996,7 +13069,7 @@ function getBattlePlayerAp() {
   if (!battle) {
     return 0;
   }
-  return Number(battle.playerAp ?? battle.ap ?? 0);
+  return clamp(Number(battle.playerAp ?? battle.ap ?? 0), 0, getActMaxAP(battle));
 }
 
 function spendBattlePlayerAp(amount) {
@@ -13011,13 +13084,7 @@ function spendBattlePlayerAp(amount) {
     return false;
   }
 
-  if (typeof battle.playerAp === "number") {
-    battle.playerAp = Math.max(0, battle.playerAp - cost);
-  } else if (typeof battle.ap === "number") {
-    battle.ap = Math.max(0, battle.ap - cost);
-  } else {
-    battle.playerAp = Math.max(0, currentAp - cost);
-  }
+  setActAP(currentAp - cost);
   return true;
 }
 
@@ -13064,18 +13131,103 @@ function getRemainingSkillCooldown(skillId, battle = state.actBattle) {
   return Math.max(0, Number(activeBattle.skillCooldowns[skillId]) || 0);
 }
 
+function setSkillCooldownSafely(skillId, remaining, battle = state.actBattle) {
+  const activeBattle = ensureBattleSkillCooldownState(battle);
+  if (!activeBattle || !skillId) {
+    return 0;
+  }
+  const nextRemaining = Math.max(0, Math.round(Number(remaining) || 0));
+  activeBattle.skillCooldowns[skillId] = nextRemaining;
+  if (nextRemaining <= 0) {
+    delete activeBattle.skillCooldownStartedTurn[skillId];
+  } else if (activeBattle.skillCooldownStartedTurn[skillId] === undefined) {
+    activeBattle.skillCooldownStartedTurn[skillId] = Math.max(0, Number(activeBattle.playerTurnCounter) || 0);
+  }
+  return nextRemaining;
+}
+
+function reduceSkillCooldownSafely(skillId, amount = 1, battle = state.actBattle, options = {}) {
+  const activeBattle = ensureBattleSkillCooldownState(battle);
+  if (!activeBattle || !skillId) {
+    return 0;
+  }
+  const current = getRemainingSkillCooldown(skillId, activeBattle);
+  if (current <= 0) {
+    return 0;
+  }
+  const minRemaining = Math.max(0, Math.round(Number(options.minRemaining) || 0));
+  const nextRemaining = Math.max(minRemaining, current - Math.max(0, Math.round(Number(amount) || 0)));
+  return setSkillCooldownSafely(skillId, nextRemaining, activeBattle);
+}
+
+function reduceAllActiveSkillCooldowns(amount = 1, battle = state.actBattle) {
+  const activeBattle = ensureBattleSkillCooldownState(battle);
+  if (!activeBattle) {
+    return 0;
+  }
+  let reducedCount = 0;
+  PLAYER_SKILLS_V2.filter(skill => skill.enabled).forEach(skill => {
+    const before = getRemainingSkillCooldown(skill.id, activeBattle);
+    if (before <= 0) {
+      return;
+    }
+    const after = reduceSkillCooldownSafely(skill.id, amount, activeBattle);
+    if (after < before) {
+      reducedCount += 1;
+    }
+  });
+  return reducedCount;
+}
+
+function reduceLongestActiveSkillCooldown(amount = 1, battle = state.actBattle) {
+  const activeBattle = ensureBattleSkillCooldownState(battle);
+  if (!activeBattle) {
+    return "";
+  }
+  const longest = PLAYER_SKILLS_V2
+    .filter(skill => skill.enabled)
+    .map(skill => ({ skill, remaining: getRemainingSkillCooldown(skill.id, activeBattle) }))
+    .filter(item => item.remaining > 0)
+    .sort((a, b) => b.remaining - a.remaining)[0];
+  if (!longest) {
+    return "";
+  }
+  reduceSkillCooldownSafely(longest.skill.id, amount, activeBattle);
+  return longest.skill.thaiName || longest.skill.name || longest.skill.id;
+}
+
 function applySkillCooldownAfterUse(skillId, battle = state.actBattle) {
   const activeBattle = ensureBattleSkillCooldownState(battle);
   const skill = getBattleFlowV2Skill(skillId);
   if (!activeBattle || !skill) {
-    return;
+    return [];
   }
+  const lines = [];
   const cooldownTurns = Math.max(0, Number(skill.cooldownTurns) || 0);
   if (cooldownTurns <= 0) {
-    return;
+    return lines;
   }
   activeBattle.skillCooldowns[skill.id] = cooldownTurns;
   activeBattle.skillCooldownStartedTurn[skill.id] = Math.max(0, Number(activeBattle.playerTurnCounter) || 0);
+  const selectedCharm = getBattleFlowV2Charm(activeBattle.selectedCharmId);
+  const reduction = Math.max(0, Number(selectedCharm?.value) || 0);
+  if (selectedCharm?.effectType === "reduceOwnCooldown2Ap" && Number(skill.apCost) === 2 && reduction > 0) {
+    const before = getRemainingSkillCooldown(skill.id, activeBattle);
+    const after = reduceSkillCooldownSafely(skill.id, reduction, activeBattle);
+    if (after < before) {
+      addBattleMessageLine(lines, "ชามเฟืองวากยสัมพันธ์ลดคูลดาวน์สกิลนี้ 1 เทิร์น");
+    }
+  }
+  if (selectedCharm?.effectType === "reduceOwnCooldown3Ap" && Number(skill.apCost) === 3 && reduction > 0) {
+    const before = getRemainingSkillCooldown(skill.id, activeBattle);
+    const after = reduceSkillCooldownSafely(skill.id, reduction, activeBattle, {
+      minRemaining: cooldownTurns > 1 ? 1 : 0
+    });
+    if (after < before) {
+      addBattleMessageLine(lines, "ชามรูนคลื่นแกรมมาเรียลดคูลดาวน์สกิลนี้ 1 เทิร์น");
+    }
+  }
+  return lines;
 }
 
 function tickPlayerSkillCooldowns(battle = state.actBattle) {
@@ -13107,6 +13259,90 @@ function tickPlayerSkillCooldowns(battle = state.actBattle) {
 
 function completePlayerSkillCooldownTurn(battle = state.actBattle) {
   tickPlayerSkillCooldowns(battle);
+}
+
+function applyPlayerTurnCooldownCharmEffects(battle = state.actBattle) {
+  const charmState = ensureBattleCharmEffectState(battle);
+  const lines = [];
+  if (!battle || !charmState?.turnCooldownInterval || !charmState.turnCooldownReduction) {
+    return lines;
+  }
+  const currentTurn = Math.max(0, Number(battle.playerTurnCounter) || 0);
+  if (!currentTurn || currentTurn % charmState.turnCooldownInterval !== 0 || charmState.lastTurnCooldownTrigger === currentTurn) {
+    return lines;
+  }
+  const reducedSkillName = reduceLongestActiveSkillCooldown(charmState.turnCooldownReduction, battle);
+  charmState.lastTurnCooldownTrigger = currentTurn;
+  if (reducedSkillName) {
+    addBattleMessageLine(lines, `ชามเศษนาฬิกาเร่งจังหวะลดคูลดาวน์ ${reducedSkillName} 1 เทิร์น`);
+  }
+  return lines;
+}
+
+function applyFocusSuccessCharmEffects(lines = []) {
+  const battle = state.actBattle;
+  const charmState = ensureBattleCharmEffectState(battle);
+  if (!battle || !charmState) {
+    return;
+  }
+  if (charmState.focusSuccessApBonus > 0) {
+    gainActAP(charmState.focusSuccessApBonus);
+    addBattleMessageLine(lines, `ชามชาสมาธิสีฟ้าฟื้น AP +${charmState.focusSuccessApBonus}`);
+  }
+  if (charmState.focusCooldownReduction > 0) {
+    const reducedCount = reduceAllActiveSkillCooldowns(charmState.focusCooldownReduction, battle);
+    if (reducedCount > 0) {
+      addBattleMessageLine(lines, `ชามทรายสมาธิย้อนเวลาลดคูลดาวน์สกิล ${reducedCount} สกิล`);
+    }
+  }
+}
+
+function applyLowHpComebackCharmEffect(lines = []) {
+  const battle = state.actBattle;
+  const charmState = ensureBattleCharmEffectState(battle);
+  if (!battle || !charmState || charmState.comebackApTriggered || charmState.lowHpApRestore <= 0) {
+    return false;
+  }
+  const threshold = charmState.lowHpApThreshold || 0.5;
+  if (getPlayerHpPercent() > threshold) {
+    return false;
+  }
+  charmState.comebackApTriggered = true;
+  gainActAP(charmState.lowHpApRestore);
+  addBattleMessageLine(lines, `ชามพลังฮึดของนักเวทฟื้น AP +${charmState.lowHpApRestore}`);
+  return true;
+}
+
+function applyCorrectAnswerPostAttackCharmEffects(charm, context = {}) {
+  const battle = context.battle || state.actBattle;
+  const lines = context.lines || [];
+  if (!battle || !charm || !context.answerResult?.isCorrect) {
+    return;
+  }
+
+  if (charm.effectType === "correctBasicAttackApChance" && context.skill?.id === "coreSpark") {
+    const chance = clamp(Number(charm.value || 0), 0, 1);
+    if (Math.random() < chance) {
+      const apGain = Math.max(1, Math.round(Number(charm.apGain) || 1));
+      gainActAP(apGain);
+      addBattleMessageLine(lines, `ชามประกายคำตอบถูกฟื้น AP +${apGain}`);
+    } else {
+      addBattleMessageLine(lines, "ชามประกายคำตอบถูกยังไม่ทำงานในครั้งนี้");
+    }
+  }
+
+  if (charm.effectType === "correctStreakCooldownReduction") {
+    const threshold = Math.max(1, Math.round(Number(charm.threshold) || 3));
+    if ((battle.correctStreak || 0) >= threshold) {
+      const reducedCount = reduceAllActiveSkillCooldowns(charm.value || 1, battle);
+      battle.correctStreak = 0;
+      if (reducedCount > 0) {
+        addBattleMessageLine(lines, `ชามจังหวะสมบูรณ์แบบลดคูลดาวน์สกิล ${reducedCount} สกิล`);
+      } else {
+        addBattleMessageLine(lines, "ชามจังหวะสมบูรณ์แบบทำงานแล้ว แต่ยังไม่มีสกิลติดคูลดาวน์");
+      }
+    }
+  }
 }
 
 function getBattleFlowV2Charm(charmId) {
@@ -13191,7 +13427,7 @@ function renderBattleSkillSelectionPanel() {
   panel.className = "battle-flow-v2-panel battle-skill-panel";
   panel.innerHTML = `
     <div class="battle-flow-v2-header battle-flow-v2-meta">
-      <strong>AP ${currentAp} / ${ACT_MAX_AP}</strong>
+      <strong>AP ${currentAp} / ${getActMaxAP(battle)}</strong>
     </div>
     <p class="battle-flow-v2-hint">เลือกพลังจากเศษ Grammar Core เพื่อโจมตี</p>
   `;
@@ -13572,6 +13808,12 @@ function applyCharmPostAttackEffect(charm, context = {}) {
     }
   }
 
+  applyCorrectAnswerPostAttackCharmEffects(charm, {
+    ...context,
+    battle,
+    lines
+  });
+
   return result;
 }
 
@@ -13850,7 +14092,7 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
     renderBattleSkillSelectionPanel();
     return;
   }
-  applySkillCooldownAfterUse(skill.id, battle);
+  const cooldownCharmLines = applySkillCooldownAfterUse(skill.id, battle);
 
   const baseDamage = getBattleFlowV2BaseDamage(answerResult);
   const damageResult = calculateBattleFlowV2Damage({
@@ -13860,6 +14102,7 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
     charm,
     chargePercent
   });
+  damageResult.bonusLines.push(...cooldownCharmLines);
 
   applyBattleFlowV2SkillEffects({ skill, charm, answerResult, damageResult });
   triggerMotion(els.battlePlayer, "player-attack-motion");
@@ -13895,6 +14138,8 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
   const postEffectLines = [];
   const postEffectResult = applyCharmPostAttackEffect(charm, {
     battle,
+    skill,
+    answerResult,
     damageResult,
     lines: postEffectLines
   });
@@ -14957,6 +15202,8 @@ function tryStunBoss(baseChance, lines) {
 
 function applyCharmSetupEffect(charm, lines) {
   const effects = state.battleActiveEffects || {};
+  const battle = state.actBattle;
+  const charmState = ensureBattleCharmEffectState(battle);
 
   switch (charm.effectType) {
     case "bonusGrammaria":
@@ -15087,6 +15334,48 @@ function applyCharmSetupEffect(charm, lines) {
       effects.surviveFatalOnce = true;
       effects.surviveFatalHealPercent = charm.value || charm.healPercent || 0.4;
       addBattleMessageLine(lines, "ได้รับพร Great Recall ป้องกันการล้ม 1 ครั้ง");
+      break;
+    case "battleStartApBonus":
+      if (charmState && !charmState.battleStartApApplied) {
+        charmState.battleStartApApplied = true;
+        gainActAP(charm.value || 1);
+        addBattleMessageLine(lines, `ชามแกนพลัง Grammar Core ฟื้น AP +${charm.value || 1}`);
+      }
+      break;
+    case "maxApBonus":
+      if (battle && charmState && !charmState.maxApBonusApplied) {
+        charmState.maxApBonusApplied = true;
+        battle.bonusMaxAp = Math.max(Number(battle.bonusMaxAp) || 0, Number(charm.value) || 1);
+        gainActAP(charm.value || 1);
+        addBattleMessageLine(lines, `ชามมานาแห่งถ้อยคำเพิ่ม Max AP +${charm.value || 1}`);
+      }
+      break;
+    case "focusSuccessApBonus":
+      if (charmState) {
+        charmState.focusSuccessApBonus = Math.max(charmState.focusSuccessApBonus || 0, Number(charm.value) || 1);
+        addBattleMessageLine(lines, "ชามชาสมาธิสีฟ้าจะเสริม AP เมื่อการตั้งสมาธิสำเร็จ");
+      }
+      break;
+    case "focusCooldownReduction":
+      if (charmState) {
+        charmState.focusCooldownReduction = Math.max(charmState.focusCooldownReduction || 0, Number(charm.value) || 1);
+        addBattleMessageLine(lines, "ชามทรายสมาธิย้อนเวลาจะลดคูลดาวน์เมื่อตั้งสมาธิสำเร็จ");
+      }
+      break;
+    case "skillCooldownEveryThirdPlayerTurn":
+      if (charmState) {
+        charmState.turnCooldownInterval = Math.max(1, Number(charm.interval) || 3);
+        charmState.turnCooldownReduction = Math.max(charmState.turnCooldownReduction || 0, Number(charm.value) || 1);
+        addBattleMessageLine(lines, "ชามเศษนาฬิกาเร่งจังหวะเริ่มนับทุก 3 เทิร์น");
+      }
+      break;
+    case "lowHpApRestoreOnce":
+      if (charmState) {
+        charmState.lowHpApRestore = Math.max(charmState.lowHpApRestore || 0, Number(charm.value) || 2);
+        charmState.lowHpApThreshold = Math.max(charmState.lowHpApThreshold || 0, Number(charm.hpThreshold) || 0.5);
+        addBattleMessageLine(lines, "ชามพลังฮึดของนักเวทพร้อมทำงานเมื่อ HP เหลือน้อย");
+        applyLowHpComebackCharmEffect(lines);
+      }
       break;
     case "fullMemoryBurst":
       state.playerHp = clamp(state.playerHp + (charm.healFlat || 25), 0, 100);
