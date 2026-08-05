@@ -1429,7 +1429,485 @@ const extraWasWereQuestions = [
   }
 ];
 
-phase1WasWereQuestions.push(...extraWasWereQuestions.map(({ choices = [], ...question }) => ({
+const wasWereWispExtraBattleQuestions50 = [
+  {
+    id: "was-were-battle-extra-001",
+    prompt: "Which word completes the sentence about I at home: I ____ at home yesterday.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: เมื่อวานฉันอยู่ที่บ้าน",
+    choices: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "ใช้ was กับประธาน I เมื่อพูดถึงอดีต"
+  },
+  {
+    id: "was-were-battle-extra-002",
+    prompt: "Which word completes the sentence: You ____ late this morning.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: เมื่อเช้านี้คุณมาสาย",
+    choices: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "ใช้ were กับประธาน you ในอดีต"
+  },
+  {
+    id: "was-were-battle-extra-003",
+    prompt: "Which word completes the sentence: He ____ very happy last night.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: เมื่อคืนเขามีความสุขมาก",
+    choices: ["were", "was", "are", "be"],
+    answer: "was",
+    explanation: "ใช้ was กับประธาน he"
+  },
+  {
+    id: "was-were-battle-extra-004",
+    prompt: "Which word completes the sentence: She ____ in the classroom yesterday.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: เมื่อวานเธออยู่ในห้องเรียน",
+    choices: ["were", "are", "was", "is"],
+    answer: "was",
+    explanation: "ใช้ was กับประธาน she"
+  },
+  {
+    id: "was-were-battle-extra-005",
+    prompt: "Which word completes the sentence: We ____ tired after the game.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: พวกเราเหนื่อยหลังจากการแข่งขัน",
+    choices: ["was", "were", "is", "am"],
+    answer: "were",
+    explanation: "ใช้ were กับประธาน we"
+  },
+  {
+    id: "was-were-battle-extra-006",
+    prompt: "Which word completes the sentence: They ____ at school last Friday.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: พวกเขาอยู่ที่โรงเรียนเมื่อวันศุกร์ที่แล้ว",
+    choices: ["was", "are", "were", "is"],
+    answer: "were",
+    explanation: "ใช้ were กับประธาน they"
+  },
+  {
+    id: "was-were-battle-extra-007",
+    prompt: "Which word completes the sentence: It ____ cold last night.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: เมื่อคืนอากาศหนาว",
+    choices: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "ใช้ was กับ it"
+  },
+  {
+    id: "was-were-battle-extra-008",
+    prompt: "Which word completes the sentence about students: The students ____ in the library.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: นักเรียนหลายคนอยู่ในห้องสมุด",
+    choices: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "The students เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-battle-extra-009",
+    prompt: "Which word completes the sentence about mother: My mother ____ busy yesterday.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: แม่ของฉันยุ่งเมื่อวานนี้",
+    choices: ["were", "was", "are", "be"],
+    answer: "was",
+    explanation: "My mother เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-battle-extra-010",
+    prompt: "Which word completes the sentence about friends: My friends ____ at the park last Sunday.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: เพื่อน ๆ ของฉันอยู่ที่สวนสาธารณะเมื่อวันอาทิตย์ที่แล้ว",
+    choices: ["was", "is", "am", "were"],
+    answer: "were",
+    explanation: "My friends เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-battle-extra-011",
+    prompt: "Which sentence is correct about he at home?",
+    promptTh: "ประโยคใดถูกต้อง",
+    choices: [
+      "He were at home yesterday.",
+      "He was at home yesterday.",
+      "He are at home yesterday.",
+      "He am at home yesterday."
+    ],
+    answer: "He was at home yesterday.",
+    explanation: "He ใช้กับ was ในอดีต"
+  },
+  {
+    id: "was-were-battle-extra-012",
+    prompt: "Which sentence is correct about they being happy?",
+    promptTh: "ประโยคใดถูกต้อง",
+    choices: [
+      "They was happy yesterday.",
+      "They is happy yesterday.",
+      "They were happy yesterday.",
+      "They am happy yesterday."
+    ],
+    answer: "They were happy yesterday.",
+    explanation: "They ใช้กับ were"
+  },
+  {
+    id: "was-were-battle-extra-013",
+    prompt: "Which sentence is correct about you being kind?",
+    promptTh: "ประโยคใดถูกต้อง",
+    choices: [
+      "You was kind to me.",
+      "You were kind to me.",
+      "You is kind to me.",
+      "You am kind to me."
+    ],
+    answer: "You were kind to me.",
+    explanation: "You ใช้กับ were"
+  },
+  {
+    id: "was-were-battle-extra-014",
+    prompt: "Which sentence is correct about she as my teacher?",
+    promptTh: "ประโยคใดถูกต้อง",
+    choices: [
+      "She were my teacher.",
+      "She are my teacher.",
+      "She was my teacher.",
+      "She am my teacher."
+    ],
+    answer: "She was my teacher.",
+    explanation: "She ใช้กับ was"
+  },
+  {
+    id: "was-were-battle-extra-015",
+    prompt: "Which sentence is correct about we in the room?",
+    promptTh: "ประโยคใดถูกต้อง",
+    choices: [
+      "We was in the room.",
+      "We were in the room.",
+      "We is in the room.",
+      "We am in the room."
+    ],
+    answer: "We were in the room.",
+    explanation: "We ใช้กับ were"
+  },
+  {
+    id: "was-were-battle-extra-016",
+    prompt: "Which sentence is NOT correct about we?",
+    promptTh: "ประโยคใดไม่ถูกต้อง",
+    choices: [
+      "I was sleepy.",
+      "He was hungry.",
+      "They were ready.",
+      "We was late."
+    ],
+    answer: "We was late.",
+    explanation: "We ต้องใช้ were ไม่ใช่ was"
+  },
+  {
+    id: "was-were-battle-extra-017",
+    prompt: "Which sentence is NOT correct about he?",
+    promptTh: "ประโยคใดไม่ถูกต้อง",
+    choices: [
+      "She was at school.",
+      "You were at home.",
+      "He were tired.",
+      "They were excited."
+    ],
+    answer: "He were tired.",
+    explanation: "He ต้องใช้ was ไม่ใช่ were"
+  },
+  {
+    id: "was-were-battle-extra-018",
+    prompt: "Which sentence is NOT correct about the cat?",
+    promptTh: "ประโยคใดไม่ถูกต้อง",
+    choices: [
+      "It was dark.",
+      "The dogs were noisy.",
+      "My father was busy.",
+      "The cat were small."
+    ],
+    answer: "The cat were small.",
+    explanation: "The cat เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-battle-extra-019",
+    prompt: "Which sentence is NOT correct about my sisters?",
+    promptTh: "ประโยคใดไม่ถูกต้อง",
+    choices: [
+      "The boys were tired.",
+      "The book was on the desk.",
+      "My sisters was happy.",
+      "My brother was angry."
+    ],
+    answer: "My sisters was happy.",
+    explanation: "My sisters เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-battle-extra-020",
+    prompt: "Which sentence is NOT correct about there was/were?",
+    promptTh: "ประโยคใดไม่ถูกต้อง",
+    choices: [
+      "There was a pencil on the table.",
+      "There were many books.",
+      "There was three students.",
+      "There were two cats."
+    ],
+    answer: "There was three students.",
+    explanation: "three students เป็นพหูพจน์ จึงใช้ There were"
+  },
+  {
+    id: "was-were-battle-extra-021",
+    prompt: "Which word completes the question about you at school: ____ you at school yesterday?",
+    promptTh: "คำใดเติมคำถามนี้ได้ถูกต้อง: เมื่อวานคุณอยู่ที่โรงเรียนไหม",
+    choices: ["Was", "Is", "Were", "Am"],
+    answer: "Were",
+    explanation: "คำถามกับ you ในอดีตใช้ Were"
+  },
+  {
+    id: "was-were-battle-extra-022",
+    prompt: "Which word completes the question: ____ he sick last week?",
+    promptTh: "คำใดเติมคำถามนี้ได้ถูกต้อง: สัปดาห์ที่แล้วเขาป่วยไหม",
+    choices: ["Were", "Are", "Was", "Am"],
+    answer: "Was",
+    explanation: "คำถามกับ he ในอดีตใช้ Was"
+  },
+  {
+    id: "was-were-battle-extra-023",
+    prompt: "Which word completes the question: ____ they in the garden?",
+    promptTh: "คำใดเติมคำถามนี้ได้ถูกต้อง: พวกเขาอยู่ในสวนไหม",
+    choices: ["Was", "Were", "Is", "Am"],
+    answer: "Were",
+    explanation: "คำถามกับ they ใช้ Were"
+  },
+  {
+    id: "was-were-battle-extra-024",
+    prompt: "Which word completes the question: ____ she your friend?",
+    promptTh: "คำใดเติมคำถามนี้ได้ถูกต้อง: เธอเป็นเพื่อนของคุณไหม",
+    choices: ["Were", "Was", "Are", "Be"],
+    answer: "Was",
+    explanation: "คำถามกับ she ใช้ Was"
+  },
+  {
+    id: "was-were-battle-extra-025",
+    prompt: "Which word completes the question: ____ the children happy?",
+    promptTh: "คำใดเติมคำถามนี้ได้ถูกต้อง: เด็ก ๆ มีความสุขไหม",
+    choices: ["Was", "Is", "Were", "Am"],
+    answer: "Were",
+    explanation: "children เป็นพหูพจน์ จึงใช้ Were"
+  },
+  {
+    id: "was-were-battle-extra-026",
+    prompt: "Which word completes the sentence: There ____ a clock on the wall.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: มีนาฬิกาหนึ่งเรือนอยู่บนผนัง",
+    choices: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "a clock เป็นเอกพจน์ จึงใช้ There was"
+  },
+  {
+    id: "was-were-battle-extra-027",
+    prompt: "Which word completes the sentence: There ____ two bags under the desk.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: มีกระเป๋าสองใบอยู่ใต้โต๊ะ",
+    choices: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "two bags เป็นพหูพจน์ จึงใช้ There were"
+  },
+  {
+    id: "was-were-battle-extra-028",
+    prompt: "Which word completes the sentence: There ____ a bird in the tree.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: มีนกหนึ่งตัวอยู่บนต้นไม้",
+    choices: ["was", "were", "are", "be"],
+    answer: "was",
+    explanation: "a bird เป็นเอกพจน์ จึงใช้ There was"
+  },
+  {
+    id: "was-were-battle-extra-029",
+    prompt: "Which word completes the sentence: There ____ many people at the market.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: มีผู้คนจำนวนมากที่ตลาด",
+    choices: ["was", "is", "am", "were"],
+    answer: "were",
+    explanation: "many people เป็นพหูพจน์ จึงใช้ There were"
+  },
+  {
+    id: "was-were-battle-extra-030",
+    prompt: "Which word completes the sentence: There ____ no milk in the glass.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: ไม่มีนมอยู่ในแก้ว",
+    choices: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "milk เป็นคำนามนับไม่ได้ ใช้ There was"
+  },
+  {
+    id: "was-were-battle-extra-031",
+    prompt: "Which word completes the sentence: I ____ not ready for the test.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: ฉันไม่พร้อมสำหรับการสอบ",
+    choices: ["were", "was", "are", "be"],
+    answer: "was",
+    explanation: "รูปปฏิเสธของ I ในอดีตคือ I was not"
+  },
+  {
+    id: "was-were-battle-extra-032",
+    prompt: "Which word completes the sentence: They ____ not in the classroom.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: พวกเขาไม่ได้อยู่ในห้องเรียน",
+    choices: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "รูปปฏิเสธของ They ในอดีตคือ They were not"
+  },
+  {
+    id: "was-were-battle-extra-033",
+    prompt: "Which word completes the sentence: The movie ____ not boring.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: ภาพยนตร์เรื่องนั้นไม่น่าเบื่อ",
+    choices: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "The movie เป็นเอกพจน์ จึงใช้ was not"
+  },
+  {
+    id: "was-were-battle-extra-034",
+    prompt: "Which word completes the sentence: The rooms ____ not clean yesterday.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: เมื่อวานห้องหลายห้องไม่สะอาด",
+    choices: ["was", "were", "is", "am"],
+    answer: "were",
+    explanation: "The rooms เป็นพหูพจน์ จึงใช้ were not"
+  },
+  {
+    id: "was-were-battle-extra-035",
+    prompt: "Which word completes the sentence: My sister ____ not at home last night.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: เมื่อคืนพี่สาว/น้องสาวของฉันไม่ได้อยู่บ้าน",
+    choices: ["were", "was", "are", "be"],
+    answer: "was",
+    explanation: "My sister เป็นเอกพจน์ จึงใช้ was not"
+  },
+  {
+    id: "was-were-battle-extra-036",
+    prompt: "Choose the correct past form of verb to be for: I",
+    promptTh: "เลือก verb to be รูปอดีตที่ถูกต้องสำหรับประธาน I",
+    choices: ["were", "was", "are", "is"],
+    answer: "was",
+    explanation: "I ใช้ was ใน Past Simple"
+  },
+  {
+    id: "was-were-battle-extra-037",
+    prompt: "Choose the correct past form of verb to be for: you",
+    promptTh: "เลือก verb to be รูปอดีตที่ถูกต้องสำหรับประธาน you",
+    choices: ["was", "were", "is", "am"],
+    answer: "were",
+    explanation: "You ใช้ were ใน Past Simple"
+  },
+  {
+    id: "was-were-battle-extra-038",
+    prompt: "Choose the correct past form of verb to be for: he",
+    promptTh: "เลือก verb to be รูปอดีตที่ถูกต้องสำหรับประธาน he",
+    choices: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "He ใช้ was ใน Past Simple"
+  },
+  {
+    id: "was-were-battle-extra-039",
+    prompt: "Choose the correct past form of verb to be for: we",
+    promptTh: "เลือก verb to be รูปอดีตที่ถูกต้องสำหรับประธาน we",
+    choices: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "We ใช้ were ใน Past Simple"
+  },
+  {
+    id: "was-were-battle-extra-040",
+    prompt: "Choose the correct past form of verb to be for: the cat",
+    promptTh: "เลือก verb to be รูปอดีตที่ถูกต้องสำหรับประธาน the cat",
+    choices: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "The cat เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-battle-extra-041",
+    prompt: "Choose the correct past form of verb to be for: the cats",
+    promptTh: "เลือก verb to be รูปอดีตที่ถูกต้องสำหรับประธาน the cats",
+    choices: ["was", "were", "is", "am"],
+    answer: "were",
+    explanation: "The cats เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-battle-extra-042",
+    prompt: "Which word completes the sentence: The teacher ____ in the office.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: ครูอยู่ในห้องสำนักงาน",
+    choices: ["were", "was", "are", "be"],
+    answer: "was",
+    explanation: "The teacher เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-battle-extra-043",
+    prompt: "Which word completes the sentence: The teachers ____ in the meeting room.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: ครูหลายคนอยู่ในห้องประชุม",
+    choices: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "The teachers เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-battle-extra-044",
+    prompt: "Which word completes the sentence: A small shop ____ near my house.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: มีร้านเล็ก ๆ อยู่ใกล้บ้านของฉัน",
+    choices: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "A small shop เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-battle-extra-045",
+    prompt: "Which word completes the sentence: Two shops ____ near the school.",
+    promptTh: "คำใดเติมประโยคนี้ได้ถูกต้อง: มีร้านสองร้านอยู่ใกล้โรงเรียน",
+    choices: ["was", "is", "am", "were"],
+    answer: "were",
+    explanation: "Two shops เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-battle-extra-046",
+    prompt: "Which sentence uses was correctly?",
+    promptTh: "ประโยคใดใช้ was ได้ถูกต้อง",
+    choices: [
+      "They was at school.",
+      "We was happy.",
+      "She was tired.",
+      "You was late."
+    ],
+    answer: "She was tired.",
+    explanation: "She เป็นเอกพจน์บุรุษที่สาม ใช้ was"
+  },
+  {
+    id: "was-were-battle-extra-047",
+    prompt: "Which sentence uses were correctly?",
+    promptTh: "ประโยคใดใช้ were ได้ถูกต้อง",
+    choices: [
+      "He were hungry.",
+      "They were ready.",
+      "It were cold.",
+      "My mother were busy."
+    ],
+    answer: "They were ready.",
+    explanation: "They เป็นพหูพจน์ ใช้ were"
+  },
+  {
+    id: "was-were-battle-extra-048",
+    prompt: "Which sentence uses was not correctly?",
+    promptTh: "ประโยคใดใช้ was not ได้ถูกต้อง",
+    choices: [
+      "They was not ready.",
+      "We was not late.",
+      "He was not angry.",
+      "You was not here."
+    ],
+    answer: "He was not angry.",
+    explanation: "He ใช้ was not ในรูปปฏิเสธอดีต"
+  },
+  {
+    id: "was-were-battle-extra-049",
+    prompt: "Which sentence uses were not correctly?",
+    promptTh: "ประโยคใดใช้ were not ได้ถูกต้อง",
+    choices: [
+      "She were not sad.",
+      "The boys were not tired.",
+      "It were not sunny.",
+      "My father were not home."
+    ],
+    answer: "The boys were not tired.",
+    explanation: "The boys เป็นพหูพจน์ จึงใช้ were not"
+  },
+  {
+    id: "was-were-battle-extra-050",
+    prompt: "Which sentence is the best answer to: Were you at school yesterday?",
+    promptTh: "ประโยคใดเป็นคำตอบที่เหมาะสมที่สุดของคำถาม: เมื่อวานคุณอยู่ที่โรงเรียนไหม",
+    choices: [
+      "Yes, I was.",
+      "Yes, I were.",
+      "Yes, I am.",
+      "Yes, I is."
+    ],
+    answer: "Yes, I was.",
+    explanation: "คำถามขึ้นต้นด้วย Were you แต่เวลาตอบเกี่ยวกับ I ต้องใช้ I was"
+  }
+];
+
+phase1WasWereQuestions.push(...[...extraWasWereQuestions, ...wasWereWispExtraBattleQuestions50].map(({ choices = [], ...question }) => ({
   ...question,
   options: question.options || choices
 })));
