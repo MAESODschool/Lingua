@@ -6264,6 +6264,7 @@ function createFirestorePlayerDoc(sessionUser, progress) {
     characterName: characterCreated ? progress.characterName || "" : "",
     characterGender: characterCreated ? progress.avatar?.gender || "" : "",
     avatarId: characterCreated ? progress.avatar?.characterId || progress.characterId || "" : "",
+    avatarImage: characterCreated ? getPlayerCharacter(progress.characterId)?.asset || "" : "",
     studentProfile: sanitizeForFirestore(studentProfile || {}),
     studentFullName: studentProfile?.fullName || "",
     classLevel: studentProfile?.classLevel || "",
@@ -6309,6 +6310,7 @@ function createDefaultStudentDashboardFields(sessionUser) {
     characterName: "",
     characterGender: "",
     avatarId: "",
+    avatarImage: "",
     currentLessonTitle: "ยังไม่เริ่ม",
     currentAreaTitle: "ยังไม่เริ่ม",
     nextGoalTitle: "เริ่มสร้างตัวละคร",
@@ -7298,6 +7300,75 @@ function savePlayerData(reason = "auto") {
   return queuePlayerDataSave(snapshot, reason);
 }
 
+async function saveCompletedStudentProfileToFirestore(user, completedProgress) {
+  if (!user || !completedProgress) {
+    throw new Error("Missing student profile data");
+  }
+
+  ensurePlayerCharacterData(completedProgress);
+  ensureRewardClaims(completedProgress);
+  const snapshot = serializeProgressValue(completedProgress);
+
+  if (getAuthMode() !== "firebase" || user.isGuest || user.userId === "guest") {
+    const saved = await progressService.saveProgress(user.userId, snapshot);
+    if (!saved) {
+      throw new Error("Local student profile save failed");
+    }
+    return true;
+  }
+
+  const firebaseUser = firebaseAuth.currentUser;
+  const userId = user.uid || user.userId;
+  if (!firebaseUser || firebaseUser.uid !== userId) {
+    throw new Error(AUTH_COPY.remoteAuthUnavailable);
+  }
+
+  const sessionUser = createSessionUser({
+    uid: firebaseUser.uid,
+    id: firebaseUser.uid,
+    username: user.username || snapshot.username || firebaseUser.email?.split("@")[0] || firebaseUser.uid,
+    email: firebaseUser.email || user.email || snapshot.email || "",
+    displayName: snapshot.displayName || user.displayName || "Lingua Player",
+    mode: "registered"
+  });
+  const studentProfile = getStudentProfileFromPlayer(snapshot) || {};
+  const character = getPlayerCharacter(snapshot.characterId);
+  const dashboardDoc = createFirestorePlayerDoc(sessionUser, snapshot);
+
+  await setDoc(getPlayerDocRef(firebaseUser.uid), {
+    ...dashboardDoc,
+    uid: firebaseUser.uid,
+    username: sessionUser.username,
+    loginEmail: firebaseUser.email || sessionUser.email || "",
+    accountMode: "online",
+    role: "student",
+    profileCompleted: true,
+    characterCreated: true,
+    studentProfile: sanitizeForFirestore({
+      ...studentProfile,
+      studentFullName: studentProfile.fullName || studentProfile.studentFullName || ""
+    }),
+    studentFullName: studentProfile.fullName || studentProfile.studentFullName || "",
+    classLevel: studentProfile.classLevel || "",
+    room: studentProfile.room || "",
+    studentNo: studentProfile.studentNo || "",
+    classGroup: studentProfile.classGroup || "",
+    classGroupKey: studentProfile.classGroupKey || "",
+    studentSortKey: Number.isFinite(Number(studentProfile.studentSortKey))
+      ? Number(studentProfile.studentSortKey)
+      : 9999,
+    characterName: snapshot.characterName || "",
+    characterGender: snapshot.avatar?.gender || "",
+    avatarId: snapshot.avatar?.characterId || snapshot.characterId || "",
+    avatarImage: character?.asset || "",
+    progressPercent: dashboardDoc.progressPercent || 0,
+    grammaria: dashboardDoc.grammaria || 0,
+    bossesDefeated: dashboardDoc.bossesDefeated || 0,
+    lastActiveAt: serverTimestamp()
+  }, { merge: true });
+  return true;
+}
+
 function mergeDeep(target, source) {
   Object.entries(source).forEach(([key, value]) => {
     if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -7364,22 +7435,26 @@ async function createCharacterFromForm() {
   const selectedGender = genderChoice ? genderChoice.value : "other";
   const characterId = getCharacterIdFromGender(selectedGender);
 
-  playerData = createDefaultPlayerData(user);
-  playerData.characterId = characterId;
-  playerData.characterName = validation.characterName;
-  playerData.className = className;
-  playerData.keyStage = keyStage;
-  playerData.room = room;
-  playerData.studentProfile = validation.profile;
-  playerData.lastActiveAt = createTimestampIso();
-  playerData.progress.playerProfile = {
-    ...(playerData.progress.playerProfile || {}),
+  const previousPlayerData = playerData ? serializeProgressValue(playerData) : null;
+  const nextPlayerData = previousPlayerData
+    ? mergeDeep(createDefaultPlayerData(user), previousPlayerData)
+    : createDefaultPlayerData(user);
+
+  nextPlayerData.characterId = characterId;
+  nextPlayerData.characterName = validation.characterName;
+  nextPlayerData.className = className;
+  nextPlayerData.keyStage = keyStage;
+  nextPlayerData.room = room;
+  nextPlayerData.studentProfile = validation.profile;
+  nextPlayerData.lastActiveAt = createTimestampIso();
+  nextPlayerData.progress.playerProfile = {
+    ...(nextPlayerData.progress.playerProfile || {}),
     keyStage,
     className,
     room,
     studentProfile: validation.profile
   };
-  playerData.avatar = {
+  nextPlayerData.avatar = {
     characterId,
     gender: selectedGender,
     bodyType: bodyTypeChoice ? bodyTypeChoice.value : "normal",
@@ -7388,7 +7463,19 @@ async function createCharacterFromForm() {
     color: "blue"
   };
 
-  await savePlayerProfile();
+  els.createStatus.textContent = "กำลังบันทึกข้อมูลนักเรียน...";
+  setButtonEnabled(els.createCharacterButton, false);
+  try {
+    await saveCompletedStudentProfileToFirestore(user, nextPlayerData);
+    playerData = nextPlayerData;
+  } catch (error) {
+    console.error("[Lingua Character Creation] Failed to save completed student profile", error);
+    playerData = previousPlayerData;
+    els.createStatus.textContent = "บันทึกข้อมูลนักเรียนไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง";
+    setButtonEnabled(els.createCharacterButton, true);
+    return;
+  }
+  setButtonEnabled(els.createCharacterButton, true);
   refreshPlayerCharacterSprites(characterId);
   els.createStatus.textContent = "บันทึกข้อมูลแล้ว";
   runSceneTransition("บันทึกข้อมูลแล้ว กำลังเปิดเมนูผู้เล่น...", showMainMenu);
@@ -9842,7 +9929,7 @@ function normalizeTeacherStudentRecord(record = {}, sourceId = "") {
       ? record.characterName || progressSnapshot.characterName || record.displayName || progressSnapshot.displayName || ""
       : "ยังไม่ได้สร้างตัวละคร",
     characterId: character?.id || "",
-    characterAsset: character?.asset || "",
+    characterAsset: character?.asset || record.avatarImage || "",
     currentLesson: safeDisplayText(record.currentLessonTitle || labels.lesson, "ยังไม่เริ่ม"),
     progressPercent,
     grammaria: Number.isFinite(savedGrammaria)
