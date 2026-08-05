@@ -1613,6 +1613,26 @@ button {
   font-weight: 900;
 }
 
+.teacher-status-badge {
+  display: block;
+  width: fit-content;
+  margin-top: 5px;
+  padding: 3px 7px;
+  border: 1px solid rgba(255, 219, 134, 0.38);
+  border-radius: 999px;
+  color: #ffe39a;
+  background: rgba(255, 219, 134, 0.1);
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.teacher-status-badge.is-incomplete {
+  color: #bfe9ff;
+  border-color: rgba(113, 221, 255, 0.34);
+  background: rgba(113, 221, 255, 0.1);
+}
+
 .teacher-dashboard-empty {
   margin: 14px;
   color: #bfe9ff;

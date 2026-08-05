@@ -1526,6 +1526,8 @@ normalizeQuestionMeta(phase1WasWereQuestions, "act1_phase1_unit3_was_were", "was
 normalizeQuestionMeta(phase1ThereWasWereQuestions, "act1_phase1_unit4_there_was_were", "thereWasWere");
 normalizeQuestionMeta(phase1HadQuestions, "act1_phase1_unit5_had", "hadPast");
 
+const WAS_WERE_WISP_IMAGE_PATH = "assets/memory-shade.png";
+
 const PAST_FRAGMENT_ACT = {
   id: "past-fragment",
   title: "ACT: The Past Fragment",
@@ -1599,6 +1601,7 @@ const PAST_FRAGMENT_ACT = {
       phaseTitle: "Entering the Past",
       enemy: "Was-Were Wisp",
       thaiEnemy: "วิสป์ was-were",
+      enemySprite: WAS_WERE_WISP_IMAGE_PATH,
       enemyMaxHp: 68,
       completionKey: "phase1WasWereCompleted",
       reward: { grammaria: 25, fragment: "Was-Were Glow" },
@@ -2493,7 +2496,7 @@ const enemySpriteMap = {
   "Time Dust Sprite": TIME_DUST_IMAGE_PATH,
   "Echo Tick": ECHO_TRICK_IMAGE_PATH,
   "Yesterday Mite": YESTERDAY_SPIRIT_IMAGE_PATH,
-  "Was-Were Wisp": assetPath("memory-shade.png"),
+  "Was-Were Wisp": WAS_WERE_WISP_IMAGE_PATH,
   "Memory Lantern": assetPath("memory-shade.png"),
   "Lost Pouch Imp": assetPath("memory-shade.png"),
   "Rewind Slime": assetPath("enemies/rewind-slime.png"),
@@ -2506,6 +2509,18 @@ const enemySpriteMap = {
   "The Memory Breaker": MEMORY_BREAKER_IMAGE_PATH,
   "ผู้ทำลายความทรงจำ": MEMORY_BREAKER_IMAGE_PATH
 };
+
+function resolveEnemySpriteForStage(stage = {}) {
+  if (stage?.id === "act1_phase1_unit3_was_were") {
+    return WAS_WERE_WISP_IMAGE_PATH;
+  }
+  return stage?.enemySprite ||
+    stage?.bossImage ||
+    enemySpriteMap[stage?.enemy] ||
+    enemySpriteMap[stage?.thaiEnemy] ||
+    enemySpriteMap[stage?.name] ||
+    assetPath("memory-shade.png");
+}
 
 const enemyDescriptions = {
   "Time Dust": "ฝุ่นแห่งกาลเวลาที่ลอยวนอยู่รอบเศษความทรงจำ",
@@ -9653,7 +9668,13 @@ function getTeacherStudentGrammaria(record = {}) {
 
 function getTeacherStudentLastActive(record = {}) {
   const progressSnapshot = record.progress && typeof record.progress === "object" ? record.progress : {};
-  const value = record.lastActiveAt || progressSnapshot.lastActiveAt || record.lastLoginAt || progressSnapshot.updatedAt || record.updatedAt;
+  const value = record.lastActiveAt ||
+    progressSnapshot.lastActiveAt ||
+    record.lastLoginAt ||
+    progressSnapshot.updatedAt ||
+    record.updatedAt ||
+    record.createdAt ||
+    progressSnapshot.createdAt;
   if (!value) {
     return "";
   }
@@ -9680,7 +9701,7 @@ function createIncompleteTeacherProfile() {
     classLevel: "",
     room: "",
     studentNo: "-",
-    classGroup: "-",
+    classGroup: "ยังไม่ได้เลือกชั้นเรียน",
     classGroupKey: "zz_incomplete",
     studentSortKey: Number.MAX_SAFE_INTEGER
   };
@@ -9708,6 +9729,7 @@ function normalizeTeacherStudentRecord(record = {}, sourceId = "") {
     profile,
     profileCompleted,
     characterCreated,
+    statusLabel: characterCreated ? "เริ่มเล่นแล้ว" : "สมัครแล้ว / ยังไม่ได้สร้างตัวละคร",
     uid: record.uid || progressSnapshot.uid || progressSnapshot.userId || sourceId,
     username,
     displayName: record.displayName || progressSnapshot.displayName || username || "",
@@ -9794,16 +9816,16 @@ function renderTeacherDashboardSummary(students) {
     return;
   }
   const total = students.length;
-  const active = students.filter(student => student.lastActiveText).length;
+  const started = students.filter(student => student.characterCreated || student.profileCompleted || student.progressPercent > 0).length;
+  const incomplete = students.filter(student => !student.characterCreated).length;
   const averageProgress = total ? Math.round(students.reduce((sum, student) => sum + student.progressPercent, 0) / total) : 0;
   const averageGrammaria = total ? Math.round(students.reduce((sum, student) => sum + student.grammaria, 0) / total) : 0;
-  const completedAct1 = students.filter(student => student.progressPercent >= 100).length;
   const cards = [
-    ["นักเรียนทั้งหมด", total],
-    ["เข้าใช้งานแล้ว", active],
+    ["นักเรียนที่สมัครแล้ว", total],
+    ["เริ่มเล่นแล้ว", started],
+    ["ยังไม่ได้สร้างตัวละคร", incomplete],
     ["ความคืบหน้าเฉลี่ย", `${averageProgress}%`],
-    ["Grammaria เฉลี่ย", averageGrammaria],
-    ["จบ Act 1 แล้ว", completedAct1]
+    ["Grammaria เฉลี่ย", averageGrammaria]
   ];
   els.teacherDashboardSummary.innerHTML = cards.map(([label, value]) => `
     <div class="teacher-summary-card">
@@ -9826,7 +9848,7 @@ function createTeacherAvatarCell(student) {
   } else {
     const fallback = document.createElement("span");
     fallback.title = "ยังไม่มีข้อมูลตัวละคร";
-    fallback.textContent = "?";
+    fallback.textContent = "-";
     wrap.appendChild(fallback);
   }
   cell.appendChild(wrap);
@@ -9836,6 +9858,20 @@ function createTeacherAvatarCell(student) {
 function appendTeacherTableCell(row, text) {
   const cell = document.createElement("td");
   cell.textContent = text;
+  row.appendChild(cell);
+}
+
+function appendTeacherCharacterCell(row, student) {
+  const cell = document.createElement("td");
+  const name = document.createElement("span");
+  name.textContent = safeDisplayText(student.characterName || student.displayName, "ยังไม่มีชื่อในเกม");
+  cell.appendChild(name);
+  if (student.statusLabel) {
+    const badge = document.createElement("span");
+    badge.className = `teacher-status-badge ${student.characterCreated ? "is-started" : "is-incomplete"}`;
+    badge.textContent = student.statusLabel;
+    cell.appendChild(badge);
+  }
   row.appendChild(cell);
 }
 
@@ -9851,7 +9887,7 @@ function renderTeacherDashboardTable() {
     row.appendChild(createTeacherAvatarCell(student));
     appendTeacherTableCell(row, String(student.profile.studentNo || "-"));
     appendTeacherTableCell(row, student.profile.fullName);
-    appendTeacherTableCell(row, safeDisplayText(student.characterName || student.displayName, "ยังไม่มีชื่อในเกม"));
+    appendTeacherCharacterCell(row, student);
     appendTeacherTableCell(row, student.profile.classGroup);
     appendTeacherTableCell(row, student.currentLesson);
     appendTeacherTableCell(row, `${student.progressPercent}%`);
@@ -17978,7 +18014,7 @@ function resetBattle() {
 function updateBattleEnemyVisual(stage = null) {
   const enemyName = stage && stage.enemy ? stage.enemy : "Memory Shade";
   const thaiName = stage && stage.thaiEnemy ? stage.thaiEnemy : enemyName;
-  const sprite = enemySpriteMap[enemyName] || assetPath("memory-shade.png");
+  const sprite = resolveEnemySpriteForStage(stage || { enemy: enemyName, thaiEnemy: thaiName });
   const isTimeDust = enemyName === "Time Dust";
   const isEchoTrick = enemyName === "Echo Tick";
   const isYesterdaySpirit = enemyName === "Yesterday Sprite";
@@ -19688,6 +19724,7 @@ function renderBattleSelect() {
   wrapper.className = "skip-enemy-grid";
 
   skipBattleEnemies.forEach(enemy => {
+    const stage = getStageById(enemy.stageId);
     const card = document.createElement("article");
     card.className = "skip-enemy-card";
     const isTimeDust = enemy.name === "Time Dust";
@@ -19704,7 +19741,7 @@ function renderBattleSelect() {
             ? "memory-breaker-gif"
             : "";
     card.innerHTML = `
-      <img class="${specialEnemyClass}" src="${enemySpriteMap[enemy.name] || assetPath("memory-shade.png")}" alt="${enemy.name}">
+      <img class="${specialEnemyClass}" src="${resolveEnemySpriteForStage(stage || enemy)}" alt="${enemy.name}">
       <div>
         <h4>${enemy.thaiName}</h4>
         <p>${enemy.description}</p>
