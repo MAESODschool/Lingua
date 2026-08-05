@@ -9947,12 +9947,17 @@ async function loadTeacherDashboardRecords() {
   if (getAuthMode() === "firebase") {
     try {
       const snapshot = await getDocs(collection(firestoreDb, STUDENT_DASHBOARD_COLLECTION));
-      return snapshot.docs
+      const students = snapshot.docs
         .map(docSnapshot => normalizeTeacherStudentRecord(docSnapshot.data(), docSnapshot.id))
         .filter(Boolean);
+      console.log("[Teacher Dashboard] loaded student count:", students.length);
+      return students;
     } catch (error) {
-      teacherDashboardLoadError = "ไม่สามารถอ่านข้อมูลนักเรียนจาก Firestore ได้";
-      console.error("[TeacherDashboard] Failed to read Firestore student dashboard records", error);
+      teacherDashboardLoadError = error?.code === "permission-denied"
+        ? "Firestore Rules ยังไม่อนุญาตให้ Teacher Dashboard อ่านรายชื่อนักเรียนทั้งหมด"
+        : "ไม่สามารถอ่านข้อมูลนักเรียนจาก Firestore ได้";
+      console.error("[Teacher Dashboard] Failed to load all students", error);
+      return [];
     }
   }
 
