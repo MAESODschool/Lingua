@@ -13202,6 +13202,67 @@ function getBattleFlowV2Skill(skillId) {
   return PLAYER_SKILLS_V2.find(skill => skill.id === skillId && skill.enabled);
 }
 
+function getUsableBattleSkills(battle = state.actBattle) {
+  const activeBattle = ensureBattleSkillCooldownState(battle);
+  if (!activeBattle) {
+    return [];
+  }
+  const currentAp = getBattlePlayerAp();
+  return PLAYER_SKILLS_V2.filter(skill => {
+    if (!skill.enabled) {
+      return false;
+    }
+    const remainingCooldown = getRemainingSkillCooldown(skill.id, activeBattle);
+    const hasEnoughAp = currentAp >= Number(skill.apCost || 0);
+    return remainingCooldown <= 0 && hasEnoughAp;
+  });
+}
+
+function hasUsableBattleSkill(battle = state.actBattle) {
+  return getUsableBattleSkills(battle).length > 0;
+}
+
+function getUnavailableSkillGuidanceMessage(battle = state.actBattle) {
+  const activeBattle = ensureBattleSkillCooldownState(battle);
+  const enabledSkills = PLAYER_SKILLS_V2.filter(skill => skill.enabled);
+  if (!activeBattle || !enabledSkills.length) {
+    return "ตอนนี้ยังใช้สกิลไม่ได้ ลองตั้งสมาธิเพื่อฟื้น AP และรอคูลดาวน์";
+  }
+  const allCoolingDown = enabledSkills.every(skill => getRemainingSkillCooldown(skill.id, activeBattle) > 0);
+  return allCoolingDown
+    ? "สกิลทั้งหมดกำลังคูลดาวน์อยู่ ลองตั้งสมาธิก่อน"
+    : "ตอนนี้ยังใช้สกิลไม่ได้ ลองตั้งสมาธิเพื่อฟื้น AP และรอคูลดาวน์";
+}
+
+function returnToMainBattleActionsFromSkillMenu(message = "") {
+  const battle = state.actBattle;
+  if (!battle || isActBattleEnded(battle)) {
+    return;
+  }
+
+  cleanupGrammariaCharge();
+  battle.playerActionPhase = "question";
+  battle.actionChoiceLocked = false;
+  battle.skillFlowLocked = false;
+  battle.awaitingGrammarCharge = false;
+  battle.correctAnswerFeedbackAdvanced = false;
+  battle.answerResolving = false;
+  battle.selectedSkillId = "";
+  battle.selectedCharmId = "";
+  battle.selectedChargePercent = 0;
+  battle.pendingPlayerAnswer = null;
+  battle.pendingPlayerAttack = null;
+  battle.pendingAttackData = null;
+  resetBattleContinueControls();
+  els.continueBattleButton.classList.add("hidden");
+  clearBattleRecoveryActions();
+  setBattleTurnOwner("player");
+  showOnlyBattlePanel(els.actionMenu);
+  els.battleMessage.textContent = message || getUnavailableSkillGuidanceMessage(battle);
+  updateBattleStats();
+  updateActActionMenuState();
+}
+
 function createInitialSkillCooldowns() {
   return PLAYER_SKILLS_V2.reduce((cooldowns, skill) => {
     if (skill.enabled) {
@@ -13514,6 +13575,14 @@ function handleBattleFlowV2AnswerResolved(question, selectedAnswer, isCorrect) {
   battle.pendingAttackData = null;
   battle.skillFlowLocked = false;
   setBattleTurnOwner("player");
+  if (!hasUsableBattleSkill(battle)) {
+    battleFlowV2Log("answer resolved, no usable skill", {
+      currentAp: getBattlePlayerAp(),
+      skillCooldowns: { ...(battle.skillCooldowns || {}) }
+    });
+    returnToMainBattleActionsFromSkillMenu(getUnavailableSkillGuidanceMessage(battle));
+    return;
+  }
   battleFlowV2Log("answer resolved, showing skill panel", battle.pendingPlayerAnswer);
   renderBattleSkillSelectionPanel();
 }
@@ -13527,6 +13596,10 @@ function renderBattleSkillSelectionPanel() {
   battle.playerActionPhase = "skillSelect";
   cleanupGrammariaCharge();
   const currentAp = getBattlePlayerAp();
+  if (!hasUsableBattleSkill(battle)) {
+    returnToMainBattleActionsFromSkillMenu(getUnavailableSkillGuidanceMessage(battle));
+    return;
+  }
   els.battleMessage.textContent = "แตะสกิลที่ต้องการใช้";
   els.charmPanel.querySelector("h3").textContent = "เลือกสกิลโจมตี";
   els.charmOptions.innerHTML = "";
@@ -13557,7 +13630,7 @@ function renderBattleSkillSelectionPanel() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `skill-card battle-flow-v3-skill-card${canUse ? "" : " is-disabled"}${isCoolingDown ? " is-skill-cooling-down" : ""}`;
-    button.disabled = !canUse && !isCoolingDown;
+    button.disabled = !canUse;
     button.setAttribute("aria-disabled", canUse ? "false" : "true");
     button.innerHTML = `
       <span class="skill-card-topline">
@@ -13573,6 +13646,15 @@ function renderBattleSkillSelectionPanel() {
   });
   optionScroll.appendChild(optionGrid);
   panel.appendChild(optionScroll);
+
+  const backButton = document.createElement("button");
+  backButton.type = "button";
+  backButton.className = "secondary-button battle-flow-v2-back";
+  backButton.textContent = "กลับไปเลือกการกระทำ";
+  backButton.addEventListener("click", () => {
+    returnToMainBattleActionsFromSkillMenu("กลับไปเลือกการกระทำ ใช้ตั้งสมาธิเพื่อฟื้น AP หรือรอคูลดาวน์ได้");
+  });
+  panel.appendChild(backButton);
 
   els.charmOptions.appendChild(panel);
   showOnlyBattlePanel(els.charmPanel);
