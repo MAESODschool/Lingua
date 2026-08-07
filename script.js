@@ -13694,7 +13694,7 @@ function renderBattleItemMenu() {
     description.textContent = item.description;
     const count = document.createElement("span");
     count.className = "battle-item-count";
-    count.textContent = `เหลือ ${remaining} ขวด`;
+    count.textContent = `คงเหลือ: ${remaining} ขวด`;
     const note = document.createElement("small");
     note.className = "battle-item-note";
     note.textContent = "ใช้แล้วเสีย 1 เทิร์น";
@@ -13703,7 +13703,7 @@ function renderBattleItemMenu() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "battle-item-button";
-    button.textContent = remaining > 0 ? "ใช้ไอเทม" : "ไอเทมนี้หมดแล้ว";
+    button.textContent = remaining > 0 ? "ใช้" : "ไอเทมนี้หมดแล้ว";
     button.disabled = remaining <= 0;
     button.addEventListener("click", () => useBattleItem(item.id));
 
