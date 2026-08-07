@@ -3648,6 +3648,7 @@ const els = {
   enemyHpText: document.getElementById("enemyHpText"),
   grammariaText: document.getElementById("grammariaText"),
   shieldText: document.getElementById("shieldText"),
+  battleBoostStatus: document.getElementById("battleBoostStatus"),
   bossStatusText: document.getElementById("bossStatusText"),
   battleTitle: document.getElementById("battleTitle"),
   battleExitButton: document.getElementById("battleExitButton"),
@@ -3668,6 +3669,9 @@ const els = {
   attackButton: document.getElementById("attackButton"),
   itemButton: document.getElementById("itemButton"),
   focusButton: document.getElementById("focusButton"),
+  itemPanel: document.getElementById("itemPanel"),
+  itemOptions: document.getElementById("itemOptions"),
+  itemBackButton: document.getElementById("itemBackButton"),
   questionPanel: document.getElementById("questionPanel"),
   questionText: document.getElementById("questionText"),
   answerOptions: document.getElementById("answerOptions"),
@@ -4593,6 +4597,7 @@ function showOnlyBattlePanel(panelToShow) {
   [
     els.bossIntentPanel,
     els.actionMenu,
+    els.itemPanel,
     els.questionPanel,
     els.charmPanel,
     els.chargePanel,
@@ -5169,6 +5174,127 @@ function transitionToRegularEdLessonAfterTimeDust(stage) {
 
 const ACT_MAX_AP = 5;
 
+const BATTLE_ITEMS = [
+  {
+    id: "hp_potion",
+    name: "ยาฟื้นพลังชีวิต",
+    image: "assets/items/hp_potion.png",
+    description: "ฟื้น HP +30",
+    fullDescription: "ฟื้นพลังชีวิตของผู้เล่น 30 หน่วย ใช้แล้วเสีย 1 เทิร์น",
+    startingQuantity: 2,
+    effectType: "restoreHp",
+    value: 30
+  },
+  {
+    id: "ap_potion",
+    name: "ยาฟื้นพลัง AP",
+    image: "assets/items/ap_potion.png",
+    description: "ฟื้น AP +2",
+    fullDescription: "ฟื้น AP ของผู้เล่น 2 หน่วย ใช้แล้วเสีย 1 เทิร์น",
+    startingQuantity: 2,
+    effectType: "restoreAp",
+    value: 2
+  },
+  {
+    id: "attack_boost_potion",
+    name: "ยาเพิ่มพลังโจมตี",
+    image: "assets/items/attack_boost_potion.png",
+    description: "เพิ่มพลังโจมตีครั้งถัดไป x2",
+    fullDescription: "เพิ่มพลังโจมตีของผู้เล่นเป็น 2 เท่าในการโจมตีครั้งถัดไป ใช้แล้วเสีย 1 เทิร์น",
+    startingQuantity: 1,
+    effectType: "nextAttackMultiplier",
+    value: 2
+  }
+];
+
+function createInitialBattleItemCounts() {
+  return BATTLE_ITEMS.reduce((items, item) => {
+    items[item.id] = item.startingQuantity;
+    return items;
+  }, {});
+}
+
+function getBattleItemById(itemId) {
+  return BATTLE_ITEMS.find(item => item.id === itemId) || null;
+}
+
+function ensureBattleItemState(battle = state.actBattle) {
+  if (!battle) {
+    return null;
+  }
+  if (!battle.items || typeof battle.items !== "object" || Array.isArray(battle.items)) {
+    battle.items = createInitialBattleItemCounts();
+  }
+  BATTLE_ITEMS.forEach(item => {
+    const current = Number(battle.items[item.id]);
+    if (!Number.isFinite(current)) {
+      battle.items[item.id] = item.startingQuantity;
+    } else {
+      battle.items[item.id] = Math.max(0, Math.round(current));
+    }
+  });
+  battle.attackBoostActive = Boolean(battle.attackBoostActive);
+  battle.nextAttackMultiplier = Math.max(1, Number(battle.nextAttackMultiplier || 1));
+  if (!battle.attackBoostActive && battle.nextAttackMultiplier > 1) {
+    battle.attackBoostActive = true;
+  }
+  if (battle.attackBoostActive && battle.nextAttackMultiplier <= 1) {
+    battle.nextAttackMultiplier = 2;
+  }
+  return battle;
+}
+
+function getBattleItemCount(itemId, battle = state.actBattle) {
+  const activeBattle = ensureBattleItemState(battle);
+  return Math.max(0, Number(activeBattle?.items?.[itemId] || 0));
+}
+
+function decreaseBattleItemCount(itemId, battle = state.actBattle) {
+  const activeBattle = ensureBattleItemState(battle);
+  if (!activeBattle?.items) {
+    return 0;
+  }
+  activeBattle.items[itemId] = Math.max(0, getBattleItemCount(itemId, activeBattle) - 1);
+  return activeBattle.items[itemId];
+}
+
+function isBattleAttackBoostReady(battle = state.actBattle) {
+  const activeBattle = ensureBattleItemState(battle);
+  return Boolean(activeBattle?.attackBoostActive || Number(activeBattle?.nextAttackMultiplier || 1) > 1);
+}
+
+function updateBattleBoostStatus() {
+  if (!els.battleBoostStatus) {
+    return;
+  }
+  const isReady = isBattleAttackBoostReady(state.actBattle);
+  els.battleBoostStatus.classList.toggle("hidden", !isReady);
+  els.battleBoostStatus.textContent = isReady ? "พลังโจมตี x2 พร้อมใช้" : "";
+}
+
+function consumeBattleAttackBoost(rawDamage, lines = []) {
+  const battle = ensureBattleItemState(state.actBattle);
+  const damage = Math.max(0, Math.round(Number(rawDamage) || 0));
+  if (!battle || damage <= 0 || !isBattleAttackBoostReady(battle)) {
+    return {
+      damage,
+      applied: false,
+      multiplier: 1
+    };
+  }
+  const multiplier = Math.max(1, Number(battle.nextAttackMultiplier || 2));
+  const boostedDamage = Math.max(1, Math.round(damage * multiplier));
+  battle.attackBoostActive = false;
+  battle.nextAttackMultiplier = 1;
+  addBattleMessageLine(lines, "พลังโจมตี x2 ทำงาน!");
+  updateBattleBoostStatus();
+  return {
+    damage: boostedDamage,
+    applied: true,
+    multiplier
+  };
+}
+
 function normalizeBossBalanceKey(stage) {
   const raw = [
     stage?.id,
@@ -5540,6 +5666,7 @@ function beginActPlayerTurn(message = "", options = {}) {
 
   setBattleTurnOwner("player");
   ensureBattleSkillCooldownState(battle);
+  ensureBattleItemState(battle);
   if (!options.preservePlayerTurnCounter) {
     battle.playerTurnCounter = Math.max(0, Number(battle.playerTurnCounter) || 0) + 1;
   }
@@ -9741,6 +9868,7 @@ function hydrateBattleSnapshot(snapshot, stage) {
   battle.isDefeated = false;
   battle.victoryHandled = false;
   ensureBattleSkillCooldownState(battle);
+  ensureBattleItemState(battle);
   return battle;
 }
 
@@ -13399,6 +13527,9 @@ function startActBattle(stageIndex) {
     selectedSkillId: "",
     selectedCharmId: "",
     selectedChargePercent: 0,
+    items: createInitialBattleItemCounts(),
+    attackBoostActive: false,
+    nextAttackMultiplier: 1,
     bonusMaxAp: 0,
     charmEffectState: {},
     skillCooldowns: createInitialSkillCooldowns(),
@@ -13510,20 +13641,177 @@ function startActAttackAction() {
   showActBattleQuestion();
 }
 
+function returnToBattleActionMenuFromItems(message = "กลับไปเลือกการกระทำ") {
+  const battle = state.actBattle;
+  if (!battle || isActBattleEnded(battle)) {
+    return;
+  }
+  battle.playerActionPhase = "question";
+  battle.actionChoiceLocked = false;
+  battle.skillFlowLocked = false;
+  battle.awaitingGrammarCharge = false;
+  showOnlyBattlePanel(els.actionMenu);
+  els.battleMessage.textContent = message;
+  updateBattleStats();
+  updateActActionMenuState();
+}
+
+function renderBattleItemMenu() {
+  const battle = ensureBattleItemState(state.actBattle);
+  if (!battle || !els.itemPanel || !els.itemOptions) {
+    return;
+  }
+
+  battle.playerActionPhase = "itemSelect";
+  els.itemOptions.innerHTML = "";
+  BATTLE_ITEMS.forEach(item => {
+    const remaining = getBattleItemCount(item.id, battle);
+    const card = document.createElement("article");
+    card.className = `battle-item-card${remaining <= 0 ? " is-disabled" : ""}`;
+
+    const imageWrap = document.createElement("div");
+    imageWrap.className = "battle-item-image-wrap";
+    const image = document.createElement("img");
+    image.className = "battle-item-icon";
+    image.src = item.image;
+    image.alt = item.name;
+    image.loading = "lazy";
+    image.decoding = "async";
+    image.addEventListener("error", () => {
+      card.classList.add("is-image-missing");
+      image.remove();
+      imageWrap.textContent = "ไอเทม";
+    }, { once: true });
+    imageWrap.appendChild(image);
+
+    const body = document.createElement("div");
+    body.className = "battle-item-body";
+    const title = document.createElement("strong");
+    title.className = "battle-item-name";
+    title.textContent = item.name;
+    const description = document.createElement("span");
+    description.className = "battle-item-description";
+    description.textContent = item.description;
+    const count = document.createElement("span");
+    count.className = "battle-item-count";
+    count.textContent = `เหลือ ${remaining} ขวด`;
+    const note = document.createElement("small");
+    note.className = "battle-item-note";
+    note.textContent = "ใช้แล้วเสีย 1 เทิร์น";
+    body.append(title, description, count, note);
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "battle-item-button";
+    button.textContent = remaining > 0 ? "ใช้ไอเทม" : "ไอเทมนี้หมดแล้ว";
+    button.disabled = remaining <= 0;
+    button.addEventListener("click", () => useBattleItem(item.id));
+
+    card.append(imageWrap, body, button);
+    els.itemOptions.appendChild(card);
+  });
+
+  showOnlyBattlePanel(els.itemPanel);
+  updateBattleBoostStatus();
+}
+
 function useActItem() {
   const battle = state.actBattle;
   if (!battle) {
     return;
   }
 
-  battle.actionChoiceLocked = false;
   battle.advanceQuestionOnContinue = false;
-  showOnlyBattlePanel(els.actionMenu);
-  els.battleMessage.textContent = "ระบบไอเทมจะเปิดใช้ในเวอร์ชันถัดไป";
+  battle.pendingPlayerAttack = null;
+  battle.pendingPlayerAnswer = null;
+  battle.selectedSkillId = "";
+  battle.selectedCharmId = "";
+  battle.selectedChargePercent = 0;
+  battle.skillFlowLocked = false;
+  cleanupGrammariaCharge();
+  els.battleMessage.textContent = "เลือกไอเทมที่ต้องการใช้";
   if (els.activityFeedback) {
-    els.activityFeedback.textContent = "ยังไม่มีไอเทมให้ใช้ในการต่อสู้นี้";
+    els.activityFeedback.textContent = "ไอเทมใช้ได้เฉพาะใน battle และใช้สำเร็จจะเสีย 1 เทิร์น";
   }
-  updateActActionMenuState();
+  renderBattleItemMenu();
+}
+
+function completeActItemTurn(message) {
+  const battle = state.actBattle;
+  if (!battle || isActBattleEnded(battle)) {
+    return;
+  }
+  battle.playerActionPhase = "enemyTurn";
+  battle.actionChoiceLocked = true;
+  battle.skillFlowLocked = false;
+  battle.pendingPlayerAttack = null;
+  battle.pendingPlayerAnswer = null;
+  battle.selectedSkillId = "";
+  battle.selectedCharmId = "";
+  battle.selectedChargePercent = 0;
+  cleanupGrammariaCharge();
+  showOnlyBattlePanel(null);
+  els.battleMessage.textContent = message;
+  completePlayerSkillCooldownTurn(battle);
+  updateBattleStats();
+  syncBattleStateToPlayerData();
+  battle.pendingBossAction = chooseActBossAction(battle);
+  setBattleTurnOwner("enemy");
+  window.setTimeout(startActBossWarning, 900);
+}
+
+function useBattleItem(itemId) {
+  const battle = ensureBattleItemState(state.actBattle);
+  const item = getBattleItemById(itemId);
+  if (!battle || !item || isActBattleEnded(battle)) {
+    return;
+  }
+
+  if (getBattleItemCount(itemId, battle) <= 0) {
+    els.battleMessage.textContent = "ไอเทมนี้หมดแล้ว";
+    renderBattleItemMenu();
+    return;
+  }
+
+  if (item.effectType === "restoreHp") {
+    if (state.playerHp >= 100) {
+      els.battleMessage.textContent = "HP เต็มอยู่แล้ว ไม่จำเป็นต้องใช้ยานี้";
+      return;
+    }
+    const beforeHp = state.playerHp;
+    state.playerHp = clamp(state.playerHp + item.value, 0, 100);
+    decreaseBattleItemCount(itemId, battle);
+    renderBattleItemMenu();
+    completeActItemTurn(`ใช้ยาฟื้นพลังชีวิต ฟื้น HP +${state.playerHp - beforeHp}`);
+    return;
+  }
+
+  if (item.effectType === "restoreAp") {
+    const currentAp = getActAP();
+    const maxAp = getActMaxAP(battle);
+    if (currentAp >= maxAp) {
+      els.battleMessage.textContent = "AP เต็มอยู่แล้ว ไม่จำเป็นต้องใช้ยานี้";
+      return;
+    }
+    const nextAp = Math.min(maxAp, currentAp + item.value);
+    setActAP(nextAp);
+    decreaseBattleItemCount(itemId, battle);
+    renderBattleItemMenu();
+    completeActItemTurn(`ใช้ยาฟื้นพลัง AP ฟื้น AP +${nextAp - currentAp}`);
+    return;
+  }
+
+  if (item.effectType === "nextAttackMultiplier") {
+    if (isBattleAttackBoostReady(battle)) {
+      els.battleMessage.textContent = "พลังโจมตี x2 พร้อมใช้งานอยู่แล้ว";
+      return;
+    }
+    battle.attackBoostActive = true;
+    battle.nextAttackMultiplier = item.value;
+    decreaseBattleItemCount(itemId, battle);
+    renderBattleItemMenu();
+    completeActItemTurn("ใช้ยาเพิ่มพลังโจมตี การโจมตีครั้งถัดไปจะแรงขึ้น x2");
+  }
 }
 
 function startActFocusAction() {
@@ -14987,7 +15275,10 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
     battle.isAttacking = false;
     return;
   }
-  const rawPlayerDamage = damageResult.finalDamage;
+  const boostResult = consumeBattleAttackBoost(damageResult.finalDamage, damageResult.bonusLines);
+  const rawPlayerDamage = boostResult.damage;
+  damageResult.attackBoostApplied = boostResult.applied;
+  damageResult.attackBoostMultiplier = boostResult.multiplier;
   const bossDamageModifiers = applyStatusDamageToTarget("boss", rawPlayerDamage, "battleFlowV2Skill", {
     skillId: skill.id,
     charmId: charm.id,
@@ -16576,6 +16867,8 @@ function resolveActCharmAttack(charm, chargePercent = 0) {
   const grammariaGain = battle.pendingPlayerAttack.grammariaGain + grammariaBonus;
 
   triggerMotion(els.battlePlayer, "player-attack-motion");
+  const boostResult = consumeBattleAttackBoost(totalDamage, bonusLines);
+  totalDamage = boostResult.damage;
   const rawTotalDamage = totalDamage;
   const bossDamageResult = applyStatusDamageToTarget("boss", rawTotalDamage, "grammariaCharge", {
     chargePercent: normalizedChargePercent,
@@ -18888,6 +19181,7 @@ function updateBattleStats() {
   renderBossBattleStatuses(statuses?.boss || null);
 
   updateActAPUI();
+  updateBattleBoostStatus();
 }
 
 function startAttack() {
@@ -20728,6 +21022,9 @@ els.itemButton.addEventListener("click", () => {
     return;
   }
   useItem();
+});
+els.itemBackButton?.addEventListener("click", () => {
+  returnToBattleActionMenuFromItems();
 });
 els.focusButton.addEventListener("click", () => {
   if (state.actBattle) {
