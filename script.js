@@ -4,7 +4,9 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 import {
   getFirestore,
@@ -3109,11 +3111,233 @@ const REMOTE_AUTH_CONFIG = {
 const AUTH_STORAGE_KEYS = {
   users: "lingua_users",
   currentUser: "lingua_current_user",
+  lastSessionPrefix: "lingua:lastSession:",
   guestProgress: "lingua_progress_guest",
   registeredProgressPrefix: "lingua_progress_registered_",
   guestPrologueSeen: "lingua_guest_has_seen_prologue",
   userPrologueSeenPrefix: "lingua_user_"
 };
+
+const RESTORABLE_SCENES = new Set([
+  "mainMenu",
+  "lesson",
+  "lessonMap",
+  "battle",
+  "assessmentResult",
+  "tutorialGuide",
+  "creatorCredits",
+  "createCharacter",
+  "teacherDashboard",
+  "story",
+  "victory"
+]);
+
+function getSessionUserId(user = getCurrentUser()) {
+  if (!user) {
+    return "";
+  }
+  return user.uid || user.userId || user.id || "";
+}
+
+function getLastSessionStorageKey(user = getCurrentUser()) {
+  const uid = getSessionUserId(user);
+  return uid ? `${AUTH_STORAGE_KEYS.lastSessionPrefix}${uid}` : "";
+}
+
+function clearLastSceneForUser(user = getCurrentUser()) {
+  const key = getLastSessionStorageKey(user);
+  if (key) {
+    playerStorage.remove(key);
+  }
+}
+
+function normalizeSceneNameForRestore(sceneName) {
+  if (sceneName === "story") {
+    return state.currentLessonStage || state.lessonStoryMode || state.lessonSteps.length ? "lesson" : "story";
+  }
+  if (sceneName === "victory") {
+    const progress = playerData?.progress?.pastFragmentAct || null;
+    return progress?.finalBossDefeated || progress?.currentScreen === "victory" || progress?.currentScreen === "pastFragmentVictory"
+      ? "assessmentResult"
+      : "victory";
+  }
+  return sceneName;
+}
+
+function buildLastScenePayload(sceneName, extraState = {}) {
+  const user = getCurrentUser();
+  const uid = getSessionUserId(user);
+  if (!uid || sceneName === "login") {
+    return null;
+  }
+
+  const progress = playerData?.progress?.pastFragmentAct || {};
+  const activeStage = state.currentLessonStage || state.actBattle?.stage || getStageById(progress.currentStageId) || null;
+  const stageIndex = activeStage ? getStageIndexById(activeStage.id) : state.actStageIndex;
+  return {
+    uid,
+    userId: user?.userId || uid,
+    lastScene: normalizeSceneNameForRestore(sceneName),
+    lastSceneUpdatedAt: Date.now(),
+    stageIndex: Number.isFinite(stageIndex) ? stageIndex : null,
+    stageId: activeStage?.id || progress.currentStageId || "",
+    lessonId: activeStage?.id || progress.currentLessonId || "",
+    currentActId: progress.currentActId || DEFAULT_ACT_PROGRESS.currentActId,
+    lessonPhase: progress.lessonPhase || "teacherExplanation",
+    currentDialogueIndex: Math.max(0, Number(progress.currentDialogueIndex) || 0),
+    currentLessonStepIndex: Math.max(0, Number(progress.currentLessonStepIndex) || 0),
+    inBattle: sceneName === "battle",
+    battleStageId: sceneName === "battle" ? activeStage?.id || progress.currentStageId || "" : "",
+    battleCheckpointId: progress.resumeCheckpoint?.scene === "battle" ? progress.resumeCheckpoint.stageId || "" : "",
+    returnScene: "",
+    returnStageIndex: null,
+    tutorialSlideIndex: currentTutorialSlideIndex || 0,
+    ...extraState
+  };
+}
+
+function saveLastSceneForCurrentUser(sceneName, extraState = {}) {
+  if (!RESTORABLE_SCENES.has(sceneName) || sceneName === "login") {
+    return;
+  }
+  const key = getLastSessionStorageKey();
+  const payload = buildLastScenePayload(sceneName, extraState);
+  if (!key || !payload) {
+    return;
+  }
+  try {
+    playerStorage.set(key, JSON.stringify(payload));
+  } catch (error) {
+    console.warn("[Session] Failed to save last scene", error);
+  }
+}
+
+function readLastSceneForCurrentUser() {
+  const user = getCurrentUser();
+  const key = getLastSessionStorageKey(user);
+  if (!key) {
+    return null;
+  }
+  const saved = playerStorage.get(key);
+  if (!saved) {
+    return null;
+  }
+  try {
+    const payload = JSON.parse(saved);
+    if (!payload || payload.uid !== getSessionUserId(user) || !RESTORABLE_SCENES.has(payload.lastScene)) {
+      playerStorage.remove(key);
+      return null;
+    }
+    return payload;
+  } catch (error) {
+    console.warn("[Session] Failed to parse last scene", error);
+    playerStorage.remove(key);
+    return null;
+  }
+}
+
+function hasCompletedCharacterCreation() {
+  return Boolean(playerData && hasCompleteStudentProfile(getStudentProfileFromPlayer()));
+}
+
+function restoreLessonSceneFromSession(session) {
+  const stage = getStageById(session?.stageId || session?.lessonId);
+  const stageIndex = stage ? getStageIndexById(stage.id) : -1;
+  if (stage && stageIndex >= 0) {
+    showStageLesson(stageIndex, {
+      dialogueIndex: Math.max(0, Number(session.currentDialogueIndex) || 0),
+      lessonStepIndex: Math.max(0, Number(session.currentLessonStepIndex) || 0)
+    });
+    return true;
+  }
+  return restoreSavedProgress();
+}
+
+function restoreBattleSceneFromSession(session) {
+  const progress = loadProgress();
+  if (progress?.resumeCheckpoint?.scene === "battle" && restoreResumeCheckpoint(progress.resumeCheckpoint)) {
+    return true;
+  }
+
+  const stage = getStageById(session?.battleStageId || session?.stageId || progress?.currentStageId);
+  const stageIndex = stage ? getStageIndexById(stage.id) : -1;
+  if (stage && stageIndex >= 0) {
+    showStageLesson(stageIndex, { dialogueIndex: 0, lessonStepIndex: 0 });
+    if (els.activityFeedback) {
+      els.activityFeedback.textContent = "โหลดหน้าต่อสู้ใหม่ไม่สำเร็จ กลับไปยังหน้าบทเรียนล่าสุด";
+    }
+    return true;
+  }
+
+  showMainMenu();
+  openGameModal({
+    title: "โหลดหน้าต่อสู้",
+    body: "โหลดหน้าต่อสู้ใหม่ไม่สำเร็จ กลับไปยังเมนูผู้เล่น",
+    actions: [{ label: "รับทราบ", primary: true, onClick: closeGameModal }]
+  });
+  return true;
+}
+
+async function restoreLastSceneForCurrentUser() {
+  const user = getCurrentUser();
+  if (!user || !playerData) {
+    return false;
+  }
+
+  if (!hasCompletedCharacterCreation()) {
+    showScene("createCharacter");
+    return true;
+  }
+
+  const session = readLastSceneForCurrentUser();
+  if (!session) {
+    showMainMenu();
+    return true;
+  }
+
+  try {
+    switch (session.lastScene) {
+      case "lesson":
+      case "story":
+        return restoreLessonSceneFromSession(session) || (showMainMenu(), true);
+      case "lessonMap":
+        showMainMenu();
+        openMainMenuLessonMap();
+        return true;
+      case "battle":
+        return restoreBattleSceneFromSession(session);
+      case "assessmentResult":
+      case "victory":
+        if (loadProgress()?.finalBossDefeated || loadProgress()?.currentScreen === "victory" || loadProgress()?.currentScreen === "pastFragmentVictory") {
+          completeActVictoryScene();
+          return true;
+        }
+        showMainMenu();
+        return true;
+      case "tutorialGuide":
+        openTutorialGuide(Math.max(0, Number(session.tutorialSlideIndex) || 0));
+        return true;
+      case "creatorCredits":
+        openCreatorCredits();
+        return true;
+      case "createCharacter":
+        showMainMenu();
+        return true;
+      case "teacherDashboard":
+        showMainMenu();
+        return true;
+      case "mainMenu":
+      default:
+        showMainMenu();
+        return true;
+    }
+  } catch (error) {
+    console.warn("[Session] Failed to restore last scene", error);
+    clearLastSceneForUser(user);
+    showMainMenu();
+    return true;
+  }
+}
 
 const STUDENT_DASHBOARD_COLLECTION = "players";
 
@@ -3303,6 +3527,12 @@ const firestoreDb = getFirestore(firebaseApp);
 const firebaseReady = getAuthMode() === "firebase";
 console.log("[Auth] mode:", AUTH_CONFIG.mode);
 console.log("[Firebase] initialized:", firebaseReady);
+const firebasePersistenceReady = firebaseReady
+  ? setPersistence(firebaseAuth, browserLocalPersistence).catch(error => {
+    console.warn("[Auth] Failed to enable browser local persistence", error);
+    return false;
+  })
+  : Promise.resolve(false);
 let resolveFirebaseAuthReady = null;
 const firebaseAuthReady = new Promise(resolve => {
   resolveFirebaseAuthReady = resolve;
@@ -3313,6 +3543,7 @@ onAuthStateChanged(firebaseAuth, user => {
 });
 
 async function waitForFirebaseAuthReady() {
+  await firebasePersistenceReady;
   await firebaseAuthReady;
   return firebaseAuth.currentUser;
 }
@@ -3809,8 +4040,8 @@ function renderTutorialSlide() {
   setButtonEnabled(els.tutorialNextButton, currentTutorialSlideIndex < maxIndex);
 }
 
-function openTutorialGuide() {
-  currentTutorialSlideIndex = 0;
+function openTutorialGuide(startSlideIndex = 0) {
+  currentTutorialSlideIndex = Math.max(0, Number(startSlideIndex) || 0);
   renderTutorialSlide();
   showScene("tutorialGuide");
 }
@@ -3821,6 +4052,7 @@ function nextTutorialSlide() {
   }
   currentTutorialSlideIndex += 1;
   renderTutorialSlide();
+  saveLastSceneForCurrentUser("tutorialGuide", { tutorialSlideIndex: currentTutorialSlideIndex });
 }
 
 function previousTutorialSlide() {
@@ -3829,6 +4061,7 @@ function previousTutorialSlide() {
   }
   currentTutorialSlideIndex -= 1;
   renderTutorialSlide();
+  saveLastSceneForCurrentUser("tutorialGuide", { tutorialSlideIndex: currentTutorialSlideIndex });
 }
 
 function returnToMainMenuFromTutorial() {
@@ -3875,6 +4108,7 @@ function showScene(name) {
   updateManualSaveButtonVisibility(name);
   playBgmForScene(name);
   renderBattleTurnIndicator();
+  saveLastSceneForCurrentUser(name);
 }
 
 function cleanupButtonsForSceneChange(nextScene) {
@@ -7122,6 +7356,7 @@ const localAuthProvider = {
   },
 
   logout() {
+    clearLastSceneForUser(this.getCurrentUser());
     playerStorage.remove(AUTH_STORAGE_KEYS.currentUser);
     state.currentUser = null;
     playerData = null;
@@ -7190,6 +7425,7 @@ const remoteAuthProvider = {
         throw new Error("รหัส Close Beta ไม่ถูกต้อง");
       }
 
+      await firebasePersistenceReady;
       console.log("[Auth] registering username:", normalizedUsername);
       const credential = await createUserWithEmailAndPassword(firebaseAuth, usernameToInternalEmail(normalizedUsername), pin);
       console.log("[Auth] Firebase uid:", credential.user.uid);
@@ -7235,6 +7471,7 @@ const remoteAuthProvider = {
         throw new Error("กรุณากรอก PIN");
       }
 
+      await firebasePersistenceReady;
       const credential = await signInWithEmailAndPassword(firebaseAuth, usernameToInternalEmail(normalizedUsername), pin);
       const sessionUser = await loadRemoteSessionUser(credential.user, normalizedUsername);
       state.currentUser = sessionUser;
@@ -7254,11 +7491,13 @@ const remoteAuthProvider = {
   },
 
   async logout() {
+    const sessionUser = this.getCurrentUser();
     try {
       await signOut(firebaseAuth);
     } catch (error) {
       console.warn("[Auth] Firebase signOut failed; clearing local game session.", error);
     }
+    clearLastSceneForUser(sessionUser);
     playerStorage.remove(AUTH_STORAGE_KEYS.currentUser);
     state.currentUser = null;
     playerData = null;
@@ -7719,6 +7958,7 @@ async function logoutCurrentUser() {
 
 async function initializeAuthUi() {
   showAuthPanel("login");
+  setAuthStatus("กำลังตรวจสอบสถานะการเข้าสู่ระบบ...");
   if (getAuthMode() === "firebase") {
     const firebaseUser = await waitForFirebaseAuthReady();
     if (firebaseUser && (!state.currentUser || state.currentUser.isGuest || state.currentUser.uid !== firebaseUser.uid)) {
@@ -7733,8 +7973,20 @@ async function initializeAuthUi() {
   const user = getCurrentUser();
   updateAuthUi();
   if (user) {
-    setAuthStatus(`พบ session ของ ${user.displayName} กดเข้าสู่ระบบหรือ Logout เพื่อเปลี่ยนผู้เล่น`);
+    setAuthStatus(`พบ session ของ ${user.displayName} กำลังพากลับเข้าสู่เกม`);
+    if (!playerData) {
+      await loadPlayerProfile(user.userId);
+    }
+    if (!playerData) {
+      els.createStatus.textContent = `${user.displayName} ยังไม่มีตัวละคร กรุณาสร้างตัวละครก่อนเริ่มเดินทาง`;
+      showScene("createCharacter");
+      return;
+    }
+    await restoreLastSceneForCurrentUser();
+    return;
   }
+  showScene("login");
+  setAuthStatus(getAuthPanelNotice("login"));
 }
 
 async function loadPlayerData(userId) {
@@ -10769,6 +11021,7 @@ function continueJourneyFromMainMenu() {
 }
 
 function openMainMenuLessonMap() {
+  saveLastSceneForCurrentUser("lessonMap");
   if (typeof openLessonSelectModal === "function") {
     openLessonSelectModal();
     return;
@@ -10783,6 +11036,7 @@ function openMainMenuLessonMap() {
 function openMainMenuAssessmentResult() {
   const progress = loadProgress();
   if (progress?.finalBossDefeated || progress?.currentScreen === "victory" || progress?.currentScreen === "pastFragmentVictory") {
+    saveLastSceneForCurrentUser("assessmentResult");
     runSceneTransition("กำลังเปิดผลการประเมิน...", completeActVictoryScene);
     return;
   }
@@ -11013,6 +11267,13 @@ function saveProgress(updateObject = {}, options = {}) {
   playerData.progress.currentScene = progress.currentScreen;
   ensureGrammariaState();
   savePlayerData(options.source || "auto");
+  if (progress.currentScreen === "battle") {
+    saveLastSceneForCurrentUser("battle");
+  } else if (progress.currentScreen === "lesson" || progress.currentScreen === "story" || progress.currentScreen === "actInfo") {
+    saveLastSceneForCurrentUser("lesson");
+  } else if (progress.currentScreen === "victory" || progress.currentScreen === "pastFragmentVictory") {
+    saveLastSceneForCurrentUser("assessmentResult");
+  }
   console.log("[Progress] Saved:", progress);
   return progress;
 }
