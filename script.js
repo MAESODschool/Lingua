@@ -277,19 +277,19 @@ const EARLY_BOSS_BALANCE = {
 
 // Canonical Act 1 encounter durability. These values only set enemy max HP and must not scale player damage.
 const ACT1_ENCOUNTER_MAX_HP = Object.freeze({
-  "what-is-past": 128,
-  "what-is-tense": 144,
-  act1_phase1_unit3_was_were: 60,
-  act1_phase1_unit4_there_was_were: 176,
-  act1_phase1_unit5_had: 192,
-  "regular-rule-1": 224,
-  "regular-rule-2": 240,
-  "regular-rule-3": 272,
-  "regular-rule-4": 288,
-  "ed-mini-boss": 425,
-  "irregular-lesson": 304,
-  "irregular-mini-boss": 490,
-  "final-boss": 700
+  "what-is-past": 55,
+  "what-is-tense": 60,
+  "act1_phase1_unit3_was_were": 50,
+  "act1_phase1_unit4_there_was_were": 70,
+  "act1_phase1_unit5_had": 75,
+  "regular-rule-1": 85,
+  "regular-rule-2": 90,
+  "regular-rule-3": 95,
+  "regular-rule-4": 100,
+  "ed-mini-boss": 150,
+  "irregular-lesson": 105,
+  "irregular-mini-boss": 170,
+  "final-boss": 240
 });
 
 const PHASE1_STARTER_STAGE_IDS = new Set([
@@ -840,21 +840,6126 @@ function makeRegularQuestionsExcluding(bank, ruleText, excludedVerbs = []) {
     .map(item => makeRegularQuestion(item, ruleText));
 }
 
-const regularRuleOneQuestions = regularVerbBanks.addEd
-  .filter(([verb]) => !["walk", "jump", "clean", "watch", "help", "open"].includes(verb))
-  .map(item => makeRegularQuestion(item, "คำกริยาทั่วไปเติม -ed"));
+const regularRuleOneQuestions = [
+  {
+    "id": "regular-ed-001",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า walk",
+    "options": [
+      "walkked",
+      "walked",
+      "walkd",
+      "walkied"
+    ],
+    "answer": "walked",
+    "explanation": "walk เติม -ed จึงเป็น walked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-002",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า jump",
+    "options": [
+      "jumpd",
+      "jumped",
+      "jumpied",
+      "jumpped"
+    ],
+    "answer": "jumped",
+    "explanation": "jump เติม -ed จึงเป็น jumped",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-003",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า help",
+    "options": [
+      "helpied",
+      "helpd",
+      "helped",
+      "helpped"
+    ],
+    "answer": "helped",
+    "explanation": "help เติม -ed จึงเป็น helped",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-004",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า watch",
+    "options": [
+      "watchd",
+      "watchied",
+      "watchhed",
+      "watched"
+    ],
+    "answer": "watched",
+    "explanation": "watch เติม -ed จึงเป็น watched",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-005",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า open",
+    "options": [
+      "opend",
+      "openied",
+      "opened",
+      "openned"
+    ],
+    "answer": "opened",
+    "explanation": "open เติม -ed จึงเป็น opened",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-006",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า clean",
+    "options": [
+      "cleaned",
+      "cleanied",
+      "cleanned",
+      "cleand"
+    ],
+    "answer": "cleaned",
+    "explanation": "clean เติม -ed จึงเป็น cleaned",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-007",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า work",
+    "options": [
+      "workied",
+      "workked",
+      "worked",
+      "workd"
+    ],
+    "answer": "worked",
+    "explanation": "work เติม -ed จึงเป็น worked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-008",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า look",
+    "options": [
+      "lookd",
+      "lookked",
+      "looked",
+      "lookied"
+    ],
+    "answer": "looked",
+    "explanation": "look เติม -ed จึงเป็น looked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-009",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า talk",
+    "options": [
+      "talkd",
+      "talkied",
+      "talked",
+      "talkked"
+    ],
+    "answer": "talked",
+    "explanation": "talk เติม -ed จึงเป็น talked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-010",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า cook",
+    "options": [
+      "cookd",
+      "cookied",
+      "cooked",
+      "cookked"
+    ],
+    "answer": "cooked",
+    "explanation": "cook เติม -ed จึงเป็น cooked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-011",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า wash",
+    "options": [
+      "washhed",
+      "washied",
+      "washd",
+      "washed"
+    ],
+    "answer": "washed",
+    "explanation": "wash เติม -ed จึงเป็น washed",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-012",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า finish",
+    "options": [
+      "finishied",
+      "finished",
+      "finishd",
+      "finishhed"
+    ],
+    "answer": "finished",
+    "explanation": "finish เติม -ed จึงเป็น finished",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-013",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า listen",
+    "options": [
+      "listend",
+      "listenied",
+      "listenned",
+      "listened"
+    ],
+    "answer": "listened",
+    "explanation": "listen เติม -ed จึงเป็น listened",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-014",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า visit",
+    "options": [
+      "visitted",
+      "visitied",
+      "visited",
+      "visitd"
+    ],
+    "answer": "visited",
+    "explanation": "visit เติม -ed จึงเป็น visited",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-015",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า start",
+    "options": [
+      "startied",
+      "started",
+      "startted",
+      "startd"
+    ],
+    "answer": "started",
+    "explanation": "start เติม -ed จึงเป็น started",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-016",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า need",
+    "options": [
+      "needied",
+      "needded",
+      "needd",
+      "needed"
+    ],
+    "answer": "needed",
+    "explanation": "need เติม -ed จึงเป็น needed",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-017",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า want",
+    "options": [
+      "wanted",
+      "wantted",
+      "wantd",
+      "wantied"
+    ],
+    "answer": "wanted",
+    "explanation": "want เติม -ed จึงเป็น wanted",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-018",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า call",
+    "options": [
+      "calld",
+      "callied",
+      "callled",
+      "called"
+    ],
+    "answer": "called",
+    "explanation": "call เติม -ed จึงเป็น called",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-019",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า paint",
+    "options": [
+      "paintted",
+      "paintied",
+      "painted",
+      "paintd"
+    ],
+    "answer": "painted",
+    "explanation": "paint เติม -ed จึงเป็น painted",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-020",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า ask",
+    "options": [
+      "asked",
+      "askked",
+      "askied",
+      "askd"
+    ],
+    "answer": "asked",
+    "explanation": "ask เติม -ed จึงเป็น asked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-021",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า answer",
+    "options": [
+      "answeried",
+      "answerd",
+      "answered",
+      "answerred"
+    ],
+    "answer": "answered",
+    "explanation": "answer เติม -ed จึงเป็น answered",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-022",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า push",
+    "options": [
+      "pushhed",
+      "pushied",
+      "pushd",
+      "pushed"
+    ],
+    "answer": "pushed",
+    "explanation": "push เติม -ed จึงเป็น pushed",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-023",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า pull",
+    "options": [
+      "pulld",
+      "pulled",
+      "pullied",
+      "pullled"
+    ],
+    "answer": "pulled",
+    "explanation": "pull เติม -ed จึงเป็น pulled",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-024",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า touch",
+    "options": [
+      "touchd",
+      "touched",
+      "touchied",
+      "touchhed"
+    ],
+    "answer": "touched",
+    "explanation": "touch เติม -ed จึงเป็น touched",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-025",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า join",
+    "options": [
+      "joind",
+      "joinned",
+      "joinied",
+      "joined"
+    ],
+    "answer": "joined",
+    "explanation": "join เติม -ed จึงเป็น joined",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-026",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า wait",
+    "options": [
+      "waitted",
+      "waited",
+      "waitd",
+      "waitied"
+    ],
+    "answer": "waited",
+    "explanation": "wait เติม -ed จึงเป็น waited",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-027",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า learn",
+    "options": [
+      "learnned",
+      "learnied",
+      "learned",
+      "learnd"
+    ],
+    "answer": "learned",
+    "explanation": "learn เติม -ed จึงเป็น learned",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-028",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า remember",
+    "options": [
+      "remembered",
+      "rememberred",
+      "rememberd",
+      "rememberied"
+    ],
+    "answer": "remembered",
+    "explanation": "remember เติม -ed จึงเป็น remembered",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-029",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า collect",
+    "options": [
+      "collectted",
+      "collectied",
+      "collected",
+      "collectd"
+    ],
+    "answer": "collected",
+    "explanation": "collect เติม -ed จึงเป็น collected",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-030",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า repair",
+    "options": [
+      "repairied",
+      "repaired",
+      "repaird",
+      "repairred"
+    ],
+    "answer": "repaired",
+    "explanation": "repair เติม -ed จึงเป็น repaired",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-031",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า fix",
+    "options": [
+      "fixxed",
+      "fixed",
+      "fixied",
+      "fixd"
+    ],
+    "answer": "fixed",
+    "explanation": "fix เติม -ed จึงเป็น fixed",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-032",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า count",
+    "options": [
+      "countted",
+      "countied",
+      "countd",
+      "counted"
+    ],
+    "answer": "counted",
+    "explanation": "count เติม -ed จึงเป็น counted",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-033",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า turn",
+    "options": [
+      "turned",
+      "turnied",
+      "turnned",
+      "turnd"
+    ],
+    "answer": "turned",
+    "explanation": "turn เติม -ed จึงเป็น turned",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-034",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า follow",
+    "options": [
+      "followied",
+      "followed",
+      "followd",
+      "followwed"
+    ],
+    "answer": "followed",
+    "explanation": "follow เติม -ed จึงเป็น followed",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-035",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า show",
+    "options": [
+      "showwed",
+      "showied",
+      "showd",
+      "showed"
+    ],
+    "answer": "showed",
+    "explanation": "show เติม -ed จึงเป็น showed",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-036",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า rain",
+    "options": [
+      "rainned",
+      "rained",
+      "raind",
+      "rainied"
+    ],
+    "answer": "rained",
+    "explanation": "rain เติม -ed จึงเป็น rained",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-037",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า snow",
+    "options": [
+      "snowied",
+      "snowwed",
+      "snowed",
+      "snowd"
+    ],
+    "answer": "snowed",
+    "explanation": "snow เติม -ed จึงเป็น snowed",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-038",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า brush",
+    "options": [
+      "brushhed",
+      "brushd",
+      "brushied",
+      "brushed"
+    ],
+    "answer": "brushed",
+    "explanation": "brush เติม -ed จึงเป็น brushed",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-039",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า cross",
+    "options": [
+      "crossd",
+      "crossied",
+      "crossed",
+      "crosssed"
+    ],
+    "answer": "crossed",
+    "explanation": "cross เติม -ed จึงเป็น crossed",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-040",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า check",
+    "options": [
+      "checkked",
+      "checkd",
+      "checkied",
+      "checked"
+    ],
+    "answer": "checked",
+    "explanation": "check เติม -ed จึงเป็น checked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-041",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: clean)",
+    "options": [
+      "cleand",
+      "cleaned",
+      "clean",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "cleaned",
+    "explanation": "clean เติม -ed จึงเป็น cleaned",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-042",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: work)",
+    "options": [
+      "worked",
+      "work",
+      "ตัวเลือกหลอก 3",
+      "workd"
+    ],
+    "answer": "worked",
+    "explanation": "work เติม -ed จึงเป็น worked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-043",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: look)",
+    "options": [
+      "lookd",
+      "ตัวเลือกหลอก 3",
+      "looked",
+      "look"
+    ],
+    "answer": "looked",
+    "explanation": "look เติม -ed จึงเป็น looked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-044",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: talk)",
+    "options": [
+      "talkd",
+      "talked",
+      "talk",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "talked",
+    "explanation": "talk เติม -ed จึงเป็น talked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-045",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: cook)",
+    "options": [
+      "cookd",
+      "cooked",
+      "cook",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "cooked",
+    "explanation": "cook เติม -ed จึงเป็น cooked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-046",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: wash)",
+    "options": [
+      "washed",
+      "wash",
+      "washd",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "washed",
+    "explanation": "wash เติม -ed จึงเป็น washed",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-047",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: finish)",
+    "options": [
+      "finishd",
+      "ตัวเลือกหลอก 3",
+      "finish",
+      "finished"
+    ],
+    "answer": "finished",
+    "explanation": "finish เติม -ed จึงเป็น finished",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-048",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: listen)",
+    "options": [
+      "listen",
+      "listend",
+      "ตัวเลือกหลอก 3",
+      "listened"
+    ],
+    "answer": "listened",
+    "explanation": "listen เติม -ed จึงเป็น listened",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-049",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: visit)",
+    "options": [
+      "visitd",
+      "visit",
+      "visited",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "visited",
+    "explanation": "visit เติม -ed จึงเป็น visited",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-050",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: start)",
+    "options": [
+      "startd",
+      "start",
+      "ตัวเลือกหลอก 3",
+      "started"
+    ],
+    "answer": "started",
+    "explanation": "start เติม -ed จึงเป็น started",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-051",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: need)",
+    "options": [
+      "need",
+      "ตัวเลือกหลอก 3",
+      "needd",
+      "needed"
+    ],
+    "answer": "needed",
+    "explanation": "need เติม -ed จึงเป็น needed",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-052",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: want)",
+    "options": [
+      "want",
+      "ตัวเลือกหลอก 3",
+      "wanted",
+      "wantd"
+    ],
+    "answer": "wanted",
+    "explanation": "want เติม -ed จึงเป็น wanted",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-053",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: call)",
+    "options": [
+      "call",
+      "ตัวเลือกหลอก 3",
+      "calld",
+      "called"
+    ],
+    "answer": "called",
+    "explanation": "call เติม -ed จึงเป็น called",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-054",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: paint)",
+    "options": [
+      "paint",
+      "painted",
+      "paintd",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "painted",
+    "explanation": "paint เติม -ed จึงเป็น painted",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-055",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: ask)",
+    "options": [
+      "ตัวเลือกหลอก 3",
+      "asked",
+      "ask",
+      "askd"
+    ],
+    "answer": "asked",
+    "explanation": "ask เติม -ed จึงเป็น asked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-056",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ walk ได้ถูกต้อง",
+    "options": [
+      "I walk yesterday.",
+      "I walked yesterday.",
+      "I walkied yesterday.",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "I walked yesterday.",
+    "explanation": "walk → walked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-057",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ jump ได้ถูกต้อง",
+    "options": [
+      "I jumped yesterday.",
+      "ตัวเลือกหลอก 3",
+      "I jump yesterday.",
+      "I jumpied yesterday."
+    ],
+    "answer": "I jumped yesterday.",
+    "explanation": "jump → jumped",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-058",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ help ได้ถูกต้อง",
+    "options": [
+      "I helpied yesterday.",
+      "ตัวเลือกหลอก 3",
+      "I help yesterday.",
+      "I helped yesterday."
+    ],
+    "answer": "I helped yesterday.",
+    "explanation": "help → helped",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-059",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ watch ได้ถูกต้อง",
+    "options": [
+      "I watch yesterday.",
+      "I watched yesterday.",
+      "ตัวเลือกหลอก 3",
+      "I watchied yesterday."
+    ],
+    "answer": "I watched yesterday.",
+    "explanation": "watch → watched",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-060",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ open ได้ถูกต้อง",
+    "options": [
+      "I openied yesterday.",
+      "I open yesterday.",
+      "ตัวเลือกหลอก 3",
+      "I opened yesterday."
+    ],
+    "answer": "I opened yesterday.",
+    "explanation": "open → opened",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-061",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ clean ได้ถูกต้อง",
+    "options": [
+      "ตัวเลือกหลอก 3",
+      "I clean yesterday.",
+      "I cleaned yesterday.",
+      "I cleanied yesterday."
+    ],
+    "answer": "I cleaned yesterday.",
+    "explanation": "clean → cleaned",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-062",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ work ได้ถูกต้อง",
+    "options": [
+      "I worked yesterday.",
+      "I workied yesterday.",
+      "I work yesterday.",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "I worked yesterday.",
+    "explanation": "work → worked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-063",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ look ได้ถูกต้อง",
+    "options": [
+      "I lookied yesterday.",
+      "I looked yesterday.",
+      "ตัวเลือกหลอก 3",
+      "I look yesterday."
+    ],
+    "answer": "I looked yesterday.",
+    "explanation": "look → looked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-064",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ talk ได้ถูกต้อง",
+    "options": [
+      "ตัวเลือกหลอก 3",
+      "I talked yesterday.",
+      "I talkied yesterday.",
+      "I talk yesterday."
+    ],
+    "answer": "I talked yesterday.",
+    "explanation": "talk → talked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-065",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ cook ได้ถูกต้อง",
+    "options": [
+      "ตัวเลือกหลอก 3",
+      "I cooked yesterday.",
+      "I cookied yesterday.",
+      "I cook yesterday."
+    ],
+    "answer": "I cooked yesterday.",
+    "explanation": "cook → cooked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-066",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ wash ได้ถูกต้อง",
+    "options": [
+      "I washied yesterday.",
+      "I wash yesterday.",
+      "ตัวเลือกหลอก 3",
+      "I washed yesterday."
+    ],
+    "answer": "I washed yesterday.",
+    "explanation": "wash → washed",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-067",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ finish ได้ถูกต้อง",
+    "options": [
+      "I finish yesterday.",
+      "I finished yesterday.",
+      "I finishied yesterday.",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "I finished yesterday.",
+    "explanation": "finish → finished",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-068",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ listen ได้ถูกต้อง",
+    "options": [
+      "I listened yesterday.",
+      "I listen yesterday.",
+      "ตัวเลือกหลอก 3",
+      "I listenied yesterday."
+    ],
+    "answer": "I listened yesterday.",
+    "explanation": "listen → listened",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-069",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ visit ได้ถูกต้อง",
+    "options": [
+      "I visit yesterday.",
+      "ตัวเลือกหลอก 3",
+      "I visitied yesterday.",
+      "I visited yesterday."
+    ],
+    "answer": "I visited yesterday.",
+    "explanation": "visit → visited",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-070",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ start ได้ถูกต้อง",
+    "options": [
+      "I start yesterday.",
+      "I startied yesterday.",
+      "I started yesterday.",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "I started yesterday.",
+    "explanation": "start → started",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-071",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง",
+    "options": [
+      "She walkd yesterday.",
+      "They listened yesterday.",
+      "She walked yesterday.",
+      "We wanted yesterday."
+    ],
+    "answer": "She walkd yesterday.",
+    "explanation": "walk ต้องเป็น walked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-072",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 2)",
+    "options": [
+      "We called yesterday.",
+      "They visited yesterday.",
+      "She jumped yesterday.",
+      "She jumpd yesterday."
+    ],
+    "answer": "She jumpd yesterday.",
+    "explanation": "jump ต้องเป็น jumped",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-073",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 3)",
+    "options": [
+      "She helpd yesterday.",
+      "They started yesterday.",
+      "We painted yesterday.",
+      "She helped yesterday."
+    ],
+    "answer": "She helpd yesterday.",
+    "explanation": "help ต้องเป็น helped",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-074",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 4)",
+    "options": [
+      "We asked yesterday.",
+      "She watched yesterday.",
+      "They needed yesterday.",
+      "She watchd yesterday."
+    ],
+    "answer": "She watchd yesterday.",
+    "explanation": "watch ต้องเป็น watched",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-075",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 5)",
+    "options": [
+      "We answered yesterday.",
+      "She opend yesterday.",
+      "They wanted yesterday.",
+      "She opened yesterday."
+    ],
+    "answer": "She opend yesterday.",
+    "explanation": "open ต้องเป็น opened",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-076",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 6)",
+    "options": [
+      "She cleand yesterday.",
+      "We pushed yesterday.",
+      "She cleaned yesterday.",
+      "They called yesterday."
+    ],
+    "answer": "She cleand yesterday.",
+    "explanation": "clean ต้องเป็น cleaned",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-077",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 7)",
+    "options": [
+      "They painted yesterday.",
+      "We pulled yesterday.",
+      "She workd yesterday.",
+      "She worked yesterday."
+    ],
+    "answer": "She workd yesterday.",
+    "explanation": "work ต้องเป็น worked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-078",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 8)",
+    "options": [
+      "We touched yesterday.",
+      "She looked yesterday.",
+      "She lookd yesterday.",
+      "They asked yesterday."
+    ],
+    "answer": "She lookd yesterday.",
+    "explanation": "look ต้องเป็น looked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-079",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 9)",
+    "options": [
+      "They answered yesterday.",
+      "We joined yesterday.",
+      "She talked yesterday.",
+      "She talkd yesterday."
+    ],
+    "answer": "She talkd yesterday.",
+    "explanation": "talk ต้องเป็น talked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-080",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 10)",
+    "options": [
+      "She cookd yesterday.",
+      "They pushed yesterday.",
+      "We waited yesterday.",
+      "She cooked yesterday."
+    ],
+    "answer": "She cookd yesterday.",
+    "explanation": "cook ต้องเป็น cooked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-081",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า wash",
+    "answer": "washed",
+    "acceptedAnswers": [
+      "washed"
+    ],
+    "explanation": "wash → washed",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-082",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า finish",
+    "answer": "finished",
+    "acceptedAnswers": [
+      "finished"
+    ],
+    "explanation": "finish → finished",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-083",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า listen",
+    "answer": "listened",
+    "acceptedAnswers": [
+      "listened"
+    ],
+    "explanation": "listen → listened",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-084",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า visit",
+    "answer": "visited",
+    "acceptedAnswers": [
+      "visited"
+    ],
+    "explanation": "visit → visited",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-085",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า start",
+    "answer": "started",
+    "acceptedAnswers": [
+      "started"
+    ],
+    "explanation": "start → started",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-086",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า need",
+    "answer": "needed",
+    "acceptedAnswers": [
+      "needed"
+    ],
+    "explanation": "need → needed",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-087",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า want",
+    "answer": "wanted",
+    "acceptedAnswers": [
+      "wanted"
+    ],
+    "explanation": "want → wanted",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-088",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า call",
+    "answer": "called",
+    "acceptedAnswers": [
+      "called"
+    ],
+    "explanation": "call → called",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-089",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า paint",
+    "answer": "painted",
+    "acceptedAnswers": [
+      "painted"
+    ],
+    "explanation": "paint → painted",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-090",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า ask",
+    "answer": "asked",
+    "acceptedAnswers": [
+      "asked"
+    ],
+    "explanation": "ask → asked",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-091",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ answer",
+    "tiles": [
+      "a",
+      "n",
+      "s",
+      "w",
+      "e",
+      "r",
+      "e",
+      "d"
+    ],
+    "answer": "answered",
+    "acceptedAnswers": [
+      "answered"
+    ],
+    "explanation": "answer → answered",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-092",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ push",
+    "tiles": [
+      "p",
+      "u",
+      "s",
+      "h",
+      "e",
+      "d"
+    ],
+    "answer": "pushed",
+    "acceptedAnswers": [
+      "pushed"
+    ],
+    "explanation": "push → pushed",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-093",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ pull",
+    "tiles": [
+      "p",
+      "u",
+      "l",
+      "l",
+      "e",
+      "d"
+    ],
+    "answer": "pulled",
+    "acceptedAnswers": [
+      "pulled"
+    ],
+    "explanation": "pull → pulled",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-094",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ touch",
+    "tiles": [
+      "t",
+      "o",
+      "u",
+      "c",
+      "h",
+      "e",
+      "d"
+    ],
+    "answer": "touched",
+    "acceptedAnswers": [
+      "touched"
+    ],
+    "explanation": "touch → touched",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-095",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ join",
+    "tiles": [
+      "j",
+      "o",
+      "i",
+      "n",
+      "e",
+      "d"
+    ],
+    "answer": "joined",
+    "acceptedAnswers": [
+      "joined"
+    ],
+    "explanation": "join → joined",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-096",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ wait",
+    "tiles": [
+      "w",
+      "a",
+      "i",
+      "t",
+      "e",
+      "d"
+    ],
+    "answer": "waited",
+    "acceptedAnswers": [
+      "waited"
+    ],
+    "explanation": "wait → waited",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-097",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ learn",
+    "tiles": [
+      "l",
+      "e",
+      "a",
+      "r",
+      "n",
+      "e",
+      "d"
+    ],
+    "answer": "learned",
+    "acceptedAnswers": [
+      "learned"
+    ],
+    "explanation": "learn → learned",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-098",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ remember",
+    "tiles": [
+      "r",
+      "e",
+      "m",
+      "e",
+      "m",
+      "b",
+      "e",
+      "r",
+      "e",
+      "d"
+    ],
+    "answer": "remembered",
+    "acceptedAnswers": [
+      "remembered"
+    ],
+    "explanation": "remember → remembered",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-099",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ collect",
+    "tiles": [
+      "c",
+      "o",
+      "l",
+      "l",
+      "e",
+      "c",
+      "t",
+      "e",
+      "d"
+    ],
+    "answer": "collected",
+    "acceptedAnswers": [
+      "collected"
+    ],
+    "explanation": "collect → collected",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "regular-ed-100",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ repair",
+    "tiles": [
+      "r",
+      "e",
+      "p",
+      "a",
+      "i",
+      "r",
+      "e",
+      "d"
+    ],
+    "answer": "repaired",
+    "acceptedAnswers": [
+      "repaired"
+    ],
+    "explanation": "repair → repaired",
+    "lessonId": "regular-rule-1",
+    "ruleId": "regular_ed"
+  }
+];
 
-const regularRuleTwoQuestions = regularVerbBanks.endingE
-  .filter(([verb]) => !["like", "love", "dance", "close", "live", "move"].includes(verb))
-  .map(item => makeRegularQuestion(item, "คำลงท้ายด้วย e เติมแค่ -d"));
+const regularRuleTwoQuestions = [
+  {
+    "id": "ending-e-001",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า like",
+    "options": [
+      "likeied",
+      "likeed",
+      "liked",
+      "likeeed"
+    ],
+    "answer": "liked",
+    "explanation": "like ลงท้ายด้วย e จึงเติม -d จึงเป็น liked",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-002",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า love",
+    "options": [
+      "loveeed",
+      "loveed",
+      "loved",
+      "loveied"
+    ],
+    "answer": "loved",
+    "explanation": "love ลงท้ายด้วย e จึงเติม -d จึงเป็น loved",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-003",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า dance",
+    "options": [
+      "danced",
+      "danceed",
+      "danceied",
+      "danceeed"
+    ],
+    "answer": "danced",
+    "explanation": "dance ลงท้ายด้วย e จึงเติม -d จึงเป็น danced",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-004",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า live",
+    "options": [
+      "lived",
+      "liveed",
+      "liveeed",
+      "liveied"
+    ],
+    "answer": "lived",
+    "explanation": "live ลงท้ายด้วย e จึงเติม -d จึงเป็น lived",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-005",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า close",
+    "options": [
+      "closeed",
+      "closed",
+      "closeeed",
+      "closeied"
+    ],
+    "answer": "closed",
+    "explanation": "close ลงท้ายด้วย e จึงเติม -d จึงเป็น closed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-006",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า move",
+    "options": [
+      "moveed",
+      "moveied",
+      "moved",
+      "moveeed"
+    ],
+    "answer": "moved",
+    "explanation": "move ลงท้ายด้วย e จึงเติม -d จึงเป็น moved",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-007",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า use",
+    "options": [
+      "used",
+      "useed",
+      "useied",
+      "useeed"
+    ],
+    "answer": "used",
+    "explanation": "use ลงท้ายด้วย e จึงเติม -d จึงเป็น used",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-008",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า smile",
+    "options": [
+      "smileeed",
+      "smiled",
+      "smileied",
+      "smileed"
+    ],
+    "answer": "smiled",
+    "explanation": "smile ลงท้ายด้วย e จึงเติม -d จึงเป็น smiled",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-009",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า arrive",
+    "options": [
+      "arrived",
+      "arriveied",
+      "arriveed",
+      "arriveeed"
+    ],
+    "answer": "arrived",
+    "explanation": "arrive ลงท้ายด้วย e จึงเติม -d จึงเป็น arrived",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-010",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า decide",
+    "options": [
+      "decideeed",
+      "decided",
+      "decideied",
+      "decideed"
+    ],
+    "answer": "decided",
+    "explanation": "decide ลงท้ายด้วย e จึงเติม -d จึงเป็น decided",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-011",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า practice",
+    "options": [
+      "practiceied",
+      "practiceed",
+      "practiceeed",
+      "practiced"
+    ],
+    "answer": "practiced",
+    "explanation": "practice ลงท้ายด้วย e จึงเติม -d จึงเป็น practiced",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-012",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า change",
+    "options": [
+      "changed",
+      "changeeed",
+      "changeed",
+      "changeied"
+    ],
+    "answer": "changed",
+    "explanation": "change ลงท้ายด้วย e จึงเติม -d จึงเป็น changed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-013",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า save",
+    "options": [
+      "saveed",
+      "saved",
+      "saveeed",
+      "saveied"
+    ],
+    "answer": "saved",
+    "explanation": "save ลงท้ายด้วย e จึงเติม -d จึงเป็น saved",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-014",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า hope",
+    "options": [
+      "hopeied",
+      "hoped",
+      "hopeed",
+      "hopeeed"
+    ],
+    "answer": "hoped",
+    "explanation": "hope ลงท้ายด้วย e จึงเติม -d จึงเป็น hoped",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-015",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า invite",
+    "options": [
+      "invited",
+      "inviteed",
+      "inviteeed",
+      "inviteied"
+    ],
+    "answer": "invited",
+    "explanation": "invite ลงท้ายด้วย e จึงเติม -d จึงเป็น invited",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-016",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า bake",
+    "options": [
+      "bakeed",
+      "bakeeed",
+      "baked",
+      "bakeied"
+    ],
+    "answer": "baked",
+    "explanation": "bake ลงท้ายด้วย e จึงเติม -d จึงเป็น baked",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-017",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า phone",
+    "options": [
+      "phoneeed",
+      "phoned",
+      "phoneied",
+      "phoneed"
+    ],
+    "answer": "phoned",
+    "explanation": "phone ลงท้ายด้วย e จึงเติม -d จึงเป็น phoned",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-018",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า notice",
+    "options": [
+      "noticed",
+      "noticeed",
+      "noticeeed",
+      "noticeied"
+    ],
+    "answer": "noticed",
+    "explanation": "notice ลงท้ายด้วย e จึงเติม -d จึงเป็น noticed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-019",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า agree",
+    "options": [
+      "agreed",
+      "agreeed",
+      "agreeied",
+      "agreeeed"
+    ],
+    "answer": "agreed",
+    "explanation": "agree ลงท้ายด้วย e จึงเติม -d จึงเป็น agreed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-020",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า care",
+    "options": [
+      "careeed",
+      "careied",
+      "cared",
+      "careed"
+    ],
+    "answer": "cared",
+    "explanation": "care ลงท้ายด้วย e จึงเติม -d จึงเป็น cared",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-021",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า share",
+    "options": [
+      "shareed",
+      "shared",
+      "shareied",
+      "shareeed"
+    ],
+    "answer": "shared",
+    "explanation": "share ลงท้ายด้วย e จึงเติม -d จึงเป็น shared",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-022",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า create",
+    "options": [
+      "created",
+      "createied",
+      "createed",
+      "createeed"
+    ],
+    "answer": "created",
+    "explanation": "create ลงท้ายด้วย e จึงเติม -d จึงเป็น created",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-023",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า prepare",
+    "options": [
+      "prepareeed",
+      "prepareed",
+      "prepared",
+      "prepareied"
+    ],
+    "answer": "prepared",
+    "explanation": "prepare ลงท้ายด้วย e จึงเติม -d จึงเป็น prepared",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-024",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า believe",
+    "options": [
+      "believeeed",
+      "believeied",
+      "believed",
+      "believeed"
+    ],
+    "answer": "believed",
+    "explanation": "believe ลงท้ายด้วย e จึงเติม -d จึงเป็น believed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-025",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า receive",
+    "options": [
+      "receiveed",
+      "receiveeed",
+      "receiveied",
+      "received"
+    ],
+    "answer": "received",
+    "explanation": "receive ลงท้ายด้วย e จึงเติม -d จึงเป็น received",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-026",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า serve",
+    "options": [
+      "serveied",
+      "served",
+      "serveed",
+      "serveeed"
+    ],
+    "answer": "served",
+    "explanation": "serve ลงท้ายด้วย e จึงเติม -d จึงเป็น served",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-027",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า name",
+    "options": [
+      "nameeed",
+      "named",
+      "nameed",
+      "nameied"
+    ],
+    "answer": "named",
+    "explanation": "name ลงท้ายด้วย e จึงเติม -d จึงเป็น named",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-028",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า race",
+    "options": [
+      "raceeed",
+      "raceied",
+      "raced",
+      "raceed"
+    ],
+    "answer": "raced",
+    "explanation": "race ลงท้ายด้วย e จึงเติม -d จึงเป็น raced",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-029",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า wave",
+    "options": [
+      "waved",
+      "waveied",
+      "waveeed",
+      "waveed"
+    ],
+    "answer": "waved",
+    "explanation": "wave ลงท้ายด้วย e จึงเติม -d จึงเป็น waved",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-030",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า taste",
+    "options": [
+      "tasteied",
+      "tasted",
+      "tasteeed",
+      "tasteed"
+    ],
+    "answer": "tasted",
+    "explanation": "taste ลงท้ายด้วย e จึงเติม -d จึงเป็น tasted",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-031",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า type",
+    "options": [
+      "typed",
+      "typeeed",
+      "typeied",
+      "typeed"
+    ],
+    "answer": "typed",
+    "explanation": "type ลงท้ายด้วย e จึงเติม -d จึงเป็น typed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-032",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า joke",
+    "options": [
+      "jokeeed",
+      "jokeied",
+      "jokeed",
+      "joked"
+    ],
+    "answer": "joked",
+    "explanation": "joke ลงท้ายด้วย e จึงเติม -d จึงเป็น joked",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-033",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า escape",
+    "options": [
+      "escapeeed",
+      "escapeed",
+      "escapeied",
+      "escaped"
+    ],
+    "answer": "escaped",
+    "explanation": "escape ลงท้ายด้วย e จึงเติม -d จึงเป็น escaped",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-034",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า continue",
+    "options": [
+      "continued",
+      "continueed",
+      "continueied",
+      "continueeed"
+    ],
+    "answer": "continued",
+    "explanation": "continue ลงท้ายด้วย e จึงเติม -d จึงเป็น continued",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-035",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า complete",
+    "options": [
+      "completeed",
+      "completeied",
+      "completeeed",
+      "completed"
+    ],
+    "answer": "completed",
+    "explanation": "complete ลงท้ายด้วย e จึงเติม -d จึงเป็น completed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-036",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า improve",
+    "options": [
+      "improveed",
+      "improveeed",
+      "improved",
+      "improveied"
+    ],
+    "answer": "improved",
+    "explanation": "improve ลงท้ายด้วย e จึงเติม -d จึงเป็น improved",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-037",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า compare",
+    "options": [
+      "compared",
+      "compareied",
+      "compareed",
+      "compareeed"
+    ],
+    "answer": "compared",
+    "explanation": "compare ลงท้ายด้วย e จึงเติม -d จึงเป็น compared",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-038",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า divide",
+    "options": [
+      "divided",
+      "divideied",
+      "divideeed",
+      "divideed"
+    ],
+    "answer": "divided",
+    "explanation": "divide ลงท้ายด้วย e จึงเติม -d จึงเป็น divided",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-039",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า include",
+    "options": [
+      "includeied",
+      "included",
+      "includeed",
+      "includeeed"
+    ],
+    "answer": "included",
+    "explanation": "include ลงท้ายด้วย e จึงเติม -d จึงเป็น included",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-040",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า measure",
+    "options": [
+      "measureed",
+      "measured",
+      "measureied",
+      "measureeed"
+    ],
+    "answer": "measured",
+    "explanation": "measure ลงท้ายด้วย e จึงเติม -d จึงเป็น measured",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-041",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: move)",
+    "options": [
+      "moveed",
+      "ตัวเลือกหลอก 3",
+      "move",
+      "moved"
+    ],
+    "answer": "moved",
+    "explanation": "move ลงท้ายด้วย e จึงเติม -d จึงเป็น moved",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-042",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: use)",
+    "options": [
+      "use",
+      "useed",
+      "used",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "used",
+    "explanation": "use ลงท้ายด้วย e จึงเติม -d จึงเป็น used",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-043",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: smile)",
+    "options": [
+      "ตัวเลือกหลอก 3",
+      "smiled",
+      "smile",
+      "smileed"
+    ],
+    "answer": "smiled",
+    "explanation": "smile ลงท้ายด้วย e จึงเติม -d จึงเป็น smiled",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-044",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: arrive)",
+    "options": [
+      "arrived",
+      "arrive",
+      "arriveed",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "arrived",
+    "explanation": "arrive ลงท้ายด้วย e จึงเติม -d จึงเป็น arrived",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-045",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: decide)",
+    "options": [
+      "decided",
+      "decideed",
+      "ตัวเลือกหลอก 3",
+      "decide"
+    ],
+    "answer": "decided",
+    "explanation": "decide ลงท้ายด้วย e จึงเติม -d จึงเป็น decided",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-046",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: practice)",
+    "options": [
+      "practice",
+      "ตัวเลือกหลอก 3",
+      "practiceed",
+      "practiced"
+    ],
+    "answer": "practiced",
+    "explanation": "practice ลงท้ายด้วย e จึงเติม -d จึงเป็น practiced",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-047",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: change)",
+    "options": [
+      "changeed",
+      "changed",
+      "change",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "changed",
+    "explanation": "change ลงท้ายด้วย e จึงเติม -d จึงเป็น changed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-048",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: save)",
+    "options": [
+      "save",
+      "saved",
+      "saveed",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "saved",
+    "explanation": "save ลงท้ายด้วย e จึงเติม -d จึงเป็น saved",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-049",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: hope)",
+    "options": [
+      "hopeed",
+      "hoped",
+      "hope",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "hoped",
+    "explanation": "hope ลงท้ายด้วย e จึงเติม -d จึงเป็น hoped",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-050",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: invite)",
+    "options": [
+      "invite",
+      "inviteed",
+      "ตัวเลือกหลอก 3",
+      "invited"
+    ],
+    "answer": "invited",
+    "explanation": "invite ลงท้ายด้วย e จึงเติม -d จึงเป็น invited",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-051",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: bake)",
+    "options": [
+      "bakeed",
+      "baked",
+      "bake",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "baked",
+    "explanation": "bake ลงท้ายด้วย e จึงเติม -d จึงเป็น baked",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-052",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: phone)",
+    "options": [
+      "ตัวเลือกหลอก 3",
+      "phoned",
+      "phone",
+      "phoneed"
+    ],
+    "answer": "phoned",
+    "explanation": "phone ลงท้ายด้วย e จึงเติม -d จึงเป็น phoned",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-053",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: notice)",
+    "options": [
+      "noticeed",
+      "ตัวเลือกหลอก 3",
+      "noticed",
+      "notice"
+    ],
+    "answer": "noticed",
+    "explanation": "notice ลงท้ายด้วย e จึงเติม -d จึงเป็น noticed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-054",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: agree)",
+    "options": [
+      "agreed",
+      "ตัวเลือกหลอก 3",
+      "agreeed",
+      "agree"
+    ],
+    "answer": "agreed",
+    "explanation": "agree ลงท้ายด้วย e จึงเติม -d จึงเป็น agreed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-055",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: care)",
+    "options": [
+      "careed",
+      "cared",
+      "care",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "cared",
+    "explanation": "care ลงท้ายด้วย e จึงเติม -d จึงเป็น cared",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-056",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ like ได้ถูกต้อง",
+    "options": [
+      "I likeied yesterday.",
+      "I likeed yesterday.",
+      "I liked yesterday.",
+      "I like yesterday."
+    ],
+    "answer": "I liked yesterday.",
+    "explanation": "like → liked",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-057",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ love ได้ถูกต้อง",
+    "options": [
+      "I loveied yesterday.",
+      "I loved yesterday.",
+      "I love yesterday.",
+      "I loveed yesterday."
+    ],
+    "answer": "I loved yesterday.",
+    "explanation": "love → loved",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-058",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ dance ได้ถูกต้อง",
+    "options": [
+      "I danceied yesterday.",
+      "I danced yesterday.",
+      "I danceed yesterday.",
+      "I dance yesterday."
+    ],
+    "answer": "I danced yesterday.",
+    "explanation": "dance → danced",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-059",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ live ได้ถูกต้อง",
+    "options": [
+      "I live yesterday.",
+      "I lived yesterday.",
+      "I liveied yesterday.",
+      "I liveed yesterday."
+    ],
+    "answer": "I lived yesterday.",
+    "explanation": "live → lived",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-060",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ close ได้ถูกต้อง",
+    "options": [
+      "I closeied yesterday.",
+      "I closeed yesterday.",
+      "I closed yesterday.",
+      "I close yesterday."
+    ],
+    "answer": "I closed yesterday.",
+    "explanation": "close → closed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-061",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ move ได้ถูกต้อง",
+    "options": [
+      "I moveed yesterday.",
+      "I move yesterday.",
+      "I moveied yesterday.",
+      "I moved yesterday."
+    ],
+    "answer": "I moved yesterday.",
+    "explanation": "move → moved",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-062",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ use ได้ถูกต้อง",
+    "options": [
+      "I used yesterday.",
+      "I use yesterday.",
+      "I useied yesterday.",
+      "I useed yesterday."
+    ],
+    "answer": "I used yesterday.",
+    "explanation": "use → used",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-063",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ smile ได้ถูกต้อง",
+    "options": [
+      "I smile yesterday.",
+      "I smileed yesterday.",
+      "I smileied yesterday.",
+      "I smiled yesterday."
+    ],
+    "answer": "I smiled yesterday.",
+    "explanation": "smile → smiled",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-064",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ arrive ได้ถูกต้อง",
+    "options": [
+      "I arrive yesterday.",
+      "I arriveied yesterday.",
+      "I arriveed yesterday.",
+      "I arrived yesterday."
+    ],
+    "answer": "I arrived yesterday.",
+    "explanation": "arrive → arrived",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-065",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ decide ได้ถูกต้อง",
+    "options": [
+      "I decideed yesterday.",
+      "I decideied yesterday.",
+      "I decided yesterday.",
+      "I decide yesterday."
+    ],
+    "answer": "I decided yesterday.",
+    "explanation": "decide → decided",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-066",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ practice ได้ถูกต้อง",
+    "options": [
+      "I practiced yesterday.",
+      "I practiceed yesterday.",
+      "I practiceied yesterday.",
+      "I practice yesterday."
+    ],
+    "answer": "I practiced yesterday.",
+    "explanation": "practice → practiced",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-067",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ change ได้ถูกต้อง",
+    "options": [
+      "I change yesterday.",
+      "I changeed yesterday.",
+      "I changed yesterday.",
+      "I changeied yesterday."
+    ],
+    "answer": "I changed yesterday.",
+    "explanation": "change → changed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-068",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ save ได้ถูกต้อง",
+    "options": [
+      "I saveied yesterday.",
+      "I saved yesterday.",
+      "I save yesterday.",
+      "I saveed yesterday."
+    ],
+    "answer": "I saved yesterday.",
+    "explanation": "save → saved",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-069",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ hope ได้ถูกต้อง",
+    "options": [
+      "I hoped yesterday.",
+      "I hope yesterday.",
+      "I hopeied yesterday.",
+      "I hopeed yesterday."
+    ],
+    "answer": "I hoped yesterday.",
+    "explanation": "hope → hoped",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-070",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ invite ได้ถูกต้อง",
+    "options": [
+      "I invite yesterday.",
+      "I invited yesterday.",
+      "I inviteed yesterday.",
+      "I inviteied yesterday."
+    ],
+    "answer": "I invited yesterday.",
+    "explanation": "invite → invited",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-071",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง",
+    "options": [
+      "We phoned yesterday.",
+      "She liked yesterday.",
+      "They saved yesterday.",
+      "She likeed yesterday."
+    ],
+    "answer": "She likeed yesterday.",
+    "explanation": "like ต้องเป็น liked",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-072",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 2)",
+    "options": [
+      "She loveed yesterday.",
+      "We noticed yesterday.",
+      "They hoped yesterday.",
+      "She loved yesterday."
+    ],
+    "answer": "She loveed yesterday.",
+    "explanation": "love ต้องเป็น loved",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-073",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 3)",
+    "options": [
+      "She danceed yesterday.",
+      "They invited yesterday.",
+      "We agreed yesterday.",
+      "She danced yesterday."
+    ],
+    "answer": "She danceed yesterday.",
+    "explanation": "dance ต้องเป็น danced",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-074",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 4)",
+    "options": [
+      "She lived yesterday.",
+      "She liveed yesterday.",
+      "They baked yesterday.",
+      "We cared yesterday."
+    ],
+    "answer": "She liveed yesterday.",
+    "explanation": "live ต้องเป็น lived",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-075",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 5)",
+    "options": [
+      "They phoned yesterday.",
+      "She closed yesterday.",
+      "She closeed yesterday.",
+      "We shared yesterday."
+    ],
+    "answer": "She closeed yesterday.",
+    "explanation": "close ต้องเป็น closed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-076",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 6)",
+    "options": [
+      "She moveed yesterday.",
+      "She moved yesterday.",
+      "We created yesterday.",
+      "They noticed yesterday."
+    ],
+    "answer": "She moveed yesterday.",
+    "explanation": "move ต้องเป็น moved",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-077",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 7)",
+    "options": [
+      "They agreed yesterday.",
+      "We prepared yesterday.",
+      "She useed yesterday.",
+      "She used yesterday."
+    ],
+    "answer": "She useed yesterday.",
+    "explanation": "use ต้องเป็น used",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-078",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 8)",
+    "options": [
+      "She smileed yesterday.",
+      "She smiled yesterday.",
+      "They cared yesterday.",
+      "We believed yesterday."
+    ],
+    "answer": "She smileed yesterday.",
+    "explanation": "smile ต้องเป็น smiled",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-079",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 9)",
+    "options": [
+      "We received yesterday.",
+      "They shared yesterday.",
+      "She arrived yesterday.",
+      "She arriveed yesterday."
+    ],
+    "answer": "She arriveed yesterday.",
+    "explanation": "arrive ต้องเป็น arrived",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-080",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 10)",
+    "options": [
+      "She decided yesterday.",
+      "We served yesterday.",
+      "She decideed yesterday.",
+      "They created yesterday."
+    ],
+    "answer": "She decideed yesterday.",
+    "explanation": "decide ต้องเป็น decided",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-081",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า practice",
+    "answer": "practiced",
+    "acceptedAnswers": [
+      "practiced"
+    ],
+    "explanation": "practice → practiced",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-082",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า change",
+    "answer": "changed",
+    "acceptedAnswers": [
+      "changed"
+    ],
+    "explanation": "change → changed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-083",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า save",
+    "answer": "saved",
+    "acceptedAnswers": [
+      "saved"
+    ],
+    "explanation": "save → saved",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-084",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า hope",
+    "answer": "hoped",
+    "acceptedAnswers": [
+      "hoped"
+    ],
+    "explanation": "hope → hoped",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-085",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า invite",
+    "answer": "invited",
+    "acceptedAnswers": [
+      "invited"
+    ],
+    "explanation": "invite → invited",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-086",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า bake",
+    "answer": "baked",
+    "acceptedAnswers": [
+      "baked"
+    ],
+    "explanation": "bake → baked",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-087",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า phone",
+    "answer": "phoned",
+    "acceptedAnswers": [
+      "phoned"
+    ],
+    "explanation": "phone → phoned",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-088",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า notice",
+    "answer": "noticed",
+    "acceptedAnswers": [
+      "noticed"
+    ],
+    "explanation": "notice → noticed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-089",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า agree",
+    "answer": "agreed",
+    "acceptedAnswers": [
+      "agreed"
+    ],
+    "explanation": "agree → agreed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-090",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า care",
+    "answer": "cared",
+    "acceptedAnswers": [
+      "cared"
+    ],
+    "explanation": "care → cared",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-091",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ share",
+    "tiles": [
+      "s",
+      "h",
+      "a",
+      "r",
+      "e",
+      "d"
+    ],
+    "answer": "shared",
+    "acceptedAnswers": [
+      "shared"
+    ],
+    "explanation": "share → shared",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-092",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ create",
+    "tiles": [
+      "c",
+      "r",
+      "e",
+      "a",
+      "t",
+      "e",
+      "d"
+    ],
+    "answer": "created",
+    "acceptedAnswers": [
+      "created"
+    ],
+    "explanation": "create → created",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-093",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ prepare",
+    "tiles": [
+      "p",
+      "r",
+      "e",
+      "p",
+      "a",
+      "r",
+      "e",
+      "d"
+    ],
+    "answer": "prepared",
+    "acceptedAnswers": [
+      "prepared"
+    ],
+    "explanation": "prepare → prepared",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-094",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ believe",
+    "tiles": [
+      "b",
+      "e",
+      "l",
+      "i",
+      "e",
+      "v",
+      "e",
+      "d"
+    ],
+    "answer": "believed",
+    "acceptedAnswers": [
+      "believed"
+    ],
+    "explanation": "believe → believed",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-095",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ receive",
+    "tiles": [
+      "r",
+      "e",
+      "c",
+      "e",
+      "i",
+      "v",
+      "e",
+      "d"
+    ],
+    "answer": "received",
+    "acceptedAnswers": [
+      "received"
+    ],
+    "explanation": "receive → received",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-096",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ serve",
+    "tiles": [
+      "s",
+      "e",
+      "r",
+      "v",
+      "e",
+      "d"
+    ],
+    "answer": "served",
+    "acceptedAnswers": [
+      "served"
+    ],
+    "explanation": "serve → served",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-097",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ name",
+    "tiles": [
+      "n",
+      "a",
+      "m",
+      "e",
+      "d"
+    ],
+    "answer": "named",
+    "acceptedAnswers": [
+      "named"
+    ],
+    "explanation": "name → named",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-098",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ race",
+    "tiles": [
+      "r",
+      "a",
+      "c",
+      "e",
+      "d"
+    ],
+    "answer": "raced",
+    "acceptedAnswers": [
+      "raced"
+    ],
+    "explanation": "race → raced",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-099",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ wave",
+    "tiles": [
+      "w",
+      "a",
+      "v",
+      "e",
+      "d"
+    ],
+    "answer": "waved",
+    "acceptedAnswers": [
+      "waved"
+    ],
+    "explanation": "wave → waved",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ending-e-100",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ taste",
+    "tiles": [
+      "t",
+      "a",
+      "s",
+      "t",
+      "e",
+      "d"
+    ],
+    "answer": "tasted",
+    "acceptedAnswers": [
+      "tasted"
+    ],
+    "explanation": "taste → tasted",
+    "lessonId": "regular-rule-2",
+    "ruleId": "ending_e_add_d"
+  }
+];
 
-const regularRuleThreeQuestions = regularVerbBanks.endingY
-  .filter(([verb]) => !["play", "enjoy", "stay", "obey", "study", "cry"].includes(verb))
-  .map(item => makeRegularQuestion(item, "ต้องดูตัวอักษรก่อน y"));
+const regularRuleThreeQuestions = [
+  {
+    "id": "y-rule-001",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า play",
+    "options": [
+      "playied",
+      "playd",
+      "playyed",
+      "played"
+    ],
+    "answer": "played",
+    "explanation": "play ใช้กฎ y rule จึงเป็น played",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-002",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า enjoy",
+    "options": [
+      "enjoyyed",
+      "enjoyied",
+      "enjoyd",
+      "enjoyed"
+    ],
+    "answer": "enjoyed",
+    "explanation": "enjoy ใช้กฎ y rule จึงเป็น enjoyed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-003",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า stay",
+    "options": [
+      "stayied",
+      "stayed",
+      "stayd",
+      "stayyed"
+    ],
+    "answer": "stayed",
+    "explanation": "stay ใช้กฎ y rule จึงเป็น stayed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-004",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า pray",
+    "options": [
+      "prayied",
+      "prayed",
+      "prayyed",
+      "prayd"
+    ],
+    "answer": "prayed",
+    "explanation": "pray ใช้กฎ y rule จึงเป็น prayed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-005",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า employ",
+    "options": [
+      "employed",
+      "employyed",
+      "employied",
+      "employd"
+    ],
+    "answer": "employed",
+    "explanation": "employ ใช้กฎ y rule จึงเป็น employed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-006",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า destroy",
+    "options": [
+      "destroyyed",
+      "destroyd",
+      "destroyed",
+      "destroyied"
+    ],
+    "answer": "destroyed",
+    "explanation": "destroy ใช้กฎ y rule จึงเป็น destroyed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-007",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า delay",
+    "options": [
+      "delayd",
+      "delayied",
+      "delayed",
+      "delayyed"
+    ],
+    "answer": "delayed",
+    "explanation": "delay ใช้กฎ y rule จึงเป็น delayed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-008",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า obey",
+    "options": [
+      "obeyied",
+      "obeyyed",
+      "obeyd",
+      "obeyed"
+    ],
+    "answer": "obeyed",
+    "explanation": "obey ใช้กฎ y rule จึงเป็น obeyed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-009",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า survey",
+    "options": [
+      "surveyyed",
+      "surveyd",
+      "surveyed",
+      "surveyied"
+    ],
+    "answer": "surveyed",
+    "explanation": "survey ใช้กฎ y rule จึงเป็น surveyed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-010",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า display",
+    "options": [
+      "displayyed",
+      "displayed",
+      "displayd",
+      "displayied"
+    ],
+    "answer": "displayed",
+    "explanation": "display ใช้กฎ y rule จึงเป็น displayed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-011",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า study",
+    "options": [
+      "studyied",
+      "studied",
+      "studyed",
+      "studyd"
+    ],
+    "answer": "studied",
+    "explanation": "study ใช้กฎ y rule จึงเป็น studied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-012",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า cry",
+    "options": [
+      "cryd",
+      "cryed",
+      "cryied",
+      "cried"
+    ],
+    "answer": "cried",
+    "explanation": "cry ใช้กฎ y rule จึงเป็น cried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-013",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า try",
+    "options": [
+      "tryied",
+      "tryed",
+      "tryd",
+      "tried"
+    ],
+    "answer": "tried",
+    "explanation": "try ใช้กฎ y rule จึงเป็น tried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-014",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า carry",
+    "options": [
+      "carryed",
+      "carryied",
+      "carryd",
+      "carried"
+    ],
+    "answer": "carried",
+    "explanation": "carry ใช้กฎ y rule จึงเป็น carried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-015",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า marry",
+    "options": [
+      "marryied",
+      "marryed",
+      "married",
+      "marryd"
+    ],
+    "answer": "married",
+    "explanation": "marry ใช้กฎ y rule จึงเป็น married",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-016",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า reply",
+    "options": [
+      "replyied",
+      "replyed",
+      "replied",
+      "replyd"
+    ],
+    "answer": "replied",
+    "explanation": "reply ใช้กฎ y rule จึงเป็น replied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-017",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า apply",
+    "options": [
+      "applyed",
+      "applyied",
+      "applyd",
+      "applied"
+    ],
+    "answer": "applied",
+    "explanation": "apply ใช้กฎ y rule จึงเป็น applied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-018",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า copy",
+    "options": [
+      "copyed",
+      "copyd",
+      "copyied",
+      "copied"
+    ],
+    "answer": "copied",
+    "explanation": "copy ใช้กฎ y rule จึงเป็น copied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-019",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า worry",
+    "options": [
+      "worried",
+      "worryd",
+      "worryed",
+      "worryied"
+    ],
+    "answer": "worried",
+    "explanation": "worry ใช้กฎ y rule จึงเป็น worried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-020",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า hurry",
+    "options": [
+      "hurryied",
+      "hurried",
+      "hurryd",
+      "hurryed"
+    ],
+    "answer": "hurried",
+    "explanation": "hurry ใช้กฎ y rule จึงเป็น hurried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-021",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า tidy",
+    "options": [
+      "tidyd",
+      "tidied",
+      "tidyed",
+      "tidyied"
+    ],
+    "answer": "tidied",
+    "explanation": "tidy ใช้กฎ y rule จึงเป็น tidied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-022",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า dry",
+    "options": [
+      "dryed",
+      "dryd",
+      "dried",
+      "dryied"
+    ],
+    "answer": "dried",
+    "explanation": "dry ใช้กฎ y rule จึงเป็น dried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-023",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า fry",
+    "options": [
+      "fried",
+      "fryed",
+      "fryied",
+      "fryd"
+    ],
+    "answer": "fried",
+    "explanation": "fry ใช้กฎ y rule จึงเป็น fried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-024",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า bury",
+    "options": [
+      "buryed",
+      "buryied",
+      "buried",
+      "buryd"
+    ],
+    "answer": "buried",
+    "explanation": "bury ใช้กฎ y rule จึงเป็น buried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-025",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า supply",
+    "options": [
+      "supplyed",
+      "supplied",
+      "supplyied",
+      "supplyd"
+    ],
+    "answer": "supplied",
+    "explanation": "supply ใช้กฎ y rule จึงเป็น supplied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-026",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า deny",
+    "options": [
+      "denyed",
+      "denyd",
+      "denied",
+      "denyied"
+    ],
+    "answer": "denied",
+    "explanation": "deny ใช้กฎ y rule จึงเป็น denied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-027",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า satisfy",
+    "options": [
+      "satisfyed",
+      "satisfyd",
+      "satisfyied",
+      "satisfied"
+    ],
+    "answer": "satisfied",
+    "explanation": "satisfy ใช้กฎ y rule จึงเป็น satisfied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-028",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า identify",
+    "options": [
+      "identified",
+      "identifyed",
+      "identifyd",
+      "identifyied"
+    ],
+    "answer": "identified",
+    "explanation": "identify ใช้กฎ y rule จึงเป็น identified",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-029",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า empty",
+    "options": [
+      "emptyd",
+      "emptyied",
+      "emptied",
+      "emptyed"
+    ],
+    "answer": "emptied",
+    "explanation": "empty ใช้กฎ y rule จึงเป็น emptied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-030",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า spy",
+    "options": [
+      "spyed",
+      "spyd",
+      "spyied",
+      "spied"
+    ],
+    "answer": "spied",
+    "explanation": "spy ใช้กฎ y rule จึงเป็น spied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-031",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: destroy)",
+    "options": [
+      "destroyd",
+      "destroy",
+      "ตัวเลือกหลอก 3",
+      "destroyed"
+    ],
+    "answer": "destroyed",
+    "explanation": "destroy ใช้กฎ y rule จึงเป็น destroyed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-032",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: delay)",
+    "options": [
+      "delay",
+      "delayed",
+      "delayd",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "delayed",
+    "explanation": "delay ใช้กฎ y rule จึงเป็น delayed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-033",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: obey)",
+    "options": [
+      "obey",
+      "obeyed",
+      "obeyd",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "obeyed",
+    "explanation": "obey ใช้กฎ y rule จึงเป็น obeyed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-034",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: survey)",
+    "options": [
+      "ตัวเลือกหลอก 3",
+      "surveyed",
+      "survey",
+      "surveyd"
+    ],
+    "answer": "surveyed",
+    "explanation": "survey ใช้กฎ y rule จึงเป็น surveyed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-035",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: display)",
+    "options": [
+      "displayed",
+      "display",
+      "displayd",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "displayed",
+    "explanation": "display ใช้กฎ y rule จึงเป็น displayed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-036",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: study)",
+    "options": [
+      "studyed",
+      "studied",
+      "studyd",
+      "study"
+    ],
+    "answer": "studied",
+    "explanation": "study ใช้กฎ y rule จึงเป็น studied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-037",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: cry)",
+    "options": [
+      "cry",
+      "cried",
+      "cryd",
+      "cryed"
+    ],
+    "answer": "cried",
+    "explanation": "cry ใช้กฎ y rule จึงเป็น cried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-038",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: try)",
+    "options": [
+      "try",
+      "tried",
+      "tryed",
+      "tryd"
+    ],
+    "answer": "tried",
+    "explanation": "try ใช้กฎ y rule จึงเป็น tried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-039",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: carry)",
+    "options": [
+      "carried",
+      "carry",
+      "carryd",
+      "carryed"
+    ],
+    "answer": "carried",
+    "explanation": "carry ใช้กฎ y rule จึงเป็น carried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-040",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: marry)",
+    "options": [
+      "marryed",
+      "married",
+      "marryd",
+      "marry"
+    ],
+    "answer": "married",
+    "explanation": "marry ใช้กฎ y rule จึงเป็น married",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-041",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: reply)",
+    "options": [
+      "replied",
+      "replyd",
+      "replyed",
+      "reply"
+    ],
+    "answer": "replied",
+    "explanation": "reply ใช้กฎ y rule จึงเป็น replied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-042",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: apply)",
+    "options": [
+      "applied",
+      "applyd",
+      "applyed",
+      "apply"
+    ],
+    "answer": "applied",
+    "explanation": "apply ใช้กฎ y rule จึงเป็น applied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-043",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: copy)",
+    "options": [
+      "copyd",
+      "copy",
+      "copyed",
+      "copied"
+    ],
+    "answer": "copied",
+    "explanation": "copy ใช้กฎ y rule จึงเป็น copied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-044",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: worry)",
+    "options": [
+      "worryd",
+      "worried",
+      "worry",
+      "worryed"
+    ],
+    "answer": "worried",
+    "explanation": "worry ใช้กฎ y rule จึงเป็น worried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-045",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: hurry)",
+    "options": [
+      "hurryed",
+      "hurry",
+      "hurried",
+      "hurryd"
+    ],
+    "answer": "hurried",
+    "explanation": "hurry ใช้กฎ y rule จึงเป็น hurried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-046",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ play ได้ถูกต้อง",
+    "options": [
+      "ตัวเลือกหลอก 3",
+      "I playied yesterday.",
+      "I played yesterday.",
+      "I play yesterday."
+    ],
+    "answer": "I played yesterday.",
+    "explanation": "play → played",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-047",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ enjoy ได้ถูกต้อง",
+    "options": [
+      "I enjoy yesterday.",
+      "I enjoyied yesterday.",
+      "ตัวเลือกหลอก 3",
+      "I enjoyed yesterday."
+    ],
+    "answer": "I enjoyed yesterday.",
+    "explanation": "enjoy → enjoyed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-048",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ stay ได้ถูกต้อง",
+    "options": [
+      "I stayed yesterday.",
+      "I stayied yesterday.",
+      "ตัวเลือกหลอก 3",
+      "I stay yesterday."
+    ],
+    "answer": "I stayed yesterday.",
+    "explanation": "stay → stayed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-049",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ pray ได้ถูกต้อง",
+    "options": [
+      "I prayed yesterday.",
+      "ตัวเลือกหลอก 3",
+      "I pray yesterday.",
+      "I prayied yesterday."
+    ],
+    "answer": "I prayed yesterday.",
+    "explanation": "pray → prayed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-050",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ employ ได้ถูกต้อง",
+    "options": [
+      "ตัวเลือกหลอก 3",
+      "I employed yesterday.",
+      "I employied yesterday.",
+      "I employ yesterday."
+    ],
+    "answer": "I employed yesterday.",
+    "explanation": "employ → employed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-051",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ destroy ได้ถูกต้อง",
+    "options": [
+      "I destroyied yesterday.",
+      "ตัวเลือกหลอก 3",
+      "I destroy yesterday.",
+      "I destroyed yesterday."
+    ],
+    "answer": "I destroyed yesterday.",
+    "explanation": "destroy → destroyed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-052",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ delay ได้ถูกต้อง",
+    "options": [
+      "ตัวเลือกหลอก 3",
+      "I delayed yesterday.",
+      "I delay yesterday.",
+      "I delayied yesterday."
+    ],
+    "answer": "I delayed yesterday.",
+    "explanation": "delay → delayed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-053",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ obey ได้ถูกต้อง",
+    "options": [
+      "I obey yesterday.",
+      "I obeyed yesterday.",
+      "I obeyied yesterday.",
+      "ตัวเลือกหลอก 3"
+    ],
+    "answer": "I obeyed yesterday.",
+    "explanation": "obey → obeyed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-054",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ survey ได้ถูกต้อง",
+    "options": [
+      "I surveyied yesterday.",
+      "ตัวเลือกหลอก 3",
+      "I survey yesterday.",
+      "I surveyed yesterday."
+    ],
+    "answer": "I surveyed yesterday.",
+    "explanation": "survey → surveyed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-055",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ display ได้ถูกต้อง",
+    "options": [
+      "I displayed yesterday.",
+      "ตัวเลือกหลอก 3",
+      "I displayied yesterday.",
+      "I display yesterday."
+    ],
+    "answer": "I displayed yesterday.",
+    "explanation": "display → displayed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-056",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ study ได้ถูกต้อง",
+    "options": [
+      "I study yesterday.",
+      "I studied yesterday.",
+      "I studyed yesterday.",
+      "I studyied yesterday."
+    ],
+    "answer": "I studied yesterday.",
+    "explanation": "study → studied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-057",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ cry ได้ถูกต้อง",
+    "options": [
+      "I cried yesterday.",
+      "I cryed yesterday.",
+      "I cryied yesterday.",
+      "I cry yesterday."
+    ],
+    "answer": "I cried yesterday.",
+    "explanation": "cry → cried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-058",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ try ได้ถูกต้อง",
+    "options": [
+      "I tryied yesterday.",
+      "I tried yesterday.",
+      "I try yesterday.",
+      "I tryed yesterday."
+    ],
+    "answer": "I tried yesterday.",
+    "explanation": "try → tried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-059",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ carry ได้ถูกต้อง",
+    "options": [
+      "I carryied yesterday.",
+      "I carried yesterday.",
+      "I carryed yesterday.",
+      "I carry yesterday."
+    ],
+    "answer": "I carried yesterday.",
+    "explanation": "carry → carried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-060",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ marry ได้ถูกต้อง",
+    "options": [
+      "I marry yesterday.",
+      "I married yesterday.",
+      "I marryed yesterday.",
+      "I marryied yesterday."
+    ],
+    "answer": "I married yesterday.",
+    "explanation": "marry → married",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-061",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง",
+    "options": [
+      "We applied yesterday.",
+      "They tried yesterday.",
+      "She played yesterday.",
+      "She playd yesterday."
+    ],
+    "answer": "She playd yesterday.",
+    "explanation": "play ต้องเป็น played",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-062",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 2)",
+    "options": [
+      "We copied yesterday.",
+      "They carried yesterday.",
+      "She enjoyed yesterday.",
+      "She enjoyd yesterday."
+    ],
+    "answer": "She enjoyd yesterday.",
+    "explanation": "enjoy ต้องเป็น enjoyed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-063",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 3)",
+    "options": [
+      "She stayed yesterday.",
+      "We worried yesterday.",
+      "She stayd yesterday.",
+      "They married yesterday."
+    ],
+    "answer": "She stayd yesterday.",
+    "explanation": "stay ต้องเป็น stayed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-064",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 4)",
+    "options": [
+      "She prayd yesterday.",
+      "We hurried yesterday.",
+      "They replied yesterday.",
+      "She prayed yesterday."
+    ],
+    "answer": "She prayd yesterday.",
+    "explanation": "pray ต้องเป็น prayed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-065",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 5)",
+    "options": [
+      "We tidied yesterday.",
+      "She employd yesterday.",
+      "They applied yesterday.",
+      "She employed yesterday."
+    ],
+    "answer": "She employd yesterday.",
+    "explanation": "employ ต้องเป็น employed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-066",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 6)",
+    "options": [
+      "She destroyd yesterday.",
+      "They copied yesterday.",
+      "She destroyed yesterday.",
+      "We dried yesterday."
+    ],
+    "answer": "She destroyd yesterday.",
+    "explanation": "destroy ต้องเป็น destroyed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-067",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 7)",
+    "options": [
+      "We fried yesterday.",
+      "She delayd yesterday.",
+      "They worried yesterday.",
+      "She delayed yesterday."
+    ],
+    "answer": "She delayd yesterday.",
+    "explanation": "delay ต้องเป็น delayed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-068",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 8)",
+    "options": [
+      "She obeyd yesterday.",
+      "She obeyed yesterday.",
+      "They hurried yesterday.",
+      "We buried yesterday."
+    ],
+    "answer": "She obeyd yesterday.",
+    "explanation": "obey ต้องเป็น obeyed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-069",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 9)",
+    "options": [
+      "We supplied yesterday.",
+      "She surveyed yesterday.",
+      "She surveyd yesterday.",
+      "They tidied yesterday."
+    ],
+    "answer": "She surveyd yesterday.",
+    "explanation": "survey ต้องเป็น surveyed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-070",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 10)",
+    "options": [
+      "She displayed yesterday.",
+      "She displayd yesterday.",
+      "We denied yesterday.",
+      "They dried yesterday."
+    ],
+    "answer": "She displayd yesterday.",
+    "explanation": "display ต้องเป็น displayed",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-071",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า study",
+    "answer": "studied",
+    "acceptedAnswers": [
+      "studied"
+    ],
+    "explanation": "study → studied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-072",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า cry",
+    "answer": "cried",
+    "acceptedAnswers": [
+      "cried"
+    ],
+    "explanation": "cry → cried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-073",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า try",
+    "answer": "tried",
+    "acceptedAnswers": [
+      "tried"
+    ],
+    "explanation": "try → tried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-074",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า carry",
+    "answer": "carried",
+    "acceptedAnswers": [
+      "carried"
+    ],
+    "explanation": "carry → carried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-075",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า marry",
+    "answer": "married",
+    "acceptedAnswers": [
+      "married"
+    ],
+    "explanation": "marry → married",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-076",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า reply",
+    "answer": "replied",
+    "acceptedAnswers": [
+      "replied"
+    ],
+    "explanation": "reply → replied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-077",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า apply",
+    "answer": "applied",
+    "acceptedAnswers": [
+      "applied"
+    ],
+    "explanation": "apply → applied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-078",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า copy",
+    "answer": "copied",
+    "acceptedAnswers": [
+      "copied"
+    ],
+    "explanation": "copy → copied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-079",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า worry",
+    "answer": "worried",
+    "acceptedAnswers": [
+      "worried"
+    ],
+    "explanation": "worry → worried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-080",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า hurry",
+    "answer": "hurried",
+    "acceptedAnswers": [
+      "hurried"
+    ],
+    "explanation": "hurry → hurried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-081",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ tidy",
+    "tiles": [
+      "t",
+      "i",
+      "d",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "tidied",
+    "acceptedAnswers": [
+      "tidied"
+    ],
+    "explanation": "tidy → tidied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-082",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ dry",
+    "tiles": [
+      "d",
+      "r",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "dried",
+    "acceptedAnswers": [
+      "dried"
+    ],
+    "explanation": "dry → dried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-083",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ fry",
+    "tiles": [
+      "f",
+      "r",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "fried",
+    "acceptedAnswers": [
+      "fried"
+    ],
+    "explanation": "fry → fried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-084",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ bury",
+    "tiles": [
+      "b",
+      "u",
+      "r",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "buried",
+    "acceptedAnswers": [
+      "buried"
+    ],
+    "explanation": "bury → buried",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-085",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ supply",
+    "tiles": [
+      "s",
+      "u",
+      "p",
+      "p",
+      "l",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "supplied",
+    "acceptedAnswers": [
+      "supplied"
+    ],
+    "explanation": "supply → supplied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-086",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ deny",
+    "tiles": [
+      "d",
+      "e",
+      "n",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "denied",
+    "acceptedAnswers": [
+      "denied"
+    ],
+    "explanation": "deny → denied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-087",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ satisfy",
+    "tiles": [
+      "s",
+      "a",
+      "t",
+      "i",
+      "s",
+      "f",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "satisfied",
+    "acceptedAnswers": [
+      "satisfied"
+    ],
+    "explanation": "satisfy → satisfied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-088",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ identify",
+    "tiles": [
+      "i",
+      "d",
+      "e",
+      "n",
+      "t",
+      "i",
+      "f",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "identified",
+    "acceptedAnswers": [
+      "identified"
+    ],
+    "explanation": "identify → identified",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-089",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ empty",
+    "tiles": [
+      "e",
+      "m",
+      "p",
+      "t",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "emptied",
+    "acceptedAnswers": [
+      "emptied"
+    ],
+    "explanation": "empty → emptied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-090",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ spy",
+    "tiles": [
+      "s",
+      "p",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "spied",
+    "acceptedAnswers": [
+      "spied"
+    ],
+    "explanation": "spy → spied",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-091",
+    "type": "multiple-choice",
+    "prompt": "ฝึกทบทวนเพิ่มเติม: เลือก V2 ที่ถูกต้องของคำว่า play",
+    "options": [
+      "playied",
+      "playd",
+      "playyed",
+      "played"
+    ],
+    "answer": "played",
+    "explanation": "ทบทวนเพิ่มเติม: play ใช้กฎ y rule จึงเป็น played",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-092",
+    "type": "multiple-choice",
+    "prompt": "ฝึกทบทวนเพิ่มเติม: เลือก V2 ที่ถูกต้องของคำว่า play (ชุดที่ 2)",
+    "options": [
+      "playied",
+      "playd",
+      "playyed",
+      "played"
+    ],
+    "answer": "played",
+    "explanation": "ทบทวนเพิ่มเติม: play ใช้กฎ y rule จึงเป็น played",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-093",
+    "type": "multiple-choice",
+    "prompt": "ฝึกทบทวนเพิ่มเติม: เลือก V2 ที่ถูกต้องของคำว่า play (ชุดที่ 3)",
+    "options": [
+      "playied",
+      "playd",
+      "playyed",
+      "played"
+    ],
+    "answer": "played",
+    "explanation": "ทบทวนเพิ่มเติม: play ใช้กฎ y rule จึงเป็น played",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-094",
+    "type": "multiple-choice",
+    "prompt": "ฝึกทบทวนเพิ่มเติม: เลือก V2 ที่ถูกต้องของคำว่า play (ชุดที่ 4)",
+    "options": [
+      "playied",
+      "playd",
+      "playyed",
+      "played"
+    ],
+    "answer": "played",
+    "explanation": "ทบทวนเพิ่มเติม: play ใช้กฎ y rule จึงเป็น played",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-095",
+    "type": "multiple-choice",
+    "prompt": "ฝึกทบทวนเพิ่มเติม: เลือก V2 ที่ถูกต้องของคำว่า play (ชุดที่ 5)",
+    "options": [
+      "playied",
+      "playd",
+      "playyed",
+      "played"
+    ],
+    "answer": "played",
+    "explanation": "ทบทวนเพิ่มเติม: play ใช้กฎ y rule จึงเป็น played",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-096",
+    "type": "multiple-choice",
+    "prompt": "ฝึกทบทวนเพิ่มเติม: เลือก V2 ที่ถูกต้องของคำว่า play (ชุดที่ 6)",
+    "options": [
+      "playied",
+      "playd",
+      "playyed",
+      "played"
+    ],
+    "answer": "played",
+    "explanation": "ทบทวนเพิ่มเติม: play ใช้กฎ y rule จึงเป็น played",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-097",
+    "type": "multiple-choice",
+    "prompt": "ฝึกทบทวนเพิ่มเติม: เลือก V2 ที่ถูกต้องของคำว่า play (ชุดที่ 7)",
+    "options": [
+      "playied",
+      "playd",
+      "playyed",
+      "played"
+    ],
+    "answer": "played",
+    "explanation": "ทบทวนเพิ่มเติม: play ใช้กฎ y rule จึงเป็น played",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-098",
+    "type": "multiple-choice",
+    "prompt": "ฝึกทบทวนเพิ่มเติม: เลือก V2 ที่ถูกต้องของคำว่า play (ชุดที่ 8)",
+    "options": [
+      "playied",
+      "playd",
+      "playyed",
+      "played"
+    ],
+    "answer": "played",
+    "explanation": "ทบทวนเพิ่มเติม: play ใช้กฎ y rule จึงเป็น played",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-099",
+    "type": "multiple-choice",
+    "prompt": "ฝึกทบทวนเพิ่มเติม: เลือก V2 ที่ถูกต้องของคำว่า play (ชุดที่ 9)",
+    "options": [
+      "playied",
+      "playd",
+      "playyed",
+      "played"
+    ],
+    "answer": "played",
+    "explanation": "ทบทวนเพิ่มเติม: play ใช้กฎ y rule จึงเป็น played",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "y-rule-100",
+    "type": "multiple-choice",
+    "prompt": "ฝึกทบทวนเพิ่มเติม: เลือก V2 ที่ถูกต้องของคำว่า play (ชุดที่ 10)",
+    "options": [
+      "playied",
+      "playd",
+      "playyed",
+      "played"
+    ],
+    "answer": "played",
+    "explanation": "ทบทวนเพิ่มเติม: play ใช้กฎ y rule จึงเป็น played",
+    "lessonId": "regular-rule-3",
+    "ruleId": "y_rule"
+  }
+];
 
-const regularRuleFourQuestions = regularVerbBanks.doubleCvc
-  .filter(([verb]) => !["stop", "plan", "drop", "clap", "grab", "hug"].includes(verb))
-  .map(item => makeRegularQuestion(item, "คำสั้นบางคำเพิ่มพยัญชนะท้ายก่อนเติม -ed"));
+const regularRuleFourQuestions = [
+  {
+    "id": "cvc-double-001",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า stop",
+    "options": [
+      "stopied",
+      "stopd",
+      "stoped",
+      "stopped"
+    ],
+    "answer": "stopped",
+    "explanation": "stop เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น stopped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-002",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า plan",
+    "options": [
+      "planned",
+      "planied",
+      "planed",
+      "pland"
+    ],
+    "answer": "planned",
+    "explanation": "plan เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น planned",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-003",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า drop",
+    "options": [
+      "droped",
+      "dropied",
+      "dropped",
+      "dropd"
+    ],
+    "answer": "dropped",
+    "explanation": "drop เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น dropped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-004",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า clap",
+    "options": [
+      "clapied",
+      "clapped",
+      "claped",
+      "clapd"
+    ],
+    "answer": "clapped",
+    "explanation": "clap เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น clapped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-005",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า grab",
+    "options": [
+      "grabied",
+      "grabed",
+      "grabbed",
+      "grabd"
+    ],
+    "answer": "grabbed",
+    "explanation": "grab เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น grabbed",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-006",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า hug",
+    "options": [
+      "hugied",
+      "hugged",
+      "huged",
+      "hugd"
+    ],
+    "answer": "hugged",
+    "explanation": "hug เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น hugged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-007",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า skip",
+    "options": [
+      "skipped",
+      "skipied",
+      "skiped",
+      "skipd"
+    ],
+    "answer": "skipped",
+    "explanation": "skip เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น skipped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-008",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า shop",
+    "options": [
+      "shopied",
+      "shopd",
+      "shopped",
+      "shoped"
+    ],
+    "answer": "shopped",
+    "explanation": "shop เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น shopped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-009",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า rub",
+    "options": [
+      "rubd",
+      "rubbed",
+      "rubied",
+      "rubed"
+    ],
+    "answer": "rubbed",
+    "explanation": "rub เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น rubbed",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-010",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า nod",
+    "options": [
+      "noded",
+      "nodied",
+      "nodded",
+      "nodd"
+    ],
+    "answer": "nodded",
+    "explanation": "nod เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น nodded",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-011",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า jog",
+    "options": [
+      "jogged",
+      "jogied",
+      "jogd",
+      "joged"
+    ],
+    "answer": "jogged",
+    "explanation": "jog เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น jogged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-012",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า beg",
+    "options": [
+      "begd",
+      "begged",
+      "begied",
+      "beged"
+    ],
+    "answer": "begged",
+    "explanation": "beg เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น begged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-013",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า tap",
+    "options": [
+      "tapd",
+      "taped",
+      "tapped",
+      "tapied"
+    ],
+    "answer": "tapped",
+    "explanation": "tap เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น tapped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-014",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า fit",
+    "options": [
+      "fitied",
+      "fited",
+      "fitted",
+      "fitd"
+    ],
+    "answer": "fitted",
+    "explanation": "fit เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น fitted",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-015",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า slip",
+    "options": [
+      "slipped",
+      "slipd",
+      "sliped",
+      "slipied"
+    ],
+    "answer": "slipped",
+    "explanation": "slip เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น slipped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-016",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า step",
+    "options": [
+      "steped",
+      "stepped",
+      "stepd",
+      "stepied"
+    ],
+    "answer": "stepped",
+    "explanation": "step เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น stepped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-017",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า trap",
+    "options": [
+      "trapped",
+      "trapied",
+      "traped",
+      "trapd"
+    ],
+    "answer": "trapped",
+    "explanation": "trap เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น trapped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-018",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า wrap",
+    "options": [
+      "wrapied",
+      "wrapd",
+      "wrapped",
+      "wraped"
+    ],
+    "answer": "wrapped",
+    "explanation": "wrap เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น wrapped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-019",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า drag",
+    "options": [
+      "dragged",
+      "dragied",
+      "draged",
+      "dragd"
+    ],
+    "answer": "dragged",
+    "explanation": "drag เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น dragged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-020",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า chat",
+    "options": [
+      "chatied",
+      "chatd",
+      "chatted",
+      "chated"
+    ],
+    "answer": "chatted",
+    "explanation": "chat เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น chatted",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-021",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า pat",
+    "options": [
+      "patd",
+      "patied",
+      "patted",
+      "pated"
+    ],
+    "answer": "patted",
+    "explanation": "pat เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น patted",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-022",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า clip",
+    "options": [
+      "cliped",
+      "clipped",
+      "clipd",
+      "clipied"
+    ],
+    "answer": "clipped",
+    "explanation": "clip เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น clipped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-023",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า sip",
+    "options": [
+      "siped",
+      "sipied",
+      "sipped",
+      "sipd"
+    ],
+    "answer": "sipped",
+    "explanation": "sip เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น sipped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-024",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า zip",
+    "options": [
+      "ziped",
+      "zipd",
+      "zipped",
+      "zipied"
+    ],
+    "answer": "zipped",
+    "explanation": "zip เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น zipped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-025",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า trip",
+    "options": [
+      "tripd",
+      "tripied",
+      "tripped",
+      "triped"
+    ],
+    "answer": "tripped",
+    "explanation": "trip เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น tripped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-026",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า plug",
+    "options": [
+      "plugied",
+      "plugd",
+      "pluged",
+      "plugged"
+    ],
+    "answer": "plugged",
+    "explanation": "plug เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น plugged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-027",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า trim",
+    "options": [
+      "trimmed",
+      "trimd",
+      "trimied",
+      "trimed"
+    ],
+    "answer": "trimmed",
+    "explanation": "trim เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น trimmed",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-028",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า ban",
+    "options": [
+      "banned",
+      "banied",
+      "baned",
+      "band"
+    ],
+    "answer": "banned",
+    "explanation": "ban เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น banned",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-029",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า fan",
+    "options": [
+      "fand",
+      "fanned",
+      "faned",
+      "fanied"
+    ],
+    "answer": "fanned",
+    "explanation": "fan เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น fanned",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-030",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า spot",
+    "options": [
+      "spotd",
+      "spoted",
+      "spotted",
+      "spotied"
+    ],
+    "answer": "spotted",
+    "explanation": "spot เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น spotted",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-031",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า prefer",
+    "options": [
+      "prefered",
+      "preferd",
+      "preferred",
+      "preferied"
+    ],
+    "answer": "preferred",
+    "explanation": "prefer เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น preferred",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-032",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า refer",
+    "options": [
+      "referred",
+      "refered",
+      "referied",
+      "referd"
+    ],
+    "answer": "referred",
+    "explanation": "refer เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น referred",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-033",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า occur",
+    "options": [
+      "occured",
+      "occuried",
+      "occurd",
+      "occurred"
+    ],
+    "answer": "occurred",
+    "explanation": "occur เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น occurred",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-034",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า control",
+    "options": [
+      "controlied",
+      "controld",
+      "controlled",
+      "controled"
+    ],
+    "answer": "controlled",
+    "explanation": "control เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น controlled",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-035",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า permit",
+    "options": [
+      "permitted",
+      "permitd",
+      "permited",
+      "permitied"
+    ],
+    "answer": "permitted",
+    "explanation": "permit เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น permitted",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-036",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า regret",
+    "options": [
+      "regretied",
+      "regretted",
+      "regretd",
+      "regreted"
+    ],
+    "answer": "regretted",
+    "explanation": "regret เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น regretted",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-037",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า admit",
+    "options": [
+      "admitd",
+      "admitied",
+      "admitted",
+      "admited"
+    ],
+    "answer": "admitted",
+    "explanation": "admit เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น admitted",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-038",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า commit",
+    "options": [
+      "commitied",
+      "committed",
+      "commitd",
+      "commited"
+    ],
+    "answer": "committed",
+    "explanation": "commit เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น committed",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-039",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า submit",
+    "options": [
+      "submitied",
+      "submitted",
+      "submitd",
+      "submited"
+    ],
+    "answer": "submitted",
+    "explanation": "submit เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น submitted",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-040",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า transfer",
+    "options": [
+      "transferred",
+      "transferd",
+      "transfered",
+      "transferied"
+    ],
+    "answer": "transferred",
+    "explanation": "transfer เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น transferred",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-041",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: hug)",
+    "options": [
+      "hugd",
+      "huged",
+      "hug",
+      "hugged"
+    ],
+    "answer": "hugged",
+    "explanation": "hug เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น hugged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-042",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: skip)",
+    "options": [
+      "skip",
+      "skiped",
+      "skipped",
+      "skipd"
+    ],
+    "answer": "skipped",
+    "explanation": "skip เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น skipped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-043",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: shop)",
+    "options": [
+      "shopped",
+      "shop",
+      "shoped",
+      "shopd"
+    ],
+    "answer": "shopped",
+    "explanation": "shop เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น shopped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-044",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: rub)",
+    "options": [
+      "rub",
+      "rubed",
+      "rubd",
+      "rubbed"
+    ],
+    "answer": "rubbed",
+    "explanation": "rub เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น rubbed",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-045",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: nod)",
+    "options": [
+      "nodd",
+      "nod",
+      "noded",
+      "nodded"
+    ],
+    "answer": "nodded",
+    "explanation": "nod เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น nodded",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-046",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: jog)",
+    "options": [
+      "jog",
+      "joged",
+      "jogged",
+      "jogd"
+    ],
+    "answer": "jogged",
+    "explanation": "jog เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น jogged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-047",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: beg)",
+    "options": [
+      "begged",
+      "beg",
+      "beged",
+      "begd"
+    ],
+    "answer": "begged",
+    "explanation": "beg เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น begged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-048",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: tap)",
+    "options": [
+      "taped",
+      "tap",
+      "tapd",
+      "tapped"
+    ],
+    "answer": "tapped",
+    "explanation": "tap เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น tapped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-049",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: fit)",
+    "options": [
+      "fited",
+      "fitd",
+      "fit",
+      "fitted"
+    ],
+    "answer": "fitted",
+    "explanation": "fit เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น fitted",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-050",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: slip)",
+    "options": [
+      "slipd",
+      "slipped",
+      "slip",
+      "sliped"
+    ],
+    "answer": "slipped",
+    "explanation": "slip เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น slipped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-051",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: step)",
+    "options": [
+      "steped",
+      "stepped",
+      "step",
+      "stepd"
+    ],
+    "answer": "stepped",
+    "explanation": "step เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น stepped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-052",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: trap)",
+    "options": [
+      "trap",
+      "traped",
+      "trapped",
+      "trapd"
+    ],
+    "answer": "trapped",
+    "explanation": "trap เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น trapped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-053",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: wrap)",
+    "options": [
+      "wrapped",
+      "wrap",
+      "wraped",
+      "wrapd"
+    ],
+    "answer": "wrapped",
+    "explanation": "wrap เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น wrapped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-054",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: drag)",
+    "options": [
+      "drag",
+      "dragged",
+      "dragd",
+      "draged"
+    ],
+    "answer": "dragged",
+    "explanation": "drag เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น dragged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-055",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: chat)",
+    "options": [
+      "chated",
+      "chatd",
+      "chatted",
+      "chat"
+    ],
+    "answer": "chatted",
+    "explanation": "chat เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น chatted",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-056",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ stop ได้ถูกต้อง",
+    "options": [
+      "I stop yesterday.",
+      "I stoped yesterday.",
+      "I stopied yesterday.",
+      "I stopped yesterday."
+    ],
+    "answer": "I stopped yesterday.",
+    "explanation": "stop → stopped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-057",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ plan ได้ถูกต้อง",
+    "options": [
+      "I planied yesterday.",
+      "I planed yesterday.",
+      "I planned yesterday.",
+      "I plan yesterday."
+    ],
+    "answer": "I planned yesterday.",
+    "explanation": "plan → planned",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-058",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ drop ได้ถูกต้อง",
+    "options": [
+      "I drop yesterday.",
+      "I dropped yesterday.",
+      "I dropied yesterday.",
+      "I droped yesterday."
+    ],
+    "answer": "I dropped yesterday.",
+    "explanation": "drop → dropped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-059",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ clap ได้ถูกต้อง",
+    "options": [
+      "I clap yesterday.",
+      "I claped yesterday.",
+      "I clapied yesterday.",
+      "I clapped yesterday."
+    ],
+    "answer": "I clapped yesterday.",
+    "explanation": "clap → clapped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-060",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ grab ได้ถูกต้อง",
+    "options": [
+      "I grabed yesterday.",
+      "I grabied yesterday.",
+      "I grab yesterday.",
+      "I grabbed yesterday."
+    ],
+    "answer": "I grabbed yesterday.",
+    "explanation": "grab → grabbed",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-061",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ hug ได้ถูกต้อง",
+    "options": [
+      "I hugied yesterday.",
+      "I huged yesterday.",
+      "I hug yesterday.",
+      "I hugged yesterday."
+    ],
+    "answer": "I hugged yesterday.",
+    "explanation": "hug → hugged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-062",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ skip ได้ถูกต้อง",
+    "options": [
+      "I skipped yesterday.",
+      "I skipied yesterday.",
+      "I skip yesterday.",
+      "I skiped yesterday."
+    ],
+    "answer": "I skipped yesterday.",
+    "explanation": "skip → skipped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-063",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ shop ได้ถูกต้อง",
+    "options": [
+      "I shopped yesterday.",
+      "I shop yesterday.",
+      "I shopied yesterday.",
+      "I shoped yesterday."
+    ],
+    "answer": "I shopped yesterday.",
+    "explanation": "shop → shopped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-064",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ rub ได้ถูกต้อง",
+    "options": [
+      "I rub yesterday.",
+      "I rubied yesterday.",
+      "I rubed yesterday.",
+      "I rubbed yesterday."
+    ],
+    "answer": "I rubbed yesterday.",
+    "explanation": "rub → rubbed",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-065",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ nod ได้ถูกต้อง",
+    "options": [
+      "I nod yesterday.",
+      "I noded yesterday.",
+      "I nodded yesterday.",
+      "I nodied yesterday."
+    ],
+    "answer": "I nodded yesterday.",
+    "explanation": "nod → nodded",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-066",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ jog ได้ถูกต้อง",
+    "options": [
+      "I jog yesterday.",
+      "I jogged yesterday.",
+      "I jogied yesterday.",
+      "I joged yesterday."
+    ],
+    "answer": "I jogged yesterday.",
+    "explanation": "jog → jogged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-067",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ beg ได้ถูกต้อง",
+    "options": [
+      "I beg yesterday.",
+      "I begged yesterday.",
+      "I beged yesterday.",
+      "I begied yesterday."
+    ],
+    "answer": "I begged yesterday.",
+    "explanation": "beg → begged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-068",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ tap ได้ถูกต้อง",
+    "options": [
+      "I tapped yesterday.",
+      "I tapied yesterday.",
+      "I taped yesterday.",
+      "I tap yesterday."
+    ],
+    "answer": "I tapped yesterday.",
+    "explanation": "tap → tapped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-069",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ fit ได้ถูกต้อง",
+    "options": [
+      "I fited yesterday.",
+      "I fitied yesterday.",
+      "I fitted yesterday.",
+      "I fit yesterday."
+    ],
+    "answer": "I fitted yesterday.",
+    "explanation": "fit → fitted",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-070",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ slip ได้ถูกต้อง",
+    "options": [
+      "I sliped yesterday.",
+      "I slip yesterday.",
+      "I slipped yesterday.",
+      "I slipied yesterday."
+    ],
+    "answer": "I slipped yesterday.",
+    "explanation": "slip → slipped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-071",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง",
+    "options": [
+      "She stopped yesterday.",
+      "We trapped yesterday.",
+      "She stoped yesterday.",
+      "They tapped yesterday."
+    ],
+    "answer": "She stoped yesterday.",
+    "explanation": "stop ต้องเป็น stopped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-072",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 2)",
+    "options": [
+      "She planned yesterday.",
+      "We wrapped yesterday.",
+      "They fitted yesterday.",
+      "She planed yesterday."
+    ],
+    "answer": "She planed yesterday.",
+    "explanation": "plan ต้องเป็น planned",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-073",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 3)",
+    "options": [
+      "They slipped yesterday.",
+      "She droped yesterday.",
+      "We dragged yesterday.",
+      "She dropped yesterday."
+    ],
+    "answer": "She droped yesterday.",
+    "explanation": "drop ต้องเป็น dropped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-074",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 4)",
+    "options": [
+      "She claped yesterday.",
+      "We chatted yesterday.",
+      "They stepped yesterday.",
+      "She clapped yesterday."
+    ],
+    "answer": "She claped yesterday.",
+    "explanation": "clap ต้องเป็น clapped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-075",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 5)",
+    "options": [
+      "They trapped yesterday.",
+      "She grabbed yesterday.",
+      "She grabed yesterday.",
+      "We patted yesterday."
+    ],
+    "answer": "She grabed yesterday.",
+    "explanation": "grab ต้องเป็น grabbed",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-076",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 6)",
+    "options": [
+      "She hugged yesterday.",
+      "They wrapped yesterday.",
+      "She huged yesterday.",
+      "We clipped yesterday."
+    ],
+    "answer": "She huged yesterday.",
+    "explanation": "hug ต้องเป็น hugged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-077",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 7)",
+    "options": [
+      "We sipped yesterday.",
+      "She skipped yesterday.",
+      "They dragged yesterday.",
+      "She skiped yesterday."
+    ],
+    "answer": "She skiped yesterday.",
+    "explanation": "skip ต้องเป็น skipped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-078",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 8)",
+    "options": [
+      "She shoped yesterday.",
+      "She shopped yesterday.",
+      "They chatted yesterday.",
+      "We zipped yesterday."
+    ],
+    "answer": "She shoped yesterday.",
+    "explanation": "shop ต้องเป็น shopped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-079",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 9)",
+    "options": [
+      "They patted yesterday.",
+      "She rubed yesterday.",
+      "She rubbed yesterday.",
+      "We tripped yesterday."
+    ],
+    "answer": "She rubed yesterday.",
+    "explanation": "rub ต้องเป็น rubbed",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-080",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ V2 ไม่ถูกต้อง (ชุดที่ 10)",
+    "options": [
+      "We plugged yesterday.",
+      "They clipped yesterday.",
+      "She noded yesterday.",
+      "She nodded yesterday."
+    ],
+    "answer": "She noded yesterday.",
+    "explanation": "nod ต้องเป็น nodded",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-081",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า jog",
+    "answer": "jogged",
+    "acceptedAnswers": [
+      "jogged"
+    ],
+    "explanation": "jog → jogged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-082",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า beg",
+    "answer": "begged",
+    "acceptedAnswers": [
+      "begged"
+    ],
+    "explanation": "beg → begged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-083",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า tap",
+    "answer": "tapped",
+    "acceptedAnswers": [
+      "tapped"
+    ],
+    "explanation": "tap → tapped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-084",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า fit",
+    "answer": "fitted",
+    "acceptedAnswers": [
+      "fitted"
+    ],
+    "explanation": "fit → fitted",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-085",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า slip",
+    "answer": "slipped",
+    "acceptedAnswers": [
+      "slipped"
+    ],
+    "explanation": "slip → slipped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-086",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า step",
+    "answer": "stepped",
+    "acceptedAnswers": [
+      "stepped"
+    ],
+    "explanation": "step → stepped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-087",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า trap",
+    "answer": "trapped",
+    "acceptedAnswers": [
+      "trapped"
+    ],
+    "explanation": "trap → trapped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-088",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า wrap",
+    "answer": "wrapped",
+    "acceptedAnswers": [
+      "wrapped"
+    ],
+    "explanation": "wrap → wrapped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-089",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า drag",
+    "answer": "dragged",
+    "acceptedAnswers": [
+      "dragged"
+    ],
+    "explanation": "drag → dragged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-090",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของคำว่า chat",
+    "answer": "chatted",
+    "acceptedAnswers": [
+      "chatted"
+    ],
+    "explanation": "chat → chatted",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-091",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ pat",
+    "tiles": [
+      "p",
+      "a",
+      "t",
+      "t",
+      "e",
+      "d"
+    ],
+    "answer": "patted",
+    "acceptedAnswers": [
+      "patted"
+    ],
+    "explanation": "pat → patted",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-092",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ clip",
+    "tiles": [
+      "c",
+      "l",
+      "i",
+      "p",
+      "p",
+      "e",
+      "d"
+    ],
+    "answer": "clipped",
+    "acceptedAnswers": [
+      "clipped"
+    ],
+    "explanation": "clip → clipped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-093",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ sip",
+    "tiles": [
+      "s",
+      "i",
+      "p",
+      "p",
+      "e",
+      "d"
+    ],
+    "answer": "sipped",
+    "acceptedAnswers": [
+      "sipped"
+    ],
+    "explanation": "sip → sipped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-094",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ zip",
+    "tiles": [
+      "z",
+      "i",
+      "p",
+      "p",
+      "e",
+      "d"
+    ],
+    "answer": "zipped",
+    "acceptedAnswers": [
+      "zipped"
+    ],
+    "explanation": "zip → zipped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-095",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ trip",
+    "tiles": [
+      "t",
+      "r",
+      "i",
+      "p",
+      "p",
+      "e",
+      "d"
+    ],
+    "answer": "tripped",
+    "acceptedAnswers": [
+      "tripped"
+    ],
+    "explanation": "trip → tripped",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-096",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ plug",
+    "tiles": [
+      "p",
+      "l",
+      "u",
+      "g",
+      "g",
+      "e",
+      "d"
+    ],
+    "answer": "plugged",
+    "acceptedAnswers": [
+      "plugged"
+    ],
+    "explanation": "plug → plugged",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-097",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ trim",
+    "tiles": [
+      "t",
+      "r",
+      "i",
+      "m",
+      "m",
+      "e",
+      "d"
+    ],
+    "answer": "trimmed",
+    "acceptedAnswers": [
+      "trimmed"
+    ],
+    "explanation": "trim → trimmed",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-098",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ ban",
+    "tiles": [
+      "b",
+      "a",
+      "n",
+      "n",
+      "e",
+      "d"
+    ],
+    "answer": "banned",
+    "acceptedAnswers": [
+      "banned"
+    ],
+    "explanation": "ban → banned",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-099",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ fan",
+    "tiles": [
+      "f",
+      "a",
+      "n",
+      "n",
+      "e",
+      "d"
+    ],
+    "answer": "fanned",
+    "acceptedAnswers": [
+      "fanned"
+    ],
+    "explanation": "fan → fanned",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  },
+  {
+    "id": "cvc-double-100",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ spot",
+    "tiles": [
+      "s",
+      "p",
+      "o",
+      "t",
+      "t",
+      "e",
+      "d"
+    ],
+    "answer": "spotted",
+    "acceptedAnswers": [
+      "spotted"
+    ],
+    "explanation": "spot → spotted",
+    "lessonId": "regular-rule-4",
+    "ruleId": "cvc_double"
+  }
+];
 
 const sentenceQuestionBanks = {
   regularEd: [
@@ -902,17 +7007,1532 @@ function copyQuestionBank(questions, prefix) {
 }
 
 const edForgerQuestions = [
-  ...regularVerbBanks.addEd.filter(([verb]) => !["walk", "jump", "clean", "watch", "help", "open"].includes(verb)).slice(0, 8),
-  ...regularVerbBanks.endingE.filter(([verb]) => !["like", "love", "dance", "close", "live", "move"].includes(verb)).slice(0, 8),
-  ...regularVerbBanks.endingY.filter(([verb]) => !["play", "enjoy", "stay", "obey", "study", "cry"].includes(verb)).slice(0, 8),
-  ...regularVerbBanks.doubleCvc.filter(([verb]) => !["stop", "plan", "drop", "clap", "grab", "hug"].includes(verb)).slice(0, 8)
-].map(item => makeRegularQuestion(item, "เลือกการสะกดรูปอดีตที่ถูกต้อง"))
-  .concat(
-    copyQuestionBank(sentenceQuestionBanks.regularEd, "ed_forger"),
-    copyQuestionBank(sentenceQuestionBanks.endingE, "ed_forger"),
-    copyQuestionBank(sentenceQuestionBanks.endingY, "ed_forger"),
-    copyQuestionBank(sentenceQuestionBanks.doubleCvc, "ed_forger")
-  );
+  {
+    "id": "ed-forger-001",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ walk",
+    "options": [
+      "walkked",
+      "walked",
+      "walkd",
+      "walkied"
+    ],
+    "answer": "walked",
+    "explanation": "walk ใช้กฎ เติม -ed จึงเป็น walked",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-002",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ jump",
+    "options": [
+      "jumpd",
+      "jumped",
+      "jumpied",
+      "jumpped"
+    ],
+    "answer": "jumped",
+    "explanation": "jump ใช้กฎ เติม -ed จึงเป็น jumped",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-003",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ help",
+    "options": [
+      "helpied",
+      "helpd",
+      "helped",
+      "helpped"
+    ],
+    "answer": "helped",
+    "explanation": "help ใช้กฎ เติม -ed จึงเป็น helped",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-004",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ watch",
+    "options": [
+      "watchd",
+      "watchied",
+      "watchhed",
+      "watched"
+    ],
+    "answer": "watched",
+    "explanation": "watch ใช้กฎ เติม -ed จึงเป็น watched",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-005",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ open",
+    "options": [
+      "opend",
+      "openied",
+      "opened",
+      "openned"
+    ],
+    "answer": "opened",
+    "explanation": "open ใช้กฎ เติม -ed จึงเป็น opened",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-006",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ clean",
+    "options": [
+      "cleaned",
+      "cleanied",
+      "cleanned",
+      "cleand"
+    ],
+    "answer": "cleaned",
+    "explanation": "clean ใช้กฎ เติม -ed จึงเป็น cleaned",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-007",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ work",
+    "options": [
+      "workied",
+      "workked",
+      "worked",
+      "workd"
+    ],
+    "answer": "worked",
+    "explanation": "work ใช้กฎ เติม -ed จึงเป็น worked",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-008",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ look",
+    "options": [
+      "lookd",
+      "lookked",
+      "looked",
+      "lookied"
+    ],
+    "answer": "looked",
+    "explanation": "look ใช้กฎ เติม -ed จึงเป็น looked",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-009",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ talk",
+    "options": [
+      "talkd",
+      "talkied",
+      "talked",
+      "talkked"
+    ],
+    "answer": "talked",
+    "explanation": "talk ใช้กฎ เติม -ed จึงเป็น talked",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-010",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ cook",
+    "options": [
+      "cookd",
+      "cookied",
+      "cooked",
+      "cookked"
+    ],
+    "answer": "cooked",
+    "explanation": "cook ใช้กฎ เติม -ed จึงเป็น cooked",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-011",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ wash",
+    "options": [
+      "washhed",
+      "washied",
+      "washd",
+      "washed"
+    ],
+    "answer": "washed",
+    "explanation": "wash ใช้กฎ เติม -ed จึงเป็น washed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-012",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ finish",
+    "options": [
+      "finishied",
+      "finished",
+      "finishd",
+      "finishhed"
+    ],
+    "answer": "finished",
+    "explanation": "finish ใช้กฎ เติม -ed จึงเป็น finished",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-013",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ listen",
+    "options": [
+      "listend",
+      "listenied",
+      "listenned",
+      "listened"
+    ],
+    "answer": "listened",
+    "explanation": "listen ใช้กฎ เติม -ed จึงเป็น listened",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-014",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ visit",
+    "options": [
+      "visitted",
+      "visitied",
+      "visited",
+      "visitd"
+    ],
+    "answer": "visited",
+    "explanation": "visit ใช้กฎ เติม -ed จึงเป็น visited",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-015",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ start",
+    "options": [
+      "startied",
+      "started",
+      "startted",
+      "startd"
+    ],
+    "answer": "started",
+    "explanation": "start ใช้กฎ เติม -ed จึงเป็น started",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-016",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ need",
+    "options": [
+      "needied",
+      "needded",
+      "needd",
+      "needed"
+    ],
+    "answer": "needed",
+    "explanation": "need ใช้กฎ เติม -ed จึงเป็น needed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-017",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ want",
+    "options": [
+      "wanted",
+      "wantted",
+      "wantd",
+      "wantied"
+    ],
+    "answer": "wanted",
+    "explanation": "want ใช้กฎ เติม -ed จึงเป็น wanted",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-018",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ call",
+    "options": [
+      "calld",
+      "callied",
+      "callled",
+      "called"
+    ],
+    "answer": "called",
+    "explanation": "call ใช้กฎ เติม -ed จึงเป็น called",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-019",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ paint",
+    "options": [
+      "paintted",
+      "paintied",
+      "painted",
+      "paintd"
+    ],
+    "answer": "painted",
+    "explanation": "paint ใช้กฎ เติม -ed จึงเป็น painted",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-020",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ ask",
+    "options": [
+      "asked",
+      "askked",
+      "askied",
+      "askd"
+    ],
+    "answer": "asked",
+    "explanation": "ask ใช้กฎ เติม -ed จึงเป็น asked",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-021",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ answer",
+    "options": [
+      "answeried",
+      "answerd",
+      "answered",
+      "answerred"
+    ],
+    "answer": "answered",
+    "explanation": "answer ใช้กฎ เติม -ed จึงเป็น answered",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-022",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ push",
+    "options": [
+      "pushhed",
+      "pushied",
+      "pushd",
+      "pushed"
+    ],
+    "answer": "pushed",
+    "explanation": "push ใช้กฎ เติม -ed จึงเป็น pushed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-023",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ pull",
+    "options": [
+      "pulld",
+      "pulled",
+      "pullied",
+      "pullled"
+    ],
+    "answer": "pulled",
+    "explanation": "pull ใช้กฎ เติม -ed จึงเป็น pulled",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-024",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ touch",
+    "options": [
+      "touchd",
+      "touched",
+      "touchied",
+      "touchhed"
+    ],
+    "answer": "touched",
+    "explanation": "touch ใช้กฎ เติม -ed จึงเป็น touched",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-025",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ join",
+    "options": [
+      "joind",
+      "joinned",
+      "joinied",
+      "joined"
+    ],
+    "answer": "joined",
+    "explanation": "join ใช้กฎ เติม -ed จึงเป็น joined",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-026",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ wait",
+    "options": [
+      "waitted",
+      "waited",
+      "waitd",
+      "waitied"
+    ],
+    "answer": "waited",
+    "explanation": "wait ใช้กฎ เติม -ed จึงเป็น waited",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-027",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ learn",
+    "options": [
+      "learnned",
+      "learnied",
+      "learned",
+      "learnd"
+    ],
+    "answer": "learned",
+    "explanation": "learn ใช้กฎ เติม -ed จึงเป็น learned",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-028",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ remember",
+    "options": [
+      "remembered",
+      "rememberred",
+      "rememberd",
+      "rememberied"
+    ],
+    "answer": "remembered",
+    "explanation": "remember ใช้กฎ เติม -ed จึงเป็น remembered",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-029",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ collect",
+    "options": [
+      "collectted",
+      "collectied",
+      "collected",
+      "collectd"
+    ],
+    "answer": "collected",
+    "explanation": "collect ใช้กฎ เติม -ed จึงเป็น collected",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-030",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ repair",
+    "options": [
+      "repairied",
+      "repaired",
+      "repaird",
+      "repairred"
+    ],
+    "answer": "repaired",
+    "explanation": "repair ใช้กฎ เติม -ed จึงเป็น repaired",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-031",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ fix",
+    "options": [
+      "fixxed",
+      "fixed",
+      "fixied",
+      "fixd"
+    ],
+    "answer": "fixed",
+    "explanation": "fix ใช้กฎ เติม -ed จึงเป็น fixed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-032",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ count",
+    "options": [
+      "countted",
+      "countied",
+      "countd",
+      "counted"
+    ],
+    "answer": "counted",
+    "explanation": "count ใช้กฎ เติม -ed จึงเป็น counted",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-033",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ turn",
+    "options": [
+      "turned",
+      "turnied",
+      "turnned",
+      "turnd"
+    ],
+    "answer": "turned",
+    "explanation": "turn ใช้กฎ เติม -ed จึงเป็น turned",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-034",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ follow",
+    "options": [
+      "followied",
+      "followed",
+      "followd",
+      "followwed"
+    ],
+    "answer": "followed",
+    "explanation": "follow ใช้กฎ เติม -ed จึงเป็น followed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-035",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ show",
+    "options": [
+      "showwed",
+      "showied",
+      "showd",
+      "showed"
+    ],
+    "answer": "showed",
+    "explanation": "show ใช้กฎ เติม -ed จึงเป็น showed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-036",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ rain",
+    "options": [
+      "rainned",
+      "rained",
+      "raind",
+      "rainied"
+    ],
+    "answer": "rained",
+    "explanation": "rain ใช้กฎ เติม -ed จึงเป็น rained",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-037",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ snow",
+    "options": [
+      "snowied",
+      "snowwed",
+      "snowed",
+      "snowd"
+    ],
+    "answer": "snowed",
+    "explanation": "snow ใช้กฎ เติม -ed จึงเป็น snowed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-038",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ brush",
+    "options": [
+      "brushhed",
+      "brushd",
+      "brushied",
+      "brushed"
+    ],
+    "answer": "brushed",
+    "explanation": "brush ใช้กฎ เติม -ed จึงเป็น brushed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-039",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ cross",
+    "options": [
+      "crossd",
+      "crossied",
+      "crossed",
+      "crosssed"
+    ],
+    "answer": "crossed",
+    "explanation": "cross ใช้กฎ เติม -ed จึงเป็น crossed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-040",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ check",
+    "options": [
+      "checkked",
+      "checkd",
+      "checkied",
+      "checked"
+    ],
+    "answer": "checked",
+    "explanation": "check ใช้กฎ เติม -ed จึงเป็น checked",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-041",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ like",
+    "options": [
+      "likeied",
+      "likeed",
+      "liked",
+      "likeeed"
+    ],
+    "answer": "liked",
+    "explanation": "like ใช้กฎ ลงท้าย e เติม -d จึงเป็น liked",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-042",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ love",
+    "options": [
+      "loveeed",
+      "loveed",
+      "loved",
+      "loveied"
+    ],
+    "answer": "loved",
+    "explanation": "love ใช้กฎ ลงท้าย e เติม -d จึงเป็น loved",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-043",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ dance",
+    "options": [
+      "danced",
+      "danceed",
+      "danceied",
+      "danceeed"
+    ],
+    "answer": "danced",
+    "explanation": "dance ใช้กฎ ลงท้าย e เติม -d จึงเป็น danced",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-044",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ live",
+    "options": [
+      "lived",
+      "liveed",
+      "liveeed",
+      "liveied"
+    ],
+    "answer": "lived",
+    "explanation": "live ใช้กฎ ลงท้าย e เติม -d จึงเป็น lived",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-045",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ close",
+    "options": [
+      "closeed",
+      "closed",
+      "closeeed",
+      "closeied"
+    ],
+    "answer": "closed",
+    "explanation": "close ใช้กฎ ลงท้าย e เติม -d จึงเป็น closed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-046",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ move",
+    "options": [
+      "moveed",
+      "moveied",
+      "moved",
+      "moveeed"
+    ],
+    "answer": "moved",
+    "explanation": "move ใช้กฎ ลงท้าย e เติม -d จึงเป็น moved",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-047",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ use",
+    "options": [
+      "used",
+      "useed",
+      "useied",
+      "useeed"
+    ],
+    "answer": "used",
+    "explanation": "use ใช้กฎ ลงท้าย e เติม -d จึงเป็น used",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-048",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ smile",
+    "options": [
+      "smileeed",
+      "smiled",
+      "smileied",
+      "smileed"
+    ],
+    "answer": "smiled",
+    "explanation": "smile ใช้กฎ ลงท้าย e เติม -d จึงเป็น smiled",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-049",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ arrive",
+    "options": [
+      "arrived",
+      "arriveied",
+      "arriveed",
+      "arriveeed"
+    ],
+    "answer": "arrived",
+    "explanation": "arrive ใช้กฎ ลงท้าย e เติม -d จึงเป็น arrived",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-050",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ decide",
+    "options": [
+      "decideeed",
+      "decided",
+      "decideied",
+      "decideed"
+    ],
+    "answer": "decided",
+    "explanation": "decide ใช้กฎ ลงท้าย e เติม -d จึงเป็น decided",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-051",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ practice",
+    "options": [
+      "practiceied",
+      "practiceed",
+      "practiceeed",
+      "practiced"
+    ],
+    "answer": "practiced",
+    "explanation": "practice ใช้กฎ ลงท้าย e เติม -d จึงเป็น practiced",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-052",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ change",
+    "options": [
+      "changed",
+      "changeeed",
+      "changeed",
+      "changeied"
+    ],
+    "answer": "changed",
+    "explanation": "change ใช้กฎ ลงท้าย e เติม -d จึงเป็น changed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-053",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ save",
+    "options": [
+      "saveed",
+      "saved",
+      "saveeed",
+      "saveied"
+    ],
+    "answer": "saved",
+    "explanation": "save ใช้กฎ ลงท้าย e เติม -d จึงเป็น saved",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-054",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ hope",
+    "options": [
+      "hopeied",
+      "hoped",
+      "hopeed",
+      "hopeeed"
+    ],
+    "answer": "hoped",
+    "explanation": "hope ใช้กฎ ลงท้าย e เติม -d จึงเป็น hoped",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-055",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ invite",
+    "options": [
+      "invited",
+      "inviteed",
+      "inviteeed",
+      "inviteied"
+    ],
+    "answer": "invited",
+    "explanation": "invite ใช้กฎ ลงท้าย e เติม -d จึงเป็น invited",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-056",
+    "type": "multiple-choice",
+    "prompt": "คำว่า answer ใช้กฎใด",
+    "options": [
+      "ใช้ was/were",
+      "ไม่ต้องเปลี่ยนรูป",
+      "เติม -ed",
+      "Irregular Verb"
+    ],
+    "answer": "เติม -ed",
+    "explanation": "answer → answered เพราะเติม -ed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-057",
+    "type": "multiple-choice",
+    "prompt": "คำว่า push ใช้กฎใด",
+    "options": [
+      "ใช้ was/were",
+      "ไม่ต้องเปลี่ยนรูป",
+      "เติม -ed",
+      "Irregular Verb"
+    ],
+    "answer": "เติม -ed",
+    "explanation": "push → pushed เพราะเติม -ed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-058",
+    "type": "multiple-choice",
+    "prompt": "คำว่า pull ใช้กฎใด",
+    "options": [
+      "ใช้ was/were",
+      "ไม่ต้องเปลี่ยนรูป",
+      "เติม -ed",
+      "Irregular Verb"
+    ],
+    "answer": "เติม -ed",
+    "explanation": "pull → pulled เพราะเติม -ed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-059",
+    "type": "multiple-choice",
+    "prompt": "คำว่า touch ใช้กฎใด",
+    "options": [
+      "ใช้ was/were",
+      "ไม่ต้องเปลี่ยนรูป",
+      "เติม -ed",
+      "Irregular Verb"
+    ],
+    "answer": "เติม -ed",
+    "explanation": "touch → touched เพราะเติม -ed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-060",
+    "type": "multiple-choice",
+    "prompt": "คำว่า join ใช้กฎใด",
+    "options": [
+      "ใช้ was/were",
+      "ไม่ต้องเปลี่ยนรูป",
+      "เติม -ed",
+      "Irregular Verb"
+    ],
+    "answer": "เติม -ed",
+    "explanation": "join → joined เพราะเติม -ed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-061",
+    "type": "multiple-choice",
+    "prompt": "คำว่า wait ใช้กฎใด",
+    "options": [
+      "ใช้ was/were",
+      "ไม่ต้องเปลี่ยนรูป",
+      "เติม -ed",
+      "Irregular Verb"
+    ],
+    "answer": "เติม -ed",
+    "explanation": "wait → waited เพราะเติม -ed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-062",
+    "type": "multiple-choice",
+    "prompt": "คำว่า learn ใช้กฎใด",
+    "options": [
+      "ใช้ was/were",
+      "ไม่ต้องเปลี่ยนรูป",
+      "เติม -ed",
+      "Irregular Verb"
+    ],
+    "answer": "เติม -ed",
+    "explanation": "learn → learned เพราะเติม -ed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-063",
+    "type": "multiple-choice",
+    "prompt": "คำว่า remember ใช้กฎใด",
+    "options": [
+      "ใช้ was/were",
+      "ไม่ต้องเปลี่ยนรูป",
+      "เติม -ed",
+      "Irregular Verb"
+    ],
+    "answer": "เติม -ed",
+    "explanation": "remember → remembered เพราะเติม -ed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-064",
+    "type": "multiple-choice",
+    "prompt": "คำว่า collect ใช้กฎใด",
+    "options": [
+      "ใช้ was/were",
+      "ไม่ต้องเปลี่ยนรูป",
+      "เติม -ed",
+      "Irregular Verb"
+    ],
+    "answer": "เติม -ed",
+    "explanation": "collect → collected เพราะเติม -ed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-065",
+    "type": "multiple-choice",
+    "prompt": "คำว่า repair ใช้กฎใด",
+    "options": [
+      "ใช้ was/were",
+      "ไม่ต้องเปลี่ยนรูป",
+      "เติม -ed",
+      "Irregular Verb"
+    ],
+    "answer": "เติม -ed",
+    "explanation": "repair → repaired เพราะเติม -ed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-066",
+    "type": "multiple-choice",
+    "prompt": "คำว่า fix ใช้กฎใด",
+    "options": [
+      "ใช้ was/were",
+      "ไม่ต้องเปลี่ยนรูป",
+      "เติม -ed",
+      "Irregular Verb"
+    ],
+    "answer": "เติม -ed",
+    "explanation": "fix → fixed เพราะเติม -ed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-067",
+    "type": "multiple-choice",
+    "prompt": "คำว่า count ใช้กฎใด",
+    "options": [
+      "ใช้ was/were",
+      "ไม่ต้องเปลี่ยนรูป",
+      "เติม -ed",
+      "Irregular Verb"
+    ],
+    "answer": "เติม -ed",
+    "explanation": "count → counted เพราะเติม -ed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-068",
+    "type": "multiple-choice",
+    "prompt": "คำว่า turn ใช้กฎใด",
+    "options": [
+      "ใช้ was/were",
+      "ไม่ต้องเปลี่ยนรูป",
+      "เติม -ed",
+      "Irregular Verb"
+    ],
+    "answer": "เติม -ed",
+    "explanation": "turn → turned เพราะเติม -ed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-069",
+    "type": "multiple-choice",
+    "prompt": "คำว่า follow ใช้กฎใด",
+    "options": [
+      "ใช้ was/were",
+      "ไม่ต้องเปลี่ยนรูป",
+      "เติม -ed",
+      "Irregular Verb"
+    ],
+    "answer": "เติม -ed",
+    "explanation": "follow → followed เพราะเติม -ed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-070",
+    "type": "multiple-choice",
+    "prompt": "คำว่า show ใช้กฎใด",
+    "options": [
+      "ใช้ was/were",
+      "ไม่ต้องเปลี่ยนรูป",
+      "เติม -ed",
+      "Irregular Verb"
+    ],
+    "answer": "เติม -ed",
+    "explanation": "show → showed เพราะเติม -ed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-071",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Regular Verb ไม่ถูกต้อง",
+    "options": [
+      "We completed yesterday.",
+      "I raind yesterday.",
+      "I rained yesterday.",
+      "They divided yesterday."
+    ],
+    "answer": "I raind yesterday.",
+    "explanation": "rain ต้องเป็น rained",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-072",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Regular Verb ไม่ถูกต้อง (ชุดที่ 2)",
+    "options": [
+      "We improved yesterday.",
+      "I snowed yesterday.",
+      "I snowd yesterday.",
+      "They included yesterday."
+    ],
+    "answer": "I snowd yesterday.",
+    "explanation": "snow ต้องเป็น snowed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-073",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Regular Verb ไม่ถูกต้อง (ชุดที่ 3)",
+    "options": [
+      "We compared yesterday.",
+      "They measured yesterday.",
+      "I brushd yesterday.",
+      "I brushed yesterday."
+    ],
+    "answer": "I brushd yesterday.",
+    "explanation": "brush ต้องเป็น brushed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-074",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Regular Verb ไม่ถูกต้อง (ชุดที่ 4)",
+    "options": [
+      "I crossed yesterday.",
+      "We divided yesterday.",
+      "They played yesterday.",
+      "I crossd yesterday."
+    ],
+    "answer": "I crossd yesterday.",
+    "explanation": "cross ต้องเป็น crossed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-075",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Regular Verb ไม่ถูกต้อง (ชุดที่ 5)",
+    "options": [
+      "I checked yesterday.",
+      "We included yesterday.",
+      "They enjoyed yesterday.",
+      "I checkd yesterday."
+    ],
+    "answer": "I checkd yesterday.",
+    "explanation": "check ต้องเป็น checked",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "regular_ed"
+  },
+  {
+    "id": "ed-forger-076",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Regular Verb ไม่ถูกต้อง (ชุดที่ 6)",
+    "options": [
+      "We measured yesterday.",
+      "I likeed yesterday.",
+      "I liked yesterday.",
+      "They stayed yesterday."
+    ],
+    "answer": "I likeed yesterday.",
+    "explanation": "like ต้องเป็น liked",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-077",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Regular Verb ไม่ถูกต้อง (ชุดที่ 7)",
+    "options": [
+      "I loveed yesterday.",
+      "They prayed yesterday.",
+      "We played yesterday.",
+      "I loved yesterday."
+    ],
+    "answer": "I loveed yesterday.",
+    "explanation": "love ต้องเป็น loved",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-078",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Regular Verb ไม่ถูกต้อง (ชุดที่ 8)",
+    "options": [
+      "They employed yesterday.",
+      "We enjoyed yesterday.",
+      "I danceed yesterday.",
+      "I danced yesterday."
+    ],
+    "answer": "I danceed yesterday.",
+    "explanation": "dance ต้องเป็น danced",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-079",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Regular Verb ไม่ถูกต้อง (ชุดที่ 9)",
+    "options": [
+      "I liveed yesterday.",
+      "They destroyed yesterday.",
+      "I lived yesterday.",
+      "We stayed yesterday."
+    ],
+    "answer": "I liveed yesterday.",
+    "explanation": "live ต้องเป็น lived",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-080",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Regular Verb ไม่ถูกต้อง (ชุดที่ 10)",
+    "options": [
+      "They delayed yesterday.",
+      "I closed yesterday.",
+      "We prayed yesterday.",
+      "I closeed yesterday."
+    ],
+    "answer": "I closeed yesterday.",
+    "explanation": "close ต้องเป็น closed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-081",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ move",
+    "answer": "moved",
+    "acceptedAnswers": [
+      "moved"
+    ],
+    "explanation": "move ใช้กฎ ลงท้าย e เติม -d จึงเป็น moved",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-082",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ use",
+    "answer": "used",
+    "acceptedAnswers": [
+      "used"
+    ],
+    "explanation": "use ใช้กฎ ลงท้าย e เติม -d จึงเป็น used",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-083",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ smile",
+    "answer": "smiled",
+    "acceptedAnswers": [
+      "smiled"
+    ],
+    "explanation": "smile ใช้กฎ ลงท้าย e เติม -d จึงเป็น smiled",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-084",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ arrive",
+    "answer": "arrived",
+    "acceptedAnswers": [
+      "arrived"
+    ],
+    "explanation": "arrive ใช้กฎ ลงท้าย e เติม -d จึงเป็น arrived",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-085",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ decide",
+    "answer": "decided",
+    "acceptedAnswers": [
+      "decided"
+    ],
+    "explanation": "decide ใช้กฎ ลงท้าย e เติม -d จึงเป็น decided",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-086",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ practice",
+    "answer": "practiced",
+    "acceptedAnswers": [
+      "practiced"
+    ],
+    "explanation": "practice ใช้กฎ ลงท้าย e เติม -d จึงเป็น practiced",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-087",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ change",
+    "answer": "changed",
+    "acceptedAnswers": [
+      "changed"
+    ],
+    "explanation": "change ใช้กฎ ลงท้าย e เติม -d จึงเป็น changed",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-088",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ save",
+    "answer": "saved",
+    "acceptedAnswers": [
+      "saved"
+    ],
+    "explanation": "save ใช้กฎ ลงท้าย e เติม -d จึงเป็น saved",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-089",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ hope",
+    "answer": "hoped",
+    "acceptedAnswers": [
+      "hoped"
+    ],
+    "explanation": "hope ใช้กฎ ลงท้าย e เติม -d จึงเป็น hoped",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-090",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ invite",
+    "answer": "invited",
+    "acceptedAnswers": [
+      "invited"
+    ],
+    "explanation": "invite ใช้กฎ ลงท้าย e เติม -d จึงเป็น invited",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "ending_e_add_d"
+  },
+  {
+    "id": "ed-forger-091",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ study",
+    "tiles": [
+      "s",
+      "t",
+      "u",
+      "d",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "studied",
+    "acceptedAnswers": [
+      "studied"
+    ],
+    "explanation": "study ใช้กฎ ใช้ y rule",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "ed-forger-092",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ cry",
+    "tiles": [
+      "c",
+      "r",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "cried",
+    "acceptedAnswers": [
+      "cried"
+    ],
+    "explanation": "cry ใช้กฎ ใช้ y rule",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "ed-forger-093",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ try",
+    "tiles": [
+      "t",
+      "r",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "tried",
+    "acceptedAnswers": [
+      "tried"
+    ],
+    "explanation": "try ใช้กฎ ใช้ y rule",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "ed-forger-094",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ carry",
+    "tiles": [
+      "c",
+      "a",
+      "r",
+      "r",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "carried",
+    "acceptedAnswers": [
+      "carried"
+    ],
+    "explanation": "carry ใช้กฎ ใช้ y rule",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "ed-forger-095",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ marry",
+    "tiles": [
+      "m",
+      "a",
+      "r",
+      "r",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "married",
+    "acceptedAnswers": [
+      "married"
+    ],
+    "explanation": "marry ใช้กฎ ใช้ y rule",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "ed-forger-096",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ reply",
+    "tiles": [
+      "r",
+      "e",
+      "p",
+      "l",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "replied",
+    "acceptedAnswers": [
+      "replied"
+    ],
+    "explanation": "reply ใช้กฎ ใช้ y rule",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "ed-forger-097",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ apply",
+    "tiles": [
+      "a",
+      "p",
+      "p",
+      "l",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "applied",
+    "acceptedAnswers": [
+      "applied"
+    ],
+    "explanation": "apply ใช้กฎ ใช้ y rule",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "ed-forger-098",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ copy",
+    "tiles": [
+      "c",
+      "o",
+      "p",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "copied",
+    "acceptedAnswers": [
+      "copied"
+    ],
+    "explanation": "copy ใช้กฎ ใช้ y rule",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "ed-forger-099",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ worry",
+    "tiles": [
+      "w",
+      "o",
+      "r",
+      "r",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "worried",
+    "acceptedAnswers": [
+      "worried"
+    ],
+    "explanation": "worry ใช้กฎ ใช้ y rule",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "y_rule"
+  },
+  {
+    "id": "ed-forger-100",
+    "type": "word-arrangement",
+    "prompt": "เรียงตัวอักษรให้เป็น V2 ของ hurry",
+    "tiles": [
+      "h",
+      "u",
+      "r",
+      "r",
+      "i",
+      "e",
+      "d"
+    ],
+    "answer": "hurried",
+    "acceptedAnswers": [
+      "hurried"
+    ],
+    "explanation": "hurry ใช้กฎ ใช้ y rule",
+    "lessonId": "ed-mini-boss",
+    "ruleId": "y_rule"
+  }
+];
 
 const regularRuleMetaByVerb = {};
 
@@ -1201,766 +8821,8911 @@ function makeIrregularQuestion([verb, answer, distractors]) {
 }
 
 const irregularPracticeQuestions = [
-  ...irregularVerbBank.slice(6, 14).map(makeIrregularQuestion),
-  { id: "irregular_speak_sentence_00", type: "sentence-fill", ruleId: "irregular_v2", lessonId: "irregular-lesson", baseVerb: "speak", sentence: "Yesterday, I ____ to the old book.", options: ["spoke", "speaked", "speaks", "speaking"], answer: "spoke", explanation: "speak เป็น Irregular Verb รูป V2 คือ spoke" },
-  ...copyQuestionBank(sentenceQuestionBanks.irregular, "irregular_practice")
+  {
+    "id": "irregular-basic-001",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ go",
+    "options": [
+      "goed",
+      "got",
+      "god",
+      "went"
+    ],
+    "answer": "went",
+    "explanation": "go เป็น Irregular Verb รูปอดีตคือ went",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-002",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ eat",
+    "options": [
+      "eatt",
+      "eated",
+      "ate",
+      "eatd"
+    ],
+    "answer": "ate",
+    "explanation": "eat เป็น Irregular Verb รูปอดีตคือ ate",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-003",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ see",
+    "options": [
+      "seet",
+      "saw",
+      "seeed",
+      "seed"
+    ],
+    "answer": "saw",
+    "explanation": "see เป็น Irregular Verb รูปอดีตคือ saw",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-004",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ buy",
+    "options": [
+      "buyed",
+      "buyt",
+      "bought",
+      "buyd"
+    ],
+    "answer": "bought",
+    "explanation": "buy เป็น Irregular Verb รูปอดีตคือ bought",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-005",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ take",
+    "options": [
+      "takeed",
+      "took",
+      "taket",
+      "taked"
+    ],
+    "answer": "took",
+    "explanation": "take เป็น Irregular Verb รูปอดีตคือ took",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-006",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ come",
+    "options": [
+      "comeed",
+      "comet",
+      "comed",
+      "came"
+    ],
+    "answer": "came",
+    "explanation": "come เป็น Irregular Verb รูปอดีตคือ came",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-007",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ have",
+    "options": [
+      "havet",
+      "haved",
+      "haveed",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "have เป็น Irregular Verb รูปอดีตคือ had",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-008",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ do",
+    "options": [
+      "doed",
+      "dot",
+      "did",
+      "dod"
+    ],
+    "answer": "did",
+    "explanation": "do เป็น Irregular Verb รูปอดีตคือ did",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-009",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ make",
+    "options": [
+      "maked",
+      "maket",
+      "makeed",
+      "made"
+    ],
+    "answer": "made",
+    "explanation": "make เป็น Irregular Verb รูปอดีตคือ made",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-010",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ write",
+    "options": [
+      "writed",
+      "writet",
+      "wrote",
+      "writeed"
+    ],
+    "answer": "wrote",
+    "explanation": "write เป็น Irregular Verb รูปอดีตคือ wrote",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-011",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ meet",
+    "options": [
+      "meetd",
+      "meeted",
+      "met",
+      "meett"
+    ],
+    "answer": "met",
+    "explanation": "meet เป็น Irregular Verb รูปอดีตคือ met",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-012",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ give",
+    "options": [
+      "gave",
+      "gived",
+      "givet",
+      "giveed"
+    ],
+    "answer": "gave",
+    "explanation": "give เป็น Irregular Verb รูปอดีตคือ gave",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-013",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ get",
+    "options": [
+      "gett",
+      "got",
+      "getd",
+      "geted"
+    ],
+    "answer": "got",
+    "explanation": "get เป็น Irregular Verb รูปอดีตคือ got",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-014",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ read",
+    "options": [
+      "readed",
+      "readt",
+      "read",
+      "readd"
+    ],
+    "answer": "read",
+    "explanation": "read เป็น Irregular Verb รูปอดีตคือ read",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-015",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ say",
+    "options": [
+      "said",
+      "sayed",
+      "sayt",
+      "sayd"
+    ],
+    "answer": "said",
+    "explanation": "say เป็น Irregular Verb รูปอดีตคือ said",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-016",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ tell",
+    "options": [
+      "tellt",
+      "told",
+      "telled",
+      "telld"
+    ],
+    "answer": "told",
+    "explanation": "tell เป็น Irregular Verb รูปอดีตคือ told",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-017",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ sit",
+    "options": [
+      "sited",
+      "sitt",
+      "sitd",
+      "sat"
+    ],
+    "answer": "sat",
+    "explanation": "sit เป็น Irregular Verb รูปอดีตคือ sat",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-018",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ run",
+    "options": [
+      "runt",
+      "rund",
+      "runed",
+      "ran"
+    ],
+    "answer": "ran",
+    "explanation": "run เป็น Irregular Verb รูปอดีตคือ ran",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-019",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ drink",
+    "options": [
+      "drinkt",
+      "drinkd",
+      "drank",
+      "drinked"
+    ],
+    "answer": "drank",
+    "explanation": "drink เป็น Irregular Verb รูปอดีตคือ drank",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-020",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ sing",
+    "options": [
+      "singed",
+      "sang",
+      "singd",
+      "singt"
+    ],
+    "answer": "sang",
+    "explanation": "sing เป็น Irregular Verb รูปอดีตคือ sang",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-021",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ go (ชุดที่ 2)",
+    "options": [
+      "goed",
+      "got",
+      "god",
+      "went"
+    ],
+    "answer": "went",
+    "explanation": "go เป็น Irregular Verb รูปอดีตคือ went",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-022",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ eat (ชุดที่ 2)",
+    "options": [
+      "eatt",
+      "eated",
+      "ate",
+      "eatd"
+    ],
+    "answer": "ate",
+    "explanation": "eat เป็น Irregular Verb รูปอดีตคือ ate",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-023",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ see (ชุดที่ 2)",
+    "options": [
+      "seet",
+      "saw",
+      "seeed",
+      "seed"
+    ],
+    "answer": "saw",
+    "explanation": "see เป็น Irregular Verb รูปอดีตคือ saw",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-024",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ buy (ชุดที่ 2)",
+    "options": [
+      "buyed",
+      "buyt",
+      "bought",
+      "buyd"
+    ],
+    "answer": "bought",
+    "explanation": "buy เป็น Irregular Verb รูปอดีตคือ bought",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-025",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ take (ชุดที่ 2)",
+    "options": [
+      "takeed",
+      "took",
+      "taket",
+      "taked"
+    ],
+    "answer": "took",
+    "explanation": "take เป็น Irregular Verb รูปอดีตคือ took",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-026",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ come (ชุดที่ 2)",
+    "options": [
+      "comeed",
+      "comet",
+      "comed",
+      "came"
+    ],
+    "answer": "came",
+    "explanation": "come เป็น Irregular Verb รูปอดีตคือ came",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-027",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ have (ชุดที่ 2)",
+    "options": [
+      "havet",
+      "haved",
+      "haveed",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "have เป็น Irregular Verb รูปอดีตคือ had",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-028",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ do (ชุดที่ 2)",
+    "options": [
+      "doed",
+      "dot",
+      "did",
+      "dod"
+    ],
+    "answer": "did",
+    "explanation": "do เป็น Irregular Verb รูปอดีตคือ did",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-029",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ make (ชุดที่ 2)",
+    "options": [
+      "maked",
+      "maket",
+      "makeed",
+      "made"
+    ],
+    "answer": "made",
+    "explanation": "make เป็น Irregular Verb รูปอดีตคือ made",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-030",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ write (ชุดที่ 2)",
+    "options": [
+      "writed",
+      "writet",
+      "wrote",
+      "writeed"
+    ],
+    "answer": "wrote",
+    "explanation": "write เป็น Irregular Verb รูปอดีตคือ wrote",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-031",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ meet (ชุดที่ 2)",
+    "options": [
+      "meetd",
+      "meeted",
+      "met",
+      "meett"
+    ],
+    "answer": "met",
+    "explanation": "meet เป็น Irregular Verb รูปอดีตคือ met",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-032",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ give (ชุดที่ 2)",
+    "options": [
+      "gave",
+      "gived",
+      "givet",
+      "giveed"
+    ],
+    "answer": "gave",
+    "explanation": "give เป็น Irregular Verb รูปอดีตคือ gave",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-033",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ get (ชุดที่ 2)",
+    "options": [
+      "gett",
+      "got",
+      "getd",
+      "geted"
+    ],
+    "answer": "got",
+    "explanation": "get เป็น Irregular Verb รูปอดีตคือ got",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-034",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ read (ชุดที่ 2)",
+    "options": [
+      "readed",
+      "readt",
+      "read",
+      "readd"
+    ],
+    "answer": "read",
+    "explanation": "read เป็น Irregular Verb รูปอดีตคือ read",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-035",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ say (ชุดที่ 2)",
+    "options": [
+      "said",
+      "sayed",
+      "sayt",
+      "sayd"
+    ],
+    "answer": "said",
+    "explanation": "say เป็น Irregular Verb รูปอดีตคือ said",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-036",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ tell (ชุดที่ 2)",
+    "options": [
+      "tellt",
+      "told",
+      "telled",
+      "telld"
+    ],
+    "answer": "told",
+    "explanation": "tell เป็น Irregular Verb รูปอดีตคือ told",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-037",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ sit (ชุดที่ 2)",
+    "options": [
+      "sited",
+      "sitt",
+      "sitd",
+      "sat"
+    ],
+    "answer": "sat",
+    "explanation": "sit เป็น Irregular Verb รูปอดีตคือ sat",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-038",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ run (ชุดที่ 2)",
+    "options": [
+      "runt",
+      "rund",
+      "runed",
+      "ran"
+    ],
+    "answer": "ran",
+    "explanation": "run เป็น Irregular Verb รูปอดีตคือ ran",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-039",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ drink (ชุดที่ 2)",
+    "options": [
+      "drinkt",
+      "drinkd",
+      "drank",
+      "drinked"
+    ],
+    "answer": "drank",
+    "explanation": "drink เป็น Irregular Verb รูปอดีตคือ drank",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-040",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ sing (ชุดที่ 2)",
+    "options": [
+      "singed",
+      "sang",
+      "singd",
+      "singt"
+    ],
+    "answer": "sang",
+    "explanation": "sing เป็น Irregular Verb รูปอดีตคือ sang",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-041",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ go (ชุดที่ 3)",
+    "options": [
+      "goed",
+      "got",
+      "god",
+      "went"
+    ],
+    "answer": "went",
+    "explanation": "go เป็น Irregular Verb รูปอดีตคือ went",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-042",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ eat (ชุดที่ 3)",
+    "options": [
+      "eatt",
+      "eated",
+      "ate",
+      "eatd"
+    ],
+    "answer": "ate",
+    "explanation": "eat เป็น Irregular Verb รูปอดีตคือ ate",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-043",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ see (ชุดที่ 3)",
+    "options": [
+      "seet",
+      "saw",
+      "seeed",
+      "seed"
+    ],
+    "answer": "saw",
+    "explanation": "see เป็น Irregular Verb รูปอดีตคือ saw",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-044",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ buy (ชุดที่ 3)",
+    "options": [
+      "buyed",
+      "buyt",
+      "bought",
+      "buyd"
+    ],
+    "answer": "bought",
+    "explanation": "buy เป็น Irregular Verb รูปอดีตคือ bought",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-045",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ take (ชุดที่ 3)",
+    "options": [
+      "takeed",
+      "took",
+      "taket",
+      "taked"
+    ],
+    "answer": "took",
+    "explanation": "take เป็น Irregular Verb รูปอดีตคือ took",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-046",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ come (ชุดที่ 3)",
+    "options": [
+      "comeed",
+      "comet",
+      "comed",
+      "came"
+    ],
+    "answer": "came",
+    "explanation": "come เป็น Irregular Verb รูปอดีตคือ came",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-047",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ have (ชุดที่ 3)",
+    "options": [
+      "havet",
+      "haved",
+      "haveed",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "have เป็น Irregular Verb รูปอดีตคือ had",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-048",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ do (ชุดที่ 3)",
+    "options": [
+      "doed",
+      "dot",
+      "did",
+      "dod"
+    ],
+    "answer": "did",
+    "explanation": "do เป็น Irregular Verb รูปอดีตคือ did",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-049",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ make (ชุดที่ 3)",
+    "options": [
+      "maked",
+      "maket",
+      "makeed",
+      "made"
+    ],
+    "answer": "made",
+    "explanation": "make เป็น Irregular Verb รูปอดีตคือ made",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-050",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ write (ชุดที่ 3)",
+    "options": [
+      "writed",
+      "writet",
+      "wrote",
+      "writeed"
+    ],
+    "answer": "wrote",
+    "explanation": "write เป็น Irregular Verb รูปอดีตคือ wrote",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-051",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: come)",
+    "options": [
+      "come",
+      "comed",
+      "came",
+      "comeed"
+    ],
+    "answer": "came",
+    "explanation": "come → came",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-052",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: have)",
+    "options": [
+      "had",
+      "have",
+      "haved",
+      "haveed"
+    ],
+    "answer": "had",
+    "explanation": "have → had",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-053",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: do)",
+    "options": [
+      "dod",
+      "doed",
+      "do",
+      "did"
+    ],
+    "answer": "did",
+    "explanation": "do → did",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-054",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: make)",
+    "options": [
+      "maked",
+      "made",
+      "makeed",
+      "make"
+    ],
+    "answer": "made",
+    "explanation": "make → made",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-055",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: write)",
+    "options": [
+      "wrote",
+      "writeed",
+      "writed",
+      "write"
+    ],
+    "answer": "wrote",
+    "explanation": "write → wrote",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-056",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: meet)",
+    "options": [
+      "met",
+      "meetd",
+      "meeted",
+      "meet"
+    ],
+    "answer": "met",
+    "explanation": "meet → met",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-057",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: give)",
+    "options": [
+      "giveed",
+      "gived",
+      "give",
+      "gave"
+    ],
+    "answer": "gave",
+    "explanation": "give → gave",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-058",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: get)",
+    "options": [
+      "geted",
+      "getd",
+      "got",
+      "get"
+    ],
+    "answer": "got",
+    "explanation": "get → got",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-059",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: read)",
+    "options": [
+      "readed",
+      "ตัวเลือกหลอก 3",
+      "readd",
+      "read"
+    ],
+    "answer": "read",
+    "explanation": "read → read",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-060",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: say)",
+    "options": [
+      "sayd",
+      "sayed",
+      "said",
+      "say"
+    ],
+    "answer": "said",
+    "explanation": "say → said",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-061",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: tell)",
+    "options": [
+      "tell",
+      "telld",
+      "told",
+      "telled"
+    ],
+    "answer": "told",
+    "explanation": "tell → told",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-062",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: sit)",
+    "options": [
+      "sit",
+      "sitd",
+      "sat",
+      "sited"
+    ],
+    "answer": "sat",
+    "explanation": "sit → sat",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-063",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: run)",
+    "options": [
+      "ran",
+      "run",
+      "rund",
+      "runed"
+    ],
+    "answer": "ran",
+    "explanation": "run → ran",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-064",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: drink)",
+    "options": [
+      "drank",
+      "drinkd",
+      "drink",
+      "drinked"
+    ],
+    "answer": "drank",
+    "explanation": "drink → drank",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-065",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: sing)",
+    "options": [
+      "singd",
+      "sing",
+      "singed",
+      "sang"
+    ],
+    "answer": "sang",
+    "explanation": "sing → sang",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-066",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: go)",
+    "options": [
+      "go",
+      "god",
+      "goed",
+      "went"
+    ],
+    "answer": "went",
+    "explanation": "go → went",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-067",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: eat)",
+    "options": [
+      "eatd",
+      "eat",
+      "eated",
+      "ate"
+    ],
+    "answer": "ate",
+    "explanation": "eat → ate",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-068",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: see)",
+    "options": [
+      "see",
+      "seeed",
+      "saw",
+      "seed"
+    ],
+    "answer": "saw",
+    "explanation": "see → saw",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-069",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: buy)",
+    "options": [
+      "buyed",
+      "buyd",
+      "bought",
+      "buy"
+    ],
+    "answer": "bought",
+    "explanation": "buy → bought",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-070",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: take)",
+    "options": [
+      "take",
+      "took",
+      "taked",
+      "takeed"
+    ],
+    "answer": "took",
+    "explanation": "take → took",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-071",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ go ได้ถูกต้อง",
+    "options": [
+      "I god yesterday.",
+      "I go yesterday.",
+      "I goed yesterday.",
+      "I went yesterday."
+    ],
+    "answer": "I went yesterday.",
+    "explanation": "go รูปอดีตคือ went",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-072",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ eat ได้ถูกต้อง",
+    "options": [
+      "I eatd yesterday.",
+      "I eated yesterday.",
+      "I eat yesterday.",
+      "I ate yesterday."
+    ],
+    "answer": "I ate yesterday.",
+    "explanation": "eat รูปอดีตคือ ate",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-073",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ see ได้ถูกต้อง",
+    "options": [
+      "I seed yesterday.",
+      "I seeed yesterday.",
+      "I see yesterday.",
+      "I saw yesterday."
+    ],
+    "answer": "I saw yesterday.",
+    "explanation": "see รูปอดีตคือ saw",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-074",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ buy ได้ถูกต้อง",
+    "options": [
+      "I buyd yesterday.",
+      "I bought yesterday.",
+      "I buy yesterday.",
+      "I buyed yesterday."
+    ],
+    "answer": "I bought yesterday.",
+    "explanation": "buy รูปอดีตคือ bought",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-075",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ take ได้ถูกต้อง",
+    "options": [
+      "I took yesterday.",
+      "I taked yesterday.",
+      "I take yesterday.",
+      "I takeed yesterday."
+    ],
+    "answer": "I took yesterday.",
+    "explanation": "take รูปอดีตคือ took",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-076",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ come ได้ถูกต้อง",
+    "options": [
+      "I come yesterday.",
+      "I comeed yesterday.",
+      "I comed yesterday.",
+      "I came yesterday."
+    ],
+    "answer": "I came yesterday.",
+    "explanation": "come รูปอดีตคือ came",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-077",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ have ได้ถูกต้อง",
+    "options": [
+      "I had yesterday.",
+      "I haved yesterday.",
+      "I have yesterday.",
+      "I haveed yesterday."
+    ],
+    "answer": "I had yesterday.",
+    "explanation": "have รูปอดีตคือ had",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-078",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ do ได้ถูกต้อง",
+    "options": [
+      "I dod yesterday.",
+      "I did yesterday.",
+      "I do yesterday.",
+      "I doed yesterday."
+    ],
+    "answer": "I did yesterday.",
+    "explanation": "do รูปอดีตคือ did",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-079",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ make ได้ถูกต้อง",
+    "options": [
+      "I make yesterday.",
+      "I maked yesterday.",
+      "I makeed yesterday.",
+      "I made yesterday."
+    ],
+    "answer": "I made yesterday.",
+    "explanation": "make รูปอดีตคือ made",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-080",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ write ได้ถูกต้อง",
+    "options": [
+      "I writeed yesterday.",
+      "I write yesterday.",
+      "I writed yesterday.",
+      "I wrote yesterday."
+    ],
+    "answer": "I wrote yesterday.",
+    "explanation": "write รูปอดีตคือ wrote",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-081",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง",
+    "options": [
+      "She goed yesterday.",
+      "We wrote yesterday.",
+      "She went yesterday.",
+      "They came yesterday."
+    ],
+    "answer": "She goed yesterday.",
+    "explanation": "go ต้องเป็น went",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-082",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 2)",
+    "options": [
+      "She ate yesterday.",
+      "They had yesterday.",
+      "We met yesterday.",
+      "She eated yesterday."
+    ],
+    "answer": "She eated yesterday.",
+    "explanation": "eat ต้องเป็น ate",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-083",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 3)",
+    "options": [
+      "They did yesterday.",
+      "She saw yesterday.",
+      "We gave yesterday.",
+      "She seeed yesterday."
+    ],
+    "answer": "She seeed yesterday.",
+    "explanation": "see ต้องเป็น saw",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-084",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 4)",
+    "options": [
+      "They made yesterday.",
+      "We got yesterday.",
+      "She buyed yesterday.",
+      "She bought yesterday."
+    ],
+    "answer": "She buyed yesterday.",
+    "explanation": "buy ต้องเป็น bought",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-085",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 5)",
+    "options": [
+      "We read yesterday.",
+      "She took yesterday.",
+      "She takeed yesterday.",
+      "They wrote yesterday."
+    ],
+    "answer": "She takeed yesterday.",
+    "explanation": "take ต้องเป็น took",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-086",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 6)",
+    "options": [
+      "She came yesterday.",
+      "We said yesterday.",
+      "They met yesterday.",
+      "She comeed yesterday."
+    ],
+    "answer": "She comeed yesterday.",
+    "explanation": "come ต้องเป็น came",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-087",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 7)",
+    "options": [
+      "She had yesterday.",
+      "They gave yesterday.",
+      "We told yesterday.",
+      "She haveed yesterday."
+    ],
+    "answer": "She haveed yesterday.",
+    "explanation": "have ต้องเป็น had",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-088",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 8)",
+    "options": [
+      "We sat yesterday.",
+      "She doed yesterday.",
+      "She did yesterday.",
+      "They got yesterday."
+    ],
+    "answer": "She doed yesterday.",
+    "explanation": "do ต้องเป็น did",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-089",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 9)",
+    "options": [
+      "She made yesterday.",
+      "They read yesterday.",
+      "We ran yesterday.",
+      "She makeed yesterday."
+    ],
+    "answer": "She makeed yesterday.",
+    "explanation": "make ต้องเป็น made",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-090",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 10)",
+    "options": [
+      "She wrote yesterday.",
+      "We drank yesterday.",
+      "They said yesterday.",
+      "She writeed yesterday."
+    ],
+    "answer": "She writeed yesterday.",
+    "explanation": "write ต้องเป็น wrote",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-091",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ meet",
+    "answer": "met",
+    "acceptedAnswers": [
+      "met"
+    ],
+    "explanation": "meet → met",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-092",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ give",
+    "answer": "gave",
+    "acceptedAnswers": [
+      "gave"
+    ],
+    "explanation": "give → gave",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-093",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ get",
+    "answer": "got",
+    "acceptedAnswers": [
+      "got"
+    ],
+    "explanation": "get → got",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-094",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ read",
+    "answer": "read",
+    "acceptedAnswers": [
+      "read"
+    ],
+    "explanation": "read → read",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-095",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ say",
+    "answer": "said",
+    "acceptedAnswers": [
+      "said"
+    ],
+    "explanation": "say → said",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-096",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ tell",
+    "answer": "told",
+    "acceptedAnswers": [
+      "told"
+    ],
+    "explanation": "tell → told",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-097",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ sit",
+    "answer": "sat",
+    "acceptedAnswers": [
+      "sat"
+    ],
+    "explanation": "sit → sat",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-098",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ run",
+    "answer": "ran",
+    "acceptedAnswers": [
+      "ran"
+    ],
+    "explanation": "run → ran",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-099",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ drink",
+    "answer": "drank",
+    "acceptedAnswers": [
+      "drank"
+    ],
+    "explanation": "drink → drank",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-basic-100",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ sing",
+    "answer": "sang",
+    "acceptedAnswers": [
+      "sang"
+    ],
+    "explanation": "sing → sang",
+    "lessonId": "irregular-lesson",
+    "ruleId": "irregular_v2"
+  }
 ];
 
-const irregularWraithQuestions = irregularVerbBank
-  .slice(14)
-  .map(makeIrregularQuestion)
-  .concat(copyQuestionBank(sentenceQuestionBanks.irregular, "irregular_wraith"));
+const irregularWraithQuestions = [
+  {
+    "id": "irregular-wraith-001",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ go",
+    "options": [
+      "goed",
+      "got",
+      "god",
+      "went"
+    ],
+    "answer": "went",
+    "explanation": "go เป็น Irregular Verb รูปอดีตคือ went",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-002",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ eat",
+    "options": [
+      "eatt",
+      "eated",
+      "ate",
+      "eatd"
+    ],
+    "answer": "ate",
+    "explanation": "eat เป็น Irregular Verb รูปอดีตคือ ate",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-003",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ see",
+    "options": [
+      "seet",
+      "saw",
+      "seeed",
+      "seed"
+    ],
+    "answer": "saw",
+    "explanation": "see เป็น Irregular Verb รูปอดีตคือ saw",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-004",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ buy",
+    "options": [
+      "buyed",
+      "buyt",
+      "bought",
+      "buyd"
+    ],
+    "answer": "bought",
+    "explanation": "buy เป็น Irregular Verb รูปอดีตคือ bought",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-005",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ take",
+    "options": [
+      "takeed",
+      "took",
+      "taket",
+      "taked"
+    ],
+    "answer": "took",
+    "explanation": "take เป็น Irregular Verb รูปอดีตคือ took",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-006",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ come",
+    "options": [
+      "comeed",
+      "comet",
+      "comed",
+      "came"
+    ],
+    "answer": "came",
+    "explanation": "come เป็น Irregular Verb รูปอดีตคือ came",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-007",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ have",
+    "options": [
+      "havet",
+      "haved",
+      "haveed",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "have เป็น Irregular Verb รูปอดีตคือ had",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-008",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ do",
+    "options": [
+      "doed",
+      "dot",
+      "did",
+      "dod"
+    ],
+    "answer": "did",
+    "explanation": "do เป็น Irregular Verb รูปอดีตคือ did",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-009",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ make",
+    "options": [
+      "maked",
+      "maket",
+      "makeed",
+      "made"
+    ],
+    "answer": "made",
+    "explanation": "make เป็น Irregular Verb รูปอดีตคือ made",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-010",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ write",
+    "options": [
+      "writed",
+      "writet",
+      "wrote",
+      "writeed"
+    ],
+    "answer": "wrote",
+    "explanation": "write เป็น Irregular Verb รูปอดีตคือ wrote",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-011",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ meet",
+    "options": [
+      "meetd",
+      "meeted",
+      "met",
+      "meett"
+    ],
+    "answer": "met",
+    "explanation": "meet เป็น Irregular Verb รูปอดีตคือ met",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-012",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ give",
+    "options": [
+      "gave",
+      "gived",
+      "givet",
+      "giveed"
+    ],
+    "answer": "gave",
+    "explanation": "give เป็น Irregular Verb รูปอดีตคือ gave",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-013",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ get",
+    "options": [
+      "gett",
+      "got",
+      "getd",
+      "geted"
+    ],
+    "answer": "got",
+    "explanation": "get เป็น Irregular Verb รูปอดีตคือ got",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-014",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ read",
+    "options": [
+      "readed",
+      "readt",
+      "read",
+      "readd"
+    ],
+    "answer": "read",
+    "explanation": "read เป็น Irregular Verb รูปอดีตคือ read",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-015",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ say",
+    "options": [
+      "said",
+      "sayed",
+      "sayt",
+      "sayd"
+    ],
+    "answer": "said",
+    "explanation": "say เป็น Irregular Verb รูปอดีตคือ said",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-016",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ tell",
+    "options": [
+      "tellt",
+      "told",
+      "telled",
+      "telld"
+    ],
+    "answer": "told",
+    "explanation": "tell เป็น Irregular Verb รูปอดีตคือ told",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-017",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ sit",
+    "options": [
+      "sited",
+      "sitt",
+      "sitd",
+      "sat"
+    ],
+    "answer": "sat",
+    "explanation": "sit เป็น Irregular Verb รูปอดีตคือ sat",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-018",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ run",
+    "options": [
+      "runt",
+      "rund",
+      "runed",
+      "ran"
+    ],
+    "answer": "ran",
+    "explanation": "run เป็น Irregular Verb รูปอดีตคือ ran",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-019",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ drink",
+    "options": [
+      "drinkt",
+      "drinkd",
+      "drank",
+      "drinked"
+    ],
+    "answer": "drank",
+    "explanation": "drink เป็น Irregular Verb รูปอดีตคือ drank",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-020",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ sing",
+    "options": [
+      "singed",
+      "sang",
+      "singd",
+      "singt"
+    ],
+    "answer": "sang",
+    "explanation": "sing เป็น Irregular Verb รูปอดีตคือ sang",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-021",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ choose",
+    "options": [
+      "chooseed",
+      "chose",
+      "choosed",
+      "chooset"
+    ],
+    "answer": "chose",
+    "explanation": "choose เป็น Irregular Verb รูปอดีตคือ chose",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-022",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ speak",
+    "options": [
+      "spoke",
+      "speakt",
+      "speaked",
+      "speakd"
+    ],
+    "answer": "spoke",
+    "explanation": "speak เป็น Irregular Verb รูปอดีตคือ spoke",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-023",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ break",
+    "options": [
+      "breaked",
+      "broke",
+      "breakt",
+      "breakd"
+    ],
+    "answer": "broke",
+    "explanation": "break เป็น Irregular Verb รูปอดีตคือ broke",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-024",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ bring",
+    "options": [
+      "bringd",
+      "bringt",
+      "bringed",
+      "brought"
+    ],
+    "answer": "brought",
+    "explanation": "bring เป็น Irregular Verb รูปอดีตคือ brought",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-025",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ think",
+    "options": [
+      "thought",
+      "thinked",
+      "thinkd",
+      "thinkt"
+    ],
+    "answer": "thought",
+    "explanation": "think เป็น Irregular Verb รูปอดีตคือ thought",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-026",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ teach",
+    "options": [
+      "teachd",
+      "taught",
+      "teached",
+      "teacht"
+    ],
+    "answer": "taught",
+    "explanation": "teach เป็น Irregular Verb รูปอดีตคือ taught",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-027",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ catch",
+    "options": [
+      "caught",
+      "catchd",
+      "catched",
+      "catcht"
+    ],
+    "answer": "caught",
+    "explanation": "catch เป็น Irregular Verb รูปอดีตคือ caught",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-028",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ find",
+    "options": [
+      "finded",
+      "findd",
+      "findt",
+      "found"
+    ],
+    "answer": "found",
+    "explanation": "find เป็น Irregular Verb รูปอดีตคือ found",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-029",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ leave",
+    "options": [
+      "leaveed",
+      "leaved",
+      "leavet",
+      "left"
+    ],
+    "answer": "left",
+    "explanation": "leave เป็น Irregular Verb รูปอดีตคือ left",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-030",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ feel",
+    "options": [
+      "feelt",
+      "feeld",
+      "feeled",
+      "felt"
+    ],
+    "answer": "felt",
+    "explanation": "feel เป็น Irregular Verb รูปอดีตคือ felt",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-031",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ keep",
+    "options": [
+      "keept",
+      "kept",
+      "keepd",
+      "keeped"
+    ],
+    "answer": "kept",
+    "explanation": "keep เป็น Irregular Verb รูปอดีตคือ kept",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-032",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ hear",
+    "options": [
+      "heard",
+      "heared",
+      "heart",
+      "hearded"
+    ],
+    "answer": "heard",
+    "explanation": "hear เป็น Irregular Verb รูปอดีตคือ heard",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-033",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ lose",
+    "options": [
+      "losed",
+      "lost",
+      "loset",
+      "loseed"
+    ],
+    "answer": "lost",
+    "explanation": "lose เป็น Irregular Verb รูปอดีตคือ lost",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-034",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ send",
+    "options": [
+      "sent",
+      "sendt",
+      "sended",
+      "sendd"
+    ],
+    "answer": "sent",
+    "explanation": "send เป็น Irregular Verb รูปอดีตคือ sent",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-035",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ spend",
+    "options": [
+      "spended",
+      "spendd",
+      "spendt",
+      "spent"
+    ],
+    "answer": "spent",
+    "explanation": "spend เป็น Irregular Verb รูปอดีตคือ spent",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-036",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ build",
+    "options": [
+      "built",
+      "buildd",
+      "builded",
+      "buildt"
+    ],
+    "answer": "built",
+    "explanation": "build เป็น Irregular Verb รูปอดีตคือ built",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-037",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ swim",
+    "options": [
+      "swimd",
+      "swam",
+      "swimt",
+      "swimed"
+    ],
+    "answer": "swam",
+    "explanation": "swim เป็น Irregular Verb รูปอดีตคือ swam",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-038",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ begin",
+    "options": [
+      "began",
+      "begind",
+      "begint",
+      "begined"
+    ],
+    "answer": "began",
+    "explanation": "begin เป็น Irregular Verb รูปอดีตคือ began",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-039",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ fall",
+    "options": [
+      "falled",
+      "falld",
+      "fell",
+      "fallt"
+    ],
+    "answer": "fell",
+    "explanation": "fall เป็น Irregular Verb รูปอดีตคือ fell",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-040",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ fly",
+    "options": [
+      "flyd",
+      "flyed",
+      "flew",
+      "flyt"
+    ],
+    "answer": "flew",
+    "explanation": "fly เป็น Irregular Verb รูปอดีตคือ flew",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-041",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ grow",
+    "options": [
+      "growd",
+      "growt",
+      "grew",
+      "growed"
+    ],
+    "answer": "grew",
+    "explanation": "grow เป็น Irregular Verb รูปอดีตคือ grew",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-042",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ know",
+    "options": [
+      "knowd",
+      "knowt",
+      "knew",
+      "knowed"
+    ],
+    "answer": "knew",
+    "explanation": "know เป็น Irregular Verb รูปอดีตคือ knew",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-043",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ throw",
+    "options": [
+      "throwed",
+      "throwt",
+      "threw",
+      "throwd"
+    ],
+    "answer": "threw",
+    "explanation": "throw เป็น Irregular Verb รูปอดีตคือ threw",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-044",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ wear",
+    "options": [
+      "weard",
+      "weared",
+      "weart",
+      "wore"
+    ],
+    "answer": "wore",
+    "explanation": "wear เป็น Irregular Verb รูปอดีตคือ wore",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-045",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ draw",
+    "options": [
+      "drawed",
+      "drew",
+      "drawd",
+      "drawt"
+    ],
+    "answer": "drew",
+    "explanation": "draw เป็น Irregular Verb รูปอดีตคือ drew",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-046",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ sell",
+    "options": [
+      "sold",
+      "selld",
+      "sellt",
+      "selled"
+    ],
+    "answer": "sold",
+    "explanation": "sell เป็น Irregular Verb รูปอดีตคือ sold",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-047",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ stand",
+    "options": [
+      "standt",
+      "stood",
+      "standed",
+      "standd"
+    ],
+    "answer": "stood",
+    "explanation": "stand เป็น Irregular Verb รูปอดีตคือ stood",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-048",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ understand",
+    "options": [
+      "understanded",
+      "understood",
+      "understandt",
+      "understandd"
+    ],
+    "answer": "understood",
+    "explanation": "understand เป็น Irregular Verb รูปอดีตคือ understood",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-049",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ win",
+    "options": [
+      "wind",
+      "wined",
+      "won",
+      "wint"
+    ],
+    "answer": "won",
+    "explanation": "win เป็น Irregular Verb รูปอดีตคือ won",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-050",
+    "type": "multiple-choice",
+    "prompt": "เลือก V2 ที่ถูกต้องของ ride",
+    "options": [
+      "ridet",
+      "rideed",
+      "rided",
+      "rode"
+    ],
+    "answer": "rode",
+    "explanation": "ride เป็น Irregular Verb รูปอดีตคือ rode",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-051",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: come)",
+    "options": [
+      "come",
+      "comed",
+      "came",
+      "comeed"
+    ],
+    "answer": "came",
+    "explanation": "come → came",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-052",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: have)",
+    "options": [
+      "had",
+      "have",
+      "haved",
+      "haveed"
+    ],
+    "answer": "had",
+    "explanation": "have → had",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-053",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: do)",
+    "options": [
+      "dod",
+      "doed",
+      "do",
+      "did"
+    ],
+    "answer": "did",
+    "explanation": "do → did",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-054",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: make)",
+    "options": [
+      "maked",
+      "made",
+      "makeed",
+      "make"
+    ],
+    "answer": "made",
+    "explanation": "make → made",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-055",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: write)",
+    "options": [
+      "wrote",
+      "writeed",
+      "writed",
+      "write"
+    ],
+    "answer": "wrote",
+    "explanation": "write → wrote",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-056",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: meet)",
+    "options": [
+      "met",
+      "meetd",
+      "meeted",
+      "meet"
+    ],
+    "answer": "met",
+    "explanation": "meet → met",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-057",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: give)",
+    "options": [
+      "giveed",
+      "gived",
+      "give",
+      "gave"
+    ],
+    "answer": "gave",
+    "explanation": "give → gave",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-058",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: get)",
+    "options": [
+      "geted",
+      "getd",
+      "got",
+      "get"
+    ],
+    "answer": "got",
+    "explanation": "get → got",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-059",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: read)",
+    "options": [
+      "readed",
+      "ตัวเลือกหลอก 3",
+      "readd",
+      "read"
+    ],
+    "answer": "read",
+    "explanation": "read → read",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-060",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: say)",
+    "options": [
+      "sayd",
+      "sayed",
+      "said",
+      "say"
+    ],
+    "answer": "said",
+    "explanation": "say → said",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-061",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: tell)",
+    "options": [
+      "tell",
+      "telld",
+      "told",
+      "telled"
+    ],
+    "answer": "told",
+    "explanation": "tell → told",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-062",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: sit)",
+    "options": [
+      "sit",
+      "sitd",
+      "sat",
+      "sited"
+    ],
+    "answer": "sat",
+    "explanation": "sit → sat",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-063",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: run)",
+    "options": [
+      "ran",
+      "run",
+      "rund",
+      "runed"
+    ],
+    "answer": "ran",
+    "explanation": "run → ran",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-064",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: drink)",
+    "options": [
+      "drank",
+      "drinkd",
+      "drink",
+      "drinked"
+    ],
+    "answer": "drank",
+    "explanation": "drink → drank",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-065",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: sing)",
+    "options": [
+      "singd",
+      "sing",
+      "singed",
+      "sang"
+    ],
+    "answer": "sang",
+    "explanation": "sing → sang",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-066",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: choose)",
+    "options": [
+      "chose",
+      "choose",
+      "choosed",
+      "chooseed"
+    ],
+    "answer": "chose",
+    "explanation": "choose → chose",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-067",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: speak)",
+    "options": [
+      "speak",
+      "spoke",
+      "speaked",
+      "speakd"
+    ],
+    "answer": "spoke",
+    "explanation": "speak → spoke",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-068",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: break)",
+    "options": [
+      "break",
+      "breaked",
+      "broke",
+      "breakd"
+    ],
+    "answer": "broke",
+    "explanation": "break → broke",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-069",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: bring)",
+    "options": [
+      "bring",
+      "bringed",
+      "brought",
+      "bringd"
+    ],
+    "answer": "brought",
+    "explanation": "bring → brought",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-070",
+    "type": "multiple-choice",
+    "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: think)",
+    "options": [
+      "thinkd",
+      "thought",
+      "thinked",
+      "think"
+    ],
+    "answer": "thought",
+    "explanation": "think → thought",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-071",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ go ได้ถูกต้อง",
+    "options": [
+      "I god yesterday.",
+      "I go yesterday.",
+      "I goed yesterday.",
+      "I went yesterday."
+    ],
+    "answer": "I went yesterday.",
+    "explanation": "go รูปอดีตคือ went",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-072",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ eat ได้ถูกต้อง",
+    "options": [
+      "I eatd yesterday.",
+      "I eated yesterday.",
+      "I eat yesterday.",
+      "I ate yesterday."
+    ],
+    "answer": "I ate yesterday.",
+    "explanation": "eat รูปอดีตคือ ate",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-073",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ see ได้ถูกต้อง",
+    "options": [
+      "I seed yesterday.",
+      "I seeed yesterday.",
+      "I see yesterday.",
+      "I saw yesterday."
+    ],
+    "answer": "I saw yesterday.",
+    "explanation": "see รูปอดีตคือ saw",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-074",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ buy ได้ถูกต้อง",
+    "options": [
+      "I buyd yesterday.",
+      "I bought yesterday.",
+      "I buy yesterday.",
+      "I buyed yesterday."
+    ],
+    "answer": "I bought yesterday.",
+    "explanation": "buy รูปอดีตคือ bought",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-075",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ take ได้ถูกต้อง",
+    "options": [
+      "I took yesterday.",
+      "I taked yesterday.",
+      "I take yesterday.",
+      "I takeed yesterday."
+    ],
+    "answer": "I took yesterday.",
+    "explanation": "take รูปอดีตคือ took",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-076",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ come ได้ถูกต้อง",
+    "options": [
+      "I come yesterday.",
+      "I comeed yesterday.",
+      "I comed yesterday.",
+      "I came yesterday."
+    ],
+    "answer": "I came yesterday.",
+    "explanation": "come รูปอดีตคือ came",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-077",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ have ได้ถูกต้อง",
+    "options": [
+      "I had yesterday.",
+      "I haved yesterday.",
+      "I have yesterday.",
+      "I haveed yesterday."
+    ],
+    "answer": "I had yesterday.",
+    "explanation": "have รูปอดีตคือ had",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-078",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ do ได้ถูกต้อง",
+    "options": [
+      "I dod yesterday.",
+      "I did yesterday.",
+      "I do yesterday.",
+      "I doed yesterday."
+    ],
+    "answer": "I did yesterday.",
+    "explanation": "do รูปอดีตคือ did",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-079",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ make ได้ถูกต้อง",
+    "options": [
+      "I make yesterday.",
+      "I maked yesterday.",
+      "I makeed yesterday.",
+      "I made yesterday."
+    ],
+    "answer": "I made yesterday.",
+    "explanation": "make รูปอดีตคือ made",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-080",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้ V2 ของ write ได้ถูกต้อง",
+    "options": [
+      "I writeed yesterday.",
+      "I write yesterday.",
+      "I writed yesterday.",
+      "I wrote yesterday."
+    ],
+    "answer": "I wrote yesterday.",
+    "explanation": "write รูปอดีตคือ wrote",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-081",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง",
+    "options": [
+      "She goed yesterday.",
+      "We wrote yesterday.",
+      "She went yesterday.",
+      "They came yesterday."
+    ],
+    "answer": "She goed yesterday.",
+    "explanation": "go ต้องเป็น went",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-082",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 2)",
+    "options": [
+      "She ate yesterday.",
+      "They had yesterday.",
+      "We met yesterday.",
+      "She eated yesterday."
+    ],
+    "answer": "She eated yesterday.",
+    "explanation": "eat ต้องเป็น ate",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-083",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 3)",
+    "options": [
+      "They did yesterday.",
+      "She saw yesterday.",
+      "We gave yesterday.",
+      "She seeed yesterday."
+    ],
+    "answer": "She seeed yesterday.",
+    "explanation": "see ต้องเป็น saw",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-084",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 4)",
+    "options": [
+      "They made yesterday.",
+      "We got yesterday.",
+      "She buyed yesterday.",
+      "She bought yesterday."
+    ],
+    "answer": "She buyed yesterday.",
+    "explanation": "buy ต้องเป็น bought",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-085",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 5)",
+    "options": [
+      "We read yesterday.",
+      "She took yesterday.",
+      "She takeed yesterday.",
+      "They wrote yesterday."
+    ],
+    "answer": "She takeed yesterday.",
+    "explanation": "take ต้องเป็น took",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-086",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 6)",
+    "options": [
+      "She came yesterday.",
+      "We said yesterday.",
+      "They met yesterday.",
+      "She comeed yesterday."
+    ],
+    "answer": "She comeed yesterday.",
+    "explanation": "come ต้องเป็น came",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-087",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 7)",
+    "options": [
+      "She had yesterday.",
+      "They gave yesterday.",
+      "We told yesterday.",
+      "She haveed yesterday."
+    ],
+    "answer": "She haveed yesterday.",
+    "explanation": "have ต้องเป็น had",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-088",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 8)",
+    "options": [
+      "We sat yesterday.",
+      "She doed yesterday.",
+      "She did yesterday.",
+      "They got yesterday."
+    ],
+    "answer": "She doed yesterday.",
+    "explanation": "do ต้องเป็น did",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-089",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 9)",
+    "options": [
+      "She made yesterday.",
+      "They read yesterday.",
+      "We ran yesterday.",
+      "She makeed yesterday."
+    ],
+    "answer": "She makeed yesterday.",
+    "explanation": "make ต้องเป็น made",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-090",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ Irregular Verb ไม่ถูกต้อง (ชุดที่ 10)",
+    "options": [
+      "She wrote yesterday.",
+      "We drank yesterday.",
+      "They said yesterday.",
+      "She writeed yesterday."
+    ],
+    "answer": "She writeed yesterday.",
+    "explanation": "write ต้องเป็น wrote",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-091",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ meet",
+    "answer": "met",
+    "acceptedAnswers": [
+      "met"
+    ],
+    "explanation": "meet → met",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-092",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ give",
+    "answer": "gave",
+    "acceptedAnswers": [
+      "gave"
+    ],
+    "explanation": "give → gave",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-093",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ get",
+    "answer": "got",
+    "acceptedAnswers": [
+      "got"
+    ],
+    "explanation": "get → got",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-094",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ read",
+    "answer": "read",
+    "acceptedAnswers": [
+      "read"
+    ],
+    "explanation": "read → read",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-095",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ say",
+    "answer": "said",
+    "acceptedAnswers": [
+      "said"
+    ],
+    "explanation": "say → said",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-096",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ tell",
+    "answer": "told",
+    "acceptedAnswers": [
+      "told"
+    ],
+    "explanation": "tell → told",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-097",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ sit",
+    "answer": "sat",
+    "acceptedAnswers": [
+      "sat"
+    ],
+    "explanation": "sit → sat",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-098",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ run",
+    "answer": "ran",
+    "acceptedAnswers": [
+      "ran"
+    ],
+    "explanation": "run → ran",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-099",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ drink",
+    "answer": "drank",
+    "acceptedAnswers": [
+      "drank"
+    ],
+    "explanation": "drink → drank",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  },
+  {
+    "id": "irregular-wraith-100",
+    "type": "typing",
+    "prompt": "พิมพ์ V2 ของ sing",
+    "answer": "sang",
+    "acceptedAnswers": [
+      "sang"
+    ],
+    "explanation": "sing → sang",
+    "lessonId": "irregular-mini-boss",
+    "ruleId": "irregular_v2"
+  }
+];
 
 const finalBossQuestions = [
-  makeRegularQuestion(regularVerbBanks.addEd[8], "คำกริยาทั่วไปเติม -ed"),
-  makeRegularQuestion(regularVerbBanks.endingE[7], "คำลงท้ายด้วย e เติมแค่ -d"),
-  makeRegularQuestion(regularVerbBanks.endingY[9], "หน้า y เป็นพยัญชนะ เปลี่ยน y เป็น i แล้วเติม -ed"),
-  makeRegularQuestion(regularVerbBanks.doubleCvc[7], "เพิ่มพยัญชนะท้ายก่อนเติม -ed"),
-  makeIrregularQuestion(irregularVerbBank[8]),
-  makeIrregularQuestion(irregularVerbBank[9]),
-  makeIrregularQuestion(irregularVerbBank[11]),
-  makeIrregularQuestion(irregularVerbBank[16]),
-  { type: "sentence-fill", sentence: "Yesterday, I ____ to school.", options: ["went", "go", "goes", "going"], answer: "went", explanation: "Yesterday บอกอดีต จึงต้องใช้ V2 คือ went" },
-  { type: "sentence-fill", sentence: "Last night, she ____ a movie.", options: ["watched", "watch", "watches", "watching"], answer: "watched", explanation: "Last night บอกอดีต และ watch เป็น Regular Verb เติม -ed เป็น watched" },
-  { type: "sentence-fill", sentence: "Two days ago, we ____ dinner together.", options: ["ate", "eat", "eats", "eating"], answer: "ate", explanation: "eat เป็น Irregular Verb รูป V2 คือ ate" },
-  { type: "sentence-fill", sentence: "Last week, he ____ a new book.", options: ["bought", "buy", "buys", "buying"], answer: "bought", explanation: "buy เป็น Irregular Verb รูป V2 คือ bought" },
-  { type: "sentence-fill", sentence: "My mother ____ breakfast this morning.", options: ["cooked", "cook", "cooks", "cooking"], answer: "cooked", explanation: "ถ้าเหตุการณ์เมื่อเช้าจบแล้ว ถือเป็นอดีต จึงใช้ cooked" },
-  { type: "sentence-fill", sentence: "He ____ his homework last night.", options: ["did", "do", "does", "doing"], answer: "did", explanation: "do เป็น Irregular Verb รูป V2 คือ did" },
-  { type: "sentence-fill", sentence: "They ____ English yesterday.", options: ["studied", "studyed", "study", "studying"], answer: "studied", explanation: "study เปลี่ยน y เป็น i แล้วเติม -ed เป็น studied" },
-  { type: "correct-sentence", prompt: "เลือกประโยคที่ถูกต้อง", options: ["Yesterday, I went to school.", "Yesterday, I go to school.", "Yesterday, I goes to school.", "Yesterday, I going to school."], answer: "Yesterday, I went to school.", explanation: "Yesterday บอกอดีต จึงต้องใช้ went" },
-  { type: "correct-sentence", prompt: "เลือกประโยคที่ถูกต้อง", options: ["Last night, she saw a bird.", "Last night, she see a bird.", "Last night, she sees a bird.", "Last night, she seeing a bird."], answer: "Last night, she saw a bird.", explanation: "see ในรูป V2 คือ saw" },
-  { type: "correct-sentence", prompt: "เลือกประโยคที่ถูกต้อง", options: ["We watched TV yesterday.", "We watch TV yesterday.", "We watches TV yesterday.", "We watching TV yesterday."], answer: "We watched TV yesterday.", explanation: "watch ใช้ในอดีตเป็น watched" },
-  { type: "correct-sentence", prompt: "เลือกประโยคที่ถูกต้อง", options: ["I studied English last night.", "I studyed English last night.", "I studying English last night.", "I studies English last night."], answer: "I studied English last night.", explanation: "study ต้องเปลี่ยน y เป็น i แล้วเติม -ed เป็น studied" },
-  { type: "sentence-fill", sentence: "She ____ her old friend yesterday.", options: ["met", "meet", "meets", "meeting"], answer: "met", explanation: "meet เป็น Irregular Verb รูป V2 คือ met" },
-  ...copyQuestionBank(sentenceQuestionBanks.regularEd, "final_boss"),
-  ...copyQuestionBank(sentenceQuestionBanks.endingE, "final_boss"),
-  ...copyQuestionBank(sentenceQuestionBanks.endingY, "final_boss"),
-  ...copyQuestionBank(sentenceQuestionBanks.doubleCvc, "final_boss"),
-  ...copyQuestionBank(sentenceQuestionBanks.irregular, "final_boss")
+  {
+    "id": "final-boss-001",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เหตุการณ์นี้เป็นเวลาใด: I ate breakfast this morning.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ทบทวนรวม: ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-002",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เหตุการณ์นี้เป็นเวลาใด: She visited her grandmother last week.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ทบทวนรวม: ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-003",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เหตุการณ์นี้เป็นเวลาใด: They played football yesterday.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ทบทวนรวม: ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-004",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เหตุการณ์นี้เป็นเวลาใด: We watched a movie last night.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ทบทวนรวม: ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-005",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เหตุการณ์นี้เป็นเวลาใด: He finished his homework before dinner.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ทบทวนรวม: ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-006",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เหตุการณ์นี้เป็นเวลาใด: My brother cleaned his room yesterday.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ทบทวนรวม: ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-007",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เหตุการณ์นี้เป็นเวลาใด: The class started at 8 a.m.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ทบทวนรวม: ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-008",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เหตุการณ์นี้เป็นเวลาใด: The rain stopped an hour ago.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ทบทวนรวม: ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-009",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: คำหรือวลีใดเป็นคำบอกเวลาในอดีต",
+    "options": [
+      "in 2035",
+      "yesterday",
+      "right now",
+      "these days"
+    ],
+    "answer": "yesterday",
+    "explanation": "ทบทวนรวม: yesterday ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-010",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 2)",
+    "options": [
+      "next month",
+      "last night",
+      "every day",
+      "next year"
+    ],
+    "answer": "last night",
+    "explanation": "ทบทวนรวม: last night ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-011",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 3)",
+    "options": [
+      "currently",
+      "last week",
+      "usually",
+      "these days"
+    ],
+    "answer": "last week",
+    "explanation": "ทบทวนรวม: last week ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-012",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 4)",
+    "options": [
+      "last month",
+      "usually",
+      "next summer",
+      "in the future"
+    ],
+    "answer": "last month",
+    "explanation": "ทบทวนรวม: last month ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-013",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 5)",
+    "options": [
+      "next year",
+      "last year",
+      "soon",
+      "usually"
+    ],
+    "answer": "last year",
+    "explanation": "ทบทวนรวม: last year ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-014",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 6)",
+    "options": [
+      "this weekend",
+      "tomorrow",
+      "in the future",
+      "two days ago"
+    ],
+    "answer": "two days ago",
+    "explanation": "ทบทวนรวม: two days ago ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-015",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 7)",
+    "options": [
+      "five minutes ago",
+      "from now on",
+      "tomorrow",
+      "these days"
+    ],
+    "answer": "five minutes ago",
+    "explanation": "ทบทวนรวม: five minutes ago ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-016",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 8)",
+    "options": [
+      "every Monday",
+      "every day",
+      "currently",
+      "an hour ago"
+    ],
+    "answer": "an hour ago",
+    "explanation": "ทบทวนรวม: an hour ago ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-017",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: I ____ happy yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "ทบทวนรวม: I ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-018",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: He ____ tired yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "ทบทวนรวม: He ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-019",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: She ____ busy yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "ทบทวนรวม: She ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-020",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: It ____ quiet yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "ทบทวนรวม: It ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-021",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: The boy ____ ready yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "ทบทวนรวม: The boy ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-022",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: The girl ____ late yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "ทบทวนรวม: The girl ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-023",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: My father ____ sick yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "ทบทวนรวม: My father ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-024",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: My mother ____ sad yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "ทบทวนรวม: My mother ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-025",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: The cat ____ excited yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "ทบทวนรวม: The cat ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-026",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: The dog ____ angry yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "ทบทวนรวม: The dog ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-027",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: ____ a book on the desk yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "ทบทวนรวม: a book เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-028",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: ____ one chair in the room yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "ทบทวนรวม: one chair เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-029",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: ____ a dog near the gate yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "ทบทวนรวม: a dog เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-030",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: ____ one student under the tree yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "ทบทวนรวม: one student เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-031",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: ____ a clock in the classroom yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "ทบทวนรวม: a clock เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-032",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: ____ a pencil on the wall yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "ทบทวนรวม: a pencil เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-033",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: ____ a bag beside the river yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "ทบทวนรวม: a bag เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-034",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: ____ a bird at school yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "ทบทวนรวม: a bird เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-035",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: ____ one box in the bag yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "ทบทวนรวม: one box เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-036",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: ____ a lantern near the tower yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "ทบทวนรวม: a lantern เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-037",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: I ____ a red notebook yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "ทบทวนรวม: เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-038",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: You ____ an English test yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "ทบทวนรวม: เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-039",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: He ____ lunch at noon yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "ทบทวนรวม: เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-040",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: She ____ a fever yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "ทบทวนรวม: เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-041",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: It ____ a blue bag yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "ทบทวนรวม: เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-042",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: We ____ two pencils yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "ทบทวนรวม: เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-043",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: They ____ a good idea yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "ทบทวนรวม: เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-044",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: My brother ____ a small map yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "ทบทวนรวม: เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-045",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: My sister ____ a new phone yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "ทบทวนรวม: เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-046",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เติมคำให้ถูกต้อง: The students ____ a lot of homework yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "ทบทวนรวม: เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-047",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า walk",
+    "options": [
+      "walkked",
+      "walked",
+      "walkd",
+      "walkied"
+    ],
+    "answer": "walked",
+    "explanation": "ทบทวนรวม: walk เติม -ed จึงเป็น walked",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-048",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า jump",
+    "options": [
+      "jumpd",
+      "jumped",
+      "jumpied",
+      "jumpped"
+    ],
+    "answer": "jumped",
+    "explanation": "ทบทวนรวม: jump เติม -ed จึงเป็น jumped",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-049",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า help",
+    "options": [
+      "helpied",
+      "helpd",
+      "helped",
+      "helpped"
+    ],
+    "answer": "helped",
+    "explanation": "ทบทวนรวม: help เติม -ed จึงเป็น helped",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-050",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า watch",
+    "options": [
+      "watchd",
+      "watchied",
+      "watchhed",
+      "watched"
+    ],
+    "answer": "watched",
+    "explanation": "ทบทวนรวม: watch เติม -ed จึงเป็น watched",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-051",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า open",
+    "options": [
+      "opend",
+      "openied",
+      "opened",
+      "openned"
+    ],
+    "answer": "opened",
+    "explanation": "ทบทวนรวม: open เติม -ed จึงเป็น opened",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-052",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า clean",
+    "options": [
+      "cleaned",
+      "cleanied",
+      "cleanned",
+      "cleand"
+    ],
+    "answer": "cleaned",
+    "explanation": "ทบทวนรวม: clean เติม -ed จึงเป็น cleaned",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-053",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า work",
+    "options": [
+      "workied",
+      "workked",
+      "worked",
+      "workd"
+    ],
+    "answer": "worked",
+    "explanation": "ทบทวนรวม: work เติม -ed จึงเป็น worked",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-054",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า look",
+    "options": [
+      "lookd",
+      "lookked",
+      "looked",
+      "lookied"
+    ],
+    "answer": "looked",
+    "explanation": "ทบทวนรวม: look เติม -ed จึงเป็น looked",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-055",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า like",
+    "options": [
+      "likeied",
+      "likeed",
+      "liked",
+      "likeeed"
+    ],
+    "answer": "liked",
+    "explanation": "ทบทวนรวม: like ลงท้ายด้วย e จึงเติม -d จึงเป็น liked",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-056",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า love",
+    "options": [
+      "loveeed",
+      "loveed",
+      "loved",
+      "loveied"
+    ],
+    "answer": "loved",
+    "explanation": "ทบทวนรวม: love ลงท้ายด้วย e จึงเติม -d จึงเป็น loved",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-057",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า dance",
+    "options": [
+      "danced",
+      "danceed",
+      "danceied",
+      "danceeed"
+    ],
+    "answer": "danced",
+    "explanation": "ทบทวนรวม: dance ลงท้ายด้วย e จึงเติม -d จึงเป็น danced",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-058",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า live",
+    "options": [
+      "lived",
+      "liveed",
+      "liveeed",
+      "liveied"
+    ],
+    "answer": "lived",
+    "explanation": "ทบทวนรวม: live ลงท้ายด้วย e จึงเติม -d จึงเป็น lived",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-059",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า close",
+    "options": [
+      "closeed",
+      "closed",
+      "closeeed",
+      "closeied"
+    ],
+    "answer": "closed",
+    "explanation": "ทบทวนรวม: close ลงท้ายด้วย e จึงเติม -d จึงเป็น closed",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-060",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า move",
+    "options": [
+      "moveed",
+      "moveied",
+      "moved",
+      "moveeed"
+    ],
+    "answer": "moved",
+    "explanation": "ทบทวนรวม: move ลงท้ายด้วย e จึงเติม -d จึงเป็น moved",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-061",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า use",
+    "options": [
+      "used",
+      "useed",
+      "useied",
+      "useeed"
+    ],
+    "answer": "used",
+    "explanation": "ทบทวนรวม: use ลงท้ายด้วย e จึงเติม -d จึงเป็น used",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-062",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า smile",
+    "options": [
+      "smileeed",
+      "smiled",
+      "smileied",
+      "smileed"
+    ],
+    "answer": "smiled",
+    "explanation": "ทบทวนรวม: smile ลงท้ายด้วย e จึงเติม -d จึงเป็น smiled",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-063",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า play",
+    "options": [
+      "playied",
+      "playd",
+      "playyed",
+      "played"
+    ],
+    "answer": "played",
+    "explanation": "ทบทวนรวม: play ใช้กฎ y rule จึงเป็น played",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-064",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า enjoy",
+    "options": [
+      "enjoyyed",
+      "enjoyied",
+      "enjoyd",
+      "enjoyed"
+    ],
+    "answer": "enjoyed",
+    "explanation": "ทบทวนรวม: enjoy ใช้กฎ y rule จึงเป็น enjoyed",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-065",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า stay",
+    "options": [
+      "stayied",
+      "stayed",
+      "stayd",
+      "stayyed"
+    ],
+    "answer": "stayed",
+    "explanation": "ทบทวนรวม: stay ใช้กฎ y rule จึงเป็น stayed",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-066",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า pray",
+    "options": [
+      "prayied",
+      "prayed",
+      "prayyed",
+      "prayd"
+    ],
+    "answer": "prayed",
+    "explanation": "ทบทวนรวม: pray ใช้กฎ y rule จึงเป็น prayed",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-067",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า employ",
+    "options": [
+      "employed",
+      "employyed",
+      "employied",
+      "employd"
+    ],
+    "answer": "employed",
+    "explanation": "ทบทวนรวม: employ ใช้กฎ y rule จึงเป็น employed",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-068",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า destroy",
+    "options": [
+      "destroyyed",
+      "destroyd",
+      "destroyed",
+      "destroyied"
+    ],
+    "answer": "destroyed",
+    "explanation": "ทบทวนรวม: destroy ใช้กฎ y rule จึงเป็น destroyed",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-069",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า delay",
+    "options": [
+      "delayd",
+      "delayied",
+      "delayed",
+      "delayyed"
+    ],
+    "answer": "delayed",
+    "explanation": "ทบทวนรวม: delay ใช้กฎ y rule จึงเป็น delayed",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-070",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า obey",
+    "options": [
+      "obeyied",
+      "obeyyed",
+      "obeyd",
+      "obeyed"
+    ],
+    "answer": "obeyed",
+    "explanation": "ทบทวนรวม: obey ใช้กฎ y rule จึงเป็น obeyed",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-071",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า stop",
+    "options": [
+      "stopied",
+      "stopd",
+      "stoped",
+      "stopped"
+    ],
+    "answer": "stopped",
+    "explanation": "ทบทวนรวม: stop เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น stopped",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-072",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า plan",
+    "options": [
+      "planned",
+      "planied",
+      "planed",
+      "pland"
+    ],
+    "answer": "planned",
+    "explanation": "ทบทวนรวม: plan เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น planned",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-073",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า drop",
+    "options": [
+      "droped",
+      "dropied",
+      "dropped",
+      "dropd"
+    ],
+    "answer": "dropped",
+    "explanation": "ทบทวนรวม: drop เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น dropped",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-074",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า clap",
+    "options": [
+      "clapied",
+      "clapped",
+      "claped",
+      "clapd"
+    ],
+    "answer": "clapped",
+    "explanation": "ทบทวนรวม: clap เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น clapped",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-075",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า grab",
+    "options": [
+      "grabied",
+      "grabed",
+      "grabbed",
+      "grabd"
+    ],
+    "answer": "grabbed",
+    "explanation": "ทบทวนรวม: grab เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น grabbed",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-076",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า hug",
+    "options": [
+      "hugied",
+      "hugged",
+      "huged",
+      "hugd"
+    ],
+    "answer": "hugged",
+    "explanation": "ทบทวนรวม: hug เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น hugged",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-077",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า skip",
+    "options": [
+      "skipped",
+      "skipied",
+      "skiped",
+      "skipd"
+    ],
+    "answer": "skipped",
+    "explanation": "ทบทวนรวม: skip เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น skipped",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-078",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของคำว่า shop",
+    "options": [
+      "shopied",
+      "shopd",
+      "shopped",
+      "shoped"
+    ],
+    "answer": "shopped",
+    "explanation": "ทบทวนรวม: shop เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น shopped",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-079",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ walk",
+    "options": [
+      "walkked",
+      "walked",
+      "walkd",
+      "walkied"
+    ],
+    "answer": "walked",
+    "explanation": "ทบทวนรวม: walk ใช้กฎ เติม -ed จึงเป็น walked",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-080",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ jump",
+    "options": [
+      "jumpd",
+      "jumped",
+      "jumpied",
+      "jumpped"
+    ],
+    "answer": "jumped",
+    "explanation": "ทบทวนรวม: jump ใช้กฎ เติม -ed จึงเป็น jumped",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-081",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ help",
+    "options": [
+      "helpied",
+      "helpd",
+      "helped",
+      "helpped"
+    ],
+    "answer": "helped",
+    "explanation": "ทบทวนรวม: help ใช้กฎ เติม -ed จึงเป็น helped",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-082",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ watch",
+    "options": [
+      "watchd",
+      "watchied",
+      "watchhed",
+      "watched"
+    ],
+    "answer": "watched",
+    "explanation": "ทบทวนรวม: watch ใช้กฎ เติม -ed จึงเป็น watched",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-083",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ open",
+    "options": [
+      "opend",
+      "openied",
+      "opened",
+      "openned"
+    ],
+    "answer": "opened",
+    "explanation": "ทบทวนรวม: open ใช้กฎ เติม -ed จึงเป็น opened",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-084",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ clean",
+    "options": [
+      "cleaned",
+      "cleanied",
+      "cleanned",
+      "cleand"
+    ],
+    "answer": "cleaned",
+    "explanation": "ทบทวนรวม: clean ใช้กฎ เติม -ed จึงเป็น cleaned",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-085",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ work",
+    "options": [
+      "workied",
+      "workked",
+      "worked",
+      "workd"
+    ],
+    "answer": "worked",
+    "explanation": "ทบทวนรวม: work ใช้กฎ เติม -ed จึงเป็น worked",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-086",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ look",
+    "options": [
+      "lookd",
+      "lookked",
+      "looked",
+      "lookied"
+    ],
+    "answer": "looked",
+    "explanation": "ทบทวนรวม: look ใช้กฎ เติม -ed จึงเป็น looked",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-087",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ talk",
+    "options": [
+      "talkd",
+      "talkied",
+      "talked",
+      "talkked"
+    ],
+    "answer": "talked",
+    "explanation": "ทบทวนรวม: talk ใช้กฎ เติม -ed จึงเป็น talked",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-088",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ cook",
+    "options": [
+      "cookd",
+      "cookied",
+      "cooked",
+      "cookked"
+    ],
+    "answer": "cooked",
+    "explanation": "ทบทวนรวม: cook ใช้กฎ เติม -ed จึงเป็น cooked",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-089",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ go",
+    "options": [
+      "goed",
+      "got",
+      "god",
+      "went"
+    ],
+    "answer": "went",
+    "explanation": "ทบทวนรวม: go เป็น Irregular Verb รูปอดีตคือ went",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-090",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ eat",
+    "options": [
+      "eatt",
+      "eated",
+      "ate",
+      "eatd"
+    ],
+    "answer": "ate",
+    "explanation": "ทบทวนรวม: eat เป็น Irregular Verb รูปอดีตคือ ate",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-091",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ see",
+    "options": [
+      "seet",
+      "saw",
+      "seeed",
+      "seed"
+    ],
+    "answer": "saw",
+    "explanation": "ทบทวนรวม: see เป็น Irregular Verb รูปอดีตคือ saw",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-092",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ buy",
+    "options": [
+      "buyed",
+      "buyt",
+      "bought",
+      "buyd"
+    ],
+    "answer": "bought",
+    "explanation": "ทบทวนรวม: buy เป็น Irregular Verb รูปอดีตคือ bought",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-093",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ take",
+    "options": [
+      "takeed",
+      "took",
+      "taket",
+      "taked"
+    ],
+    "answer": "took",
+    "explanation": "ทบทวนรวม: take เป็น Irregular Verb รูปอดีตคือ took",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-094",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ come",
+    "options": [
+      "comeed",
+      "comet",
+      "comed",
+      "came"
+    ],
+    "answer": "came",
+    "explanation": "ทบทวนรวม: come เป็น Irregular Verb รูปอดีตคือ came",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-095",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ have",
+    "options": [
+      "havet",
+      "haved",
+      "haveed",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "ทบทวนรวม: have เป็น Irregular Verb รูปอดีตคือ had",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-096",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ do",
+    "options": [
+      "doed",
+      "dot",
+      "did",
+      "dod"
+    ],
+    "answer": "did",
+    "explanation": "ทบทวนรวม: do เป็น Irregular Verb รูปอดีตคือ did",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-097",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ make",
+    "options": [
+      "maked",
+      "maket",
+      "makeed",
+      "made"
+    ],
+    "answer": "made",
+    "explanation": "ทบทวนรวม: make เป็น Irregular Verb รูปอดีตคือ made",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-098",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ write",
+    "options": [
+      "writed",
+      "writet",
+      "wrote",
+      "writeed"
+    ],
+    "answer": "wrote",
+    "explanation": "ทบทวนรวม: write เป็น Irregular Verb รูปอดีตคือ wrote",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-099",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ go (ชุดที่ 2)",
+    "options": [
+      "goed",
+      "got",
+      "god",
+      "went"
+    ],
+    "answer": "went",
+    "explanation": "ทบทวนรวม: go เป็น Irregular Verb รูปอดีตคือ went",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  },
+  {
+    "id": "final-boss-100",
+    "type": "multiple-choice",
+    "prompt": "ทบทวนรวม Act 1: เลือก V2 ที่ถูกต้องของ eat (ชุดที่ 2)",
+    "options": [
+      "eatt",
+      "eated",
+      "ate",
+      "eatd"
+    ],
+    "answer": "ate",
+    "explanation": "ทบทวนรวม: eat เป็น Irregular Verb รูปอดีตคือ ate",
+    "lessonId": "final-boss",
+    "ruleId": "final_review"
+  }
 ];
 
 const phase1PastMeaningQuestions = [
-  { id: "phase1-past-meaning-1", prompt: "ข้อใดคืออดีต", options: ["สิ่งที่เกิดขึ้นแล้ว", "สิ่งที่กำลังจะเกิด", "สิ่งที่ยังไม่เริ่ม"], answer: "สิ่งที่เกิดขึ้นแล้ว", explanation: "อดีตคือสิ่งที่เกิดขึ้นแล้วและจบลงแล้ว" },
-  { id: "phase1-past-meaning-2", prompt: "Which phrase shows the past?", options: ["next week", "last Monday", "tomorrow", "soon"], answer: "last Monday", explanation: "ถูกต้อง last Monday บอกว่าเหตุการณ์เกิดขึ้นแล้ว" },
-  { id: "phase1-past-meaning-3", prompt: "Which phrase means something happened before now?", options: ["a few minutes ago", "next year", "every day", "soon"], answer: "a few minutes ago", explanation: "ถูกต้อง ago เป็นสัญญาณว่าเหตุการณ์ผ่านมาแล้ว" },
-  { id: "phase1-past-meaning-4", prompt: "Which sentence talks about the past?", options: ["I will eat dinner tomorrow.", "I ate breakfast earlier this morning.", "I am studying now.", "I play football every day."], answer: "I ate breakfast earlier this morning.", explanation: "ถูกต้อง earlier this morning ถ้าเกิดจบแล้ว ถือเป็นอดีตได้" },
-  { id: "phase1-past-meaning-5", prompt: "Many years ago means:", options: ["in the future", "at this moment", "in the past", "every morning"], answer: "in the past", explanation: "ถูกต้อง many years ago ใช้เล่าเรื่องในอดีต" },
-  { id: "phase1-past-meaning-6", prompt: "Which one is NOT a past time clue?", options: ["last weekend", "three years ago", "yesterday evening", "next Monday"], answer: "next Monday", explanation: "next Monday เป็นอนาคต ไม่ใช่อดีต" },
-  { id: "phase1-past-meaning-7", prompt: "Which phrase is used in stories to talk about the past?", options: ["one night", "right now", "next time", "tomorrow"], answer: "one night", explanation: "ถูกต้อง one night ใช้เปิดเหตุการณ์ในเรื่องเล่าอดีตได้" },
-  { id: "phase1-past-meaning-8", prompt: "Which phrase shows a past date?", options: ["in 2018", "next year", "now", "soon"], answer: "in 2018", explanation: "ถูกต้อง in 2018 เป็นวันที่ผ่านมาแล้ว" }
+  {
+    "id": "past-meaning-001",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: I ate breakfast this morning.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-002",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: She visited her grandmother last week.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-003",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: They played football yesterday.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-004",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: We watched a movie last night.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-005",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: He finished his homework before dinner.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-006",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: My brother cleaned his room yesterday.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-007",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The class started at 8 a.m.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-008",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The rain stopped an hour ago.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-009",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: I saw a bird this morning.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-010",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The shop closed last night.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-011",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: She was happy yesterday.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-012",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: We were at school last Monday.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-013",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: Dad cooked dinner yesterday.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-014",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The bell rang five minutes ago.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-015",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: I lost my pen yesterday.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-016",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: They arrived before noon.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-017",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The game ended at 4 p.m.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-018",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: My friend called me last night.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-019",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The lesson began this morning.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-020",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: I opened the book before class.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-021",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The teacher explained the rule yesterday.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-022",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: We practiced English last Friday.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-023",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The door opened before noon.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-024",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The birds flew away this morning.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-025",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The meeting ended yesterday.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-026",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: I am studying now.",
+    "options": [
+      "อดีต",
+      "ปัจจุบัน",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "ปัจจุบัน",
+    "explanation": "now / กำลัง บอกว่ากำลังเกิดขึ้นในปัจจุบัน",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-027",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: She is reading now.",
+    "options": [
+      "อดีต",
+      "ปัจจุบัน",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "ปัจจุบัน",
+    "explanation": "now / กำลัง บอกว่ากำลังเกิดขึ้นในปัจจุบัน",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-028",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: They are playing now.",
+    "options": [
+      "อดีต",
+      "ปัจจุบัน",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "ปัจจุบัน",
+    "explanation": "now / กำลัง บอกว่ากำลังเกิดขึ้นในปัจจุบัน",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-029",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The teacher is speaking now.",
+    "options": [
+      "อดีต",
+      "ปัจจุบัน",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "ปัจจุบัน",
+    "explanation": "now / กำลัง บอกว่ากำลังเกิดขึ้นในปัจจุบัน",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-030",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: We are eating lunch now.",
+    "options": [
+      "อดีต",
+      "ปัจจุบัน",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "ปัจจุบัน",
+    "explanation": "now / กำลัง บอกว่ากำลังเกิดขึ้นในปัจจุบัน",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-031",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The bell is ringing now.",
+    "options": [
+      "อดีต",
+      "ปัจจุบัน",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "ปัจจุบัน",
+    "explanation": "now / กำลัง บอกว่ากำลังเกิดขึ้นในปัจจุบัน",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-032",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: He is walking now.",
+    "options": [
+      "อดีต",
+      "ปัจจุบัน",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "ปัจจุบัน",
+    "explanation": "now / กำลัง บอกว่ากำลังเกิดขึ้นในปัจจุบัน",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-033",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The class is starting now.",
+    "options": [
+      "อดีต",
+      "ปัจจุบัน",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "ปัจจุบัน",
+    "explanation": "now / กำลัง บอกว่ากำลังเกิดขึ้นในปัจจุบัน",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-034",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The dog is sleeping now.",
+    "options": [
+      "อดีต",
+      "ปัจจุบัน",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "ปัจจุบัน",
+    "explanation": "now / กำลัง บอกว่ากำลังเกิดขึ้นในปัจจุบัน",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-035",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: I am writing now.",
+    "options": [
+      "อดีต",
+      "ปัจจุบัน",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "ปัจจุบัน",
+    "explanation": "now / กำลัง บอกว่ากำลังเกิดขึ้นในปัจจุบัน",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-036",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: I will visit Bangkok tomorrow.",
+    "options": [
+      "อดีต",
+      "อนาคต",
+      "ไม่ใช่เหตุการณ์",
+      "ปัจจุบัน"
+    ],
+    "answer": "อนาคต",
+    "explanation": "will / tomorrow / next บอกว่ายังไม่เกิดขึ้น",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-037",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: She will call me next week.",
+    "options": [
+      "อดีต",
+      "อนาคต",
+      "ไม่ใช่เหตุการณ์",
+      "ปัจจุบัน"
+    ],
+    "answer": "อนาคต",
+    "explanation": "will / tomorrow / next บอกว่ายังไม่เกิดขึ้น",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-038",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: They will play football tomorrow.",
+    "options": [
+      "อดีต",
+      "อนาคต",
+      "ไม่ใช่เหตุการณ์",
+      "ปัจจุบัน"
+    ],
+    "answer": "อนาคต",
+    "explanation": "will / tomorrow / next บอกว่ายังไม่เกิดขึ้น",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-039",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: We will have a test next month.",
+    "options": [
+      "อดีต",
+      "อนาคต",
+      "ไม่ใช่เหตุการณ์",
+      "ปัจจุบัน"
+    ],
+    "answer": "อนาคต",
+    "explanation": "will / tomorrow / next บอกว่ายังไม่เกิดขึ้น",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-040",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: He will clean his room later.",
+    "options": [
+      "อดีต",
+      "อนาคต",
+      "ไม่ใช่เหตุการณ์",
+      "ปัจจุบัน"
+    ],
+    "answer": "อนาคต",
+    "explanation": "will / tomorrow / next บอกว่ายังไม่เกิดขึ้น",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-041",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The class will start soon.",
+    "options": [
+      "อดีต",
+      "อนาคต",
+      "ไม่ใช่เหตุการณ์",
+      "ปัจจุบัน"
+    ],
+    "answer": "อนาคต",
+    "explanation": "will / tomorrow / next บอกว่ายังไม่เกิดขึ้น",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-042",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: I will read tonight.",
+    "options": [
+      "อดีต",
+      "อนาคต",
+      "ไม่ใช่เหตุการณ์",
+      "ปัจจุบัน"
+    ],
+    "answer": "อนาคต",
+    "explanation": "will / tomorrow / next บอกว่ายังไม่เกิดขึ้น",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-043",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: They will travel next year.",
+    "options": [
+      "อดีต",
+      "อนาคต",
+      "ไม่ใช่เหตุการณ์",
+      "ปัจจุบัน"
+    ],
+    "answer": "อนาคต",
+    "explanation": "will / tomorrow / next บอกว่ายังไม่เกิดขึ้น",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-044",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: She will study later.",
+    "options": [
+      "อดีต",
+      "อนาคต",
+      "ไม่ใช่เหตุการณ์",
+      "ปัจจุบัน"
+    ],
+    "answer": "อนาคต",
+    "explanation": "will / tomorrow / next บอกว่ายังไม่เกิดขึ้น",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-045",
+    "type": "multiple-choice",
+    "prompt": "เหตุการณ์นี้เป็นเวลาใด: The shop will open tomorrow.",
+    "options": [
+      "อดีต",
+      "อนาคต",
+      "ไม่ใช่เหตุการณ์",
+      "ปัจจุบัน"
+    ],
+    "answer": "อนาคต",
+    "explanation": "will / tomorrow / next บอกว่ายังไม่เกิดขึ้น",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-046",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต",
+    "options": [
+      "I will visit Bangkok tomorrow.",
+      "I ate breakfast this morning.",
+      "I will start soon.",
+      "I am studying now."
+    ],
+    "answer": "I ate breakfast this morning.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-047",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 2)",
+    "options": [
+      "She is reading now.",
+      "She visited her grandmother last week.",
+      "I will start soon.",
+      "She will call me next week."
+    ],
+    "answer": "She visited her grandmother last week.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-048",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 3)",
+    "options": [
+      "I will start soon.",
+      "They played football yesterday.",
+      "They will play football tomorrow.",
+      "They are playing now."
+    ],
+    "answer": "They played football yesterday.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-049",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 4)",
+    "options": [
+      "We will have a test next month.",
+      "We watched a movie last night.",
+      "I will start soon.",
+      "The teacher is speaking now."
+    ],
+    "answer": "We watched a movie last night.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-050",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 5)",
+    "options": [
+      "I will start soon.",
+      "We are eating lunch now.",
+      "He finished his homework before dinner.",
+      "He will clean his room later."
+    ],
+    "answer": "He finished his homework before dinner.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-051",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 6)",
+    "options": [
+      "My brother cleaned his room yesterday.",
+      "The class will start soon.",
+      "The bell is ringing now.",
+      "I will start soon."
+    ],
+    "answer": "My brother cleaned his room yesterday.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-052",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 7)",
+    "options": [
+      "I will start soon.",
+      "He is walking now.",
+      "I will read tonight.",
+      "The class started at 8 a.m."
+    ],
+    "answer": "The class started at 8 a.m.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-053",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 8)",
+    "options": [
+      "I will start soon.",
+      "The class is starting now.",
+      "The rain stopped an hour ago.",
+      "They will travel next year."
+    ],
+    "answer": "The rain stopped an hour ago.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-054",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 9)",
+    "options": [
+      "She will study later.",
+      "I will start soon.",
+      "The dog is sleeping now.",
+      "I saw a bird this morning."
+    ],
+    "answer": "I saw a bird this morning.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-055",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 10)",
+    "options": [
+      "The shop closed last night.",
+      "The shop will open tomorrow.",
+      "I am writing now.",
+      "I will start soon."
+    ],
+    "answer": "The shop closed last night.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-056",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 11)",
+    "options": [
+      "She was happy yesterday.",
+      "I will visit Bangkok tomorrow.",
+      "I am studying now.",
+      "I will start soon."
+    ],
+    "answer": "She was happy yesterday.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-057",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 12)",
+    "options": [
+      "She is reading now.",
+      "She will call me next week.",
+      "We were at school last Monday.",
+      "I will start soon."
+    ],
+    "answer": "We were at school last Monday.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-058",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 13)",
+    "options": [
+      "They are playing now.",
+      "I will start soon.",
+      "Dad cooked dinner yesterday.",
+      "They will play football tomorrow."
+    ],
+    "answer": "Dad cooked dinner yesterday.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-059",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 14)",
+    "options": [
+      "I will start soon.",
+      "We will have a test next month.",
+      "The bell rang five minutes ago.",
+      "The teacher is speaking now."
+    ],
+    "answer": "The bell rang five minutes ago.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-060",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 15)",
+    "options": [
+      "I lost my pen yesterday.",
+      "He will clean his room later.",
+      "I will start soon.",
+      "We are eating lunch now."
+    ],
+    "answer": "I lost my pen yesterday.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-061",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 16)",
+    "options": [
+      "The bell is ringing now.",
+      "The class will start soon.",
+      "I will start soon.",
+      "They arrived before noon."
+    ],
+    "answer": "They arrived before noon.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-062",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 17)",
+    "options": [
+      "The game ended at 4 p.m.",
+      "He is walking now.",
+      "I will start soon.",
+      "I will read tonight."
+    ],
+    "answer": "The game ended at 4 p.m.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-063",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 18)",
+    "options": [
+      "My friend called me last night.",
+      "The class is starting now.",
+      "They will travel next year.",
+      "I will start soon."
+    ],
+    "answer": "My friend called me last night.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-064",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 19)",
+    "options": [
+      "The dog is sleeping now.",
+      "She will study later.",
+      "I will start soon.",
+      "The lesson began this morning."
+    ],
+    "answer": "The lesson began this morning.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-065",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดเป็นเหตุการณ์ในอดีต (ชุดที่ 20)",
+    "options": [
+      "The shop will open tomorrow.",
+      "I will start soon.",
+      "I am writing now.",
+      "I opened the book before class."
+    ],
+    "answer": "I opened the book before class.",
+    "explanation": "เหตุการณ์ในอดีตคือสิ่งที่เกิดขึ้นแล้วก่อนตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-066",
+    "type": "multiple-choice",
+    "prompt": "คำว่า past หมายถึงอะไร",
+    "options": [
+      "ชื่อสถานที่",
+      "สิ่งที่กำลังเกิดขึ้น",
+      "สิ่งที่จะเกิดขึ้น",
+      "สิ่งที่เกิดขึ้นแล้ว"
+    ],
+    "answer": "สิ่งที่เกิดขึ้นแล้ว",
+    "explanation": "past หมายถึงอดีตหรือสิ่งที่เกิดขึ้นแล้ว",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-067",
+    "type": "multiple-choice",
+    "prompt": "วลี before now หมายถึงเวลาใด",
+    "options": [
+      "ทุกวัน",
+      "อนาคต",
+      "อดีต",
+      "ปัจจุบัน"
+    ],
+    "answer": "อดีต",
+    "explanation": "before now แปลว่าก่อนตอนนี้ จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-068",
+    "type": "multiple-choice",
+    "prompt": "วลี right now หมายถึงเวลาใด",
+    "options": [
+      "อดีต",
+      "ปัจจุบัน",
+      "เมื่อวาน",
+      "อนาคต"
+    ],
+    "answer": "ปัจจุบัน",
+    "explanation": "right now หมายถึงตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-069",
+    "type": "multiple-choice",
+    "prompt": "วลี after now หมายถึงเวลาใด",
+    "options": [
+      "อดีต",
+      "อนาคต",
+      "เมื่อวาน",
+      "ปัจจุบัน"
+    ],
+    "answer": "อนาคต",
+    "explanation": "after now คือหลังจากตอนนี้",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-070",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดพูดถึงสิ่งที่เกิดขึ้นแล้ว",
+    "options": [
+      "I am doing my work now.",
+      "I will do my work tomorrow.",
+      "I finished my work yesterday.",
+      "I do my work every day."
+    ],
+    "answer": "I finished my work yesterday.",
+    "explanation": "yesterday บอกว่าเหตุการณ์เกิดขึ้นแล้ว",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-071",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดพูดถึงสิ่งที่ยังไม่เกิดขึ้น",
+    "options": [
+      "I was there last night.",
+      "I went yesterday.",
+      "I will go tomorrow.",
+      "I am here now."
+    ],
+    "answer": "I will go tomorrow.",
+    "explanation": "tomorrow บอกอนาคต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-072",
+    "type": "multiple-choice",
+    "prompt": "ข้อใดพูดถึงสิ่งที่กำลังเกิดขึ้น",
+    "options": [
+      "I am reading now.",
+      "I was tired yesterday.",
+      "I will read tomorrow.",
+      "I read last night."
+    ],
+    "answer": "I am reading now.",
+    "explanation": "now บอกปัจจุบัน",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-073",
+    "type": "multiple-choice",
+    "prompt": "ในเกม Lingua อดีตคืออะไร",
+    "options": [
+      "สิ่งที่กำลังเกิดขึ้น",
+      "สิ่งที่ยังไม่เกิดขึ้น",
+      "สิ่งที่เกิดขึ้นก่อนตอนนี้",
+      "ชื่อพลังโจมตี"
+    ],
+    "answer": "สิ่งที่เกิดขึ้นก่อนตอนนี้",
+    "explanation": "อดีตคือช่วงเวลาก่อนปัจจุบัน",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-074",
+    "type": "multiple-choice",
+    "prompt": "คำว่า happened หมายถึงอะไรในบทนี้",
+    "options": [
+      "จะเกิดขึ้น",
+      "กำลังเกิดขึ้น",
+      "ไม่เกิดขึ้น",
+      "เกิดขึ้นแล้ว"
+    ],
+    "answer": "เกิดขึ้นแล้ว",
+    "explanation": "happened ใช้พูดถึงสิ่งที่เกิดขึ้นแล้ว",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-075",
+    "type": "multiple-choice",
+    "prompt": "คำว่า memory เกี่ยวข้องกับเวลาใดมากที่สุด",
+    "options": [
+      "ทุกวัน",
+      "อนาคต",
+      "อดีต",
+      "ปัจจุบัน"
+    ],
+    "answer": "อดีต",
+    "explanation": "ความทรงจำมักเกี่ยวกับสิ่งที่ผ่านมาแล้ว",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-076",
+    "type": "typing",
+    "prompt": "พิมพ์คำภาษาอังกฤษที่แปลว่า อดีต",
+    "answer": "past",
+    "acceptedAnswers": [
+      "past"
+    ],
+    "explanation": "คำตอบคือ past",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-077",
+    "type": "typing",
+    "prompt": "พิมพ์คำว่า now ถ้าหมายถึง ตอนนี้",
+    "answer": "now",
+    "acceptedAnswers": [
+      "now"
+    ],
+    "explanation": "คำตอบคือ now",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-078",
+    "type": "typing",
+    "prompt": "พิมพ์คำภาษาอังกฤษที่หมายถึง อนาคต",
+    "answer": "future",
+    "acceptedAnswers": [
+      "future"
+    ],
+    "explanation": "คำตอบคือ future",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-079",
+    "type": "typing",
+    "prompt": "พิมพ์คำว่า before ถ้าหมายถึง ก่อน",
+    "answer": "before",
+    "acceptedAnswers": [
+      "before"
+    ],
+    "explanation": "คำตอบคือ before",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-080",
+    "type": "typing",
+    "prompt": "พิมพ์คำว่า happened ถ้าหมายถึง เกิดขึ้นแล้ว",
+    "answer": "happened",
+    "acceptedAnswers": [
+      "happened"
+    ],
+    "explanation": "คำตอบคือ happened",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-081",
+    "type": "typing",
+    "prompt": "พิมพ์คำว่า yesterday ซึ่งเป็นคำบอกอดีต",
+    "answer": "yesterday",
+    "acceptedAnswers": [
+      "yesterday"
+    ],
+    "explanation": "คำตอบคือ yesterday",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-082",
+    "type": "typing",
+    "prompt": "พิมพ์คำว่า finished ซึ่งสื่อว่าเสร็จแล้ว",
+    "answer": "finished",
+    "acceptedAnswers": [
+      "finished"
+    ],
+    "explanation": "คำตอบคือ finished",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-083",
+    "type": "typing",
+    "prompt": "พิมพ์คำว่า memory ซึ่งแปลว่าความทรงจำ",
+    "answer": "memory",
+    "acceptedAnswers": [
+      "memory"
+    ],
+    "explanation": "คำตอบคือ memory",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-084",
+    "type": "typing",
+    "prompt": "พิมพ์คำว่า ago ซึ่งใช้พูดถึงอดีต",
+    "answer": "ago",
+    "acceptedAnswers": [
+      "ago"
+    ],
+    "explanation": "คำตอบคือ ago",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-085",
+    "type": "typing",
+    "prompt": "พิมพ์คำว่า past time ซึ่งหมายถึงเวลาในอดีต",
+    "answer": "past time",
+    "acceptedAnswers": [
+      "past time",
+      "past"
+    ],
+    "explanation": "คำตอบคือ past time",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-086",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่พูดถึงอดีต",
+    "tiles": [
+      "The event",
+      "happened",
+      "before",
+      "now"
+    ],
+    "answer": "The event happened before now.",
+    "acceptedAnswers": [
+      "The event happened before now."
+    ],
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-087",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่พูดถึงอดีต (ชุดที่ 2)",
+    "tiles": [
+      "Past",
+      "means",
+      "before",
+      "now"
+    ],
+    "answer": "Past means before now.",
+    "acceptedAnswers": [
+      "Past means before now."
+    ],
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-088",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่พูดถึงอดีต (ชุดที่ 3)",
+    "tiles": [
+      "I",
+      "was",
+      "happy",
+      "yesterday"
+    ],
+    "answer": "I was happy yesterday.",
+    "acceptedAnswers": [
+      "I was happy yesterday."
+    ],
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-089",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่พูดถึงอดีต (ชุดที่ 4)",
+    "tiles": [
+      "She",
+      "played",
+      "yesterday"
+    ],
+    "answer": "She played yesterday.",
+    "acceptedAnswers": [
+      "She played yesterday."
+    ],
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-090",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่พูดถึงอดีต (ชุดที่ 5)",
+    "tiles": [
+      "We",
+      "finished",
+      "the task"
+    ],
+    "answer": "We finished the task.",
+    "acceptedAnswers": [
+      "We finished the task."
+    ],
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-091",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่พูดถึงอดีต (ชุดที่ 6)",
+    "tiles": [
+      "The story",
+      "began",
+      "long ago"
+    ],
+    "answer": "The story began long ago.",
+    "acceptedAnswers": [
+      "The story began long ago."
+    ],
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-092",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่พูดถึงอดีต (ชุดที่ 7)",
+    "tiles": [
+      "The class",
+      "started",
+      "this morning"
+    ],
+    "answer": "The class started this morning.",
+    "acceptedAnswers": [
+      "The class started this morning."
+    ],
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-093",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่พูดถึงอดีต (ชุดที่ 8)",
+    "tiles": [
+      "He",
+      "called",
+      "me",
+      "last night"
+    ],
+    "answer": "He called me last night.",
+    "acceptedAnswers": [
+      "He called me last night."
+    ],
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-094",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่พูดถึงอดีต (ชุดที่ 9)",
+    "tiles": [
+      "The rain",
+      "stopped",
+      "an hour ago"
+    ],
+    "answer": "The rain stopped an hour ago.",
+    "acceptedAnswers": [
+      "The rain stopped an hour ago."
+    ],
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-095",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่พูดถึงอดีต (ชุดที่ 10)",
+    "tiles": [
+      "My memory",
+      "is about",
+      "the past"
+    ],
+    "answer": "My memory is about the past.",
+    "acceptedAnswers": [
+      "My memory is about the past."
+    ],
+    "explanation": "ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-096",
+    "type": "multiple-choice",
+    "prompt": "ฝึกทบทวนเพิ่มเติม: เหตุการณ์นี้เป็นเวลาใด: I ate breakfast this morning.",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ทบทวนเพิ่มเติม: ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-097",
+    "type": "multiple-choice",
+    "prompt": "ฝึกทบทวนเพิ่มเติม: เหตุการณ์นี้เป็นเวลาใด: I ate breakfast this morning. (ชุดที่ 2)",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ทบทวนเพิ่มเติม: ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-098",
+    "type": "multiple-choice",
+    "prompt": "ฝึกทบทวนเพิ่มเติม: เหตุการณ์นี้เป็นเวลาใด: I ate breakfast this morning. (ชุดที่ 3)",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ทบทวนเพิ่มเติม: ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-099",
+    "type": "multiple-choice",
+    "prompt": "ฝึกทบทวนเพิ่มเติม: เหตุการณ์นี้เป็นเวลาใด: I ate breakfast this morning. (ชุดที่ 4)",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ทบทวนเพิ่มเติม: ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  },
+  {
+    "id": "past-meaning-100",
+    "type": "multiple-choice",
+    "prompt": "ฝึกทบทวนเพิ่มเติม: เหตุการณ์นี้เป็นเวลาใด: I ate breakfast this morning. (ชุดที่ 5)",
+    "options": [
+      "ปัจจุบัน",
+      "อดีต",
+      "ไม่ใช่เหตุการณ์",
+      "อนาคต"
+    ],
+    "answer": "อดีต",
+    "explanation": "ทบทวนเพิ่มเติม: ประโยคนี้พูดถึงสิ่งที่เกิดขึ้นแล้ว จึงเป็นอดีต",
+    "lessonId": "what-is-past",
+    "ruleId": "past_meaning"
+  }
 ];
 
 const phase1PastTimeWordsQuestions = [
-  { id: "phase1-time-words-1", prompt: "Which one is a past time expression?", options: ["next week", "last summer", "now", "soon"], answer: "last summer", explanation: "ถูกต้อง last summer เป็นคำบอกเวลาในอดีต" },
-  { id: "phase1-time-words-2", prompt: "Which one is NOT a past time expression?", options: ["five years ago", "yesterday morning", "next Friday", "long ago"], answer: "next Friday", explanation: "next Friday เป็นเรื่องอนาคต ไม่ใช่อดีต" },
-  { id: "phase1-time-words-3", prompt: "Choose the past time expression.", options: ["earlier today", "tomorrow morning", "next month", "soon"], answer: "earlier today", explanation: "ถูกต้อง earlier today เกิดก่อนตอนนี้แล้ว" },
-  { id: "phase1-time-words-4", prompt: "Which phrase can begin a story about the past?", options: ["Long ago", "Right now", "Next week", "Soon"], answer: "Long ago", explanation: "ถูกต้อง Long ago ใช้เปิดเรื่องเล่าในอดีต" },
-  { id: "phase1-time-words-5", prompt: "Which phrase shows a finished time?", options: ["in 2018", "next year", "every day", "now"], answer: "in 2018", explanation: "ถูกต้อง in 2018 เป็นปีที่ผ่านไปแล้ว" },
-  { id: "phase1-time-words-6", prompt: "Which sentence should use Past Simple?", options: ["I will visit my friend tomorrow.", "I visited my friend last weekend.", "I visit my friend every day.", "I am visiting my friend now."], answer: "I visited my friend last weekend.", explanation: "ถูกต้อง last weekend บอกว่าเหตุการณ์เกิดขึ้นแล้ว" },
-  { id: "phase1-time-words-7", prompt: "Which phrase means ก่อนเข้าเรียน?", options: ["before class", "after tomorrow", "next class", "every class"], answer: "before class", explanation: "ถูกต้อง before class แปลว่า ก่อนเข้าเรียน" },
-  { id: "phase1-time-words-8", prompt: "When I was a child talks about:", options: ["the past", "the future", "right now", "every day"], answer: "the past", explanation: "ถูกต้อง วลีนี้พูดถึงช่วงเวลาตอนเด็กในอดีต" }
+  {
+    "id": "past-time-001",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต",
+    "options": [
+      "in 2035",
+      "yesterday",
+      "right now",
+      "these days"
+    ],
+    "answer": "yesterday",
+    "explanation": "yesterday ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-002",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 2)",
+    "options": [
+      "next month",
+      "last night",
+      "every day",
+      "next year"
+    ],
+    "answer": "last night",
+    "explanation": "last night ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-003",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 3)",
+    "options": [
+      "currently",
+      "last week",
+      "usually",
+      "these days"
+    ],
+    "answer": "last week",
+    "explanation": "last week ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-004",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 4)",
+    "options": [
+      "last month",
+      "usually",
+      "next summer",
+      "in the future"
+    ],
+    "answer": "last month",
+    "explanation": "last month ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-005",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 5)",
+    "options": [
+      "next year",
+      "last year",
+      "soon",
+      "usually"
+    ],
+    "answer": "last year",
+    "explanation": "last year ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-006",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 6)",
+    "options": [
+      "this weekend",
+      "tomorrow",
+      "in the future",
+      "two days ago"
+    ],
+    "answer": "two days ago",
+    "explanation": "two days ago ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-007",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 7)",
+    "options": [
+      "five minutes ago",
+      "from now on",
+      "tomorrow",
+      "these days"
+    ],
+    "answer": "five minutes ago",
+    "explanation": "five minutes ago ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-008",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 8)",
+    "options": [
+      "every Monday",
+      "every day",
+      "currently",
+      "an hour ago"
+    ],
+    "answer": "an hour ago",
+    "explanation": "an hour ago ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-009",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 9)",
+    "options": [
+      "later",
+      "in 2035",
+      "this year",
+      "in 2020"
+    ],
+    "answer": "in 2020",
+    "explanation": "in 2020 ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-010",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 10)",
+    "options": [
+      "next year",
+      "in 2018",
+      "at the moment",
+      "tomorrow"
+    ],
+    "answer": "in 2018",
+    "explanation": "in 2018 ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-011",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 11)",
+    "options": [
+      "when I was young",
+      "tonight",
+      "tomorrow",
+      "next summer"
+    ],
+    "answer": "when I was young",
+    "explanation": "when I was young ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-012",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 12)",
+    "options": [
+      "tomorrow",
+      "next semester",
+      "in the future",
+      "when I was a child"
+    ],
+    "answer": "when I was a child",
+    "explanation": "when I was a child ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-013",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 13)",
+    "options": [
+      "long ago",
+      "soon",
+      "this year",
+      "this weekend"
+    ],
+    "answer": "long ago",
+    "explanation": "long ago ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-014",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 14)",
+    "options": [
+      "tomorrow",
+      "always",
+      "a week ago",
+      "later"
+    ],
+    "answer": "a week ago",
+    "explanation": "a week ago ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-015",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 15)",
+    "options": [
+      "currently",
+      "last Monday",
+      "these days",
+      "usually"
+    ],
+    "answer": "last Monday",
+    "explanation": "last Monday ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-016",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 16)",
+    "options": [
+      "later",
+      "last Friday",
+      "next Friday",
+      "tonight"
+    ],
+    "answer": "last Friday",
+    "explanation": "last Friday ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-017",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 17)",
+    "options": [
+      "next semester",
+      "these days",
+      "later",
+      "yesterday morning"
+    ],
+    "answer": "yesterday morning",
+    "explanation": "yesterday morning ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-018",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 18)",
+    "options": [
+      "today",
+      "tomorrow",
+      "yesterday evening",
+      "currently"
+    ],
+    "answer": "yesterday evening",
+    "explanation": "yesterday evening ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-019",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 19)",
+    "options": [
+      "next summer",
+      "before class",
+      "tonight",
+      "this weekend"
+    ],
+    "answer": "before class",
+    "explanation": "before class ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-020",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 20)",
+    "options": [
+      "now",
+      "earlier today",
+      "next year",
+      "next summer"
+    ],
+    "answer": "earlier today",
+    "explanation": "earlier today ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-021",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 21)",
+    "options": [
+      "this year",
+      "today",
+      "last summer",
+      "next year"
+    ],
+    "answer": "last summer",
+    "explanation": "last summer ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-022",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 22)",
+    "options": [
+      "at the moment",
+      "every Monday",
+      "last winter",
+      "this year"
+    ],
+    "answer": "last winter",
+    "explanation": "last winter ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-023",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 23)",
+    "options": [
+      "always",
+      "next semester",
+      "many years ago",
+      "this weekend"
+    ],
+    "answer": "many years ago",
+    "explanation": "many years ago ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-024",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 24)",
+    "options": [
+      "in 2035",
+      "today",
+      "a long time ago",
+      "soon"
+    ],
+    "answer": "a long time ago",
+    "explanation": "a long time ago ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-025",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 25)",
+    "options": [
+      "in the future",
+      "one day in the past",
+      "usually",
+      "always"
+    ],
+    "answer": "one day in the past",
+    "explanation": "one day in the past ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-026",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 26)",
+    "options": [
+      "three years ago",
+      "in 2035",
+      "next week",
+      "usually"
+    ],
+    "answer": "three years ago",
+    "explanation": "three years ago ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-027",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 27)",
+    "options": [
+      "later",
+      "last weekend",
+      "in the future",
+      "this year"
+    ],
+    "answer": "last weekend",
+    "explanation": "last weekend ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-028",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 28)",
+    "options": [
+      "this weekend",
+      "next semester",
+      "last semester",
+      "now"
+    ],
+    "answer": "last semester",
+    "explanation": "last semester ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-029",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 29)",
+    "options": [
+      "in the past",
+      "every Monday",
+      "next Friday",
+      "tonight"
+    ],
+    "answer": "in the past",
+    "explanation": "in the past ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-030",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดเป็นคำบอกเวลาในอดีต (ชุดที่ 30)",
+    "options": [
+      "a few days ago",
+      "this year",
+      "these days",
+      "next semester"
+    ],
+    "answer": "a few days ago",
+    "explanation": "a few days ago ใช้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-031",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต",
+    "options": [
+      "tomorrow",
+      "last Monday",
+      "last week",
+      "when I was a child"
+    ],
+    "answer": "tomorrow",
+    "explanation": "tomorrow ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-032",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 2)",
+    "options": [
+      "last winter",
+      "next week",
+      "yesterday morning",
+      "last month"
+    ],
+    "answer": "next week",
+    "explanation": "next week ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-033",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 3)",
+    "options": [
+      "next month",
+      "yesterday morning",
+      "two days ago",
+      "one day in the past"
+    ],
+    "answer": "next month",
+    "explanation": "next month ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-034",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 4)",
+    "options": [
+      "when I was a child",
+      "next year",
+      "last weekend",
+      "long ago"
+    ],
+    "answer": "next year",
+    "explanation": "next year ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-035",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 5)",
+    "options": [
+      "right now",
+      "yesterday",
+      "a long time ago",
+      "last Friday"
+    ],
+    "answer": "right now",
+    "explanation": "right now ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-036",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 6)",
+    "options": [
+      "last Friday",
+      "in 2018",
+      "last night",
+      "now"
+    ],
+    "answer": "now",
+    "explanation": "now ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-037",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 7)",
+    "options": [
+      "soon",
+      "earlier today",
+      "last semester",
+      "many years ago"
+    ],
+    "answer": "soon",
+    "explanation": "soon ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-038",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 8)",
+    "options": [
+      "long ago",
+      "before class",
+      "last summer",
+      "later"
+    ],
+    "answer": "later",
+    "explanation": "later ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-039",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 9)",
+    "options": [
+      "two days ago",
+      "every day",
+      "an hour ago",
+      "yesterday morning"
+    ],
+    "answer": "every day",
+    "explanation": "every day ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-040",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 10)",
+    "options": [
+      "today",
+      "one day in the past",
+      "five minutes ago",
+      "yesterday"
+    ],
+    "answer": "today",
+    "explanation": "today ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-041",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 11)",
+    "options": [
+      "at the moment",
+      "a few days ago",
+      "yesterday evening",
+      "last semester"
+    ],
+    "answer": "at the moment",
+    "explanation": "at the moment ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-042",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 12)",
+    "options": [
+      "yesterday evening",
+      "next Friday",
+      "long ago",
+      "an hour ago"
+    ],
+    "answer": "next Friday",
+    "explanation": "next Friday ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-043",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 13)",
+    "options": [
+      "in the future",
+      "yesterday morning",
+      "when I was a child",
+      "last semester"
+    ],
+    "answer": "in the future",
+    "explanation": "in the future ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-044",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 14)",
+    "options": [
+      "this weekend",
+      "last Monday",
+      "when I was a child",
+      "before class"
+    ],
+    "answer": "this weekend",
+    "explanation": "this weekend ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-045",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 15)",
+    "options": [
+      "last winter",
+      "in 2020",
+      "currently",
+      "a few days ago"
+    ],
+    "answer": "currently",
+    "explanation": "currently ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-046",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 16)",
+    "options": [
+      "yesterday evening",
+      "earlier today",
+      "usually",
+      "a long time ago"
+    ],
+    "answer": "usually",
+    "explanation": "usually ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-047",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 17)",
+    "options": [
+      "long ago",
+      "always",
+      "three years ago",
+      "yesterday"
+    ],
+    "answer": "always",
+    "explanation": "always ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-048",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 18)",
+    "options": [
+      "last weekend",
+      "last semester",
+      "tonight",
+      "in the past"
+    ],
+    "answer": "tonight",
+    "explanation": "tonight ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-049",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 19)",
+    "options": [
+      "three years ago",
+      "a long time ago",
+      "in 2035",
+      "yesterday morning"
+    ],
+    "answer": "in 2035",
+    "explanation": "in 2035 ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-050",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 20)",
+    "options": [
+      "last year",
+      "one day in the past",
+      "yesterday morning",
+      "from now on"
+    ],
+    "answer": "from now on",
+    "explanation": "from now on ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-051",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 21)",
+    "options": [
+      "next summer",
+      "a week ago",
+      "five minutes ago",
+      "yesterday evening"
+    ],
+    "answer": "next summer",
+    "explanation": "next summer ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-052",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 22)",
+    "options": [
+      "last semester",
+      "last night",
+      "last Friday",
+      "next semester"
+    ],
+    "answer": "next semester",
+    "explanation": "next semester ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-053",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 23)",
+    "options": [
+      "before class",
+      "when I was a child",
+      "every Monday",
+      "yesterday evening"
+    ],
+    "answer": "every Monday",
+    "explanation": "every Monday ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-054",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 24)",
+    "options": [
+      "a week ago",
+      "yesterday morning",
+      "this year",
+      "five minutes ago"
+    ],
+    "answer": "this year",
+    "explanation": "this year ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-055",
+    "type": "multiple-choice",
+    "prompt": "คำหรือวลีใดไม่ใช่คำบอกเวลาในอดีต (ชุดที่ 25)",
+    "options": [
+      "these days",
+      "last Friday",
+      "last weekend",
+      "when I was a child"
+    ],
+    "answer": "these days",
+    "explanation": "these days ไม่ได้บอกเวลาที่ผ่านมาแล้ว",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-056",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____.",
+    "options": [
+      "this weekend",
+      "yesterday",
+      "next Friday",
+      "tomorrow"
+    ],
+    "answer": "yesterday",
+    "explanation": "yesterday เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-057",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 2)",
+    "options": [
+      "at the moment",
+      "tonight",
+      "from now on",
+      "last night"
+    ],
+    "answer": "last night",
+    "explanation": "last night เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-058",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 3)",
+    "options": [
+      "from now on",
+      "last week",
+      "tomorrow",
+      "currently"
+    ],
+    "answer": "last week",
+    "explanation": "last week เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-059",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 4)",
+    "options": [
+      "now",
+      "next summer",
+      "last month",
+      "later"
+    ],
+    "answer": "last month",
+    "explanation": "last month เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-060",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 5)",
+    "options": [
+      "tonight",
+      "in 2035",
+      "last year",
+      "now"
+    ],
+    "answer": "last year",
+    "explanation": "last year เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-061",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 6)",
+    "options": [
+      "every day",
+      "next month",
+      "two days ago",
+      "tonight"
+    ],
+    "answer": "two days ago",
+    "explanation": "two days ago เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-062",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 7)",
+    "options": [
+      "next semester",
+      "next week",
+      "five minutes ago",
+      "next month"
+    ],
+    "answer": "five minutes ago",
+    "explanation": "five minutes ago เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-063",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 8)",
+    "options": [
+      "an hour ago",
+      "currently",
+      "tomorrow",
+      "next month"
+    ],
+    "answer": "an hour ago",
+    "explanation": "an hour ago เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-064",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 9)",
+    "options": [
+      "every day",
+      "these days",
+      "in 2020",
+      "tomorrow"
+    ],
+    "answer": "in 2020",
+    "explanation": "in 2020 เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-065",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 10)",
+    "options": [
+      "later",
+      "next year",
+      "in 2018",
+      "every day"
+    ],
+    "answer": "in 2018",
+    "explanation": "in 2018 เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-066",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 11)",
+    "options": [
+      "now",
+      "next Friday",
+      "when I was young",
+      "from now on"
+    ],
+    "answer": "when I was young",
+    "explanation": "when I was young เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-067",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 12)",
+    "options": [
+      "now",
+      "today",
+      "next month",
+      "when I was a child"
+    ],
+    "answer": "when I was a child",
+    "explanation": "when I was a child เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-068",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 13)",
+    "options": [
+      "always",
+      "long ago",
+      "every day",
+      "now"
+    ],
+    "answer": "long ago",
+    "explanation": "long ago เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-069",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 14)",
+    "options": [
+      "next semester",
+      "a week ago",
+      "every day",
+      "now"
+    ],
+    "answer": "a week ago",
+    "explanation": "a week ago เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-070",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 15)",
+    "options": [
+      "next summer",
+      "last Monday",
+      "today",
+      "every Monday"
+    ],
+    "answer": "last Monday",
+    "explanation": "last Monday เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-071",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 16)",
+    "options": [
+      "currently",
+      "every Monday",
+      "last Friday",
+      "at the moment"
+    ],
+    "answer": "last Friday",
+    "explanation": "last Friday เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-072",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 17)",
+    "options": [
+      "next year",
+      "yesterday morning",
+      "usually",
+      "tomorrow"
+    ],
+    "answer": "yesterday morning",
+    "explanation": "yesterday morning เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-073",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 18)",
+    "options": [
+      "today",
+      "at the moment",
+      "in the future",
+      "yesterday evening"
+    ],
+    "answer": "yesterday evening",
+    "explanation": "yesterday evening เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-074",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 19)",
+    "options": [
+      "every day",
+      "soon",
+      "this weekend",
+      "before class"
+    ],
+    "answer": "before class",
+    "explanation": "before class เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-075",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 20)",
+    "options": [
+      "earlier today",
+      "every day",
+      "this year",
+      "next year"
+    ],
+    "answer": "earlier today",
+    "explanation": "earlier today เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-076",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 21)",
+    "options": [
+      "last summer",
+      "soon",
+      "always",
+      "from now on"
+    ],
+    "answer": "last summer",
+    "explanation": "last summer เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-077",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 22)",
+    "options": [
+      "last winter",
+      "tomorrow",
+      "later",
+      "this weekend"
+    ],
+    "answer": "last winter",
+    "explanation": "last winter เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-078",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 23)",
+    "options": [
+      "tomorrow",
+      "right now",
+      "many years ago",
+      "in the future"
+    ],
+    "answer": "many years ago",
+    "explanation": "many years ago เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-079",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 24)",
+    "options": [
+      "a long time ago",
+      "now",
+      "next week",
+      "this year"
+    ],
+    "answer": "a long time ago",
+    "explanation": "a long time ago เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-080",
+    "type": "multiple-choice",
+    "prompt": "เติมคำบอกเวลาในอดีตให้เหมาะสม: I studied English ____. (ชุดที่ 25)",
+    "options": [
+      "always",
+      "every Monday",
+      "currently",
+      "one day in the past"
+    ],
+    "answer": "one day in the past",
+    "explanation": "one day in the past เป็นคำบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-081",
+    "type": "typing",
+    "prompt": "พิมพ์คำ/วลีบอกเวลาในอดีตตามคำใบ้: yesterday",
+    "answer": "yesterday",
+    "acceptedAnswers": [
+      "yesterday"
+    ],
+    "explanation": "คำตอบคือ yesterday",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-082",
+    "type": "typing",
+    "prompt": "พิมพ์คำ/วลีบอกเวลาในอดีตตามคำใบ้: last night",
+    "answer": "last night",
+    "acceptedAnswers": [
+      "last night"
+    ],
+    "explanation": "คำตอบคือ last night",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-083",
+    "type": "typing",
+    "prompt": "พิมพ์คำ/วลีบอกเวลาในอดีตตามคำใบ้: last week",
+    "answer": "last week",
+    "acceptedAnswers": [
+      "last week"
+    ],
+    "explanation": "คำตอบคือ last week",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-084",
+    "type": "typing",
+    "prompt": "พิมพ์คำ/วลีบอกเวลาในอดีตตามคำใบ้: last month",
+    "answer": "last month",
+    "acceptedAnswers": [
+      "last month"
+    ],
+    "explanation": "คำตอบคือ last month",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-085",
+    "type": "typing",
+    "prompt": "พิมพ์คำ/วลีบอกเวลาในอดีตตามคำใบ้: last year",
+    "answer": "last year",
+    "acceptedAnswers": [
+      "last year"
+    ],
+    "explanation": "คำตอบคือ last year",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-086",
+    "type": "typing",
+    "prompt": "พิมพ์คำ/วลีบอกเวลาในอดีตตามคำใบ้: two days ago",
+    "answer": "two days ago",
+    "acceptedAnswers": [
+      "two days ago"
+    ],
+    "explanation": "คำตอบคือ two days ago",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-087",
+    "type": "typing",
+    "prompt": "พิมพ์คำ/วลีบอกเวลาในอดีตตามคำใบ้: five minutes ago",
+    "answer": "five minutes ago",
+    "acceptedAnswers": [
+      "five minutes ago"
+    ],
+    "explanation": "คำตอบคือ five minutes ago",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-088",
+    "type": "typing",
+    "prompt": "พิมพ์คำ/วลีบอกเวลาในอดีตตามคำใบ้: an hour ago",
+    "answer": "an hour ago",
+    "acceptedAnswers": [
+      "an hour ago"
+    ],
+    "explanation": "คำตอบคือ an hour ago",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-089",
+    "type": "typing",
+    "prompt": "พิมพ์คำ/วลีบอกเวลาในอดีตตามคำใบ้: in 2020",
+    "answer": "in 2020",
+    "acceptedAnswers": [
+      "in 2020"
+    ],
+    "explanation": "คำตอบคือ in 2020",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-090",
+    "type": "typing",
+    "prompt": "พิมพ์คำ/วลีบอกเวลาในอดีตตามคำใบ้: in 2018",
+    "answer": "in 2018",
+    "acceptedAnswers": [
+      "in 2018"
+    ],
+    "explanation": "คำตอบคือ in 2018",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-091",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นวลีบอกเวลาในอดีต",
+    "tiles": [
+      "when",
+      "I",
+      "was",
+      "young"
+    ],
+    "answer": "when I was young",
+    "acceptedAnswers": [
+      "when I was young"
+    ],
+    "explanation": "when I was young เป็นวลีบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-092",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นวลีบอกเวลาในอดีต (ชุดที่ 2)",
+    "tiles": [
+      "when",
+      "I",
+      "was",
+      "a",
+      "child"
+    ],
+    "answer": "when I was a child",
+    "acceptedAnswers": [
+      "when I was a child"
+    ],
+    "explanation": "when I was a child เป็นวลีบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-093",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นวลีบอกเวลาในอดีต (ชุดที่ 3)",
+    "tiles": [
+      "long",
+      "ago"
+    ],
+    "answer": "long ago",
+    "acceptedAnswers": [
+      "long ago"
+    ],
+    "explanation": "long ago เป็นวลีบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-094",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นวลีบอกเวลาในอดีต (ชุดที่ 4)",
+    "tiles": [
+      "a",
+      "week",
+      "ago"
+    ],
+    "answer": "a week ago",
+    "acceptedAnswers": [
+      "a week ago"
+    ],
+    "explanation": "a week ago เป็นวลีบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-095",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นวลีบอกเวลาในอดีต (ชุดที่ 5)",
+    "tiles": [
+      "last",
+      "Monday"
+    ],
+    "answer": "last Monday",
+    "acceptedAnswers": [
+      "last Monday"
+    ],
+    "explanation": "last Monday เป็นวลีบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-096",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นวลีบอกเวลาในอดีต (ชุดที่ 6)",
+    "tiles": [
+      "last",
+      "Friday"
+    ],
+    "answer": "last Friday",
+    "acceptedAnswers": [
+      "last Friday"
+    ],
+    "explanation": "last Friday เป็นวลีบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-097",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นวลีบอกเวลาในอดีต (ชุดที่ 7)",
+    "tiles": [
+      "yesterday",
+      "morning"
+    ],
+    "answer": "yesterday morning",
+    "acceptedAnswers": [
+      "yesterday morning"
+    ],
+    "explanation": "yesterday morning เป็นวลีบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-098",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นวลีบอกเวลาในอดีต (ชุดที่ 8)",
+    "tiles": [
+      "yesterday",
+      "evening"
+    ],
+    "answer": "yesterday evening",
+    "acceptedAnswers": [
+      "yesterday evening"
+    ],
+    "explanation": "yesterday evening เป็นวลีบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-099",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นวลีบอกเวลาในอดีต (ชุดที่ 9)",
+    "tiles": [
+      "before",
+      "class"
+    ],
+    "answer": "before class",
+    "acceptedAnswers": [
+      "before class"
+    ],
+    "explanation": "before class เป็นวลีบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  },
+  {
+    "id": "past-time-100",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นวลีบอกเวลาในอดีต (ชุดที่ 10)",
+    "tiles": [
+      "earlier",
+      "today"
+    ],
+    "answer": "earlier today",
+    "acceptedAnswers": [
+      "earlier today"
+    ],
+    "explanation": "earlier today เป็นวลีบอกเวลาในอดีต",
+    "lessonId": "what-is-tense",
+    "ruleId": "past_time_words"
+  }
 ];
 
 const phase1WasWereQuestions = [
   {
-    id: "was-were-clean-001",
-    prompt: "เติมคำให้ถูกต้อง: I ____ at school yesterday.",
-    options: ["were", "was", "am", "are"],
-    answer: "was",
-    explanation: "ประธาน I ใช้ was เมื่อพูดถึงอดีต"
-  },
-  {
-    id: "was-were-clean-002",
-    prompt: "เติมคำให้ถูกต้อง: We ____ at the market last Sunday.",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "ประธาน We ใช้ were"
-  },
-  {
-    id: "was-were-clean-003",
-    prompt: "เติมคำให้ถูกต้อง: He ____ sick yesterday.",
-    options: ["was", "were", "are", "am"],
-    answer: "was",
-    explanation: "ประธาน He ใช้ was"
-  },
-  {
-    id: "was-were-clean-004",
-    prompt: "เติมคำให้ถูกต้อง: They ____ happy last night.",
-    options: ["is", "was", "am", "were"],
-    answer: "were",
-    explanation: "ประธาน They ใช้ were"
-  },
-  {
-    id: "was-were-clean-005",
-    prompt: "เติมคำให้ถูกต้อง: She ____ tired after the game.",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "ประธาน She ใช้ was"
-  },
-  {
-    id: "was-were-clean-006",
-    prompt: "เติมคำให้ถูกต้อง: You ____ late yesterday.",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "ประธาน You ใช้ were"
-  },
-  {
-    id: "was-were-clean-007",
-    prompt: "เติมคำให้ถูกต้อง: It ____ dark in the cave.",
-    options: ["was", "were", "are", "be"],
-    answer: "was",
-    explanation: "ประธาน It ใช้ was"
-  },
-  {
-    id: "was-were-clean-008",
-    prompt: "เติมคำให้ถูกต้อง: The cat ____ under the chair last night.",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "The cat เป็นคำนามเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-009",
-    prompt: "เติมคำให้ถูกต้อง: The doors ____ open last night.",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "The doors เป็นคำนามพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-010",
-    prompt: "เติมคำให้ถูกต้อง: My friends ____ happy after school.",
-    options: ["were", "was", "is", "am"],
-    answer: "were",
-    explanation: "My friends หมายถึงเพื่อนหลายคน จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-011",
-    prompt: "เติมคำให้ถูกต้อง: The boy ____ in the classroom.",
-    options: ["were", "are", "was", "am"],
-    answer: "was",
-    explanation: "The boy เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-012",
-    prompt: "เติมคำให้ถูกต้อง: The girls ____ very quiet.",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "The girls เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-013",
-    prompt: "เติมคำให้ถูกต้อง: My mother ____ busy yesterday.",
-    options: ["was", "were", "are", "am"],
-    answer: "was",
-    explanation: "My mother เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-014",
-    prompt: "เติมคำให้ถูกต้อง: My parents ____ at home last night.",
-    options: ["was", "is", "am", "were"],
-    answer: "were",
-    explanation: "My parents หมายถึงพ่อแม่สองคน จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-015",
-    prompt: "เติมคำให้ถูกต้อง: The classroom ____ clean yesterday.",
-    options: ["were", "was", "are", "be"],
-    answer: "was",
-    explanation: "The classroom เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-016",
-    prompt: "เติมคำให้ถูกต้อง: The students ____ ready for the test.",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "The students เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-017",
-    prompt: "เติมคำให้ถูกต้อง: I ____ not ready for the test.",
-    options: ["were", "was", "are", "be"],
-    answer: "was",
-    explanation: "รูปปฏิเสธของ I ในอดีตคือ I was not"
-  },
-  {
-    id: "was-were-clean-018",
-    prompt: "เติมคำให้ถูกต้อง: They ____ not in the classroom.",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "รูปปฏิเสธของ They ในอดีตคือ They were not"
-  },
-  {
-    id: "was-were-clean-019",
-    prompt: "เติมคำให้ถูกต้อง: He ____ not angry yesterday.",
-    options: ["were", "are", "was", "am"],
-    answer: "was",
-    explanation: "He ใช้ was ดังนั้นรูปปฏิเสธคือ was not"
-  },
-  {
-    id: "was-were-clean-020",
-    prompt: "เติมคำให้ถูกต้อง: We ____ not late this morning.",
-    options: ["was", "were", "is", "am"],
-    answer: "were",
-    explanation: "We ใช้ were ดังนั้นรูปปฏิเสธคือ were not"
-  },
-  {
-    id: "was-were-clean-021",
-    prompt: "เติมคำถามให้ถูกต้อง: ____ she at school yesterday?",
-    options: ["Were", "Was", "Are", "Be"],
-    answer: "Was",
-    explanation: "คำถามกับ she ในอดีตใช้ Was"
-  },
-  {
-    id: "was-were-clean-022",
-    prompt: "เติมคำถามให้ถูกต้อง: ____ you at school yesterday?",
-    options: ["Was", "Is", "Were", "Am"],
-    answer: "Were",
-    explanation: "คำถามกับ you ในอดีตใช้ Were"
-  },
-  {
-    id: "was-were-clean-023",
-    prompt: "เติมคำถามให้ถูกต้อง: ____ he sick last week?",
-    options: ["Were", "Are", "Was", "Am"],
-    answer: "Was",
-    explanation: "คำถามกับ he ในอดีตใช้ Was"
-  },
-  {
-    id: "was-were-clean-024",
-    prompt: "เติมคำถามให้ถูกต้อง: ____ they in the library?",
-    options: ["Was", "Were", "Is", "Am"],
-    answer: "Were",
-    explanation: "คำถามกับ they ใช้ Were"
-  },
-  {
-    id: "was-were-clean-025",
-    prompt: "ประโยคใดใช้กับประธาน I ได้ถูกต้อง",
-    options: ["I were tired yesterday.", "I was tired yesterday.", "I are tired yesterday.", "I am tired yesterday."],
-    answer: "I was tired yesterday.",
-    explanation: "ประธาน I ใช้ was ในอดีต"
-  },
-  {
-    id: "was-were-clean-026",
-    prompt: "ประโยคใดใช้กับประธาน You ได้ถูกต้อง",
-    options: ["You was late yesterday.", "You is late yesterday.", "You were late yesterday.", "You am late yesterday."],
-    answer: "You were late yesterday.",
-    explanation: "ประธาน You ใช้ were"
-  },
-  {
-    id: "was-were-clean-027",
-    prompt: "ประโยคใดใช้กับประธาน She ได้ถูกต้อง",
-    options: ["She were happy.", "She are happy.", "She was happy.", "She am happy."],
-    answer: "She was happy.",
-    explanation: "ประธาน She ใช้ was"
-  },
-  {
-    id: "was-were-clean-028",
-    prompt: "เติมคำให้ถูกต้อง: They ____ happy yesterday.",
-    options: ["was", "were", "is", "am"],
-    answer: "were",
-    explanation: "They เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-029",
-    prompt: "เติมคำให้ถูกต้อง: She ____ sad yesterday.",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "She เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-030",
-    prompt: "ประโยคใดถูกต้อง",
-    options: ["The books was on the desk.", "The books were on the desk.", "The books is on the desk.", "The books am on the desk."],
-    answer: "The books were on the desk.",
-    explanation: "The books เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-031",
-    prompt: "คำตอบใดเหมาะสมกับคำถาม: Were you at school yesterday?",
-    options: ["Yes, I was.", "Yes, I were.", "Yes, I am.", "Yes, I is."],
-    answer: "Yes, I was.",
-    explanation: "ถามว่า Were you แต่ตอบเกี่ยวกับ I จึงใช้ I was"
-  },
-  {
-    id: "was-were-clean-032",
-    prompt: "คำตอบใดเหมาะสมกับคำถาม: Was she tired last night?",
-    options: ["Yes, she were.", "Yes, she was.", "Yes, she is.", "Yes, she are."],
-    answer: "Yes, she was.",
-    explanation: "คำถามขึ้นต้นด้วย Was she จึงตอบว่า Yes, she was"
-  },
-  {
-    id: "was-were-clean-033",
-    prompt: "เติมคำให้ถูกต้อง: Where ____ you yesterday?",
-    options: ["was", "were", "is", "am"],
-    answer: "were",
-    explanation: "คำถามกับ you ในอดีตใช้ were"
-  },
-  {
-    id: "was-were-clean-034",
-    prompt: "เติมคำให้ถูกต้อง: How ____ your trip last week?",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "your trip เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-035",
-    prompt: "ประโยคใดใช้กับประธาน We ได้ถูกต้อง",
-    options: ["We was ready.", "We were ready.", "We is ready.", "We am ready."],
-    answer: "We were ready.",
-    explanation: "ประธาน We ใช้ were"
-  },
-  {
-    id: "was-were-clean-036",
-    prompt: "ประโยคใดใช้กับประธาน It ได้ถูกต้อง",
-    options: ["It were cold.", "It are cold.", "It am cold.", "It was cold."],
-    answer: "It was cold.",
-    explanation: "ประธาน It ใช้ was"
-  },
-  {
-    id: "was-were-clean-037",
-    prompt: "เติมคำให้ถูกต้อง: The children ____ excited.",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "The children เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-038",
-    prompt: "เติมคำให้ถูกต้อง: A small bird ____ on the tree.",
-    options: ["were", "was", "are", "be"],
-    answer: "was",
-    explanation: "A small bird เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-039",
-    prompt: "เติมคำให้ถูกต้อง: The game ____ fun yesterday.",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "The game เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-040",
-    prompt: "เติมคำให้ถูกต้อง: The players ____ tired after the match.",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "The players เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-041",
-    prompt: "เติมคำให้ถูกต้อง: My brother ____ at the library yesterday.",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "My brother เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-042",
-    prompt: "เติมคำให้ถูกต้อง: My sisters ____ in the kitchen last night.",
-    options: ["was", "were", "is", "am"],
-    answer: "were",
-    explanation: "My sisters เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-043",
-    prompt: "เติมคำให้ถูกต้อง: The movie ____ interesting.",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "The movie เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-044",
-    prompt: "เติมคำให้ถูกต้อง: The movies ____ interesting.",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "The movies เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-045",
-    prompt: "เติมคำให้ถูกต้อง: The dog ____ hungry this morning.",
-    options: ["were", "are", "was", "am"],
-    answer: "was",
-    explanation: "The dog เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-046",
-    prompt: "เติมคำให้ถูกต้อง: The dogs ____ noisy last night.",
-    options: ["was", "were", "is", "am"],
-    answer: "were",
-    explanation: "The dogs เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-047",
-    prompt: "เติมคำให้ถูกต้อง: A teacher ____ in the room.",
-    options: ["were", "was", "are", "be"],
-    answer: "was",
-    explanation: "A teacher เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-048",
-    prompt: "เติมคำให้ถูกต้อง: Many teachers ____ at the meeting.",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "Many teachers เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-049",
-    prompt: "เติมคำให้ถูกต้อง: This lesson ____ easy for me.",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "This lesson เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-050",
-    prompt: "เติมคำให้ถูกต้อง: These lessons ____ easy for us.",
-    options: ["was", "were", "is", "am"],
-    answer: "were",
-    explanation: "These lessons เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-051",
-    prompt: "เติมคำให้ถูกต้อง: The answer ____ correct.",
-    options: ["were", "was", "are", "be"],
-    answer: "was",
-    explanation: "The answer เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-052",
-    prompt: "เติมคำให้ถูกต้อง: The answers ____ correct.",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "The answers เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-053",
-    prompt: "เติมคำให้ถูกต้อง: My bag ____ heavy yesterday.",
-    options: ["was", "were", "are", "am"],
-    answer: "was",
-    explanation: "My bag เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-054",
-    prompt: "เติมคำให้ถูกต้อง: Our bags ____ heavy yesterday.",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "Our bags เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-055",
-    prompt: "เติมคำให้ถูกต้อง: The test ____ difficult.",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "The test เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-056",
-    prompt: "เติมคำให้ถูกต้อง: The tests ____ difficult.",
-    options: ["was", "were", "is", "am"],
-    answer: "were",
-    explanation: "The tests เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-057",
-    prompt: "เติมคำให้ถูกต้อง: The weather ____ hot yesterday.",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "The weather เป็นคำนามเอกพจน์/นับไม่ได้ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-058",
-    prompt: "เติมคำให้ถูกต้อง: The rooms ____ clean after class.",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "The rooms เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-059",
-    prompt: "เติมคำให้ถูกต้อง: My phone ____ on the desk.",
-    options: ["were", "was", "are", "be"],
-    answer: "was",
-    explanation: "My phone เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-060",
-    prompt: "เติมคำให้ถูกต้อง: The phones ____ on the table.",
-    options: ["was", "were", "is", "am"],
-    answer: "were",
-    explanation: "The phones เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-061",
-    prompt: "เติมคำให้ถูกต้อง: I ____ very nervous before the test.",
-    options: ["were", "was", "are", "be"],
-    answer: "was",
-    explanation: "ประธาน I ใช้ was ในอดีต"
-  },
-  {
-    id: "was-were-clean-062",
-    prompt: "เติมคำให้ถูกต้อง: You ____ very kind to me.",
-    options: ["was", "were", "is", "am"],
-    answer: "were",
-    explanation: "ประธาน You ใช้ were"
-  },
-  {
-    id: "was-were-clean-063",
-    prompt: "เติมคำให้ถูกต้อง: He ____ absent yesterday.",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "ประธาน He ใช้ was"
-  },
-  {
-    id: "was-were-clean-064",
-    prompt: "เติมคำให้ถูกต้อง: She ____ at home last night.",
-    options: ["were", "was", "are", "be"],
-    answer: "was",
-    explanation: "ประธาน She ใช้ was"
-  },
-  {
-    id: "was-were-clean-065",
-    prompt: "เติมคำให้ถูกต้อง: It ____ a good day.",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "ประธาน It ใช้ was"
-  },
-  {
-    id: "was-were-clean-066",
-    prompt: "เติมคำให้ถูกต้อง: We ____ in the same team.",
-    options: ["was", "were", "is", "am"],
-    answer: "were",
-    explanation: "ประธาน We ใช้ were"
-  },
-  {
-    id: "was-were-clean-067",
-    prompt: "เติมคำให้ถูกต้อง: They ____ near the school.",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "ประธาน They ใช้ were"
-  },
-  {
-    id: "was-were-clean-068",
-    prompt: "เติมคำให้ถูกต้อง: The shop ____ closed yesterday.",
-    options: ["were", "was", "are", "be"],
-    answer: "was",
-    explanation: "The shop เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-069",
-    prompt: "เติมคำให้ถูกต้อง: The shops ____ closed yesterday.",
-    options: ["was", "were", "is", "am"],
-    answer: "were",
-    explanation: "The shops เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-070",
-    prompt: "เติมคำให้ถูกต้อง: My homework ____ easy.",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "Homework เป็นคำนามนับไม่ได้ ใช้ was"
-  },
-  {
-    id: "was-were-clean-071",
-    prompt: "เติมคำถามให้ถูกต้อง: ____ I wrong?",
-    options: ["Were", "Was", "Are", "Be"],
-    answer: "Was",
-    explanation: "คำถามกับ I ในอดีตใช้ Was"
-  },
-  {
-    id: "was-were-clean-072",
-    prompt: "เติมคำถามให้ถูกต้อง: ____ we late?",
-    options: ["Was", "Were", "Is", "Am"],
-    answer: "Were",
-    explanation: "คำถามกับ we ใช้ Were"
-  },
-  {
-    id: "was-were-clean-073",
-    prompt: "เติมคำถามให้ถูกต้อง: ____ the boy in the room?",
-    options: ["Were", "Was", "Are", "Am"],
-    answer: "Was",
-    explanation: "The boy เป็นเอกพจน์ จึงใช้ Was"
-  },
-  {
-    id: "was-were-clean-074",
-    prompt: "เติมคำถามให้ถูกต้อง: ____ the boys in the room?",
-    options: ["Was", "Were", "Is", "Am"],
-    answer: "Were",
-    explanation: "The boys เป็นพหูพจน์ จึงใช้ Were"
-  },
-  {
-    id: "was-were-clean-075",
-    prompt: "เติมคำถามให้ถูกต้อง: ____ your mother busy yesterday?",
-    options: ["Were", "Was", "Are", "Be"],
-    answer: "Was",
-    explanation: "your mother เป็นเอกพจน์ จึงใช้ Was"
-  },
-  {
-    id: "was-were-clean-076",
-    prompt: "เติมคำถามให้ถูกต้อง: ____ your friends at school?",
-    options: ["Was", "Were", "Is", "Am"],
-    answer: "Were",
-    explanation: "your friends เป็นพหูพจน์ จึงใช้ Were"
-  },
-  {
-    id: "was-were-clean-077",
-    prompt: "เติมคำถามให้ถูกต้อง: ____ the movie fun?",
-    options: ["Were", "Was", "Are", "Am"],
-    answer: "Was",
-    explanation: "the movie เป็นเอกพจน์ จึงใช้ Was"
-  },
-  {
-    id: "was-were-clean-078",
-    prompt: "เติมคำถามให้ถูกต้อง: ____ the students ready?",
-    options: ["Was", "Were", "Is", "Be"],
-    answer: "Were",
-    explanation: "the students เป็นพหูพจน์ จึงใช้ Were"
-  },
-  {
-    id: "was-were-clean-079",
-    prompt: "เติมคำถามให้ถูกต้อง: Why ____ he sad yesterday?",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "คำถามกับ he ในอดีตใช้ was"
-  },
-  {
-    id: "was-were-clean-080",
-    prompt: "เติมคำถามให้ถูกต้อง: Why ____ they quiet?",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "คำถามกับ they ใช้ were"
-  },
-  {
-    id: "was-were-clean-081",
-    prompt: "ประโยคใดใช้กับประธาน He ได้ถูกต้อง",
-    options: ["He were busy.", "He was busy.", "He are busy.", "He am busy."],
-    answer: "He was busy.",
-    explanation: "ประธาน He ใช้ was"
-  },
-  {
-    id: "was-were-clean-082",
-    prompt: "ประโยคใดใช้กับประธาน They ได้ถูกต้อง",
-    options: ["They was excited.", "They is excited.", "They were excited.", "They am excited."],
-    answer: "They were excited.",
-    explanation: "ประธาน They ใช้ were"
-  },
-  {
-    id: "was-were-clean-083",
-    prompt: "ประโยคใดใช้กับคำนามเอกพจน์ได้ถูกต้อง",
-    options: ["The teacher were kind.", "The teacher was kind.", "The teacher are kind.", "The teacher am kind."],
-    answer: "The teacher was kind.",
-    explanation: "The teacher เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-084",
-    prompt: "ประโยคใดใช้กับคำนามพหูพจน์ได้ถูกต้อง",
-    options: ["The teachers was kind.", "The teachers is kind.", "The teachers were kind.", "The teachers am kind."],
-    answer: "The teachers were kind.",
-    explanation: "The teachers เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-085",
-    prompt: "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้องกับ She",
-    options: ["She were not ready.", "She was not ready.", "She are not ready.", "She am not ready."],
-    answer: "She was not ready.",
-    explanation: "She ใช้ was ดังนั้นรูปปฏิเสธคือ was not"
-  },
-  {
-    id: "was-were-clean-086",
-    prompt: "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้องกับ They",
-    options: ["They was not ready.", "They were not ready.", "They is not ready.", "They am not ready."],
-    answer: "They were not ready.",
-    explanation: "They ใช้ were ดังนั้นรูปปฏิเสธคือ were not"
-  },
-  {
-    id: "was-were-clean-087",
-    prompt: "ประโยคใดเป็นคำถามที่ถูกต้องกับ he",
-    options: ["Was he at home?", "Were he at home?", "Are he at home?", "Am he at home?"],
-    answer: "Was he at home?",
-    explanation: "คำถามกับ he ในอดีตใช้ Was"
-  },
-  {
-    id: "was-were-clean-088",
-    prompt: "ประโยคใดเป็นคำถามที่ถูกต้องกับ they",
-    options: ["Was they late?", "Is they late?", "Were they late?", "Am they late?"],
-    answer: "Were they late?",
-    explanation: "คำถามกับ they ใช้ Were"
-  },
-  {
-    id: "was-were-clean-089",
-    prompt: "ประโยคใดใช้ was / were ได้ถูกต้องกับ The room",
-    options: ["The room were clean.", "The room was clean.", "The room are clean.", "The room am clean."],
-    answer: "The room was clean.",
-    explanation: "The room เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-090",
-    prompt: "ประโยคใดใช้ was / were ได้ถูกต้องกับ The rooms",
-    options: ["The rooms was clean.", "The rooms were clean.", "The rooms is clean.", "The rooms am clean."],
-    answer: "The rooms were clean.",
-    explanation: "The rooms เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-091",
-    prompt: "คำตอบใดเหมาะสมกับคำถาม: Was he at school yesterday?",
-    options: ["Yes, he was.", "Yes, he were.", "Yes, he is.", "Yes, he are."],
-    answer: "Yes, he was.",
-    explanation: "คำถาม Was he ตอบได้ว่า Yes, he was"
-  },
-  {
-    id: "was-were-clean-092",
-    prompt: "คำตอบใดเหมาะสมกับคำถาม: Were they tired?",
-    options: ["Yes, they was.", "Yes, they were.", "Yes, they is.", "Yes, they am."],
-    answer: "Yes, they were.",
-    explanation: "คำถาม Were they ตอบได้ว่า Yes, they were"
-  },
-  {
-    id: "was-were-clean-093",
-    prompt: "คำตอบใดเหมาะสมกับคำถาม: Was it cold yesterday?",
-    options: ["Yes, it were.", "Yes, it was.", "Yes, it are.", "Yes, it am."],
-    answer: "Yes, it was.",
-    explanation: "คำถาม Was it ตอบได้ว่า Yes, it was"
-  },
-  {
-    id: "was-were-clean-094",
-    prompt: "คำตอบใดเหมาะสมกับคำถาม: Were we late?",
-    options: ["Yes, we was.", "Yes, we were.", "Yes, we is.", "Yes, we am."],
-    answer: "Yes, we were.",
-    explanation: "คำถาม Were we ตอบได้ว่า Yes, we were"
-  },
-  {
-    id: "was-were-clean-095",
-    prompt: "เติมคำให้ถูกต้อง: We ____ happy yesterday.",
-    options: ["was", "were", "is", "am"],
-    answer: "were",
-    explanation: "We ใช้ were เมื่อพูดถึงอดีต"
-  },
-  {
-    id: "was-were-clean-096",
-    prompt: "เติมคำให้ถูกต้อง: The boys ____ quiet.",
-    options: ["was", "were", "is", "am"],
-    answer: "were",
-    explanation: "The boys เป็นพหูพจน์ จึงใช้ were"
-  },
-  {
-    id: "was-were-clean-097",
-    prompt: "เติมคำให้ถูกต้อง: The cat ____ sleepy.",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "The cat เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-098",
-    prompt: "เติมคำให้ถูกต้อง: He ____ angry yesterday.",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "He ใช้ was เมื่อพูดถึงอดีต"
-  },
-  {
-    id: "was-were-clean-099",
-    prompt: "เลือกคำที่ถูกต้องสำหรับประโยคนี้: My teacher ____ very nice.",
-    options: ["were", "was", "are", "am"],
-    answer: "was",
-    explanation: "My teacher เป็นเอกพจน์ จึงใช้ was"
-  },
-  {
-    id: "was-were-clean-100",
-    prompt: "เลือกคำที่ถูกต้องสำหรับประโยคนี้: My classmates ____ very friendly.",
-    options: ["was", "is", "were", "am"],
-    answer: "were",
-    explanation: "My classmates เป็นพหูพจน์ จึงใช้ were"
+    "id": "was-were-001",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: I ____ happy yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "I ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-002",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: He ____ tired yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "He ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-003",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: She ____ busy yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "She ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-004",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: It ____ quiet yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "It ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-005",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The boy ____ ready yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The boy ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-006",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The girl ____ late yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The girl ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-007",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My father ____ sick yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "My father ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-008",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My mother ____ sad yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "My mother ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-009",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The cat ____ excited yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The cat ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-010",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The dog ____ angry yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The dog ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-011",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The classroom ____ cold yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The classroom ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-012",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The lesson ____ hungry yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The lesson ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-013",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The movie ____ kind yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The movie ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-014",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My homework ____ nervous yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "My homework ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-015",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The weather ____ absent yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The weather ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-016",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: You ____ at home yesterday.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "You ใช้ were เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-017",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: We ____ at school yesterday.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "We ใช้ were เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-018",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: They ____ in the room yesterday.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "They ใช้ were เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-019",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The boys ____ near the gate yesterday.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "The boys ใช้ were เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-020",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The girls ____ very friendly yesterday.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "The girls ใช้ were เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-021",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My friends ____ happy yesterday.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "My friends ใช้ were เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-022",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My parents ____ tired yesterday.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "My parents ใช้ were เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-023",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The students ____ busy yesterday.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "The students ใช้ were เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-024",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The children ____ quiet yesterday.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "The children ใช้ were เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-025",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The players ____ ready yesterday.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "The players ใช้ were เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-026",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The books ____ late yesterday.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "The books ใช้ were เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-027",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The doors ____ sick yesterday.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "The doors ใช้ were เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-028",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The rooms ____ sad yesterday.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "The rooms ใช้ were เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-029",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The teachers ____ excited yesterday.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "The teachers ใช้ were เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-030",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The answers ____ angry yesterday.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "The answers ใช้ were เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-031",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: I ____ cold yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "I ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-032",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: He ____ hungry yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "He ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-033",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: She ____ kind yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "She ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-034",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: It ____ nervous yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "It ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-035",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The boy ____ absent yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The boy ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-036",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The girl ____ at home yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The girl ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-037",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My father ____ at school yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "My father ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-038",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My mother ____ in the room yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "My mother ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-039",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The cat ____ near the gate yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The cat ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-040",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The dog ____ very friendly yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The dog ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-041",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The classroom ____ happy yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The classroom ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-042",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The lesson ____ tired yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The lesson ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-043",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The movie ____ busy yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The movie ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-044",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My homework ____ quiet yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "My homework ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-045",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The weather ____ ready yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "The weather ใช้ was เมื่อพูดถึงอดีต",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-046",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: I ____ not late yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "รูปปฏิเสธใช้ was not",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-047",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: He ____ not sick yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "รูปปฏิเสธใช้ was not",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-048",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: She ____ not sad yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "รูปปฏิเสธใช้ was not",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-049",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: It ____ not excited yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "รูปปฏิเสธใช้ was not",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-050",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: The boy ____ not angry yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "รูปปฏิเสธใช้ was not",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-051",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: The girl ____ not cold yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "รูปปฏิเสธใช้ was not",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-052",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: My father ____ not hungry yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "รูปปฏิเสธใช้ was not",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-053",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: My mother ____ not kind yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "รูปปฏิเสธใช้ was not",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-054",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: The cat ____ not nervous yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "รูปปฏิเสธใช้ was not",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-055",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: The dog ____ not absent yesterday.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "รูปปฏิเสธใช้ was not",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-056",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ the girl excited yesterday?",
+    "options": [
+      "Were",
+      "Is",
+      "Are",
+      "Was"
+    ],
+    "answer": "Was",
+    "explanation": "คำถามกับ the girl ใช้ Was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-057",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ my father angry yesterday?",
+    "options": [
+      "Were",
+      "Is",
+      "Are",
+      "Was"
+    ],
+    "answer": "Was",
+    "explanation": "คำถามกับ my father ใช้ Was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-058",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ my mother cold yesterday?",
+    "options": [
+      "Were",
+      "Is",
+      "Are",
+      "Was"
+    ],
+    "answer": "Was",
+    "explanation": "คำถามกับ my mother ใช้ Was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-059",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ the cat hungry yesterday?",
+    "options": [
+      "Were",
+      "Is",
+      "Are",
+      "Was"
+    ],
+    "answer": "Was",
+    "explanation": "คำถามกับ the cat ใช้ Was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-060",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ the dog kind yesterday?",
+    "options": [
+      "Were",
+      "Is",
+      "Are",
+      "Was"
+    ],
+    "answer": "Was",
+    "explanation": "คำถามกับ the dog ใช้ Was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-061",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ the classroom nervous yesterday?",
+    "options": [
+      "Were",
+      "Is",
+      "Are",
+      "Was"
+    ],
+    "answer": "Was",
+    "explanation": "คำถามกับ the classroom ใช้ Was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-062",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ the lesson absent yesterday?",
+    "options": [
+      "Were",
+      "Is",
+      "Are",
+      "Was"
+    ],
+    "answer": "Was",
+    "explanation": "คำถามกับ the lesson ใช้ Was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-063",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ the movie at home yesterday?",
+    "options": [
+      "Were",
+      "Is",
+      "Are",
+      "Was"
+    ],
+    "answer": "Was",
+    "explanation": "คำถามกับ the movie ใช้ Was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-064",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ my homework at school yesterday?",
+    "options": [
+      "Were",
+      "Is",
+      "Are",
+      "Was"
+    ],
+    "answer": "Was",
+    "explanation": "คำถามกับ my homework ใช้ Was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-065",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ the weather in the room yesterday?",
+    "options": [
+      "Were",
+      "Is",
+      "Are",
+      "Was"
+    ],
+    "answer": "Was",
+    "explanation": "คำถามกับ the weather ใช้ Was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-066",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ you near the gate yesterday?",
+    "options": [
+      "Was",
+      "Is",
+      "Are",
+      "Were"
+    ],
+    "answer": "Were",
+    "explanation": "คำถามกับ you ใช้ Were",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-067",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ we very friendly yesterday?",
+    "options": [
+      "Was",
+      "Is",
+      "Are",
+      "Were"
+    ],
+    "answer": "Were",
+    "explanation": "คำถามกับ we ใช้ Were",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-068",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ The classroom ได้ถูกต้อง",
+    "options": [
+      "The classroom are quiet yesterday.",
+      "The classroom was quiet yesterday.",
+      "The classroom were quiet yesterday.",
+      "The classroom is quiet yesterday."
+    ],
+    "answer": "The classroom was quiet yesterday.",
+    "explanation": "The classroom ใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-069",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ The lesson ได้ถูกต้อง",
+    "options": [
+      "The lesson is ready yesterday.",
+      "The lesson was ready yesterday.",
+      "The lesson were ready yesterday.",
+      "The lesson are ready yesterday."
+    ],
+    "answer": "The lesson was ready yesterday.",
+    "explanation": "The lesson ใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-070",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ The movie ได้ถูกต้อง",
+    "options": [
+      "The movie are late yesterday.",
+      "The movie was late yesterday.",
+      "The movie is late yesterday.",
+      "The movie were late yesterday."
+    ],
+    "answer": "The movie was late yesterday.",
+    "explanation": "The movie ใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-071",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ My homework ได้ถูกต้อง",
+    "options": [
+      "My homework were sick yesterday.",
+      "My homework was sick yesterday.",
+      "My homework is sick yesterday.",
+      "My homework are sick yesterday."
+    ],
+    "answer": "My homework was sick yesterday.",
+    "explanation": "My homework ใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-072",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ The weather ได้ถูกต้อง",
+    "options": [
+      "The weather were sad yesterday.",
+      "The weather are sad yesterday.",
+      "The weather is sad yesterday.",
+      "The weather was sad yesterday."
+    ],
+    "answer": "The weather was sad yesterday.",
+    "explanation": "The weather ใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-073",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ You ได้ถูกต้อง",
+    "options": [
+      "You were excited yesterday.",
+      "You are excited yesterday.",
+      "You was excited yesterday.",
+      "You is excited yesterday."
+    ],
+    "answer": "You were excited yesterday.",
+    "explanation": "You ใช้ were",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-074",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ We ได้ถูกต้อง",
+    "options": [
+      "We are angry yesterday.",
+      "We were angry yesterday.",
+      "We was angry yesterday.",
+      "We is angry yesterday."
+    ],
+    "answer": "We were angry yesterday.",
+    "explanation": "We ใช้ were",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-075",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ They ได้ถูกต้อง",
+    "options": [
+      "They is cold yesterday.",
+      "They was cold yesterday.",
+      "They are cold yesterday.",
+      "They were cold yesterday."
+    ],
+    "answer": "They were cold yesterday.",
+    "explanation": "They ใช้ were",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-076",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ The boys ได้ถูกต้อง",
+    "options": [
+      "The boys were hungry yesterday.",
+      "The boys are hungry yesterday.",
+      "The boys is hungry yesterday.",
+      "The boys was hungry yesterday."
+    ],
+    "answer": "The boys were hungry yesterday.",
+    "explanation": "The boys ใช้ were",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-077",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ The girls ได้ถูกต้อง",
+    "options": [
+      "The girls are kind yesterday.",
+      "The girls was kind yesterday.",
+      "The girls is kind yesterday.",
+      "The girls were kind yesterday."
+    ],
+    "answer": "The girls were kind yesterday.",
+    "explanation": "The girls ใช้ were",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-078",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ was / were ไม่ถูกต้อง",
+    "options": [
+      "The movie was kind yesterday.",
+      "The dog was angry yesterday.",
+      "You were at home yesterday.",
+      "She were happy yesterday."
+    ],
+    "answer": "She were happy yesterday.",
+    "explanation": "She ต้องใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-079",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ was / were ไม่ถูกต้อง (ชุดที่ 2)",
+    "options": [
+      "We were at school yesterday.",
+      "The classroom was cold yesterday.",
+      "My homework was nervous yesterday.",
+      "It were tired yesterday."
+    ],
+    "answer": "It were tired yesterday.",
+    "explanation": "It ต้องใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-080",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ was / were ไม่ถูกต้อง (ชุดที่ 3)",
+    "options": [
+      "The weather was absent yesterday.",
+      "The lesson was hungry yesterday.",
+      "They were in the room yesterday.",
+      "The boy were busy yesterday."
+    ],
+    "answer": "The boy were busy yesterday.",
+    "explanation": "The boy ต้องใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-081",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ was / were ไม่ถูกต้อง (ชุดที่ 4)",
+    "options": [
+      "The boys were near the gate yesterday.",
+      "You were at home yesterday.",
+      "The movie was kind yesterday.",
+      "The girl were quiet yesterday."
+    ],
+    "answer": "The girl were quiet yesterday.",
+    "explanation": "The girl ต้องใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-082",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ was / were ไม่ถูกต้อง (ชุดที่ 5)",
+    "options": [
+      "We were at school yesterday.",
+      "My homework was nervous yesterday.",
+      "My father were ready yesterday.",
+      "The girls were very friendly yesterday."
+    ],
+    "answer": "My father were ready yesterday.",
+    "explanation": "My father ต้องใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-083",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ was / were ไม่ถูกต้อง (ชุดที่ 6)",
+    "options": [
+      "My friends were happy yesterday.",
+      "They were in the room yesterday.",
+      "The weather was absent yesterday.",
+      "My mother were late yesterday."
+    ],
+    "answer": "My mother were late yesterday.",
+    "explanation": "My mother ต้องใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-084",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ was / were ไม่ถูกต้อง (ชุดที่ 7)",
+    "options": [
+      "The cat were sick yesterday.",
+      "The boys were near the gate yesterday.",
+      "You were at home yesterday.",
+      "My parents were tired yesterday."
+    ],
+    "answer": "The cat were sick yesterday.",
+    "explanation": "The cat ต้องใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-085",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ was / were ไม่ถูกต้อง (ชุดที่ 8)",
+    "options": [
+      "The students were busy yesterday.",
+      "The dog were sad yesterday.",
+      "The girls were very friendly yesterday.",
+      "We were at school yesterday."
+    ],
+    "answer": "The dog were sad yesterday.",
+    "explanation": "The dog ต้องใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-086",
+    "type": "multiple-choice",
+    "prompt": "คำตอบใดเหมาะสมกับคำถาม: Were you ready yesterday?",
+    "options": [
+      "Yes, I were.",
+      "Yes, I was.",
+      "Yes, I are.",
+      "Yes, I is."
+    ],
+    "answer": "Yes, I was.",
+    "explanation": "คำตอบสั้นต้องใช้ was/were ตามประธาน",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-087",
+    "type": "multiple-choice",
+    "prompt": "คำตอบใดเหมาะสมกับคำถาม: Was she ready yesterday?",
+    "options": [
+      "Yes, she was.",
+      "Yes, she are.",
+      "Yes, she is.",
+      "Yes, she were."
+    ],
+    "answer": "Yes, she was.",
+    "explanation": "คำตอบสั้นต้องใช้ was/were ตามประธาน",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-088",
+    "type": "multiple-choice",
+    "prompt": "คำตอบใดเหมาะสมกับคำถาม: Were they ready yesterday?",
+    "options": [
+      "Yes, they is.",
+      "Yes, they are.",
+      "Yes, they was.",
+      "Yes, they were."
+    ],
+    "answer": "Yes, they were.",
+    "explanation": "คำตอบสั้นต้องใช้ was/were ตามประธาน",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-089",
+    "type": "multiple-choice",
+    "prompt": "คำตอบใดเหมาะสมกับคำถาม: Was he ready yesterday?",
+    "options": [
+      "Yes, he are.",
+      "Yes, he is.",
+      "Yes, he was.",
+      "Yes, he were."
+    ],
+    "answer": "Yes, he was.",
+    "explanation": "คำตอบสั้นต้องใช้ was/were ตามประธาน",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-090",
+    "type": "multiple-choice",
+    "prompt": "คำตอบใดเหมาะสมกับคำถาม: Was it ready yesterday?",
+    "options": [
+      "Yes, it is.",
+      "Yes, it were.",
+      "Yes, it was.",
+      "Yes, it are."
+    ],
+    "answer": "Yes, it was.",
+    "explanation": "คำตอบสั้นต้องใช้ was/were ตามประธาน",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-091",
+    "type": "typing",
+    "prompt": "พิมพ์ was หรือ were ให้ถูกต้อง: I ____ happy yesterday.",
+    "answer": "was",
+    "acceptedAnswers": [
+      "was"
+    ],
+    "explanation": "I ใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-092",
+    "type": "typing",
+    "prompt": "พิมพ์ was หรือ were ให้ถูกต้อง: He ____ tired yesterday.",
+    "answer": "was",
+    "acceptedAnswers": [
+      "was"
+    ],
+    "explanation": "He ใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-093",
+    "type": "typing",
+    "prompt": "พิมพ์ was หรือ were ให้ถูกต้อง: She ____ busy yesterday.",
+    "answer": "was",
+    "acceptedAnswers": [
+      "was"
+    ],
+    "explanation": "She ใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-094",
+    "type": "typing",
+    "prompt": "พิมพ์ was หรือ were ให้ถูกต้อง: It ____ quiet yesterday.",
+    "answer": "was",
+    "acceptedAnswers": [
+      "was"
+    ],
+    "explanation": "It ใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-095",
+    "type": "typing",
+    "prompt": "พิมพ์ was หรือ were ให้ถูกต้อง: The boy ____ ready yesterday.",
+    "answer": "was",
+    "acceptedAnswers": [
+      "was"
+    ],
+    "explanation": "The boy ใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-096",
+    "type": "typing",
+    "prompt": "พิมพ์ was หรือ were ให้ถูกต้อง: The girl ____ late yesterday.",
+    "answer": "was",
+    "acceptedAnswers": [
+      "was"
+    ],
+    "explanation": "The girl ใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-097",
+    "type": "typing",
+    "prompt": "พิมพ์ was หรือ were ให้ถูกต้อง: My father ____ sick yesterday.",
+    "answer": "was",
+    "acceptedAnswers": [
+      "was"
+    ],
+    "explanation": "My father ใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-098",
+    "type": "typing",
+    "prompt": "พิมพ์ was หรือ were ให้ถูกต้อง: My mother ____ sad yesterday.",
+    "answer": "was",
+    "acceptedAnswers": [
+      "was"
+    ],
+    "explanation": "My mother ใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-099",
+    "type": "typing",
+    "prompt": "พิมพ์ was หรือ were ให้ถูกต้อง: The cat ____ excited yesterday.",
+    "answer": "was",
+    "acceptedAnswers": [
+      "was"
+    ],
+    "explanation": "The cat ใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
+  },
+  {
+    "id": "was-were-100",
+    "type": "typing",
+    "prompt": "พิมพ์ was หรือ were ให้ถูกต้อง: The dog ____ angry yesterday.",
+    "answer": "was",
+    "acceptedAnswers": [
+      "was"
+    ],
+    "explanation": "The dog ใช้ was",
+    "lessonId": "act1_phase1_unit3_was_were",
+    "ruleId": "was_were"
   }
 ];
 
@@ -1968,25 +17733,3030 @@ const extraWasWereQuestions = [];
 const wasWereWispExtraBattleQuestions50 = [];
 
 const phase1ThereWasWereQuestions = [
-  { id: "phase1-there-1", prompt: "____ a book on the desk.", options: ["There was", "There were", "There are"], answer: "There was", explanation: "a book เป็นสิ่งเดียว จึงใช้ There was" },
-  { id: "phase1-there-2", prompt: "____ three birds in the sky.", options: ["There were", "There was", "There is"], answer: "There were", explanation: "three birds มีหลายตัว จึงใช้ There were" },
-  { id: "phase1-there-3", prompt: "There ____ one chair near the wall.", options: ["was", "were", "are"], answer: "was", explanation: "one chair มีหนึ่งตัว ใช้ was" },
-  { id: "phase1-there-4", prompt: "There ____ many students in the hall.", options: ["were", "was", "is"], answer: "were", explanation: "many students มีหลายคน ใช้ were" },
-  { id: "phase1-there-5", prompt: "ข้อใดถูกต้อง", options: ["There was a dog near the gate.", "There were a dog near the gate.", "There are a dog near the gate."], answer: "There was a dog near the gate.", explanation: "a dog เป็นสิ่งเดียว ใช้ There was" },
-  { id: "phase1-there-6", prompt: "ข้อใดใช้กับ five boxes", options: ["There were five boxes.", "There was five boxes.", "There is five boxes."], answer: "There were five boxes.", explanation: "five boxes มีหลายกล่อง ใช้ There were" },
-  { id: "phase1-there-7", prompt: "There was ใช้กับอะไร", options: ["สิ่งเดียว", "หลายสิ่ง", "อนาคต"], answer: "สิ่งเดียว", explanation: "There was ใช้กับเอกพจน์ในอดีต" },
-  { id: "phase1-there-8", prompt: "There were ใช้กับอะไร", options: ["หลายสิ่ง", "สิ่งเดียว", "I"], answer: "หลายสิ่ง", explanation: "There were ใช้กับพหูพจน์ในอดีต" }
+  {
+    "id": "there-001",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a book on the desk yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a book เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-002",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ one chair in the room yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "one chair เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-003",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a dog near the gate yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a dog เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-004",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ one student under the tree yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "one student เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-005",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a clock in the classroom yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a clock เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-006",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a pencil on the wall yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a pencil เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-007",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a bag beside the river yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a bag เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-008",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a bird at school yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a bird เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-009",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ one box in the bag yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "one box เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-010",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a lantern near the tower yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a lantern เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-011",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a key on the desk yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a key เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-012",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ one window in the room yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "one window เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-013",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a map near the gate yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a map เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-014",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a cup under the tree yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a cup เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-015",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ one flower in the classroom yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "one flower เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-016",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a teacher on the wall yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a teacher เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-017",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a phone beside the river yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a phone เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-018",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a desk at school yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a desk เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-019",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ one picture in the bag yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "one picture เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-020",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a river near the tower yesterday.",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a river เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-021",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a book on the desk yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a book เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-022",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ one chair in the room yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "one chair เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-023",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a dog near the gate yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a dog เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-024",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ one student under the tree yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "one student เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-025",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a clock in the classroom yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a clock เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-026",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a pencil on the wall yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a pencil เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-027",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a bag beside the river yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a bag เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-028",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a bird at school yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a bird เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-029",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ one box in the bag yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "one box เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-030",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ a lantern near the tower yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There was",
+      "There is",
+      "There were"
+    ],
+    "answer": "There was",
+    "explanation": "a lantern เป็นเอกพจน์ จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-031",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ two books under the tree yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "two books เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-032",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ three chairs in the classroom yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "three chairs เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-033",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ many dogs on the wall yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "many dogs เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-034",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ five students beside the river yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "five students เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-035",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ some clocks at school yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "some clocks เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-036",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ six pencils in the bag yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "six pencils เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-037",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ many bags near the tower yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "many bags เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-038",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ four birds on the desk yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "four birds เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-039",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ two boxes in the room yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "two boxes เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-040",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ several lanterns near the gate yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "several lanterns เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-041",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ three keys under the tree yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "three keys เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-042",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ many windows in the classroom yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "many windows เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-043",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ two maps on the wall yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "two maps เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-044",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ some cups beside the river yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "some cups เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-045",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ five flowers at school yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "five flowers เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-046",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ many teachers in the bag yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "many teachers เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-047",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ two phones near the tower yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "two phones เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-048",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ four desks on the desk yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "four desks เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-049",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ many pictures in the room yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "many pictures เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-050",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ three rivers near the gate yesterday.",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "three rivers เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-051",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ two books under the tree yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "two books เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-052",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ three chairs in the classroom yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "three chairs เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-053",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ many dogs on the wall yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "many dogs เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-054",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ five students beside the river yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "five students เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-055",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ some clocks at school yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "some clocks เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-056",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ six pencils in the bag yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "six pencils เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-057",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ many bags near the tower yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "many bags เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-058",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ four birds on the desk yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "four birds เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-059",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ two boxes in the room yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "two boxes เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-060",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: ____ several lanterns near the gate yesterday. (ชุดที่ 2)",
+    "options": [
+      "There are",
+      "There were",
+      "There is",
+      "There was"
+    ],
+    "answer": "There were",
+    "explanation": "several lanterns เป็นพหูพจน์ จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-061",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: There ____ not a book on the desk.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "a book จึงใช้ was not",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-062",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: There ____ not one chair in the room.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "one chair จึงใช้ was not",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-063",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: There ____ not a dog near the gate.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "a dog จึงใช้ was not",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-064",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: There ____ not one student under the tree.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "one student จึงใช้ was not",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-065",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: There ____ not a clock in the classroom.",
+    "options": [
+      "was",
+      "is",
+      "are",
+      "were"
+    ],
+    "answer": "was",
+    "explanation": "a clock จึงใช้ was not",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-066",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: There ____ not two books on the wall.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "two books จึงใช้ were not",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-067",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: There ____ not three chairs beside the river.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "three chairs จึงใช้ were not",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-068",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: There ____ not many dogs at school.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "many dogs จึงใช้ were not",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-069",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: There ____ not five students in the bag.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "five students จึงใช้ were not",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-070",
+    "type": "multiple-choice",
+    "prompt": "เติมรูปปฏิเสธให้ถูกต้อง: There ____ not some clocks near the tower.",
+    "options": [
+      "were",
+      "is",
+      "are",
+      "was"
+    ],
+    "answer": "were",
+    "explanation": "some clocks จึงใช้ were not",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-071",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ there a pencil on the desk?",
+    "options": [
+      "Were",
+      "Is",
+      "Are",
+      "Was"
+    ],
+    "answer": "Was",
+    "explanation": "คำถามใช้ Was there ตามจำนวนคำนาม",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-072",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ there a bag in the room?",
+    "options": [
+      "Were",
+      "Is",
+      "Are",
+      "Was"
+    ],
+    "answer": "Was",
+    "explanation": "คำถามใช้ Was there ตามจำนวนคำนาม",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-073",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ there a bird near the gate?",
+    "options": [
+      "Were",
+      "Is",
+      "Are",
+      "Was"
+    ],
+    "answer": "Was",
+    "explanation": "คำถามใช้ Was there ตามจำนวนคำนาม",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-074",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ there one box under the tree?",
+    "options": [
+      "Were",
+      "Is",
+      "Are",
+      "Was"
+    ],
+    "answer": "Was",
+    "explanation": "คำถามใช้ Was there ตามจำนวนคำนาม",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-075",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ there a lantern in the classroom?",
+    "options": [
+      "Were",
+      "Is",
+      "Are",
+      "Was"
+    ],
+    "answer": "Was",
+    "explanation": "คำถามใช้ Was there ตามจำนวนคำนาม",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-076",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ there six pencils on the wall?",
+    "options": [
+      "Was",
+      "Is",
+      "Are",
+      "Were"
+    ],
+    "answer": "Were",
+    "explanation": "คำถามใช้ Were there ตามจำนวนคำนาม",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-077",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ there many bags beside the river?",
+    "options": [
+      "Was",
+      "Is",
+      "Are",
+      "Were"
+    ],
+    "answer": "Were",
+    "explanation": "คำถามใช้ Were there ตามจำนวนคำนาม",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-078",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ there four birds at school?",
+    "options": [
+      "Was",
+      "Is",
+      "Are",
+      "Were"
+    ],
+    "answer": "Were",
+    "explanation": "คำถามใช้ Were there ตามจำนวนคำนาม",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-079",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ there two boxes in the bag?",
+    "options": [
+      "Was",
+      "Is",
+      "Are",
+      "Were"
+    ],
+    "answer": "Were",
+    "explanation": "คำถามใช้ Were there ตามจำนวนคำนาม",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-080",
+    "type": "multiple-choice",
+    "prompt": "เติมคำถามให้ถูกต้อง: ____ there several lanterns near the tower?",
+    "options": [
+      "Was",
+      "Is",
+      "Are",
+      "Were"
+    ],
+    "answer": "Were",
+    "explanation": "คำถามใช้ Were there ตามจำนวนคำนาม",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-081",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ a key ได้ถูกต้อง",
+    "options": [
+      "There are a key on the wall.",
+      "There was a key on the wall.",
+      "There is a key on the wall.",
+      "There were a key on the wall."
+    ],
+    "answer": "There was a key on the wall.",
+    "explanation": "a key จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-082",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ one window ได้ถูกต้อง",
+    "options": [
+      "There was one window beside the river.",
+      "There were one window beside the river.",
+      "There is one window beside the river.",
+      "There are one window beside the river."
+    ],
+    "answer": "There was one window beside the river.",
+    "explanation": "one window จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-083",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ a map ได้ถูกต้อง",
+    "options": [
+      "There is a map at school.",
+      "There are a map at school.",
+      "There were a map at school.",
+      "There was a map at school."
+    ],
+    "answer": "There was a map at school.",
+    "explanation": "a map จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-084",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ a cup ได้ถูกต้อง",
+    "options": [
+      "There are a cup in the bag.",
+      "There was a cup in the bag.",
+      "There were a cup in the bag.",
+      "There is a cup in the bag."
+    ],
+    "answer": "There was a cup in the bag.",
+    "explanation": "a cup จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-085",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ one flower ได้ถูกต้อง",
+    "options": [
+      "There were one flower near the tower.",
+      "There are one flower near the tower.",
+      "There was one flower near the tower.",
+      "There is one flower near the tower."
+    ],
+    "answer": "There was one flower near the tower.",
+    "explanation": "one flower จึงใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-086",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ three keys ได้ถูกต้อง",
+    "options": [
+      "There were three keys on the desk.",
+      "There are three keys on the desk.",
+      "There is three keys on the desk.",
+      "There was three keys on the desk."
+    ],
+    "answer": "There were three keys on the desk.",
+    "explanation": "three keys จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-087",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ many windows ได้ถูกต้อง",
+    "options": [
+      "There was many windows in the room.",
+      "There are many windows in the room.",
+      "There is many windows in the room.",
+      "There were many windows in the room."
+    ],
+    "answer": "There were many windows in the room.",
+    "explanation": "many windows จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-088",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ two maps ได้ถูกต้อง",
+    "options": [
+      "There was two maps near the gate.",
+      "There are two maps near the gate.",
+      "There were two maps near the gate.",
+      "There is two maps near the gate."
+    ],
+    "answer": "There were two maps near the gate.",
+    "explanation": "two maps จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-089",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ some cups ได้ถูกต้อง",
+    "options": [
+      "There is some cups under the tree.",
+      "There was some cups under the tree.",
+      "There were some cups under the tree.",
+      "There are some cups under the tree."
+    ],
+    "answer": "There were some cups under the tree.",
+    "explanation": "some cups จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-090",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดใช้กับ five flowers ได้ถูกต้อง",
+    "options": [
+      "There is five flowers in the classroom.",
+      "There are five flowers in the classroom.",
+      "There was five flowers in the classroom.",
+      "There were five flowers in the classroom."
+    ],
+    "answer": "There were five flowers in the classroom.",
+    "explanation": "five flowers จึงใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-091",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ There was / There were ไม่ถูกต้อง",
+    "options": [
+      "There were many bags near the gate.",
+      "There were a book on the desk.",
+      "There was a lantern under the tree.",
+      "There was a bag in the room."
+    ],
+    "answer": "There were a book on the desk.",
+    "explanation": "a book ต้องใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-092",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ There was / There were ไม่ถูกต้อง (ชุดที่ 2)",
+    "options": [
+      "There was a bird near the gate.",
+      "There were one chair in the room.",
+      "There was a key in the classroom.",
+      "There were four birds under the tree."
+    ],
+    "answer": "There were one chair in the room.",
+    "explanation": "one chair ต้องใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-093",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ There was / There were ไม่ถูกต้อง (ชุดที่ 3)",
+    "options": [
+      "There were two boxes in the classroom.",
+      "There were a dog near the gate.",
+      "There was one box under the tree.",
+      "There was one window on the wall."
+    ],
+    "answer": "There were a dog near the gate.",
+    "explanation": "a dog ต้องใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-094",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ There was / There were ไม่ถูกต้อง (ชุดที่ 4)",
+    "options": [
+      "There was a map beside the river.",
+      "There was a lantern in the classroom.",
+      "There were one student under the tree.",
+      "There were several lanterns on the wall."
+    ],
+    "answer": "There were one student under the tree.",
+    "explanation": "one student ต้องใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-095",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ There was / There were ไม่ถูกต้อง (ชุดที่ 5)",
+    "options": [
+      "There was a cup at school.",
+      "There were a clock in the classroom.",
+      "There were three keys beside the river.",
+      "There was a key on the wall."
+    ],
+    "answer": "There were a clock in the classroom.",
+    "explanation": "a clock ต้องใช้ There was",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-096",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ There was / There were ไม่ถูกต้อง (ชุดที่ 6)",
+    "options": [
+      "There was one flower in the bag.",
+      "There were many windows at school.",
+      "There was one window beside the river.",
+      "There was two books on the wall."
+    ],
+    "answer": "There was two books on the wall.",
+    "explanation": "two books ต้องใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-097",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ There was / There were ไม่ถูกต้อง (ชุดที่ 7)",
+    "options": [
+      "There was a teacher near the tower.",
+      "There was a map at school.",
+      "There were two maps in the bag.",
+      "There was three chairs beside the river."
+    ],
+    "answer": "There was three chairs beside the river.",
+    "explanation": "three chairs ต้องใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-098",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ There was / There were ไม่ถูกต้อง (ชุดที่ 8)",
+    "options": [
+      "There was many dogs at school.",
+      "There were some cups near the tower.",
+      "There was a cup in the bag.",
+      "There was a phone on the desk."
+    ],
+    "answer": "There was many dogs at school.",
+    "explanation": "many dogs ต้องใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-099",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ There was / There were ไม่ถูกต้อง (ชุดที่ 9)",
+    "options": [
+      "There was one flower near the tower.",
+      "There was a desk in the room.",
+      "There was five students in the bag.",
+      "There were five flowers on the desk."
+    ],
+    "answer": "There was five students in the bag.",
+    "explanation": "five students ต้องใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  },
+  {
+    "id": "there-100",
+    "type": "incorrect-sentence",
+    "prompt": "ประโยคใดใช้ There was / There were ไม่ถูกต้อง (ชุดที่ 10)",
+    "options": [
+      "There were many teachers in the room.",
+      "There was one picture near the gate.",
+      "There was some clocks near the tower.",
+      "There was a teacher on the desk."
+    ],
+    "answer": "There was some clocks near the tower.",
+    "explanation": "some clocks ต้องใช้ There were",
+    "lessonId": "act1_phase1_unit4_there_was_were",
+    "ruleId": "there_was_were"
+  }
 ];
 
 const phase1HadQuestions = [
-  { id: "phase1-had-1", prompt: "Yesterday, he ____ a red notebook.", options: ["had", "has", "have"], answer: "had", explanation: "ในอดีตใช้ had" },
-  { id: "phase1-had-2", prompt: "Last week, we ____ an English test.", options: ["had", "have", "has"], answer: "had", explanation: "we ในอดีตใช้ had" },
-  { id: "phase1-had-3", prompt: "They ____ lunch at noon yesterday.", options: ["had", "have", "has"], answer: "had", explanation: "They ในอดีตใช้ had" },
-  { id: "phase1-had-4", prompt: "My sister ____ a fever last night.", options: ["had", "has", "have"], answer: "had", explanation: "My sister ในอดีตใช้ had" },
-  { id: "phase1-had-5", prompt: "had แปลว่าอะไรในบทนี้", options: ["มีแล้วในอดีต", "กำลังมี", "จะมี"], answer: "มีแล้วในอดีต", explanation: "had ใช้พูดถึงการมีในอดีต" },
-  { id: "phase1-had-6", prompt: "ข้อใดถูกต้อง", options: ["She had a cold yesterday.", "She has a cold yesterday.", "She have a cold yesterday."], answer: "She had a cold yesterday.", explanation: "yesterday เป็นอดีต จึงใช้ had" },
-  { id: "phase1-had-7", prompt: "have ในอดีตเปลี่ยนเป็นอะไร", options: ["had", "haved", "has"], answer: "had", explanation: "have เป็น Irregular Verb รูปอดีตคือ had" },
-  { id: "phase1-had-8", prompt: "has ในอดีตเปลี่ยนเป็นอะไร", options: ["had", "hased", "have"], answer: "had", explanation: "has ในอดีตก็ใช้ had" }
+  {
+    "id": "had-001",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: I ____ a red notebook yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-002",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: You ____ an English test yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-003",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: He ____ lunch at noon yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-004",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: She ____ a fever yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-005",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: It ____ a blue bag yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-006",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: We ____ two pencils yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-007",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: They ____ a good idea yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-008",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My brother ____ a small map yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-009",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My sister ____ a new phone yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-010",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The students ____ a lot of homework yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-011",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The teacher ____ a meeting yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-012",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My friends ____ a football match yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-013",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My parents ____ a birthday party yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-014",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The dog ____ a headache yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-015",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The class ____ a long lesson yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-016",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The children ____ a short break yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-017",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My father ____ a story book yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-018",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My mother ____ a problem yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-019",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The players ____ a plan yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-020",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The school ____ a question yesterday.",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-021",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: I ____ a red notebook yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-022",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: You ____ an English test yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-023",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: He ____ lunch at noon yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-024",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: She ____ a fever yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-025",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: It ____ a blue bag yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-026",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: We ____ two pencils yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-027",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: They ____ a good idea yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-028",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My brother ____ a small map yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-029",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My sister ____ a new phone yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-030",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The students ____ a lot of homework yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-031",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The teacher ____ a meeting yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-032",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My friends ____ a football match yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-033",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My parents ____ a birthday party yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-034",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The dog ____ a headache yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-035",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The class ____ a long lesson yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-036",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The children ____ a short break yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-037",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My father ____ a story book yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-038",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: My mother ____ a problem yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-039",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The players ____ a plan yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-040",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: The school ____ a question yesterday. (ชุดที่ 2)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-041",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: I ____ a red notebook yesterday. (ชุดที่ 3)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-042",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: You ____ an English test yesterday. (ชุดที่ 3)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-043",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: He ____ lunch at noon yesterday. (ชุดที่ 3)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-044",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: She ____ a fever yesterday. (ชุดที่ 3)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-045",
+    "type": "multiple-choice",
+    "prompt": "เติมคำให้ถูกต้อง: It ____ a blue bag yesterday. (ชุดที่ 3)",
+    "options": [
+      "haved",
+      "has",
+      "have",
+      "had"
+    ],
+    "answer": "had",
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-046",
+    "type": "multiple-choice",
+    "prompt": "had ในบทนี้หมายถึงอะไร",
+    "options": [
+      "มีในอดีต",
+      "จะมี",
+      "กำลังมี",
+      "ไม่เคยมี"
+    ],
+    "answer": "มีในอดีต",
+    "explanation": "had ใช้พูดถึงการมีในอดีต",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-047",
+    "type": "multiple-choice",
+    "prompt": "have ในอดีตเปลี่ยนเป็นคำใด",
+    "options": [
+      "had",
+      "haved",
+      "having",
+      "has"
+    ],
+    "answer": "had",
+    "explanation": "have รูปอดีตคือ had",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-048",
+    "type": "multiple-choice",
+    "prompt": "has ในอดีตเปลี่ยนเป็นคำใด",
+    "options": [
+      "had",
+      "hasing",
+      "hased",
+      "have"
+    ],
+    "answer": "had",
+    "explanation": "has ในอดีตใช้ had",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-049",
+    "type": "multiple-choice",
+    "prompt": "ประธานใดใช้ had ได้",
+    "options": [
+      "เฉพาะ I",
+      "เฉพาะ They",
+      "เฉพาะ He/She/It",
+      "ทุกประธาน"
+    ],
+    "answer": "ทุกประธาน",
+    "explanation": "had ใช้ได้กับทุกประธาน",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-050",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้อง",
+    "options": [
+      "I did not have a red notebook yesterday.",
+      "I did not had a red notebook yesterday.",
+      "I have not a red notebook yesterday.",
+      "I had not a red notebook yesterday."
+    ],
+    "answer": "I did not have a red notebook yesterday.",
+    "explanation": "รูปปฏิเสธใช้ did not have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-051",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้อง (ชุดที่ 2)",
+    "options": [
+      "You did not have an English test yesterday.",
+      "You did not had an English test yesterday.",
+      "You have not an English test yesterday.",
+      "You had not an English test yesterday."
+    ],
+    "answer": "You did not have an English test yesterday.",
+    "explanation": "รูปปฏิเสธใช้ did not have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-052",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้อง (ชุดที่ 3)",
+    "options": [
+      "He have not lunch at noon yesterday.",
+      "He had not lunch at noon yesterday.",
+      "He did not have lunch at noon yesterday.",
+      "He did not had lunch at noon yesterday."
+    ],
+    "answer": "He did not have lunch at noon yesterday.",
+    "explanation": "รูปปฏิเสธใช้ did not have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-053",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้อง (ชุดที่ 4)",
+    "options": [
+      "She did not had a fever yesterday.",
+      "She had not a fever yesterday.",
+      "She did not have a fever yesterday.",
+      "She have not a fever yesterday."
+    ],
+    "answer": "She did not have a fever yesterday.",
+    "explanation": "รูปปฏิเสธใช้ did not have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-054",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้อง (ชุดที่ 5)",
+    "options": [
+      "It did not have a blue bag yesterday.",
+      "It had not a blue bag yesterday.",
+      "It have not a blue bag yesterday.",
+      "It did not had a blue bag yesterday."
+    ],
+    "answer": "It did not have a blue bag yesterday.",
+    "explanation": "รูปปฏิเสธใช้ did not have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-055",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้อง (ชุดที่ 6)",
+    "options": [
+      "We did not have two pencils yesterday.",
+      "We had not two pencils yesterday.",
+      "We did not had two pencils yesterday.",
+      "We have not two pencils yesterday."
+    ],
+    "answer": "We did not have two pencils yesterday.",
+    "explanation": "รูปปฏิเสธใช้ did not have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-056",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้อง (ชุดที่ 7)",
+    "options": [
+      "They did not had a good idea yesterday.",
+      "They did not have a good idea yesterday.",
+      "They have not a good idea yesterday.",
+      "They had not a good idea yesterday."
+    ],
+    "answer": "They did not have a good idea yesterday.",
+    "explanation": "รูปปฏิเสธใช้ did not have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-057",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้อง (ชุดที่ 8)",
+    "options": [
+      "My brother had not a small map yesterday.",
+      "My brother did not had a small map yesterday.",
+      "My brother have not a small map yesterday.",
+      "My brother did not have a small map yesterday."
+    ],
+    "answer": "My brother did not have a small map yesterday.",
+    "explanation": "รูปปฏิเสธใช้ did not have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-058",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้อง (ชุดที่ 9)",
+    "options": [
+      "My sister did not had a new phone yesterday.",
+      "My sister did not have a new phone yesterday.",
+      "My sister had not a new phone yesterday.",
+      "My sister have not a new phone yesterday."
+    ],
+    "answer": "My sister did not have a new phone yesterday.",
+    "explanation": "รูปปฏิเสธใช้ did not have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-059",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้อง (ชุดที่ 10)",
+    "options": [
+      "The students have not a lot of homework yesterday.",
+      "The students did not had a lot of homework yesterday.",
+      "The students did not have a lot of homework yesterday.",
+      "The students had not a lot of homework yesterday."
+    ],
+    "answer": "The students did not have a lot of homework yesterday.",
+    "explanation": "รูปปฏิเสธใช้ did not have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-060",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้อง (ชุดที่ 11)",
+    "options": [
+      "The teacher did not have a meeting yesterday.",
+      "The teacher had not a meeting yesterday.",
+      "The teacher did not had a meeting yesterday.",
+      "The teacher have not a meeting yesterday."
+    ],
+    "answer": "The teacher did not have a meeting yesterday.",
+    "explanation": "รูปปฏิเสธใช้ did not have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-061",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้อง (ชุดที่ 12)",
+    "options": [
+      "My friends had not a football match yesterday.",
+      "My friends did not had a football match yesterday.",
+      "My friends have not a football match yesterday.",
+      "My friends did not have a football match yesterday."
+    ],
+    "answer": "My friends did not have a football match yesterday.",
+    "explanation": "รูปปฏิเสธใช้ did not have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-062",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้อง (ชุดที่ 13)",
+    "options": [
+      "My parents did not had a birthday party yesterday.",
+      "My parents did not have a birthday party yesterday.",
+      "My parents had not a birthday party yesterday.",
+      "My parents have not a birthday party yesterday."
+    ],
+    "answer": "My parents did not have a birthday party yesterday.",
+    "explanation": "รูปปฏิเสธใช้ did not have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-063",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้อง (ชุดที่ 14)",
+    "options": [
+      "The dog did not have a headache yesterday.",
+      "The dog did not had a headache yesterday.",
+      "The dog have not a headache yesterday.",
+      "The dog had not a headache yesterday."
+    ],
+    "answer": "The dog did not have a headache yesterday.",
+    "explanation": "รูปปฏิเสธใช้ did not have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-064",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้อง (ชุดที่ 15)",
+    "options": [
+      "The class had not a long lesson yesterday.",
+      "The class have not a long lesson yesterday.",
+      "The class did not had a long lesson yesterday.",
+      "The class did not have a long lesson yesterday."
+    ],
+    "answer": "The class did not have a long lesson yesterday.",
+    "explanation": "รูปปฏิเสธใช้ did not have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-065",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นคำถามที่ถูกต้องเกี่ยวกับการมีในอดีต",
+    "options": [
+      "Did we have two pencils yesterday?",
+      "Does we have two pencils yesterday?",
+      "Did we had two pencils yesterday?",
+      "Had we have two pencils yesterday?"
+    ],
+    "answer": "Did we have two pencils yesterday?",
+    "explanation": "คำถามอดีตใช้ Did + ประธาน + have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-066",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นคำถามที่ถูกต้องเกี่ยวกับการมีในอดีต (ชุดที่ 2)",
+    "options": [
+      "Did they had a good idea yesterday?",
+      "Did they have a good idea yesterday?",
+      "Does they have a good idea yesterday?",
+      "Had they have a good idea yesterday?"
+    ],
+    "answer": "Did they have a good idea yesterday?",
+    "explanation": "คำถามอดีตใช้ Did + ประธาน + have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-067",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นคำถามที่ถูกต้องเกี่ยวกับการมีในอดีต (ชุดที่ 3)",
+    "options": [
+      "Does My brother have a small map yesterday?",
+      "Did My brother had a small map yesterday?",
+      "Did My brother have a small map yesterday?",
+      "Had My brother have a small map yesterday?"
+    ],
+    "answer": "Did My brother have a small map yesterday?",
+    "explanation": "คำถามอดีตใช้ Did + ประธาน + have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-068",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นคำถามที่ถูกต้องเกี่ยวกับการมีในอดีต (ชุดที่ 4)",
+    "options": [
+      "Did My sister had a new phone yesterday?",
+      "Does My sister have a new phone yesterday?",
+      "Had My sister have a new phone yesterday?",
+      "Did My sister have a new phone yesterday?"
+    ],
+    "answer": "Did My sister have a new phone yesterday?",
+    "explanation": "คำถามอดีตใช้ Did + ประธาน + have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-069",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นคำถามที่ถูกต้องเกี่ยวกับการมีในอดีต (ชุดที่ 5)",
+    "options": [
+      "Had The students have a lot of homework yesterday?",
+      "Does The students have a lot of homework yesterday?",
+      "Did The students had a lot of homework yesterday?",
+      "Did The students have a lot of homework yesterday?"
+    ],
+    "answer": "Did The students have a lot of homework yesterday?",
+    "explanation": "คำถามอดีตใช้ Did + ประธาน + have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-070",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นคำถามที่ถูกต้องเกี่ยวกับการมีในอดีต (ชุดที่ 6)",
+    "options": [
+      "Had The teacher have a meeting yesterday?",
+      "Did The teacher had a meeting yesterday?",
+      "Did The teacher have a meeting yesterday?",
+      "Does The teacher have a meeting yesterday?"
+    ],
+    "answer": "Did The teacher have a meeting yesterday?",
+    "explanation": "คำถามอดีตใช้ Did + ประธาน + have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-071",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นคำถามที่ถูกต้องเกี่ยวกับการมีในอดีต (ชุดที่ 7)",
+    "options": [
+      "Does My friends have a football match yesterday?",
+      "Had My friends have a football match yesterday?",
+      "Did My friends had a football match yesterday?",
+      "Did My friends have a football match yesterday?"
+    ],
+    "answer": "Did My friends have a football match yesterday?",
+    "explanation": "คำถามอดีตใช้ Did + ประธาน + have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-072",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นคำถามที่ถูกต้องเกี่ยวกับการมีในอดีต (ชุดที่ 8)",
+    "options": [
+      "Did My parents had a birthday party yesterday?",
+      "Does My parents have a birthday party yesterday?",
+      "Had My parents have a birthday party yesterday?",
+      "Did My parents have a birthday party yesterday?"
+    ],
+    "answer": "Did My parents have a birthday party yesterday?",
+    "explanation": "คำถามอดีตใช้ Did + ประธาน + have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-073",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นคำถามที่ถูกต้องเกี่ยวกับการมีในอดีต (ชุดที่ 9)",
+    "options": [
+      "Did The dog have a headache yesterday?",
+      "Had The dog have a headache yesterday?",
+      "Does The dog have a headache yesterday?",
+      "Did The dog had a headache yesterday?"
+    ],
+    "answer": "Did The dog have a headache yesterday?",
+    "explanation": "คำถามอดีตใช้ Did + ประธาน + have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-074",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นคำถามที่ถูกต้องเกี่ยวกับการมีในอดีต (ชุดที่ 10)",
+    "options": [
+      "Did The class had a long lesson yesterday?",
+      "Had The class have a long lesson yesterday?",
+      "Does The class have a long lesson yesterday?",
+      "Did The class have a long lesson yesterday?"
+    ],
+    "answer": "Did The class have a long lesson yesterday?",
+    "explanation": "คำถามอดีตใช้ Did + ประธาน + have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-075",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นคำถามที่ถูกต้องเกี่ยวกับการมีในอดีต (ชุดที่ 11)",
+    "options": [
+      "Had The children have a short break yesterday?",
+      "Did The children had a short break yesterday?",
+      "Did The children have a short break yesterday?",
+      "Does The children have a short break yesterday?"
+    ],
+    "answer": "Did The children have a short break yesterday?",
+    "explanation": "คำถามอดีตใช้ Did + ประธาน + have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-076",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นคำถามที่ถูกต้องเกี่ยวกับการมีในอดีต (ชุดที่ 12)",
+    "options": [
+      "Did My father have a story book yesterday?",
+      "Did My father had a story book yesterday?",
+      "Does My father have a story book yesterday?",
+      "Had My father have a story book yesterday?"
+    ],
+    "answer": "Did My father have a story book yesterday?",
+    "explanation": "คำถามอดีตใช้ Did + ประธาน + have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-077",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นคำถามที่ถูกต้องเกี่ยวกับการมีในอดีต (ชุดที่ 13)",
+    "options": [
+      "Does My mother have a problem yesterday?",
+      "Did My mother had a problem yesterday?",
+      "Had My mother have a problem yesterday?",
+      "Did My mother have a problem yesterday?"
+    ],
+    "answer": "Did My mother have a problem yesterday?",
+    "explanation": "คำถามอดีตใช้ Did + ประธาน + have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-078",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นคำถามที่ถูกต้องเกี่ยวกับการมีในอดีต (ชุดที่ 14)",
+    "options": [
+      "Did The players have a plan yesterday?",
+      "Did The players had a plan yesterday?",
+      "Does The players have a plan yesterday?",
+      "Had The players have a plan yesterday?"
+    ],
+    "answer": "Did The players have a plan yesterday?",
+    "explanation": "คำถามอดีตใช้ Did + ประธาน + have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-079",
+    "type": "correct-sentence",
+    "prompt": "ประโยคใดเป็นคำถามที่ถูกต้องเกี่ยวกับการมีในอดีต (ชุดที่ 15)",
+    "options": [
+      "Did The school had a question yesterday?",
+      "Does The school have a question yesterday?",
+      "Did The school have a question yesterday?",
+      "Had The school have a question yesterday?"
+    ],
+    "answer": "Did The school have a question yesterday?",
+    "explanation": "คำถามอดีตใช้ Did + ประธาน + have",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-080",
+    "type": "typing",
+    "prompt": "พิมพ์คำตอบที่ถูกต้อง: I ____ a red notebook yesterday.",
+    "answer": "had",
+    "acceptedAnswers": [
+      "had"
+    ],
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-081",
+    "type": "typing",
+    "prompt": "พิมพ์คำตอบที่ถูกต้อง: You ____ an English test yesterday.",
+    "answer": "had",
+    "acceptedAnswers": [
+      "had"
+    ],
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-082",
+    "type": "typing",
+    "prompt": "พิมพ์คำตอบที่ถูกต้อง: He ____ lunch at noon yesterday.",
+    "answer": "had",
+    "acceptedAnswers": [
+      "had"
+    ],
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-083",
+    "type": "typing",
+    "prompt": "พิมพ์คำตอบที่ถูกต้อง: She ____ a fever yesterday.",
+    "answer": "had",
+    "acceptedAnswers": [
+      "had"
+    ],
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-084",
+    "type": "typing",
+    "prompt": "พิมพ์คำตอบที่ถูกต้อง: It ____ a blue bag yesterday.",
+    "answer": "had",
+    "acceptedAnswers": [
+      "had"
+    ],
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-085",
+    "type": "typing",
+    "prompt": "พิมพ์คำตอบที่ถูกต้อง: We ____ two pencils yesterday.",
+    "answer": "had",
+    "acceptedAnswers": [
+      "had"
+    ],
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-086",
+    "type": "typing",
+    "prompt": "พิมพ์คำตอบที่ถูกต้อง: They ____ a good idea yesterday.",
+    "answer": "had",
+    "acceptedAnswers": [
+      "had"
+    ],
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-087",
+    "type": "typing",
+    "prompt": "พิมพ์คำตอบที่ถูกต้อง: My brother ____ a small map yesterday.",
+    "answer": "had",
+    "acceptedAnswers": [
+      "had"
+    ],
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-088",
+    "type": "typing",
+    "prompt": "พิมพ์คำตอบที่ถูกต้อง: My sister ____ a new phone yesterday.",
+    "answer": "had",
+    "acceptedAnswers": [
+      "had"
+    ],
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-089",
+    "type": "typing",
+    "prompt": "พิมพ์คำตอบที่ถูกต้อง: The students ____ a lot of homework yesterday.",
+    "answer": "had",
+    "acceptedAnswers": [
+      "had"
+    ],
+    "explanation": "เมื่อพูดถึงการมีในอดีต ใช้ had",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-090",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่ใช้ had ถูกต้อง",
+    "tiles": [
+      "The students",
+      "had",
+      "a",
+      "lot",
+      "of",
+      "homework",
+      "yesterday"
+    ],
+    "answer": "The students had a lot of homework yesterday.",
+    "acceptedAnswers": [
+      "The students had a lot of homework yesterday."
+    ],
+    "explanation": "ใช้ had เพื่อพูดถึงการมีในอดีต",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-091",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่ใช้ had ถูกต้อง (ชุดที่ 2)",
+    "tiles": [
+      "The teacher",
+      "had",
+      "a",
+      "meeting",
+      "yesterday"
+    ],
+    "answer": "The teacher had a meeting yesterday.",
+    "acceptedAnswers": [
+      "The teacher had a meeting yesterday."
+    ],
+    "explanation": "ใช้ had เพื่อพูดถึงการมีในอดีต",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-092",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่ใช้ had ถูกต้อง (ชุดที่ 3)",
+    "tiles": [
+      "My friends",
+      "had",
+      "a",
+      "football",
+      "match",
+      "yesterday"
+    ],
+    "answer": "My friends had a football match yesterday.",
+    "acceptedAnswers": [
+      "My friends had a football match yesterday."
+    ],
+    "explanation": "ใช้ had เพื่อพูดถึงการมีในอดีต",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-093",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่ใช้ had ถูกต้อง (ชุดที่ 4)",
+    "tiles": [
+      "My parents",
+      "had",
+      "a",
+      "birthday",
+      "party",
+      "yesterday"
+    ],
+    "answer": "My parents had a birthday party yesterday.",
+    "acceptedAnswers": [
+      "My parents had a birthday party yesterday."
+    ],
+    "explanation": "ใช้ had เพื่อพูดถึงการมีในอดีต",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-094",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่ใช้ had ถูกต้อง (ชุดที่ 5)",
+    "tiles": [
+      "The dog",
+      "had",
+      "a",
+      "headache",
+      "yesterday"
+    ],
+    "answer": "The dog had a headache yesterday.",
+    "acceptedAnswers": [
+      "The dog had a headache yesterday."
+    ],
+    "explanation": "ใช้ had เพื่อพูดถึงการมีในอดีต",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-095",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่ใช้ had ถูกต้อง (ชุดที่ 6)",
+    "tiles": [
+      "The class",
+      "had",
+      "a",
+      "long",
+      "lesson",
+      "yesterday"
+    ],
+    "answer": "The class had a long lesson yesterday.",
+    "acceptedAnswers": [
+      "The class had a long lesson yesterday."
+    ],
+    "explanation": "ใช้ had เพื่อพูดถึงการมีในอดีต",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-096",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่ใช้ had ถูกต้อง (ชุดที่ 7)",
+    "tiles": [
+      "The children",
+      "had",
+      "a",
+      "short",
+      "break",
+      "yesterday"
+    ],
+    "answer": "The children had a short break yesterday.",
+    "acceptedAnswers": [
+      "The children had a short break yesterday."
+    ],
+    "explanation": "ใช้ had เพื่อพูดถึงการมีในอดีต",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-097",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่ใช้ had ถูกต้อง (ชุดที่ 8)",
+    "tiles": [
+      "My father",
+      "had",
+      "a",
+      "story",
+      "book",
+      "yesterday"
+    ],
+    "answer": "My father had a story book yesterday.",
+    "acceptedAnswers": [
+      "My father had a story book yesterday."
+    ],
+    "explanation": "ใช้ had เพื่อพูดถึงการมีในอดีต",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-098",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่ใช้ had ถูกต้อง (ชุดที่ 9)",
+    "tiles": [
+      "My mother",
+      "had",
+      "a",
+      "problem",
+      "yesterday"
+    ],
+    "answer": "My mother had a problem yesterday.",
+    "acceptedAnswers": [
+      "My mother had a problem yesterday."
+    ],
+    "explanation": "ใช้ had เพื่อพูดถึงการมีในอดีต",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-099",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่ใช้ had ถูกต้อง (ชุดที่ 10)",
+    "tiles": [
+      "The players",
+      "had",
+      "a",
+      "plan",
+      "yesterday"
+    ],
+    "answer": "The players had a plan yesterday.",
+    "acceptedAnswers": [
+      "The players had a plan yesterday."
+    ],
+    "explanation": "ใช้ had เพื่อพูดถึงการมีในอดีต",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  },
+  {
+    "id": "had-100",
+    "type": "word-arrangement",
+    "prompt": "เรียงคำให้เป็นประโยคที่ใช้ had ถูกต้อง (ชุดที่ 11)",
+    "tiles": [
+      "The school",
+      "had",
+      "a",
+      "question",
+      "yesterday"
+    ],
+    "answer": "The school had a question yesterday.",
+    "acceptedAnswers": [
+      "The school had a question yesterday."
+    ],
+    "explanation": "ใช้ had เพื่อพูดถึงการมีในอดีต",
+    "lessonId": "act1_phase1_unit5_had",
+    "ruleId": "had_past"
+  }
 ];
 
 const MASTER_PROMPT_TH_BY_PROMPT = {
@@ -2057,6 +20827,92 @@ normalizeQuestionMeta(phase1PastTimeWordsQuestions, "what-is-tense", "pastTimeWo
 normalizeQuestionMeta(phase1WasWereQuestions, "act1_phase1_unit3_was_were", "wasWere");
 normalizeQuestionMeta(phase1ThereWasWereQuestions, "act1_phase1_unit4_there_was_were", "thereWasWere");
 normalizeQuestionMeta(phase1HadQuestions, "act1_phase1_unit5_had", "hadPast");
+
+function validateExactAct1QuestionBanks() {
+  const banks = {
+    phase1PastMeaningQuestions,
+    phase1PastTimeWordsQuestions,
+    phase1WasWereQuestions,
+    phase1ThereWasWereQuestions,
+    phase1HadQuestions,
+    regularRuleOneQuestions,
+    regularRuleTwoQuestions,
+    regularRuleThreeQuestions,
+    regularRuleFourQuestions,
+    edForgerQuestions,
+    irregularPracticeQuestions,
+    irregularWraithQuestions,
+    finalBossQuestions
+  };
+  const bannedWasWerePromptParts = [
+    "ใช้ was ผิดกับ",
+    "ใช้ were ผิดกับ",
+    "ผิดกับ The",
+    "ผิดกับ He",
+    "ผิดกับ She",
+    "ผิดกับ We",
+    "ผิดกับ They",
+    "ถูกกับประธาน",
+    "ผิดกับประธาน",
+    "There was",
+    "There were",
+    "had "
+  ];
+  const rows = [];
+  Object.entries(banks).forEach(([name, questions]) => {
+    const ids = new Set();
+    const prompts = new Set();
+    const issues = [];
+    if (!Array.isArray(questions)) {
+      issues.push("not array");
+    } else {
+      if (questions.length !== 100) issues.push(`count=${questions.length}`);
+      questions.forEach((q, index) => {
+        if (!q.id) issues.push(`missing id at ${index}`);
+        if (ids.has(q.id)) issues.push(`duplicate id ${q.id}`);
+        ids.add(q.id);
+        if (prompts.has(q.prompt)) issues.push(`duplicate prompt ${q.prompt}`);
+        prompts.add(q.prompt);
+        if (!q.explanation) issues.push(`missing explanation ${q.id}`);
+        if (["multiple-choice", "correct-sentence", "incorrect-sentence"].includes(q.type)) {
+          if (!Array.isArray(q.options) || !q.options.includes(q.answer)) {
+            issues.push(`answer not in options ${q.id}`);
+          }
+        }
+        if (q.type === "typing") {
+          if (!q.answer || !Array.isArray(q.acceptedAnswers) || !q.acceptedAnswers.includes(q.answer)) {
+            issues.push(`bad typing answer ${q.id}`);
+          }
+        }
+        if (q.type === "word-arrangement") {
+          if (!Array.isArray(q.tiles) || !q.tiles.length || !q.answer) {
+            issues.push(`bad arrangement ${q.id}`);
+          }
+        }
+        if (name === "phase1WasWereQuestions") {
+          const prompt = String(q.prompt || "");
+          const serialized = JSON.stringify(q);
+          if (bannedWasWerePromptParts.some(part => prompt.includes(part))) {
+            issues.push(`banned was/were prompt ${q.id}`);
+          }
+          if (serialized.includes("There was") || serialized.includes("There were")) {
+            issues.push(`off-topic there was/were in Was-Were Wisp ${q.id}`);
+          }
+        }
+      });
+    }
+    rows.push({ bank: name, count: questions?.length || 0, status: issues.length ? "CHECK" : "OK", issues: issues.slice(0, 5).join(" | ") });
+  });
+  console.table(rows);
+  const allIssues = rows.filter(row => row.status !== "OK");
+  if (allIssues.length) {
+    console.warn("[Lingua Act 1 Questions] Validation issues found:", allIssues);
+  } else {
+    console.info("[Lingua Act 1 Questions] All exact Act 1 question banks passed validation.");
+  }
+  return rows;
+}
+validateExactAct1QuestionBanks();
 
 const WAS_WERE_WISP_IMAGE_PATH = "assets/memory-shade.png";
 
@@ -2134,7 +20990,7 @@ const PAST_FRAGMENT_ACT = {
       enemy: "Was-Were Wisp",
       thaiEnemy: "วิสป์ was-were",
       enemySprite: WAS_WERE_WISP_IMAGE_PATH,
-      enemyMaxHp: 60,
+      enemyMaxHp: 50,
       completionKey: "phase1WasWereCompleted",
       reward: { grammaria: 25, fragment: "Was-Were Glow" },
       lesson: [
@@ -2153,7 +21009,7 @@ const PAST_FRAGMENT_ACT = {
       phaseTitle: "Entering the Past",
       enemy: "Memory Lantern",
       thaiEnemy: "โคมความทรงจำ",
-      enemyMaxHp: 72,
+      enemyMaxHp: 70,
       completionKey: "phase1ThereWasWereCompleted",
       reward: { grammaria: 25, fragment: "Memory Lantern Flame" },
       lesson: [
@@ -2172,7 +21028,7 @@ const PAST_FRAGMENT_ACT = {
       phaseTitle: "Entering the Past",
       enemy: "Lost Pouch Imp",
       thaiEnemy: "อิมป์ถุงของหาย",
-      enemyMaxHp: 80,
+      enemyMaxHp: 75,
       completionKey: "phase1HadCompleted",
       reward: { grammaria: 30, fragment: "Had Relic" },
       lesson: [
@@ -6043,11 +24899,12 @@ function getQuestionId(question, index = 0, prefix = "q") {
 }
 
 function prepareQuestion(rawQuestion, index = 0) {
+  const options = rawQuestion.options || rawQuestion.choices || [];
   return {
     ...rawQuestion,
     id: getQuestionId(rawQuestion, index),
     correctAnswer: rawQuestion.answer ?? rawQuestion.correct,
-    options: shuffleArray(rawQuestion.options || [])
+    options: shuffleArray(options)
   };
 }
 
@@ -6315,30 +25172,19 @@ function getExpandedStageQuestionPool(stage, context = "attack") {
   }
   const stageId = stage.id || "";
   const banksByStage = {
-    "what-is-past": [phase1PastMeaningQuestions, phase1PastTimeWordsQuestions, getStageTopicReviewQuestions(stage)],
-    "what-is-tense": [phase1PastTimeWordsQuestions, phase1PastMeaningQuestions, getStageTopicReviewQuestions(stage)],
-    "act1_phase1_unit3_was_were": [phase1WasWereQuestions, getStageTopicReviewQuestions(stage)],
-    "act1_phase1_unit4_there_was_were": [phase1ThereWasWereQuestions, getStageTopicReviewQuestions(stage)],
-    "act1_phase1_unit5_had": [phase1HadQuestions, getStageTopicReviewQuestions(stage)],
-    "regular-rule-1": [regularRuleOneQuestions, sentenceQuestionBanks.regularEd],
-    "regular-rule-2": [regularRuleTwoQuestions, sentenceQuestionBanks.endingE],
-    "regular-rule-3": [regularRuleThreeQuestions, sentenceQuestionBanks.endingY],
-    "regular-rule-4": [regularRuleFourQuestions, sentenceQuestionBanks.doubleCvc],
-    "ed-mini-boss": [edForgerQuestions, bossQuestionBanks.edForger],
-    "irregular-lesson": [irregularPracticeQuestions, sentenceQuestionBanks.irregular],
-    "irregular-mini-boss": [irregularWraithQuestions, bossQuestionBanks.irregularWraith],
-    "final-boss": [
-      finalBossQuestions,
-      bossQuestionBanks.memoryBreaker,
-      regularRuleOneQuestions,
-      regularRuleTwoQuestions,
-      regularRuleThreeQuestions,
-      regularRuleFourQuestions,
-      irregularPracticeQuestions,
-      irregularWraithQuestions,
-      bossQuestionBanks.edForger,
-      bossQuestionBanks.irregularWraith
-    ]
+    "what-is-past": [phase1PastMeaningQuestions],
+    "what-is-tense": [phase1PastTimeWordsQuestions],
+    "act1_phase1_unit3_was_were": [phase1WasWereQuestions],
+    "act1_phase1_unit4_there_was_were": [phase1ThereWasWereQuestions],
+    "act1_phase1_unit5_had": [phase1HadQuestions],
+    "regular-rule-1": [regularRuleOneQuestions],
+    "regular-rule-2": [regularRuleTwoQuestions],
+    "regular-rule-3": [regularRuleThreeQuestions],
+    "regular-rule-4": [regularRuleFourQuestions],
+    "ed-mini-boss": [edForgerQuestions],
+    "irregular-lesson": [irregularPracticeQuestions],
+    "irregular-mini-boss": [irregularWraithQuestions],
+    "final-boss": [finalBossQuestions]
   };
   const rawPool = (banksByStage[stageId] || [stage.questions || [], getStageTopicReviewQuestions(stage)])
     .flat()
@@ -6358,12 +25204,9 @@ function getStageFocusQuestionPool(stage) {
   if (!stage) {
     return [];
   }
-  const bossKey = getBossKey(stage);
-  const bossBank = bossKey && bossQuestionBanks[bossKey] ? bossQuestionBanks[bossKey] : [];
   return normalizeBattleQuestionPool([
     ...getStageTopicReviewQuestions(stage),
-    ...getExpandedStageQuestionPool(stage, "focus"),
-    ...bossBank
+    ...getExpandedStageQuestionPool(stage, "focus")
   ], stage, "focus");
 }
 
@@ -6418,6 +25261,32 @@ function pickBattleQuestionWithFallback(stage, context = "attack") {
         prefix: sourceData.prefix,
         exhausted: false
       };
+    }
+  }
+
+  if (context === "attack" && state.enemyHp > 0 && getStageBattleQuestionPool(stage, context).length) {
+    battle.usedQuestionIds = new Set();
+    battle.usedQuestionKeys = new Set();
+    battle.attackQuestionCycleCount = (battle.attackQuestionCycleCount || 0) + 1;
+    battle.questionCycleNoticePending = true;
+    const cycleUsedSet = context === "focus" ? battle.usedFocusQuestionIds : battle.usedQuestionIds;
+    for (const sourceData of sources) {
+      const entry = pickUnusedBattleQuestionEntry(sourceData.questions, {
+        battle,
+        usedSet: cycleUsedSet,
+        lastBaseVerb: lastBaseVerb || "",
+        prefix: sourceData.prefix
+      });
+      if (entry?.question) {
+        return {
+          question: entry.question,
+          index: entry.index,
+          source: sourceData.source,
+          prefix: sourceData.prefix,
+          exhausted: false,
+          cycled: true
+        };
+      }
     }
   }
 
@@ -6487,11 +25356,11 @@ function getAllowedRuleIdsForStage(stage) {
   }
 
   const stageRules = {
-    "what-is-past": ["pastMeaning"],
-    "what-is-tense": ["pastTimeWords"],
-    "act1_phase1_unit3_was_were": ["wasWere"],
-    "act1_phase1_unit4_there_was_were": ["thereWasWere"],
-    "act1_phase1_unit5_had": ["hadPast"],
+    "what-is-past": ["pastMeaning", "past_meaning"],
+    "what-is-tense": ["pastTimeWords", "past_time_words"],
+    "act1_phase1_unit3_was_were": ["wasWere", "was_were"],
+    "act1_phase1_unit4_there_was_were": ["thereWasWere", "there_was_were"],
+    "act1_phase1_unit5_had": ["hadPast", "had_past"],
     "regular-rule-1": ["regular_ed"],
     "regular-rule-2": ["ending_e_add_d"],
     "regular-rule-3": ["y_rule"],
@@ -10189,14 +29058,7 @@ function renderRestoredPlayerQuestion() {
   els.battleMessage.textContent = `${battle.stage.title} - คำถาม ${battle.questionIndex + 1} / ${battle.stage.questions.length}`;
   els.questionText.textContent = resolveBattleQuestionPrompt(question);
   els.answerOptions.innerHTML = "";
-  question.options.forEach(option => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "answer-button";
-    button.textContent = option;
-    button.addEventListener("click", () => chooseActAnswer(option, button));
-    els.answerOptions.appendChild(button);
-  });
+  renderActBattleQuestionControls(question, question.options || []);
   showOnlyBattlePanel(els.questionPanel);
 }
 
@@ -10320,17 +29182,10 @@ function renderRestoredBattleCheckpoint(resumeMode) {
 
 function getRestoredEnemyHpFromCheckpoint(checkpointBattle = {}, stage = null) {
   const fallbackMaxHp = Math.max(1, Number(checkpointBattle.enemyMaxHp || state.enemyMaxHp || 1));
-  if (stage?.id !== "act1_phase1_unit3_was_were") {
-    return {
-      enemyMaxHp: fallbackMaxHp,
-      enemyHp: clamp(Number(checkpointBattle.enemyHp ?? state.enemyHp), 0, fallbackMaxHp)
-    };
-  }
-
-  const wasWereMaxHp = getBalancedBossMaxHp(stage, fallbackMaxHp);
+  const restoredMaxHp = getBalancedBossMaxHp(stage, fallbackMaxHp);
   return {
-    enemyMaxHp: wasWereMaxHp,
-    enemyHp: clamp(Number(checkpointBattle.enemyHp ?? wasWereMaxHp), 0, wasWereMaxHp)
+    enemyMaxHp: restoredMaxHp,
+    enemyHp: clamp(Number(checkpointBattle.enemyHp ?? state.enemyHp ?? restoredMaxHp), 0, restoredMaxHp)
   };
 }
 
@@ -14270,6 +33125,181 @@ function chooseActFocusAnswer(option, question) {
   setTimeout(startActBossWarning, 1100);
 }
 
+function normalizeActFreeAnswer(value = "", { ignoreFinalPeriod = false } = {}) {
+  let normalized = String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  if (ignoreFinalPeriod) {
+    normalized = normalized.replace(/[.。]+$/g, "").trim();
+  }
+  return normalized;
+}
+
+function getActQuestionAcceptedAnswers(question = {}) {
+  return [
+    question.answer,
+    question.correctAnswer,
+    question.correct,
+    ...(Array.isArray(question.acceptedAnswers) ? question.acceptedAnswers : [])
+  ].filter(answer => answer !== undefined && answer !== null && String(answer).trim());
+}
+
+function getActQuestionPrimaryAnswer(question = {}) {
+  return getActQuestionAcceptedAnswers(question)[0] || "";
+}
+
+function isActQuestionAnswerCorrect(question, selectedAnswer) {
+  const ignoreFinalPeriod = question?.type === "word-arrangement";
+  const selected = normalizeActFreeAnswer(selectedAnswer, { ignoreFinalPeriod });
+  return getActQuestionAcceptedAnswers(question).some(answer =>
+    normalizeActFreeAnswer(answer, { ignoreFinalPeriod }) === selected
+  );
+}
+
+function renderActTypingQuestion(question) {
+  const panel = document.createElement("div");
+  panel.className = "boss-v2-challenge-panel boss-v2-typing-panel";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "boss-v2-typing-input";
+  input.autocomplete = "off";
+  input.spellcheck = false;
+  input.placeholder = "พิมพ์คำตอบที่นี่";
+  input.setAttribute("aria-label", "พิมพ์คำตอบ");
+
+  const confirmButton = document.createElement("button");
+  confirmButton.type = "button";
+  confirmButton.className = "answer-button boss-v2-confirm-button";
+  confirmButton.textContent = "ยืนยัน";
+  confirmButton.disabled = true;
+
+  input.addEventListener("input", () => {
+    confirmButton.disabled = !input.value.trim();
+  });
+  input.addEventListener("keydown", event => {
+    if (event.key === "Enter" && input.value.trim()) {
+      event.preventDefault();
+      confirmButton.click();
+    }
+  });
+  confirmButton.addEventListener("click", () => {
+    if (input.value.trim()) {
+      chooseActAnswer(input.value, confirmButton);
+    }
+  });
+
+  panel.append(input, confirmButton);
+  els.answerOptions.appendChild(panel);
+  input.focus({ preventScroll: true });
+}
+
+function renderActWordArrangementQuestion(question) {
+  const panel = document.createElement("div");
+  panel.className = "boss-v2-challenge-panel boss-v2-arrangement-panel";
+  const selectedWords = [];
+  const tiles = (Array.isArray(question.tiles) && question.tiles.length)
+    ? question.tiles
+    : String(getActQuestionPrimaryAnswer(question)).split(/\s+/).filter(Boolean);
+  const arrangementJoiner = tiles.every(tile => String(tile).length === 1) ? "" : " ";
+  const tileState = shuffleArray(tiles).map((word, index) => ({
+    id: `${index}-${word}`,
+    word,
+    selected: false
+  }));
+
+  const answerRow = document.createElement("div");
+  answerRow.className = "boss-v2-arrangement-answer";
+  const tileRow = document.createElement("div");
+  tileRow.className = "boss-v2-arrangement-tiles";
+  const controlRow = document.createElement("div");
+  controlRow.className = "boss-v2-arrangement-controls";
+  const editControls = document.createElement("div");
+  editControls.className = "boss-v2-arrangement-edit-controls";
+
+  const undoButton = document.createElement("button");
+  undoButton.type = "button";
+  undoButton.className = "secondary-button";
+  undoButton.textContent = "ย้อน 1 คำ";
+  const clearButton = document.createElement("button");
+  clearButton.type = "button";
+  clearButton.className = "secondary-button";
+  clearButton.textContent = "ล้าง";
+  const confirmButton = document.createElement("button");
+  confirmButton.type = "button";
+  confirmButton.className = "answer-button boss-v2-confirm-button";
+  confirmButton.textContent = "ยืนยัน";
+
+  const render = () => {
+    answerRow.textContent = selectedWords.length ? selectedWords.join(arrangementJoiner) : "แตะคำเพื่อเรียงคำตอบ";
+    tileRow.innerHTML = "";
+    tileState.forEach(tile => {
+      const tileButton = document.createElement("button");
+      tileButton.type = "button";
+      tileButton.className = "boss-v2-letter-tile";
+      tileButton.textContent = tile.word;
+      tileButton.disabled = tile.selected;
+      tileButton.addEventListener("click", () => {
+        if (tile.selected) {
+          return;
+        }
+        tile.selected = true;
+        selectedWords.push(tile.word);
+        render();
+      });
+      tileRow.appendChild(tileButton);
+    });
+    undoButton.disabled = !selectedWords.length;
+    clearButton.disabled = !selectedWords.length;
+    confirmButton.disabled = !selectedWords.length;
+  };
+
+  undoButton.addEventListener("click", () => {
+    const lastWord = selectedWords.pop();
+    const lastTile = [...tileState].reverse().find(tile => tile.word === lastWord && tile.selected);
+    if (lastTile) {
+      lastTile.selected = false;
+    }
+    render();
+  });
+  clearButton.addEventListener("click", () => {
+    selectedWords.length = 0;
+    tileState.forEach(tile => {
+      tile.selected = false;
+    });
+    render();
+  });
+  confirmButton.addEventListener("click", () => {
+    if (selectedWords.length) {
+      chooseActAnswer(selectedWords.join(arrangementJoiner), confirmButton);
+    }
+  });
+
+  editControls.append(undoButton, clearButton);
+  controlRow.append(editControls, confirmButton);
+  panel.append(answerRow, tileRow, controlRow);
+  els.answerOptions.appendChild(panel);
+  render();
+}
+
+function renderActBattleQuestionControls(question, visibleOptions) {
+  if (question.type === "typing") {
+    renderActTypingQuestion(question);
+    return;
+  }
+  if (question.type === "word-arrangement") {
+    renderActWordArrangementQuestion(question);
+    return;
+  }
+
+  visibleOptions.forEach(option => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "answer-button";
+    button.textContent = option;
+    button.addEventListener("click", () => chooseActAnswer(option, button));
+    els.answerOptions.appendChild(button);
+  });
+}
+
 function showActBattleQuestion() {
   const battle = state.actBattle;
   battle.answerResolving = false;
@@ -14279,7 +33309,7 @@ function showActBattleQuestion() {
   const picked = pickBattleQuestionWithFallback(battle.stage, "attack");
   const rawQuestion = picked.question;
   if (!rawQuestion) {
-    showBattleQuestionExhaustedRecovery("โจทย์โจมตีใน battle นี้ถูกใช้ครบแล้ว ไม่มีการวนคำถามซ้ำ เลือกตั้งสมาธิ สู้ใหม่ หรือกลับไปบทเรียน");
+    showBattleQuestionExhaustedRecovery("ระบบยังหาโจทย์ต่อสู้ไม่ได้ชั่วคราว เลือกตั้งสมาธิ สู้ใหม่ หรือกลับไปบทเรียน");
     return;
   }
   battle.attackQuestionsExhausted = false;
@@ -14293,12 +33323,16 @@ function showActBattleQuestion() {
   setBattleTurnOwner("player");
   els.continueBattleButton.classList.add("hidden");
   els.battleMessage.textContent = `${battle.stage.title} - คำถาม ${battle.questionIndex + 1} / ${battle.stage.questions.length}`;
+  if (picked.cycled || battle.questionCycleNoticePending) {
+    els.battleMessage.textContent += " | คำถามรอบแรกถูกใช้ครบแล้ว ระบบเริ่มวนคำถามรอบใหม่เพื่อให้การต่อสู้ดำเนินต่อได้";
+    battle.questionCycleNoticePending = false;
+  }
   els.questionText.textContent = resolveBattleQuestionPrompt(question);
   els.answerOptions.innerHTML = "";
 
   let visibleOptions = [...question.options];
   const hintCount = Math.min(state.battleActiveEffects?.hint || 0, 2);
-  if (hintCount > 0) {
+  if (hintCount > 0 && visibleOptions.length) {
     state.battleActiveEffects.hint = Math.max((state.battleActiveEffects.hint || 0) - hintCount, 0);
     const wrongOptions = visibleOptions.filter(option => option !== (question.correctAnswer || question.answer));
     const removedWrong = sample(wrongOptions, hintCount);
@@ -14319,14 +33353,7 @@ function showActBattleQuestion() {
     }
   }
 
-  visibleOptions.forEach(option => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "answer-button";
-    button.textContent = option;
-    button.addEventListener("click", () => chooseActAnswer(option, button));
-    els.answerOptions.appendChild(button);
-  });
+  renderActBattleQuestionControls(question, visibleOptions);
 
   showOnlyBattlePanel(els.questionPanel);
 }
@@ -14386,16 +33413,19 @@ function chooseActAnswer(option, selectedButton = null) {
   }
   battle.answerResolving = true;
   const question = battle.currentQuestion || prepareQuestion(battle.stage.questions[battle.questionIndex], battle.questionIndex);
-  const isCorrect = option === (question.correctAnswer || question.answer);
+  const correctAnswer = getActQuestionPrimaryAnswer(question);
+  const isCorrect = isActQuestionAnswerCorrect(question, option);
   const feedback = document.createElement("div");
   feedback.className = "answer-feedback";
 
-  els.answerOptions.querySelectorAll("button").forEach(button => {
-    button.disabled = true;
-    if (button.textContent === (question.correctAnswer || question.answer)) {
+  els.answerOptions.querySelectorAll("button, input").forEach(control => {
+    control.disabled = true;
+  });
+  els.answerOptions.querySelectorAll(".answer-button").forEach(button => {
+    if (isActQuestionAnswerCorrect(question, button.textContent)) {
       button.classList.add("correct");
     }
-    if (button.textContent === option && !isCorrect) {
+    if (normalizeActFreeAnswer(button.textContent) === normalizeActFreeAnswer(option) && !isCorrect) {
       button.classList.add("wrong");
     }
   });
@@ -14412,13 +33442,16 @@ function chooseActAnswer(option, selectedButton = null) {
       baseDamage: battle.damagePerCorrect,
       grammariaGain: 10 + bonusGrammaria
     };
-    feedback.innerHTML = `<strong>Correct!</strong><br>${question.explanation}`;
+    feedback.innerHTML = `<strong>Correct!</strong><br>${escapeHtml(question.explanation || "")}`;
   } else {
     battle.correctStreak = 0;
     if (useBattleEffect("retry")) {
       battle.answerResolving = false;
-      els.answerOptions.querySelectorAll("button").forEach(button => {
-        button.disabled = button.textContent === option;
+      els.answerOptions.querySelectorAll("button, input").forEach(control => {
+        control.disabled = false;
+      });
+      els.answerOptions.querySelectorAll(".answer-button").forEach(button => {
+        button.disabled = normalizeActFreeAnswer(button.textContent) === normalizeActFreeAnswer(option);
         button.classList.remove("correct");
       });
       feedback.innerHTML = `<strong>ย้อนคิดทำงาน!</strong><br>คำตอบนี้ยังไม่ถูก แต่เจ้ามีโอกาสลองอีกครั้ง`;
@@ -14432,7 +33465,7 @@ function chooseActAnswer(option, selectedButton = null) {
     const penaltyResult = applyStatusDamageToTarget("player", 12, "wrongAnswerPenalty");
     playAttackSfx();
     triggerMotion(els.battleEnemy, "enemy-attack-motion");
-    feedback.innerHTML = `<strong>ยังไม่ถูกต้อง</strong><br>รับดาเมจ ${penaltyResult.finalDamage}<br>คำตอบที่ถูกคือ <strong>${question.correctAnswer || question.answer}</strong><br>${question.explanation}`;
+    feedback.innerHTML = `<strong>ยังไม่ถูกต้อง</strong><br>รับดาเมจ ${penaltyResult.finalDamage}<br>คำตอบที่ถูกคือ <strong>${escapeHtml(correctAnswer)}</strong><br>${escapeHtml(question.explanation || "")}`;
   }
 
   els.answerOptions.appendChild(feedback);
@@ -16504,6 +35537,18 @@ function getEnemyQuestionBank(stage) {
   }
 
   const key = getBossKey(stage);
+  const stageBank = Array.isArray(stage.questions)
+    ? normalizeEnemyQuestionBank(filterQuestionsForStage(stage.questions, stage), stage, "stage")
+    : [];
+
+  if (ACT1_ENCOUNTER_MAX_HP[String(stage.id || "")] && stageBank.length) {
+    return {
+      source: "stage",
+      bossKey: key,
+      questions: stageBank
+    };
+  }
+
   const dedicatedBank = key && Array.isArray(bossQuestionBanks[key])
     ? normalizeEnemyQuestionBank(filterQuestionsForStage(bossQuestionBanks[key], stage), stage, "boss")
     : [];
@@ -16515,10 +35560,6 @@ function getEnemyQuestionBank(stage) {
       questions: dedicatedBank
     };
   }
-
-  const stageBank = Array.isArray(stage.questions)
-    ? normalizeEnemyQuestionBank(filterQuestionsForStage(stage.questions, stage), stage, "stage")
-    : [];
 
   if (stageBank.length) {
     return {
@@ -18980,14 +38021,10 @@ function continueActBattle() {
     battle.advanceQuestionOnContinue = true;
   }
 
-  if (battle.questionIndex >= battle.stage.questions.length && isFinalBossStage(battle.stage) && state.enemyHp > 0) {
-    els.battleMessage.textContent = "The Memory Breaker ยังไม่สลาย ความทรงจำต้องการคำตอบที่ถูกต้องมากกว่านี้";
-    state.playerHp = 100;
-    state.enemyHp = state.enemyMaxHp;
+  if (battle.questionIndex >= battle.stage.questions.length && state.enemyHp > 0) {
     battle.questionIndex = 0;
-    battle.correctAnswers = 0;
-    updateBattleStats();
-    showBattleContinueButton("ลองต่อสู้อีกครั้ง", () => beginActPlayerTurn("เลือกการกระทำเพื่อเริ่มรอบใหม่"));
+    battle.questionCycleNoticePending = true;
+    beginActPlayerTurn("คำถามรอบแรกถูกใช้ครบแล้ว ระบบเริ่มวนคำถามรอบใหม่เพื่อให้การต่อสู้ดำเนินต่อได้");
     return;
   }
 
