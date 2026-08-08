@@ -1453,17 +1453,17 @@ const phase1WasWereQuestions = [
   },
   {
     id: "was-were-clean-028",
-    prompt: "ประโยคใดใช้ was ผิด",
-    options: ["He was at home.", "It was cold.", "They was happy.", "My father was busy."],
-    answer: "They was happy.",
-    explanation: "They ต้องใช้ were ไม่ใช่ was"
+    prompt: "เติมคำให้ถูกต้อง: They ____ happy yesterday.",
+    options: ["was", "were", "is", "am"],
+    answer: "were",
+    explanation: "They เป็นพหูพจน์ จึงใช้ were"
   },
   {
     id: "was-were-clean-029",
-    prompt: "ประโยคใดใช้ were ผิด",
-    options: ["We were ready.", "They were tired.", "You were late.", "She were sad."],
-    answer: "She were sad.",
-    explanation: "She ต้องใช้ was ไม่ใช่ were"
+    prompt: "เติมคำให้ถูกต้อง: She ____ sad yesterday.",
+    options: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "She เป็นเอกพจน์ จึงใช้ was"
   },
   {
     id: "was-were-clean-030",
@@ -1922,31 +1922,31 @@ const phase1WasWereQuestions = [
   },
   {
     id: "was-were-clean-095",
-    prompt: "ประโยคใดใช้ was ผิดกับประธานพหูพจน์",
-    options: ["I was at home.", "She was tired.", "We was happy.", "It was cold."],
-    answer: "We was happy.",
-    explanation: "We ต้องใช้ were ไม่ใช่ was"
+    prompt: "เติมคำให้ถูกต้อง: We ____ happy yesterday.",
+    options: ["was", "were", "is", "am"],
+    answer: "were",
+    explanation: "We ใช้ were เมื่อพูดถึงอดีต"
   },
   {
     id: "was-were-clean-096",
-    prompt: "ประโยคใดใช้ was ผิดกับ The boys",
-    options: ["The dog was hungry.", "My father was busy.", "The boys was quiet.", "The lesson was easy."],
-    answer: "The boys was quiet.",
-    explanation: "The boys เป็นพหูพจน์ ต้องใช้ were"
+    prompt: "เติมคำให้ถูกต้อง: The boys ____ quiet.",
+    options: ["was", "were", "is", "am"],
+    answer: "were",
+    explanation: "The boys เป็นพหูพจน์ จึงใช้ were"
   },
   {
     id: "was-were-clean-097",
-    prompt: "ประโยคใดใช้ were ผิดกับคำนามเอกพจน์",
-    options: ["You were kind.", "They were ready.", "The cat were sleepy.", "We were happy."],
-    answer: "The cat were sleepy.",
-    explanation: "The cat เป็นเอกพจน์ ต้องใช้ was"
+    prompt: "เติมคำให้ถูกต้อง: The cat ____ sleepy.",
+    options: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "The cat เป็นเอกพจน์ จึงใช้ was"
   },
   {
     id: "was-were-clean-098",
-    prompt: "ประโยคใดใช้ were ผิดกับ He",
-    options: ["The students were ready.", "My friends were here.", "He were angry.", "The books were old."],
-    answer: "He were angry.",
-    explanation: "He ต้องใช้ was ไม่ใช่ were"
+    prompt: "เติมคำให้ถูกต้อง: He ____ angry yesterday.",
+    options: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "He ใช้ was เมื่อพูดถึงอดีต"
   },
   {
     id: "was-were-clean-099",
