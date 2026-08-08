@@ -1433,96 +1433,56 @@ const phase1WasWereQuestions = [
   {
     id: "was-were-clean-025",
     prompt: "ประโยคใดใช้กับประธาน I ได้ถูกต้อง",
-    options: [
-      "I were tired yesterday.",
-      "I was tired yesterday.",
-      "I are tired yesterday.",
-      "I am tired yesterday."
-    ],
+    options: ["I were tired yesterday.", "I was tired yesterday.", "I are tired yesterday.", "I am tired yesterday."],
     answer: "I was tired yesterday.",
     explanation: "ประธาน I ใช้ was ในอดีต"
   },
   {
     id: "was-were-clean-026",
     prompt: "ประโยคใดใช้กับประธาน You ได้ถูกต้อง",
-    options: [
-      "You was late yesterday.",
-      "You is late yesterday.",
-      "You were late yesterday.",
-      "You am late yesterday."
-    ],
+    options: ["You was late yesterday.", "You is late yesterday.", "You were late yesterday.", "You am late yesterday."],
     answer: "You were late yesterday.",
     explanation: "ประธาน You ใช้ were"
   },
   {
     id: "was-were-clean-027",
     prompt: "ประโยคใดใช้กับประธาน She ได้ถูกต้อง",
-    options: [
-      "She were happy.",
-      "She are happy.",
-      "She was happy.",
-      "She am happy."
-    ],
+    options: ["She were happy.", "She are happy.", "She was happy.", "She am happy."],
     answer: "She was happy.",
     explanation: "ประธาน She ใช้ was"
   },
   {
     id: "was-were-clean-028",
     prompt: "ประโยคใดใช้ was ผิด",
-    options: [
-      "He was at home.",
-      "It was cold.",
-      "They was happy.",
-      "My father was busy."
-    ],
+    options: ["He was at home.", "It was cold.", "They was happy.", "My father was busy."],
     answer: "They was happy.",
     explanation: "They ต้องใช้ were ไม่ใช่ was"
   },
   {
     id: "was-were-clean-029",
     prompt: "ประโยคใดใช้ were ผิด",
-    options: [
-      "We were ready.",
-      "They were tired.",
-      "You were late.",
-      "She were sad."
-    ],
+    options: ["We were ready.", "They were tired.", "You were late.", "She were sad."],
     answer: "She were sad.",
     explanation: "She ต้องใช้ was ไม่ใช่ were"
   },
   {
     id: "was-were-clean-030",
     prompt: "ประโยคใดถูกต้อง",
-    options: [
-      "The books was on the desk.",
-      "The books were on the desk.",
-      "The books is on the desk.",
-      "The books am on the desk."
-    ],
+    options: ["The books was on the desk.", "The books were on the desk.", "The books is on the desk.", "The books am on the desk."],
     answer: "The books were on the desk.",
     explanation: "The books เป็นพหูพจน์ จึงใช้ were"
   },
   {
     id: "was-were-clean-031",
     prompt: "คำตอบใดเหมาะสมกับคำถาม: Were you at school yesterday?",
-    options: [
-      "Yes, I was.",
-      "Yes, I were.",
-      "Yes, I am.",
-      "Yes, I is."
-    ],
+    options: ["Yes, I was.", "Yes, I were.", "Yes, I am.", "Yes, I is."],
     answer: "Yes, I was.",
     explanation: "ถามว่า Were you แต่ตอบเกี่ยวกับ I จึงใช้ I was"
   },
   {
     id: "was-were-clean-032",
     prompt: "คำตอบใดเหมาะสมกับคำถาม: Was she tired last night?",
-    options: [
-      "Yes, she were.",
-      "Yes, she was.",
-      "Yes, she is.",
-      "Yes, she are."
-    ],
+    options: ["Yes, she were.", "Yes, she was.", "Yes, she is.", "Yes, she are."],
     answer: "Yes, she was.",
     explanation: "คำถามขึ้นต้นด้วย Was she จึงตอบว่า Yes, she was"
   },
@@ -1543,24 +1503,14 @@ const phase1WasWereQuestions = [
   {
     id: "was-were-clean-035",
     prompt: "ประโยคใดใช้กับประธาน We ได้ถูกต้อง",
-    options: [
-      "We was ready.",
-      "We were ready.",
-      "We is ready.",
-      "We am ready."
-    ],
+    options: ["We was ready.", "We were ready.", "We is ready.", "We am ready."],
     answer: "We were ready.",
     explanation: "ประธาน We ใช้ were"
   },
   {
     id: "was-were-clean-036",
     prompt: "ประโยคใดใช้กับประธาน It ได้ถูกต้อง",
-    options: [
-      "It were cold.",
-      "It are cold.",
-      "It am cold.",
-      "It was cold."
-    ],
+    options: ["It were cold.", "It are cold.", "It am cold.", "It was cold."],
     answer: "It was cold.",
     explanation: "ประธาน It ใช้ was"
   },
@@ -1591,6 +1541,426 @@ const phase1WasWereQuestions = [
     options: ["was", "is", "were", "am"],
     answer: "were",
     explanation: "The players เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-clean-041",
+    prompt: "เติมคำให้ถูกต้อง: My brother ____ at the library yesterday.",
+    options: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "My brother เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-clean-042",
+    prompt: "เติมคำให้ถูกต้อง: My sisters ____ in the kitchen last night.",
+    options: ["was", "were", "is", "am"],
+    answer: "were",
+    explanation: "My sisters เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-clean-043",
+    prompt: "เติมคำให้ถูกต้อง: The movie ____ interesting.",
+    options: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "The movie เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-clean-044",
+    prompt: "เติมคำให้ถูกต้อง: The movies ____ interesting.",
+    options: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "The movies เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-clean-045",
+    prompt: "เติมคำให้ถูกต้อง: The dog ____ hungry this morning.",
+    options: ["were", "are", "was", "am"],
+    answer: "was",
+    explanation: "The dog เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-clean-046",
+    prompt: "เติมคำให้ถูกต้อง: The dogs ____ noisy last night.",
+    options: ["was", "were", "is", "am"],
+    answer: "were",
+    explanation: "The dogs เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-clean-047",
+    prompt: "เติมคำให้ถูกต้อง: A teacher ____ in the room.",
+    options: ["were", "was", "are", "be"],
+    answer: "was",
+    explanation: "A teacher เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-clean-048",
+    prompt: "เติมคำให้ถูกต้อง: Many teachers ____ at the meeting.",
+    options: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "Many teachers เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-clean-049",
+    prompt: "เติมคำให้ถูกต้อง: This lesson ____ easy for me.",
+    options: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "This lesson เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-clean-050",
+    prompt: "เติมคำให้ถูกต้อง: These lessons ____ easy for us.",
+    options: ["was", "were", "is", "am"],
+    answer: "were",
+    explanation: "These lessons เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-clean-051",
+    prompt: "เติมคำให้ถูกต้อง: The answer ____ correct.",
+    options: ["were", "was", "are", "be"],
+    answer: "was",
+    explanation: "The answer เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-clean-052",
+    prompt: "เติมคำให้ถูกต้อง: The answers ____ correct.",
+    options: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "The answers เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-clean-053",
+    prompt: "เติมคำให้ถูกต้อง: My bag ____ heavy yesterday.",
+    options: ["was", "were", "are", "am"],
+    answer: "was",
+    explanation: "My bag เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-clean-054",
+    prompt: "เติมคำให้ถูกต้อง: Our bags ____ heavy yesterday.",
+    options: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "Our bags เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-clean-055",
+    prompt: "เติมคำให้ถูกต้อง: The test ____ difficult.",
+    options: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "The test เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-clean-056",
+    prompt: "เติมคำให้ถูกต้อง: The tests ____ difficult.",
+    options: ["was", "were", "is", "am"],
+    answer: "were",
+    explanation: "The tests เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-clean-057",
+    prompt: "เติมคำให้ถูกต้อง: The weather ____ hot yesterday.",
+    options: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "The weather เป็นคำนามเอกพจน์/นับไม่ได้ จึงใช้ was"
+  },
+  {
+    id: "was-were-clean-058",
+    prompt: "เติมคำให้ถูกต้อง: The rooms ____ clean after class.",
+    options: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "The rooms เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-clean-059",
+    prompt: "เติมคำให้ถูกต้อง: My phone ____ on the desk.",
+    options: ["were", "was", "are", "be"],
+    answer: "was",
+    explanation: "My phone เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-clean-060",
+    prompt: "เติมคำให้ถูกต้อง: The phones ____ on the table.",
+    options: ["was", "were", "is", "am"],
+    answer: "were",
+    explanation: "The phones เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-clean-061",
+    prompt: "เติมคำให้ถูกต้อง: I ____ very nervous before the test.",
+    options: ["were", "was", "are", "be"],
+    answer: "was",
+    explanation: "ประธาน I ใช้ was ในอดีต"
+  },
+  {
+    id: "was-were-clean-062",
+    prompt: "เติมคำให้ถูกต้อง: You ____ very kind to me.",
+    options: ["was", "were", "is", "am"],
+    answer: "were",
+    explanation: "ประธาน You ใช้ were"
+  },
+  {
+    id: "was-were-clean-063",
+    prompt: "เติมคำให้ถูกต้อง: He ____ absent yesterday.",
+    options: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "ประธาน He ใช้ was"
+  },
+  {
+    id: "was-were-clean-064",
+    prompt: "เติมคำให้ถูกต้อง: She ____ at home last night.",
+    options: ["were", "was", "are", "be"],
+    answer: "was",
+    explanation: "ประธาน She ใช้ was"
+  },
+  {
+    id: "was-were-clean-065",
+    prompt: "เติมคำให้ถูกต้อง: It ____ a good day.",
+    options: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "ประธาน It ใช้ was"
+  },
+  {
+    id: "was-were-clean-066",
+    prompt: "เติมคำให้ถูกต้อง: We ____ in the same team.",
+    options: ["was", "were", "is", "am"],
+    answer: "were",
+    explanation: "ประธาน We ใช้ were"
+  },
+  {
+    id: "was-were-clean-067",
+    prompt: "เติมคำให้ถูกต้อง: They ____ near the school.",
+    options: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "ประธาน They ใช้ were"
+  },
+  {
+    id: "was-were-clean-068",
+    prompt: "เติมคำให้ถูกต้อง: The shop ____ closed yesterday.",
+    options: ["were", "was", "are", "be"],
+    answer: "was",
+    explanation: "The shop เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-clean-069",
+    prompt: "เติมคำให้ถูกต้อง: The shops ____ closed yesterday.",
+    options: ["was", "were", "is", "am"],
+    answer: "were",
+    explanation: "The shops เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-clean-070",
+    prompt: "เติมคำให้ถูกต้อง: My homework ____ easy.",
+    options: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "Homework เป็นคำนามนับไม่ได้ ใช้ was"
+  },
+  {
+    id: "was-were-clean-071",
+    prompt: "เติมคำถามให้ถูกต้อง: ____ I wrong?",
+    options: ["Were", "Was", "Are", "Be"],
+    answer: "Was",
+    explanation: "คำถามกับ I ในอดีตใช้ Was"
+  },
+  {
+    id: "was-were-clean-072",
+    prompt: "เติมคำถามให้ถูกต้อง: ____ we late?",
+    options: ["Was", "Were", "Is", "Am"],
+    answer: "Were",
+    explanation: "คำถามกับ we ใช้ Were"
+  },
+  {
+    id: "was-were-clean-073",
+    prompt: "เติมคำถามให้ถูกต้อง: ____ the boy in the room?",
+    options: ["Were", "Was", "Are", "Am"],
+    answer: "Was",
+    explanation: "The boy เป็นเอกพจน์ จึงใช้ Was"
+  },
+  {
+    id: "was-were-clean-074",
+    prompt: "เติมคำถามให้ถูกต้อง: ____ the boys in the room?",
+    options: ["Was", "Were", "Is", "Am"],
+    answer: "Were",
+    explanation: "The boys เป็นพหูพจน์ จึงใช้ Were"
+  },
+  {
+    id: "was-were-clean-075",
+    prompt: "เติมคำถามให้ถูกต้อง: ____ your mother busy yesterday?",
+    options: ["Were", "Was", "Are", "Be"],
+    answer: "Was",
+    explanation: "your mother เป็นเอกพจน์ จึงใช้ Was"
+  },
+  {
+    id: "was-were-clean-076",
+    prompt: "เติมคำถามให้ถูกต้อง: ____ your friends at school?",
+    options: ["Was", "Were", "Is", "Am"],
+    answer: "Were",
+    explanation: "your friends เป็นพหูพจน์ จึงใช้ Were"
+  },
+  {
+    id: "was-were-clean-077",
+    prompt: "เติมคำถามให้ถูกต้อง: ____ the movie fun?",
+    options: ["Were", "Was", "Are", "Am"],
+    answer: "Was",
+    explanation: "the movie เป็นเอกพจน์ จึงใช้ Was"
+  },
+  {
+    id: "was-were-clean-078",
+    prompt: "เติมคำถามให้ถูกต้อง: ____ the students ready?",
+    options: ["Was", "Were", "Is", "Be"],
+    answer: "Were",
+    explanation: "the students เป็นพหูพจน์ จึงใช้ Were"
+  },
+  {
+    id: "was-were-clean-079",
+    prompt: "เติมคำถามให้ถูกต้อง: Why ____ he sad yesterday?",
+    options: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "คำถามกับ he ในอดีตใช้ was"
+  },
+  {
+    id: "was-were-clean-080",
+    prompt: "เติมคำถามให้ถูกต้อง: Why ____ they quiet?",
+    options: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "คำถามกับ they ใช้ were"
+  },
+  {
+    id: "was-were-clean-081",
+    prompt: "ประโยคใดใช้กับประธาน He ได้ถูกต้อง",
+    options: ["He were busy.", "He was busy.", "He are busy.", "He am busy."],
+    answer: "He was busy.",
+    explanation: "ประธาน He ใช้ was"
+  },
+  {
+    id: "was-were-clean-082",
+    prompt: "ประโยคใดใช้กับประธาน They ได้ถูกต้อง",
+    options: ["They was excited.", "They is excited.", "They were excited.", "They am excited."],
+    answer: "They were excited.",
+    explanation: "ประธาน They ใช้ were"
+  },
+  {
+    id: "was-were-clean-083",
+    prompt: "ประโยคใดใช้กับคำนามเอกพจน์ได้ถูกต้อง",
+    options: ["The teacher were kind.", "The teacher was kind.", "The teacher are kind.", "The teacher am kind."],
+    answer: "The teacher was kind.",
+    explanation: "The teacher เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-clean-084",
+    prompt: "ประโยคใดใช้กับคำนามพหูพจน์ได้ถูกต้อง",
+    options: ["The teachers was kind.", "The teachers is kind.", "The teachers were kind.", "The teachers am kind."],
+    answer: "The teachers were kind.",
+    explanation: "The teachers เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-clean-085",
+    prompt: "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้องกับ She",
+    options: ["She were not ready.", "She was not ready.", "She are not ready.", "She am not ready."],
+    answer: "She was not ready.",
+    explanation: "She ใช้ was ดังนั้นรูปปฏิเสธคือ was not"
+  },
+  {
+    id: "was-were-clean-086",
+    prompt: "ประโยคใดเป็นรูปปฏิเสธที่ถูกต้องกับ They",
+    options: ["They was not ready.", "They were not ready.", "They is not ready.", "They am not ready."],
+    answer: "They were not ready.",
+    explanation: "They ใช้ were ดังนั้นรูปปฏิเสธคือ were not"
+  },
+  {
+    id: "was-were-clean-087",
+    prompt: "ประโยคใดเป็นคำถามที่ถูกต้องกับ he",
+    options: ["Was he at home?", "Were he at home?", "Are he at home?", "Am he at home?"],
+    answer: "Was he at home?",
+    explanation: "คำถามกับ he ในอดีตใช้ Was"
+  },
+  {
+    id: "was-were-clean-088",
+    prompt: "ประโยคใดเป็นคำถามที่ถูกต้องกับ they",
+    options: ["Was they late?", "Is they late?", "Were they late?", "Am they late?"],
+    answer: "Were they late?",
+    explanation: "คำถามกับ they ใช้ Were"
+  },
+  {
+    id: "was-were-clean-089",
+    prompt: "ประโยคใดใช้ was / were ได้ถูกต้องกับ The room",
+    options: ["The room were clean.", "The room was clean.", "The room are clean.", "The room am clean."],
+    answer: "The room was clean.",
+    explanation: "The room เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-clean-090",
+    prompt: "ประโยคใดใช้ was / were ได้ถูกต้องกับ The rooms",
+    options: ["The rooms was clean.", "The rooms were clean.", "The rooms is clean.", "The rooms am clean."],
+    answer: "The rooms were clean.",
+    explanation: "The rooms เป็นพหูพจน์ จึงใช้ were"
+  },
+  {
+    id: "was-were-clean-091",
+    prompt: "คำตอบใดเหมาะสมกับคำถาม: Was he at school yesterday?",
+    options: ["Yes, he was.", "Yes, he were.", "Yes, he is.", "Yes, he are."],
+    answer: "Yes, he was.",
+    explanation: "คำถาม Was he ตอบได้ว่า Yes, he was"
+  },
+  {
+    id: "was-were-clean-092",
+    prompt: "คำตอบใดเหมาะสมกับคำถาม: Were they tired?",
+    options: ["Yes, they was.", "Yes, they were.", "Yes, they is.", "Yes, they am."],
+    answer: "Yes, they were.",
+    explanation: "คำถาม Were they ตอบได้ว่า Yes, they were"
+  },
+  {
+    id: "was-were-clean-093",
+    prompt: "คำตอบใดเหมาะสมกับคำถาม: Was it cold yesterday?",
+    options: ["Yes, it were.", "Yes, it was.", "Yes, it are.", "Yes, it am."],
+    answer: "Yes, it was.",
+    explanation: "คำถาม Was it ตอบได้ว่า Yes, it was"
+  },
+  {
+    id: "was-were-clean-094",
+    prompt: "คำตอบใดเหมาะสมกับคำถาม: Were we late?",
+    options: ["Yes, we was.", "Yes, we were.", "Yes, we is.", "Yes, we am."],
+    answer: "Yes, we were.",
+    explanation: "คำถาม Were we ตอบได้ว่า Yes, we were"
+  },
+  {
+    id: "was-were-clean-095",
+    prompt: "ประโยคใดใช้ was ผิดกับประธานพหูพจน์",
+    options: ["I was at home.", "She was tired.", "We was happy.", "It was cold."],
+    answer: "We was happy.",
+    explanation: "We ต้องใช้ were ไม่ใช่ was"
+  },
+  {
+    id: "was-were-clean-096",
+    prompt: "ประโยคใดใช้ was ผิดกับ The boys",
+    options: ["The dog was hungry.", "My father was busy.", "The boys was quiet.", "The lesson was easy."],
+    answer: "The boys was quiet.",
+    explanation: "The boys เป็นพหูพจน์ ต้องใช้ were"
+  },
+  {
+    id: "was-were-clean-097",
+    prompt: "ประโยคใดใช้ were ผิดกับคำนามเอกพจน์",
+    options: ["You were kind.", "They were ready.", "The cat were sleepy.", "We were happy."],
+    answer: "The cat were sleepy.",
+    explanation: "The cat เป็นเอกพจน์ ต้องใช้ was"
+  },
+  {
+    id: "was-were-clean-098",
+    prompt: "ประโยคใดใช้ were ผิดกับ He",
+    options: ["The students were ready.", "My friends were here.", "He were angry.", "The books were old."],
+    answer: "He were angry.",
+    explanation: "He ต้องใช้ was ไม่ใช่ were"
+  },
+  {
+    id: "was-were-clean-099",
+    prompt: "เลือกคำที่ถูกต้องสำหรับประโยคนี้: My teacher ____ very nice.",
+    options: ["were", "was", "are", "am"],
+    answer: "was",
+    explanation: "My teacher เป็นเอกพจน์ จึงใช้ was"
+  },
+  {
+    id: "was-were-clean-100",
+    prompt: "เลือกคำที่ถูกต้องสำหรับประโยคนี้: My classmates ____ very friendly.",
+    options: ["was", "is", "were", "am"],
+    answer: "were",
+    explanation: "My classmates เป็นพหูพจน์ จึงใช้ were"
   }
 ];
 
