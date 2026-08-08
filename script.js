@@ -301,7 +301,7 @@ const PHASE1_STARTER_STAGE_IDS = new Set([
 ]);
 
 const FOCUS_BALANCE_CONFIG = {
-  correctApGain: 1,
+  correctApGain: 2,
   wrongApGain: 0,
   focusDamageBonusPercent: 15,
   maxFocusStacks: 1,
@@ -21342,6 +21342,9 @@ const actAttackCharms = [
   makeCharm("b_opening_rune", "รูนเริ่มศึก", "B", "attack", "firstTurnDamageBonus", 1.35, "ถ้าเป็นเทิร์นแรกของการต่อสู้ ดาเมจเพิ่ม 35%"),
   makeCharm("ap_mana_bowl", "ชามมานาแห่งถ้อยคำ", "B", "ap", "maxApBonus", 1, "เพิ่มจำนวน AP สูงสุดของผู้เล่น 1 หน่วย ทำให้วางแผนใช้สกิลได้ยืดหยุ่นขึ้น"),
   makeCharm("ap_focus_tea", "ชามชาสมาธิสีฟ้า", "B", "ap", "focusSuccessApBonus", 1, "เมื่อตั้งสมาธิสำเร็จ ผู้เล่นได้รับ AP เพิ่มอีก 1 หน่วย เหมาะสำหรับผู้เล่นที่ชอบเตรียมจังหวะก่อนโจมตี"),
+  makeCharm("ap_spring_cup", "ชามน้ำพุ AP", "B", "ap", "restoreApOnSuccessfulAttack", 1, "เมื่อตอบถูกและโจมตีสำเร็จ ฟื้น AP +1", { icon: "💧" }),
+  makeCharm("focus_twin_cup", "ชามสมาธิคู่", "B", "focus", "grantNextFocusApBonus", 1, "เมื่อใช้ตั้งสมาธิสำเร็จ ฟื้น AP เพิ่มอีก +1", { icon: "🧘" }),
+  makeCharm("cooldown_breeze_cup", "ชามสายลมลดคูลดาวน์", "B", "cooldown", "reduceLongestCooldown", 1, "หลังโจมตีสำเร็จ ลดคูลดาวน์สกิลที่เหลือนานที่สุด 1 เทิร์น", { icon: "🌬️" }),
   makeCharm("cd_focus_hourglass", "ชามทรายสมาธิย้อนเวลา", "B", "cooldown", "focusCooldownReduction", 1, "เมื่อตั้งสมาธิสำเร็จ ลดคูลดาวน์ของสกิลทั้งหมดที่กำลังรออยู่ลง 1 เทิร์น"),
 
   makeCharm("a_echo_strike", "ประกายโจมตีสะท้อน", "A", "attack", "echoDamage", 0.25, "หลังโจมตีหลัก ทำดาเมจซ้ำอีก 25%"),
@@ -21359,6 +21362,9 @@ const actAttackCharms = [
   makeCharm("a_combo_echo", "Echo Strike", "A", "attack", "comboCorrectEcho", 0.30, "ถ้าตอบถูกติดกัน 2 ครั้ง โจมตีซ้ำอีก 30%", { condition: "twoCorrectInRow" }),
   makeCharm("a_grammar_break", "Grammar Break", "A", "break", "bossQuestionBreak", 1, "เพิ่มดาเมจ 15% และทำให้การโจมตีเจาะจังหวะ Guard ของบอส"),
   makeCharm("ap_correct_spark", "ชามประกายคำตอบถูก", "A", "ap", "correctBasicAttackApChance", 0.35, "เมื่อตอบคำถามจากการโจมตีพื้นฐานถูกต้อง มีโอกาส 35% ที่จะฟื้น AP 1 หน่วย", { apGain: 1 }),
+  makeCharm("ap_refund_cup", "ชามคืนพลังเวท", "A", "ap", "refundApOnHighCostSkill", 1, "หลังใช้สกิลที่ใช้ AP 2 ขึ้นไป หากโจมตีสำเร็จ จะคืน AP +1", { icon: "🔷" }),
+  makeCharm("empty_core_cup", "ชามแกนพลังฉุกเฉิน", "A", "ap", "restoreApWhenEmptyOnce", 1, "เมื่อใช้สกิลแล้ว AP เหลือ 0 จะฟื้น AP +1 ทันที ใช้ได้ 1 ครั้งต่อการต่อสู้", { icon: "🌀" }),
+  makeCharm("double_turn_cup", "ชามจังหวะซ้ำ", "A", "extraTurn", "doubleTurnChanceOnce", 0.35, "หลังโจมตีสำเร็จ มีโอกาสได้ลงมืออีกครั้ง ใช้ได้ 1 ครั้งต่อการต่อสู้", { icon: "⏩" }),
   makeCharm("cd_syntax_gear", "ชามเฟืองวากยสัมพันธ์", "A", "cooldown", "reduceOwnCooldown2Ap", 1, "เมื่อใช้สกิลที่ใช้ 2 AP ลดคูลดาวน์ของสกิลนั้นลง 1 เทิร์น ช่วยให้กลับมาใช้สกิลกลางได้เร็วขึ้น"),
   makeCharm("cd_surge_rune", "ชามรูนคลื่นแกรมมาเรีย", "A", "cooldown", "reduceOwnCooldown3Ap", 1, "เมื่อใช้สกิลที่ใช้ 3 AP ลดคูลดาวน์ของสกิลนั้นลง 1 เทิร์น เหมาะสำหรับผู้เล่นที่ชอบใช้สกิลใหญ่"),
 
@@ -21373,6 +21379,8 @@ const actAttackCharms = [
   makeCharm("s_grammar_roulette", "Grammar Roulette", "S", "gamble", "rouletteDamage", null, "ดาเมจสุ่ม 70% หรือ 180% ของดาเมจปกติ", { values: [0.70, 1.80] }),
   makeCharm("s_absolute_parry", "Absolute Parry", "S", "parry", "upgradeNextParry", 1, "Parry ครั้งถัดไป ถ้าโดนช่องสีใดก็ตาม จะอัปเกรดผลขึ้น 1 ระดับ", { duration: 1 }),
   makeCharm("ap_comeback_chalice", "ชามพลังฮึดของนักเวท", "S", "ap", "lowHpApRestoreOnce", 2, "เมื่อพลังชีวิตของผู้เล่นเหลือ 50% หรือน้อยกว่า จะฟื้น AP 2 หน่วย ใช้ได้เพียง 1 ครั้งต่อการต่อสู้", { hpThreshold: 0.5, oncePerBattle: true }),
+  makeCharm("perfect_turn_cup", "ชามเทิร์นสมบูรณ์", "S", "extraTurn", "perfectChargeExtraTurnOnce", 1, "ถ้าชาร์จได้ Perfect หลังโจมตีสำเร็จ จะได้ลงมืออีกครั้ง ใช้ได้ 1 ครั้งต่อการต่อสู้", { icon: "🌟" }),
+  makeCharm("ap_overflow_cup", "ชามกระแส AP ล้น", "S", "ap", "apOverflowCooldown", 1, "ถ้า AP เต็มหลังการโจมตีสำเร็จ จะเปลี่ยนพลังส่วนเกินเป็นลดคูลดาวน์ 1 เทิร์น", { icon: "💠" }),
   makeCharm("cd_perfect_timing", "ชามจังหวะสมบูรณ์แบบ", "S", "cooldown", "correctStreakCooldownReduction", 1, "เมื่อตอบคำถามถูกติดต่อกัน 3 ครั้ง ลดคูลดาวน์ของสกิลทั้งหมดลง 1 เทิร์น เป็นรางวัลสำหรับการตอบอย่างแม่นยำ", { threshold: 3 }),
 
   makeCharm("ss_past_fragment", "เศษเสี้ยว Past Fragment", "SS", "attack", "damageAndReward", null, "ดาเมจ x2 และได้ Grammaria เพิ่ม +15", { damageMultiplier: 2.00, bonusGrammaria: 15 }),
@@ -21439,6 +21447,14 @@ const CHARM_EFFECT_HANDLERS = {
   maxApBonus: { category: "ap", timing: "setup", requiresValue: true },
   focusSuccessApBonus: { category: "ap", timing: "focusSuccess", requiresValue: true },
   correctBasicAttackApChance: { category: "ap", timing: "postAttack", requiresValue: true },
+  restoreApOnSuccessfulAttack: { category: "ap", timing: "postAttack", requiresValue: true },
+  refundApOnHighCostSkill: { category: "ap", timing: "postAttack", requiresValue: true },
+  restoreApWhenEmptyOnce: { category: "ap", timing: "skillUse", requiresValue: true },
+  grantNextFocusApBonus: { category: "focus", timing: "postAttack", requiresValue: true },
+  reduceLongestCooldown: { category: "cooldown", timing: "postAttack", requiresValue: true },
+  doubleTurnChanceOnce: { category: "turn", timing: "postAttack", requiresValue: true },
+  perfectChargeExtraTurnOnce: { category: "turn", timing: "postAttack", requiresValue: true },
+  apOverflowCooldown: { category: "ap", timing: "postAttack", requiresValue: true },
   lowHpApRestoreOnce: { category: "ap", timing: "playerDamage", requiresValue: true },
   skillCooldownEveryThirdPlayerTurn: { category: "cooldown", timing: "turn", requiresValue: true },
   focusCooldownReduction: { category: "cooldown", timing: "focusSuccess", requiresValue: true },
@@ -24606,6 +24622,25 @@ function ensureBattleCharmEffectState(battle = getActBattle()) {
   return battle.charmEffectState;
 }
 
+function ensureBattleApEconomyState(battle = getActBattle()) {
+  if (!battle) {
+    return null;
+  }
+  ensureBattleCharmEffectState(battle);
+  if (!battle.charmBattleFlags || typeof battle.charmBattleFlags !== "object" || Array.isArray(battle.charmBattleFlags)) {
+    battle.charmBattleFlags = {};
+  }
+  battle.charmBattleFlags.emptyCoreCupUsed = Boolean(battle.charmBattleFlags.emptyCoreCupUsed);
+  battle.charmBattleFlags.doubleTurnCupUsed = Boolean(battle.charmBattleFlags.doubleTurnCupUsed);
+  battle.charmBattleFlags.perfectTurnCupUsed = Boolean(battle.charmBattleFlags.perfectTurnCupUsed);
+  if (!battle.playerBuffs || typeof battle.playerBuffs !== "object" || Array.isArray(battle.playerBuffs)) {
+    battle.playerBuffs = {};
+  }
+  battle.playerBuffs.nextFocusApBonus = Math.max(0, Number(battle.playerBuffs.nextFocusApBonus) || 0);
+  battle.isBonusTurn = Boolean(battle.isBonusTurn);
+  return battle;
+}
+
 function getActMaxAP(battle = getActBattle()) {
   if (!battle) {
     return ACT_MAX_AP;
@@ -24634,12 +24669,35 @@ function setActAP(value) {
   updateActActionMenuState();
 }
 
-function gainActAP(amount) {
+function restorePlayerAp(amount, reason = "", options = {}) {
   const battle = getActBattle();
-  if (!battle || !amount) {
-    return;
+  if (!battle) {
+    return { before: 0, after: 0, gained: 0, max: ACT_MAX_AP, reason };
   }
-  setActAP(getActAP() + amount);
+  ensureBattleApEconomyState(battle);
+  const before = getActAP();
+  const max = getActMaxAP(battle);
+  const safeAmount = Math.max(0, Number(amount) || 0);
+  if (safeAmount <= 0) {
+    return { before, after: before, gained: 0, max, reason };
+  }
+  setActAP(before + safeAmount);
+  const after = getActAP();
+  const gained = Math.max(0, after - before);
+  if (options.updateStats !== false) {
+    updateBattleStats();
+  }
+  if (options.captureCheckpoint && playerData && getActiveSceneName() === "battle") {
+    saveProgress({}, {
+      source: reason || "apRestore",
+      captureCheckpoint: true
+    });
+  }
+  return { before, after, gained, max, reason };
+}
+
+function gainActAP(amount, reason = "") {
+  return restorePlayerAp(amount, reason, { updateStats: false }).gained;
 }
 
 function spendActAP(cost) {
@@ -24810,6 +24868,7 @@ function beginActPlayerTurn(message = "", options = {}) {
   setBattleTurnOwner("player");
   ensureBattleSkillCooldownState(battle);
   ensureBattleItemState(battle);
+  ensureBattleApEconomyState(battle);
   if (!options.preservePlayerTurnCounter) {
     battle.playerTurnCounter = Math.max(0, Number(battle.playerTurnCounter) || 0) + 1;
   }
@@ -29043,6 +29102,7 @@ function hydrateBattleSnapshot(snapshot, stage) {
   battle.victoryHandled = false;
   ensureBattleSkillCooldownState(battle);
   ensureBattleItemState(battle);
+  ensureBattleApEconomyState(battle);
   return battle;
 }
 
@@ -32718,6 +32778,9 @@ function startActBattle(stageIndex) {
     nextAttackMultiplier: 1,
     bonusMaxAp: 0,
     charmEffectState: {},
+    charmBattleFlags: {},
+    playerBuffs: {},
+    isBonusTurn: false,
     skillCooldowns: createInitialSkillCooldowns(),
     skillCooldownStartedTurn: {},
     skillCooldownLastTickPlayerTurn: 0,
@@ -32938,6 +33001,7 @@ function completeActItemTurn(message) {
   cleanupGrammariaCharge();
   showOnlyBattlePanel(null);
   els.battleMessage.textContent = message;
+  battle.isBonusTurn = false;
   completePlayerSkillCooldownTurn(battle);
   updateBattleStats();
   syncBattleStateToPlayerData();
@@ -33058,6 +33122,7 @@ function chooseActFocusAnswer(option, question) {
   if (!battle) {
     return;
   }
+  ensureBattleApEconomyState(battle);
 
   const correctAnswer = question.correctAnswer || question.answer;
   const isCorrect = option === correctAnswer;
@@ -33076,23 +33141,26 @@ function chooseActFocusAnswer(option, question) {
   if (isCorrect) {
     recordCorrectAnswerForGrammaria();
     const apGain = FOCUS_BALANCE_CONFIG.correctApGain;
-    gainActAP(apGain);
+    const baseApResult = restorePlayerAp(apGain, "focusSuccess", { updateStats: false });
     const focusResult = applyFocusBuffFromMeditation();
     const focusBonusPercent = focusResult?.focusBuff?.bonusPercent || FOCUS_BALANCE_CONFIG.focusDamageBonusPercent;
     const focusCharmLines = [];
     applyFocusSuccessCharmEffects(focusCharmLines);
+    const focusApLine = baseApResult.gained > 0
+      ? `ได้รับ AP +${baseApResult.gained}`
+      : "AP ฟื้นถึงค่าสูงสุดแล้ว";
     feedback.innerHTML = focusResult?.hadActiveBuff
-      ? `<strong>ตั้งสมาธิสำเร็จ!</strong><br>สมาธิของเจ้ายังคงมั่นคง โบนัสเดิมถูกรีเฟรช แต่จะไม่ซ้อนทับ${focusCharmLines.length ? `<br>${focusCharmLines.join("<br>")}` : ""}<br>${question.explanation || ""}`
-      : `<strong>ตั้งสมาธิสำเร็จ!</strong><br>ได้รับ AP +${apGain} และพลังโจมตีครั้งถัดไปเพิ่มขึ้น ${focusBonusPercent}%${focusCharmLines.length ? `<br>${focusCharmLines.join("<br>")}` : ""}<br>${question.explanation || ""}`;
+      ? `<strong>ตั้งสมาธิสำเร็จ!</strong><br>${focusApLine}<br>สมาธิของเจ้ายังคงมั่นคง โบนัสเดิมถูกรีเฟรช แต่จะไม่ซ้อนทับ${focusCharmLines.length ? `<br>${focusCharmLines.join("<br>")}` : ""}<br>${question.explanation || ""}`
+      : `<strong>ตั้งสมาธิสำเร็จ!</strong><br>${focusApLine} และพลังโจมตีครั้งถัดไปเพิ่มขึ้น ${focusBonusPercent}%${focusCharmLines.length ? `<br>${focusCharmLines.join("<br>")}` : ""}<br>${question.explanation || ""}`;
     els.battleMessage.textContent = focusResult?.hadActiveBuff
-      ? "สมาธิของเจ้ายังคงมั่นคง โบนัสเดิมถูกรีเฟรช แต่จะไม่ซ้อนทับ"
-      : `สมาธิของเจ้าสงบลง ได้รับ AP +${apGain} และพลังโจมตีครั้งถัดไปเพิ่มขึ้น ${focusBonusPercent}%`;
+      ? `สมาธิของเจ้ายังคงมั่นคง ${focusApLine} โบนัสเดิมถูกรีเฟรช แต่จะไม่ซ้อนทับ`
+      : `สมาธิของเจ้าสงบลง ${focusApLine} และพลังโจมตีครั้งถัดไปเพิ่มขึ้น ${focusBonusPercent}%`;
     if (focusCharmLines.length) {
       els.battleMessage.textContent += `\n${focusCharmLines.join("\n")}`;
     }
     console.log("[FocusBalance] meditation result", {
       correct: true,
-      apGain,
+      apGain: baseApResult.gained,
       focusBonusPercent: battle.focusBuff?.bonusPercent || 0,
       stacks: battle.focusBuff?.stacks || 0
     });
@@ -33118,6 +33186,7 @@ function chooseActFocusAnswer(option, question) {
     return;
   }
   battle.pendingBossAction = chooseActBossAction(battle);
+  battle.isBonusTurn = false;
   battle.advanceQuestionOnContinue = false;
   if (battle.pendingBossAction && battle.pendingBossAction.sequence) {
     battle.pendingBossAction.sequence = battle.pendingBossAction.sequence.map(step => step === "attack" ? "question" : step);
@@ -33790,8 +33859,18 @@ function applyFocusSuccessCharmEffects(lines = []) {
     return;
   }
   if (charmState.focusSuccessApBonus > 0) {
-    gainActAP(charmState.focusSuccessApBonus);
-    addBattleMessageLine(lines, `ชามชาสมาธิสีฟ้าฟื้น AP +${charmState.focusSuccessApBonus}`);
+    const apResult = restorePlayerAp(charmState.focusSuccessApBonus, "focusSuccessCharm", { updateStats: false });
+    addBattleMessageLine(lines, apResult.gained > 0
+      ? `ชามชาสมาธิสีฟ้าฟื้น AP +${apResult.gained}`
+      : "ชามชาสมาธิสีฟ้าทำงาน แต่ AP เต็มแล้ว");
+  }
+  const twinFocusBonus = Math.max(0, Number(battle.playerBuffs?.nextFocusApBonus) || 0);
+  if (twinFocusBonus > 0) {
+    battle.playerBuffs.nextFocusApBonus = 0;
+    const apResult = restorePlayerAp(twinFocusBonus, "focusTwinCup", { updateStats: false });
+    addBattleMessageLine(lines, apResult.gained > 0
+      ? `ชามสมาธิคู่ทำงาน! ตั้งสมาธิฟื้น AP เพิ่มอีก +${apResult.gained}`
+      : "ชามสมาธิคู่ทำงาน แต่ AP เต็มแล้ว");
   }
   if (charmState.focusCooldownReduction > 0) {
     const reducedCount = reduceAllActiveSkillCooldowns(charmState.focusCooldownReduction, battle);
@@ -33812,9 +33891,47 @@ function applyLowHpComebackCharmEffect(lines = []) {
     return false;
   }
   charmState.comebackApTriggered = true;
-  gainActAP(charmState.lowHpApRestore);
-  addBattleMessageLine(lines, `ชามพลังฮึดของนักเวทฟื้น AP +${charmState.lowHpApRestore}`);
+  const apResult = restorePlayerAp(charmState.lowHpApRestore, "lowHpApRestoreOnce", { updateStats: false });
+  addBattleMessageLine(lines, apResult.gained > 0
+    ? `ชามพลังฮึดของนักเวทฟื้น AP +${apResult.gained}`
+    : "ชามพลังฮึดของนักเวททำงาน แต่ AP เต็มแล้ว");
   return true;
+}
+
+function getBattleFlowV2SkillCost(skill = {}) {
+  return Math.max(0, Number(skill.apCost) || 0);
+}
+
+function isSuccessfulBattleFlowV2Attack(context = {}) {
+  return Boolean(context.answerResult?.isCorrect) &&
+    Math.max(0, Number(context.damageResult?.finalDamage) || 0) > 0;
+}
+
+function isPerfectBattleCharge(context = {}) {
+  const chargePercent = Math.round(Number(context.chargePercent ?? context.damageResult?.chargePercent) || 0);
+  return chargePercent >= BATTLE_FLOW_V2_CONFIG.maxChargePercent;
+}
+
+function canGrantBattleExtraTurn(battle = state.actBattle) {
+  return Boolean(battle) &&
+    !battle.isBonusTurn &&
+    !isActBattleEnded(battle) &&
+    state.enemyHp > 0;
+}
+
+function applyEmptyCoreCupAfterSkillSpend(charm, skill, lines = []) {
+  const battle = ensureBattleApEconomyState(state.actBattle);
+  if (!battle || charm?.effectType !== "restoreApWhenEmptyOnce") {
+    return;
+  }
+  if (battle.charmBattleFlags.emptyCoreCupUsed || getBattleFlowV2SkillCost(skill) <= 0 || getBattlePlayerAp() > 0) {
+    return;
+  }
+  battle.charmBattleFlags.emptyCoreCupUsed = true;
+  const apResult = restorePlayerAp(charm.value || 1, "emptyCoreCup", { updateStats: false });
+  addBattleMessageLine(lines, apResult.gained > 0
+    ? `ชามแกนพลังฉุกเฉินทำงาน! ฟื้น AP +${apResult.gained}`
+    : "ชามแกนพลังฉุกเฉินทำงาน แต่ AP เต็มแล้ว");
 }
 
 function applyCorrectAnswerPostAttackCharmEffects(charm, context = {}) {
@@ -33823,13 +33940,61 @@ function applyCorrectAnswerPostAttackCharmEffects(charm, context = {}) {
   if (!battle || !charm || !context.answerResult?.isCorrect) {
     return;
   }
+  ensureBattleApEconomyState(battle);
+  const isSuccessfulAttack = isSuccessfulBattleFlowV2Attack(context);
 
-  if (charm.effectType === "correctBasicAttackApChance" && context.skill?.id === "coreSpark") {
+  if (isSuccessfulAttack && charm.effectType === "restoreApOnSuccessfulAttack") {
+    const apResult = restorePlayerAp(charm.value || 1, "apSpringCup", { updateStats: false });
+    addBattleMessageLine(lines, apResult.gained > 0
+      ? `ชามน้ำพุ AP ฟื้น AP +${apResult.gained}`
+      : "ชามน้ำพุ AP ทำงาน แต่ AP เต็มแล้ว");
+  }
+
+  if (isSuccessfulAttack && charm.effectType === "refundApOnHighCostSkill") {
+    if (getBattleFlowV2SkillCost(context.skill) >= 2) {
+      const apResult = restorePlayerAp(charm.value || 1, "apRefundCup", { updateStats: false });
+      addBattleMessageLine(lines, apResult.gained > 0
+        ? `ชามคืนพลังเวทคืน AP +${apResult.gained}`
+        : "ชามคืนพลังเวททำงาน แต่ AP เต็มแล้ว");
+    } else {
+      addBattleMessageLine(lines, "ชามคืนพลังเวทต้องใช้กับสกิลที่ใช้ AP 2 ขึ้นไป");
+    }
+  }
+
+  if (isSuccessfulAttack && charm.effectType === "reduceLongestCooldown") {
+    const reducedSkillName = reduceLongestActiveSkillCooldown(charm.value || 1, battle);
+    addBattleMessageLine(lines, reducedSkillName
+      ? `ชามสายลมลดคูลดาวน์ ${reducedSkillName} 1 เทิร์น`
+      : "ชามสายลมทำงานแล้ว แต่ยังไม่มีสกิลติดคูลดาวน์");
+  }
+
+  if (isSuccessfulAttack && charm.effectType === "grantNextFocusApBonus") {
+    battle.playerBuffs.nextFocusApBonus = Math.max(
+      Number(battle.playerBuffs.nextFocusApBonus) || 0,
+      Number(charm.value) || 1
+    );
+    addBattleMessageLine(lines, "ชามสมาธิคู่พร้อมทำงาน! ตั้งสมาธิครั้งถัดไปจะฟื้น AP เพิ่ม");
+  }
+
+  if (isSuccessfulAttack && charm.effectType === "apOverflowCooldown") {
+    if (getBattlePlayerAp() >= getActMaxAP(battle)) {
+      const reducedSkillName = reduceLongestActiveSkillCooldown(charm.value || 1, battle);
+      addBattleMessageLine(lines, reducedSkillName
+        ? `ชามกระแส AP ล้นเปลี่ยนพลังเป็นลดคูลดาวน์ ${reducedSkillName} 1 เทิร์น`
+        : "ชามกระแส AP ล้นทำงานแล้ว แต่ยังไม่มีสกิลติดคูลดาวน์");
+    } else {
+      addBattleMessageLine(lines, "ชามกระแส AP ล้นยังไม่ทำงาน เพราะ AP ยังไม่เต็ม");
+    }
+  }
+
+  if (isSuccessfulAttack && charm.effectType === "correctBasicAttackApChance" && context.skill?.id === "coreSpark") {
     const chance = clamp(Number(charm.value || 0), 0, 1);
     if (Math.random() < chance) {
       const apGain = Math.max(1, Math.round(Number(charm.apGain) || 1));
-      gainActAP(apGain);
-      addBattleMessageLine(lines, `ชามประกายคำตอบถูกฟื้น AP +${apGain}`);
+      const apResult = restorePlayerAp(apGain, "correctBasicAttackApChance", { updateStats: false });
+      addBattleMessageLine(lines, apResult.gained > 0
+        ? `ชามประกายคำตอบถูกฟื้น AP +${apResult.gained}`
+        : "ชามประกายคำตอบถูกทำงาน แต่ AP เต็มแล้ว");
     } else {
       addBattleMessageLine(lines, "ชามประกายคำตอบถูกยังไม่ทำงานในครั้งนี้");
     }
@@ -33892,6 +34057,7 @@ function handleBattleFlowV2AnswerResolved(question, selectedAnswer, isCorrect) {
   if (!isCorrect) {
     battle.pendingPlayerAttack = null;
     battle.playerActionPhase = "enemyTurn";
+    battle.isBonusTurn = false;
     completePlayerSkillCooldownTurn(battle);
     battle.pendingBossAction = chooseActBossAction(battle);
     setBattleTurnOwner("enemy");
@@ -34322,14 +34488,44 @@ function applyCharmPostAttackEffect(charm, context = {}) {
   if (!battle || !charm) {
     return result;
   }
+  ensureBattleApEconomyState(battle);
+  const isSuccessfulAttack = isSuccessfulBattleFlowV2Attack(context);
+  const canExtraTurn = isSuccessfulAttack && canGrantBattleExtraTurn(battle);
 
-  if (charm.effectType === "extraTurnChance") {
+  if (charm.effectType === "extraTurnChance" && canExtraTurn) {
     const chance = clamp(Number(charm.value || 0), 0, 1);
     if (Math.random() < chance) {
       result.extraTurn = true;
       addBattleMessageLine(lines, "Time Skip ทำงาน! ได้เล่นต่อทันที");
     } else {
       addBattleMessageLine(lines, "Time Skip ไม่ทำงานในครั้งนี้");
+    }
+  }
+
+  if (charm.effectType === "doubleTurnChanceOnce" && canExtraTurn) {
+    if (battle.charmBattleFlags.doubleTurnCupUsed) {
+      addBattleMessageLine(lines, "ชามจังหวะซ้ำใช้พลังไปแล้วใน battle นี้");
+    } else {
+      const chance = clamp(Number(charm.value || 0.35), 0, 1);
+      if (Math.random() < chance) {
+        battle.charmBattleFlags.doubleTurnCupUsed = true;
+        result.extraTurn = true;
+        addBattleMessageLine(lines, "ชามจังหวะซ้ำทำงาน! ได้ลงมืออีกครั้ง");
+      } else {
+        addBattleMessageLine(lines, "ชามจังหวะซ้ำยังไม่ทำงานในครั้งนี้");
+      }
+    }
+  }
+
+  if (charm.effectType === "perfectChargeExtraTurnOnce" && canExtraTurn) {
+    if (battle.charmBattleFlags.perfectTurnCupUsed) {
+      addBattleMessageLine(lines, "ชามเทิร์นสมบูรณ์ใช้พลังไปแล้วใน battle นี้");
+    } else if (isPerfectBattleCharge(context)) {
+      battle.charmBattleFlags.perfectTurnCupUsed = true;
+      result.extraTurn = true;
+      addBattleMessageLine(lines, "ชามเทิร์นสมบูรณ์ทำงาน! Perfect Charge ให้ลงมืออีกครั้ง");
+    } else {
+      addBattleMessageLine(lines, "ชามเทิร์นสมบูรณ์ต้องชาร์จให้ Perfect เพื่อทำงาน");
     }
   }
 
@@ -34617,6 +34813,8 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
     renderBattleSkillSelectionPanel();
     return;
   }
+  const emptyCoreCharmLines = [];
+  applyEmptyCoreCupAfterSkillSpend(charm, skill, emptyCoreCharmLines);
   const cooldownCharmLines = applySkillCooldownAfterUse(skill.id, battle);
 
   const baseDamage = getBattleFlowV2BaseDamage(answerResult);
@@ -34627,7 +34825,7 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
     charm,
     chargePercent
   });
-  damageResult.bonusLines.push(...cooldownCharmLines);
+  damageResult.bonusLines.push(...emptyCoreCharmLines, ...cooldownCharmLines);
 
   applyBattleFlowV2SkillEffects({ skill, charm, answerResult, damageResult });
   triggerMotion(els.battlePlayer, "player-attack-motion");
@@ -34669,6 +34867,7 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
     skill,
     answerResult,
     damageResult,
+    chargePercent: rawChargePercent,
     lines: postEffectLines
   });
   damageResult.bonusLines.push(...postEffectLines);
@@ -34710,6 +34909,7 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
     battle.isResolvingTurn = false;
     battle.isAttacking = false;
     battle.playerActionPhase = "question";
+    battle.isBonusTurn = true;
     setBattleTurnOwner("player");
     showBattleContinueButton(
       battle.questionIndex >= battle.stage.questions.length - 1 ? "รับรางวัล" : "คำถามถัดไป",
@@ -34722,6 +34922,7 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
   battle.skillFlowLocked = false;
   battle.isResolvingTurn = false;
   battle.isAttacking = false;
+  battle.isBonusTurn = false;
   els.continueBattleButton.classList.add("hidden");
   battle.pendingBossAction = chooseActBossAction(battle);
   setTimeout(startActBossWarning, 900);
