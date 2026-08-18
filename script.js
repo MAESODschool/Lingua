@@ -22122,6 +22122,9 @@ function buildLastScenePayload(sceneName, extraState = {}) {
 }
 
 function saveLastSceneForCurrentUser(sceneName, extraState = {}) {
+  if (isPracticeModeActive()) {
+    return;
+  }
   if (!RESTORABLE_SCENES.has(sceneName) || sceneName === "login") {
     return;
   }
@@ -22564,6 +22567,15 @@ const state = {
   postBossDialogueStage: null,
   activeReplayLessonId: null,
   replayReturnProgress: null,
+  practiceMode: {
+    active: false,
+    stageId: "",
+    source: "",
+    unlockedByCode: false,
+    returnTo: "mainMenu",
+    realProgressSnapshot: null
+  },
+  practiceUnlockStageIds: new Set(),
   pendingBattleReturnContext: null,
   lessonStoryMode: false,
   lessonStorySteps: [],
@@ -24156,8 +24168,8 @@ function showDefeatScreen(reason = "HP เหลือ 0") {
         onClick: retryCurrentBattle
       },
       {
-        label: "ไปเรียนบทนี้ใหม่",
-        onClick: returnToCurrentLessonFromDefeat
+        label: isPracticeModeActive() ? "กลับหน้าหลัก" : "ไปเรียนบทนี้ใหม่",
+        onClick: isPracticeModeActive() ? returnFromPracticeMode : returnToCurrentLessonFromDefeat
       }
     ]
   });
@@ -26931,6 +26943,10 @@ async function logoutCurrentUser() {
   clearEnemyTurnTimer();
   stopTimer("charge");
   stopParryCountdown();
+  if (isPracticeModeActive()) {
+    endPracticeMode({ restoreProgress: true });
+  }
+  state.practiceUnlockStageIds.clear();
   await authService.logout();
   updateAuthUi();
   setAuthStatus("ออกจากระบบแล้ว สามารถเลือกผู้เล่นใหม่ได้");
@@ -27224,12 +27240,20 @@ function updatePlayerProgress(updateObject) {
     return;
   }
 
+  if (isPracticeModeActive()) {
+    return;
+  }
+
   mergeDeep(playerData, updateObject);
   savePlayerData();
 }
 
 function syncBattleStateToPlayerData() {
   if (!playerData) {
+    return;
+  }
+
+  if (isPracticeModeActive()) {
     return;
   }
 
@@ -28385,7 +28409,7 @@ function renderBossGrammariaResult(result, onContinue) {
   panel.className = "grammaria-result";
   panel.innerHTML = `
     <div class="grammaria-breakdown">
-      <h3>${result.replay ? "Replay Complete / เรียนซ้ำสำเร็จ" : "สรุปการต่อสู้"}</h3>
+      <h3>${result.practice ? "จบการฝึก" : result.replay ? "Replay Complete / เรียนซ้ำสำเร็จ" : "สรุปการต่อสู้"}</h3>
       <div class="grammaria-breakdown-row"><span>ตอบถูก</span><strong>${result.correctAnswers || 0} ข้อ</strong></div>
       <div class="grammaria-breakdown-row"><span>ตอบผิด</span><strong>${result.wrongAnswers || 0} ข้อ</strong></div>
       <div class="grammaria-breakdown-row"><span>ดาเมจที่ทำกับบอส</span><strong>${result.playerDamageDealt || 0}</strong></div>
@@ -28402,13 +28426,14 @@ function renderBossGrammariaResult(result, onContinue) {
       <div class="grammaria-breakdown-row"><span>ตอบถูก ${result.correctAnswers || 0} ข้อ × ${GRAMMARIA_POINTS.correctAnswer}</span><strong>${result.correctPoints || 0}</strong></div>
       <div class="grammaria-breakdown-row"><span>Point Parry ${result.parryCount || 0} ครั้ง × ${GRAMMARIA_POINTS.parry}</span><strong>${result.parryPoints || 0}</strong></div>
       <div class="grammaria-breakdown-row"><span>Grammaria Charge ${result.grammariaChargeCount || 0} ครั้ง × ${GRAMMARIA_POINTS.charge}</span><strong>${result.chargePoints || 0}</strong></div>
-      <div class="grammaria-total-row"><span>${result.replay ? "ได้รับในโหมดเรียนซ้ำ" : "ได้รับจากบอสนี้"}</span><strong>${result.earned || 0} Grammaria</strong></div>
+      <div class="grammaria-total-row"><span>${result.practice ? "Grammaria ที่ได้รับ" : result.replay ? "ได้รับในโหมดเรียนซ้ำ" : "ได้รับจากบอสนี้"}</span><strong>${result.earned || 0} Grammaria</strong></div>
       <div class="grammaria-total-row"><span>Grammaria สะสมทั้งหมด</span><strong>${result.totalAfter || 0}</strong></div>
 
       <h3>Fragment / Reward</h3>
-      <div class="grammaria-breakdown-row"><span>Fragment ที่ได้รับ</span><strong>${result.replay ? "ไม่มีรางวัลซ้ำ" : (result.rewardFragment || "ไม่มี")}</strong></div>
-      ${result.rewardBadge ? `<div class="grammaria-breakdown-row"><span>Badge ที่ได้รับ</span><strong>${result.rewardBadge}</strong></div>` : ""}
+      <div class="grammaria-breakdown-row"><span>Fragment ที่ได้รับ</span><strong>${result.practice ? "ไม่มี" : result.replay ? "ไม่มีรางวัลซ้ำ" : (result.rewardFragment || "ไม่มี")}</strong></div>
+      ${result.practice ? '<div class="grammaria-breakdown-row"><span>Badge ที่ได้รับ</span><strong>ไม่มี</strong></div>' : result.rewardBadge ? `<div class="grammaria-breakdown-row"><span>Badge ที่ได้รับ</span><strong>${result.rewardBadge}</strong></div>` : ""}
     </div>
+    ${result.practice ? '<p class="grammaria-result-note">นี่คือโหมดฝึก จึงไม่มีการเพิ่มคะแนนหรือความคืบหน้า</p>' : ""}
     ${result.replay ? "<p class=\"grammaria-result-note\">คุณได้ทบทวนบทเรียนนี้แล้ว ไม่มีการรับ Grammaria หรือรางวัลซ้ำในโหมดเรียนซ้ำ</p>" : ""}
     ${result.duplicate && !result.replay ? "<p class=\"grammaria-result-note\">เคยรับ Grammaria จากบอส/ด่านนี้แล้ว จึงไม่ได้รับ Grammaria เพิ่ม แต่ยังสามารถเล่นซ้ำเพื่อฝึกฝนได้</p>" : ""}
   `;
@@ -28422,12 +28447,12 @@ function renderBossGrammariaResult(result, onContinue) {
   });
 
   openGameModal({
-    title: result.replay ? "เรียนซ้ำสำเร็จ" : `ชัยชนะเหนือ ${result.bossName || "บอสแห่ง Lingua"}`,
-    body: result.replay || result.duplicate ? "ไม่มีการรับ Grammaria หรือรางวัลซ้ำในโหมดเรียนซ้ำ" : "สรุปผลการต่อสู้และรางวัลที่ได้รับ",
+    title: result.practice ? "จบการฝึก" : result.replay ? "เรียนซ้ำสำเร็จ" : `ชัยชนะเหนือ ${result.bossName || "บอสแห่ง Lingua"}`,
+    body: result.practice ? "โหมดฝึก: ไม่มีการรับ Grammaria, Fragment, Badge หรือความคืบหน้า" : result.replay || result.duplicate ? "ไม่มีการรับ Grammaria หรือรางวัลซ้ำในโหมดเรียนซ้ำ" : "สรุปผลการต่อสู้และรางวัลที่ได้รับ",
     content: panel,
     actions: [
       {
-        label: "ไปต่อ",
+        label: result.practice ? "กลับหน้าหลัก" : "ไปต่อ",
         primary: true,
         onClick: () => {
           closeGameModal();
@@ -28680,7 +28705,7 @@ function getActiveSceneName() {
 }
 
 function isManualSaveScene(sceneName = getActiveSceneName()) {
-  return sceneName === "story" || sceneName === "battle";
+  return !isPracticeModeActive() && (sceneName === "story" || sceneName === "battle");
 }
 
 function updateManualSaveButtonVisibility(sceneName = getActiveSceneName()) {
@@ -30127,6 +30152,115 @@ function startLessonFromLessonMap(stage, stageIndex, { isReplay = false } = {}) 
   });
 }
 
+const PRACTICE_UNLOCK_CODE = "skiplesson";
+
+function isPracticeModeActive() {
+  return Boolean(state.practiceMode?.active);
+}
+
+function clonePracticeProgressSnapshot() {
+  if (!playerData) {
+    return null;
+  }
+  return {
+    progress: JSON.parse(JSON.stringify(playerData.progress || {})),
+    grammaria: Number(playerData.grammaria) || 0,
+    hp: Number(playerData.hp) || 100,
+    stateGrammaria: Number(state.grammaria) || 0,
+    statePlayerHp: Number(state.playerHp) || 100
+  };
+}
+
+function beginPracticeMode(stage, source = "lesson-map-code") {
+  saveLastSceneForCurrentUser("mainMenu");
+  state.practiceMode = {
+    active: true,
+    stageId: stage?.id || "",
+    source,
+    unlockedByCode: true,
+    returnTo: "mainMenu",
+    realProgressSnapshot: clonePracticeProgressSnapshot()
+  };
+}
+
+function endPracticeMode({ restoreProgress = true } = {}) {
+  const snapshot = state.practiceMode?.realProgressSnapshot;
+  if (restoreProgress && snapshot && playerData) {
+    playerData.progress = JSON.parse(JSON.stringify(snapshot.progress || {}));
+    playerData.grammaria = snapshot.grammaria;
+    playerData.hp = snapshot.hp;
+    state.grammaria = snapshot.stateGrammaria;
+    state.playerHp = snapshot.statePlayerHp;
+  }
+  state.practiceMode = {
+    active: false,
+    stageId: "",
+    source: "",
+    unlockedByCode: false,
+    returnTo: "mainMenu",
+    realProgressSnapshot: null
+  };
+}
+
+function startPracticeLessonFromMap(stage, stageIndex, source = "lesson-map-code") {
+  if (!stage || stageIndex < 0 || state.isTransitioning) {
+    return;
+  }
+  beginPracticeMode(stage, source);
+  state.practiceUnlockStageIds.add(stage.id);
+  state.activeReplayLessonId = null;
+  state.replayReturnProgress = null;
+  closeGameModal();
+  runSceneTransition("กำลังเปิดโหมดฝึก...", () => {
+    showStageLesson(stageIndex, { lessonStepIndex: 0, dialogueIndex: 0, isPractice: true });
+  });
+}
+
+function openPracticeUnlockModal(stage, stageIndex, source = "lesson-map-code") {
+  const content = document.createElement("div");
+  content.className = "practice-unlock-form";
+  const note = document.createElement("p");
+  note.textContent = "โหมดฝึกจะไม่ให้ Grammaria, Fragment, Badge หรือความคืบหน้า";
+  const input = document.createElement("input");
+  input.type = "password";
+  input.placeholder = "กรอกรหัส";
+  input.autocomplete = "off";
+  input.setAttribute("aria-label", "กรอกรหัสสำหรับโหมดฝึก");
+  const error = document.createElement("p");
+  error.className = "form-status";
+  content.append(note, input, error);
+
+  const verifyAndStart = () => {
+    if (input.value.toLowerCase().trim() !== PRACTICE_UNLOCK_CODE) {
+      error.textContent = "รหัสไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง";
+      els.gameModal.dataset.modalLocked = "false";
+      els.gameModalActions.querySelectorAll("button").forEach(button => setButtonEnabled(button, true));
+      setButtonEnabled(els.gameModalClose, true);
+      input.focus();
+      input.select();
+      return;
+    }
+    startPracticeLessonFromMap(stage, stageIndex, source);
+  };
+
+  input.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      verifyAndStart();
+    }
+  });
+  openGameModal({
+    title: "ปลดล็อกบทเรียนสำหรับฝึก",
+    body: "บทเรียนนี้ยังไม่ปลดล็อกในเส้นทางหลัก หากต้องการฝึกบทนี้ ให้กรอกรหัสจากครู",
+    content,
+    actions: [
+      { label: "ยกเลิก", onClick: closeGameModal },
+      { label: "ปลดล็อกเพื่อฝึก", primary: true, onClick: verifyAndStart }
+    ]
+  });
+  requestAnimationFrame(() => input.focus());
+}
+
 function confirmReplayLesson(stage, stageIndex) {
   openGameModal({
     title: "เรียนซ้ำบทเรียน",
@@ -30233,6 +30367,10 @@ function saveProgress(updateObject = {}, options = {}) {
   const progress = ensureActProgress();
   if (!progress) {
     return null;
+  }
+
+  if (isPracticeModeActive()) {
+    return progress;
   }
 
   mergeDeep(progress, updateObject);
@@ -32572,6 +32710,7 @@ function showStageLesson(stageIndex, resumeState = {}) {
     return;
   }
 
+  const isPractice = Boolean(resumeState.isPractice || isPracticeModeActive());
   const isReplay = Boolean(resumeState.isReplay);
   if (isReplay) {
     const progress = loadProgress();
@@ -32596,6 +32735,8 @@ function showStageLesson(stageIndex, resumeState = {}) {
   updateLessonChrome(stage, stageIndex, "lesson");
   if (isReplay) {
     els.activityFeedback.textContent = "โหมดเรียนซ้ำ: จะไม่ได้รับ Grammaria หรือรางวัลซ้ำ";
+  } else if (isPractice) {
+    els.activityFeedback.textContent = "โหมดฝึกจะไม่ให้ Grammaria, Fragment, Badge หรือความคืบหน้า";
   }
   console.log("[Lesson Start]", stage.id, getAllowedRuleIdsForStage(stage));
   startStageDialogueLesson(stage, resumeState.dialogueIndex || 0);
@@ -32625,8 +32766,8 @@ function startBattleFromActivity() {
   const stage = getPlayableStages()[state.actStageIndex] || getPlayableStages()[0];
   if (!state.pendingBattleReturnContext) {
     state.pendingBattleReturnContext = createBattleReturnContext(stage, {
-      source: isReplayingStage(stage) ? "replay" : "lesson",
-      returnTo: isReplayingStage(stage) ? "mainMenu" : ""
+      source: isPracticeModeActive() ? "practice" : isReplayingStage(stage) ? "replay" : "lesson",
+      returnTo: isPracticeModeActive() || isReplayingStage(stage) ? "mainMenu" : ""
     });
   }
   runSceneTransition(`${stage.enemy} ปรากฏตัว!`, () => startActBattle(state.actStageIndex));
@@ -32781,6 +32922,7 @@ function startActBattle(stageIndex) {
     charmBattleFlags: {},
     playerBuffs: {},
     isBonusTurn: false,
+    practiceNoticeShown: false,
     skillCooldowns: createInitialSkillCooldowns(),
     skillCooldownStartedTurn: {},
     skillCooldownLastTickPlayerTurn: 0,
@@ -32856,6 +32998,10 @@ function startActBattle(stageIndex) {
   setActionButtonsEnabled(false);
   showScene("battle");
   beginActPlayerTurn("เลือกการกระทำเพื่อเริ่มเทิร์นของผู้พเนจร");
+  if (isPracticeModeActive() && !state.actBattle.practiceNoticeShown) {
+    state.actBattle.practiceNoticeShown = true;
+    els.battleMessage.textContent = "โหมดฝึก: บทนี้จะไม่ให้ Grammaria, Fragment, Badge หรือความคืบหน้า";
+  }
 }
 
 function startActAttackAction() {
@@ -38272,10 +38418,34 @@ function createReplayBossResultSnapshot(stage, stats = getCurrentBattleStats()) 
   };
 }
 
+function createPracticeResultSnapshot(stage, stats = getCurrentBattleStats()) {
+  const snapshot = createBossResultSnapshot(stage, stats);
+  return {
+    ...snapshot,
+    practice: true,
+    earned: 0,
+    correctPoints: 0,
+    parryPoints: 0,
+    chargePoints: 0,
+    duplicate: false,
+    totalAfter: state.practiceMode?.realProgressSnapshot?.progress?.grammaria?.total ??
+      state.practiceMode?.realProgressSnapshot?.grammaria ??
+      playerData?.progress?.grammaria?.total ??
+      playerData?.grammaria ?? 0,
+    rewardFragment: "",
+    rewardBadge: ""
+  };
+}
+
 function grantActReward(stage, options = {}) {
   const progress = ensureActProgress();
   if (!progress) {
     return null;
+  }
+
+  if (isPracticeModeActive()) {
+    state.lastGrammariaResult = createPracticeResultSnapshot(stage);
+    return state.lastGrammariaResult;
   }
 
   if (isReplayingStage(stage)) {
@@ -38376,6 +38546,10 @@ function finalizeBossVictoryWithResult(stage, onContinue) {
   state.grammaria = playerData ? playerData.grammaria || state.grammaria : state.grammaria;
 
   renderBossGrammariaResult(grammariaResult, () => {
+    if (grammariaResult.practice) {
+      returnFromPracticeMode();
+      return;
+    }
     console.log("[BossResult] continue to next stage", stage.id);
     if (typeof onContinue === "function") {
       onContinue();
@@ -38537,13 +38711,25 @@ function showStageReward(stage) {
   }
 
   const nextIndex = state.actStageIndex + 1;
+  const isPractice = isPracticeModeActive();
   const isReplay = isReplayingStage(stage);
   const grammariaEarned = state.lastGrammariaResult?.bossId === (getBossProgressId(stage) || stage.id)
     ? state.lastGrammariaResult.earned || 0
     : 0;
   state.isLessonSummaryOpen = false;
   restoreLessonUIAfterBattle();
-  const rewardLines = isReplay
+  const rewardLines = isPractice
+    ? [
+      state.lastStageResult.totalQuestions
+        ? `คำตอบถูกต้อง: ${state.lastStageResult.correctAnswers} / ${state.lastStageResult.totalQuestions}`
+        : "บทเรียนเสร็จสิ้น",
+      "โหมดฝึก",
+      "Grammaria ที่ได้รับ: 0",
+      "Fragment: ไม่มี",
+      "Badge: ไม่มี",
+      "ความคืบหน้า: ไม่เปลี่ยนแปลง"
+    ]
+    : isReplay
     ? [
       state.lastStageResult.totalQuestions
         ? `คำตอบถูกต้อง: ${state.lastStageResult.correctAnswers} / ${state.lastStageResult.totalQuestions}`
@@ -38560,13 +38746,15 @@ function showStageReward(stage) {
     ];
 
   updateLessonChrome(stage, state.actStageIndex, "lesson");
-  els.nounActivityVisual.querySelector("h3").textContent = isReplay ? "เรียนซ้ำสำเร็จ" : "ได้รับ Fragment";
-  els.activityFeedback.textContent = isReplay
+  els.nounActivityVisual.querySelector("h3").textContent = isPractice ? "จบการฝึก" : isReplay ? "เรียนซ้ำสำเร็จ" : "ได้รับ Fragment";
+  els.activityFeedback.textContent = isPractice
+    ? "นี่คือโหมดฝึก จึงไม่มีการเพิ่มคะแนนหรือความคืบหน้า"
+    : isReplay
     ? "คุณได้ทบทวนบทเรียนนี้แล้ว ไม่มีรางวัลซ้ำ"
     : `ได้รับ ${stage.reward.fragment} และ Grammaria +${grammariaEarned}`;
   renderActionCards(rewardLines, "lesson-card");
   const nextStage = getPlayableStages()[nextIndex];
-  if (nextStage && !isReplay) {
+  if (nextStage && !isReplay && !isPractice) {
     console.log("[Progress] Next lesson:", nextStage.id);
     saveProgress({
       currentStageId: nextStage.id,
@@ -38577,6 +38765,11 @@ function showStageReward(stage) {
       currentDialogueIndex: 0,
       currentLessonStepIndex: 0
     });
+  }
+  if (isPractice) {
+    setBattleButtonAction("กลับหน้าหลัก", returnFromPracticeMode);
+    showScene("story");
+    return;
   }
   if (isReplay) {
     setBattleButtonAction("กลับเมนูผู้เล่น", () => {
@@ -40017,7 +40210,7 @@ function saveCurrentLessonPositionBeforeMainMenu() {
     return;
   }
 
-  if (state.activeReplayLessonId) {
+  if (state.activeReplayLessonId || isPracticeModeActive()) {
     return;
   }
 
@@ -40064,7 +40257,11 @@ function returnToPlayerMainMenuFromLesson(event = null) {
     hideNamePrompt();
     state.isTypingDialogue = false;
     state.awaitingDialogueChoice = false;
-    saveCurrentLessonPositionBeforeMainMenu();
+    if (isPracticeModeActive()) {
+      endPracticeMode({ restoreProgress: true });
+    } else {
+      saveCurrentLessonPositionBeforeMainMenu();
+    }
     showMainMenu();
     state.activeReplayLessonId = null;
     state.replayReturnProgress = null;
@@ -40081,7 +40278,7 @@ function handleLessonBack() {
     return;
   }
 
-  if (state.activeReplayLessonId) {
+  if (state.activeReplayLessonId || isPracticeModeActive()) {
     returnToPlayerMainMenuFromLesson();
     return;
   }
@@ -40135,6 +40332,24 @@ function cleanupManualBattleExitState() {
   state.battleActiveEffects = {};
 }
 
+function returnFromPracticeMode() {
+  closeGameModal();
+  cleanupManualBattleExitState();
+  stopTypewriter();
+  cancelNextDialogueHold();
+  hideDialogueChoices();
+  hideNamePrompt();
+  state.lessonStoryMode = false;
+  state.lessonStorySteps = [];
+  state.lessonStoryStepIndex = 0;
+  state.lessonSteps = [];
+  state.lessonStepIndex = 0;
+  state.currentLessonStage = null;
+  state.postBossDialogueStage = null;
+  endPracticeMode({ restoreProgress: true });
+  showMainMenu();
+}
+
 function exitBattleToReturnContext() {
   const battle = state.actBattle;
   const stage = battle?.stage || getPlayableStages()[state.actStageIndex] || null;
@@ -40163,7 +40378,9 @@ function exitBattleToReturnContext() {
 function confirmExitBattle() {
   openGameModal({
     title: "ออกจากการต่อสู้นี้หรือไม่?",
-    body: "ต้องการออกจากการต่อสู้และกลับไปหน้าบทเรียนหรือไม่?",
+    body: isPracticeModeActive()
+      ? "ต้องการออกจากการต่อสู้และกลับหน้าหลักหรือไม่? ความคืบหน้าจริงจะไม่เปลี่ยนแปลง"
+      : "ต้องการออกจากการต่อสู้และกลับไปหน้าบทเรียนหรือไม่?",
     actions: [
       {
         label: "อยู่ต่อ",
@@ -40174,25 +40391,18 @@ function confirmExitBattle() {
         primary: true,
         onClick: () => {
           closeGameModal();
-          runSceneTransition("กลับสู่บทเรียน...", exitBattleToReturnContext);
+          runSceneTransition(isPracticeModeActive() ? "กลับสู่หน้าหลัก..." : "กลับสู่บทเรียน...", () => {
+            if (isPracticeModeActive()) {
+              returnFromPracticeMode();
+              return;
+            }
+            exitBattleToReturnContext();
+          });
         }
       }
     ]
   });
 }
-
-const lessonSelectGroups = [
-  { title: "อดีตคืออะไร", stageId: "what-is-past" },
-  { title: "คำบอกเวลาอดีต", stageId: "what-is-tense" },
-  { title: "was / were", stageId: "act1_phase1_unit3_was_were" },
-  { title: "there was / there were", stageId: "act1_phase1_unit4_there_was_were" },
-  { title: "had", stageId: "act1_phase1_unit5_had" },
-  { title: "Regular Verbs: -ed", stageId: "regular-rule-1" },
-  { title: "Regular Verbs: e + -d", stageId: "regular-rule-2" },
-  { title: "Regular Verbs: y / CVC", stageId: "regular-rule-3" },
-  { title: "Irregular Verbs", stageId: "irregular-lesson" },
-  { title: "Final Review", stageId: "final-boss" }
-];
 
 const TEACHER_DEBUG_MODE = false;
 const PROTOTYPE_DEBUG_MODE = TEACHER_DEBUG_MODE;
@@ -40228,31 +40438,25 @@ function openLessonSelectModal() {
   const content = document.createElement("div");
   content.className = "lesson-select-grid";
 
-  lessonSelectGroups.forEach(group => {
-    const stageIndex = stages.findIndex(stage => stage.id === group.stageId);
-    const stage = stages[stageIndex];
-    if (!stage) {
-      return;
-    }
-
+  stages.forEach((stage, stageIndex) => {
     const isCompleted = completed.has(stage.id);
     const isUnlocked = unlocked.has(stage.id) || isCompleted || LESSON_SELECT_TEST_MODE;
+    const isPracticeReady = !isUnlocked && state.practiceUnlockStageIds.has(stage.id);
     const button = document.createElement("button");
     button.type = "button";
     button.className = `lesson-select-card ${isCompleted ? "is-completed" : ""} ${isUnlocked ? "" : "is-locked"}`;
-    button.disabled = !isUnlocked;
     button.innerHTML = `
-      <strong>${group.title}</strong>
+      <strong>${stage.title || stage.id}</strong>
       <span>${stage.thaiTitle || stage.title}</span>
-      <em>${isCompleted ? "เรียนซ้ำได้" : isUnlocked ? (LESSON_SELECT_TEST_MODE ? "เปิดสำหรับทดสอบ" : "เริ่ม / เล่นต่อ") : "ยังไม่ปลดล็อก"}</em>
+      <em>${isCompleted ? "เรียนซ้ำได้" : isUnlocked ? (LESSON_SELECT_TEST_MODE ? "เปิดสำหรับทดสอบ" : "เริ่ม / เล่นต่อ") : isPracticeReady ? "โหมดฝึกพร้อมใช้ — ไม่ได้รับคะแนน" : "ล็อกอยู่ — กรอกรหัสเพื่อฝึก"}</em>
     `;
     button.addEventListener("click", () => {
       if (!isUnlocked) {
-        openGameModal({
-          title: "บทเรียนยังไม่ปลดล็อก",
-          body: "บทเรียนนี้ยังไม่ปลดล็อก กรุณาเรียนบทเรียนก่อนหน้าให้สำเร็จก่อน",
-          actions: [{ label: "รับทราบ", primary: true, onClick: closeGameModal }]
-        });
+        if (state.practiceUnlockStageIds.has(stage.id)) {
+          startPracticeLessonFromMap(stage, stageIndex, "lesson-map-session-unlock");
+          return;
+        }
+        openPracticeUnlockModal(stage, stageIndex);
         return;
       }
       if (isCompleted) {
