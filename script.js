@@ -24969,6 +24969,133 @@ function getQuestionId(question, index = 0, prefix = "q") {
   ].join("-");
 }
 
+function getQuestionStableKey(question, fallbackPrefix = "question") {
+  if (question?.id) {
+    return String(question.id);
+  }
+  const prompt = question?.prompt || question?.sentence || question?.question || question?.text || "";
+  const answer = question?.answer ?? question?.correctAnswer ?? question?.correct ?? question?.v2 ?? "";
+  if (prompt && answer !== "") {
+    return `${fallbackPrefix}:${prompt}::${answer}`;
+  }
+  if (prompt) {
+    return `${fallbackPrefix}:${prompt}`;
+  }
+  return `${fallbackPrefix}:${JSON.stringify(question || {}).slice(0, 120)}`;
+}
+
+function createQuestionRepeatHistory() {
+  return {
+    usedQuestionKeys: new Set(),
+    wrongQuestionKeys: new Set(),
+    correctQuestionKeys: new Set(),
+    repeatQuestionKeys: new Set(),
+    repeatCycle: 0,
+    repeatNoticeShown: false
+  };
+}
+
+function ensureQuestionRepeatHistory(history) {
+  const safeHistory = history && typeof history === "object" ? history : createQuestionRepeatHistory();
+  ["usedQuestionKeys", "wrongQuestionKeys", "correctQuestionKeys", "repeatQuestionKeys"].forEach(key => {
+    safeHistory[key] = safeHistory[key] instanceof Set ? safeHistory[key] : restoreSet(safeHistory[key]);
+  });
+  safeHistory.repeatCycle = Math.max(0, Number(safeHistory.repeatCycle) || 0);
+  safeHistory.repeatNoticeShown = Boolean(safeHistory.repeatNoticeShown);
+  return safeHistory;
+}
+
+function getBattleQuestionRepeatHistory(context = "attack", battle = state.actBattle) {
+  if (!battle) {
+    return createQuestionRepeatHistory();
+  }
+  const field = context === "focus"
+    ? "focusQuestionHistory"
+    : context === "boss" ? "bossQuestionHistory" : "attackQuestionHistory";
+  battle[field] = ensureQuestionRepeatHistory(battle[field]);
+  return battle[field];
+}
+
+function markQuestionResult(question, result, history, prefix = "question") {
+  if (!question || !history) {
+    return;
+  }
+  const safeHistory = ensureQuestionRepeatHistory(history);
+  const key = getQuestionStableKey(question, prefix);
+  safeHistory.usedQuestionKeys.add(key);
+  if (result === "correct") {
+    safeHistory.correctQuestionKeys.add(key);
+  } else if (result === "wrong") {
+    safeHistory.wrongQuestionKeys.add(key);
+  }
+}
+
+function pickRandomItem(items) {
+  if (!Array.isArray(items) || !items.length) {
+    return null;
+  }
+  return items[Math.floor(Math.random() * items.length)] || null;
+}
+
+function pickQuestionWithSmartRepeat(questionEntries, history, prefix = "battle") {
+  const safeHistory = ensureQuestionRepeatHistory(history);
+  const uniqueEntries = [];
+  const knownKeys = new Set();
+  (questionEntries || []).forEach(entry => {
+    const question = entry?.question || entry;
+    if (!question || typeof question !== "object") {
+      return;
+    }
+    const key = getQuestionStableKey(question, prefix);
+    if (!knownKeys.has(key)) {
+      knownKeys.add(key);
+      uniqueEntries.push({ ...(entry?.question ? entry : { question }), key });
+    }
+  });
+  if (!uniqueEntries.length) {
+    return null;
+  }
+
+  const unused = uniqueEntries.filter(entry => !safeHistory.usedQuestionKeys.has(entry.key));
+  if (unused.length) {
+    const picked = pickRandomItem(unused);
+    safeHistory.usedQuestionKeys.add(picked.key);
+    return { ...picked, repeatMode: false, repeatReason: "unused", repeatNoticeJustStarted: false };
+  }
+
+  const repeatNoticeJustStarted = !safeHistory.repeatNoticeShown;
+  safeHistory.repeatNoticeShown = true;
+  let wrongPool = uniqueEntries.filter(entry =>
+    safeHistory.wrongQuestionKeys.has(entry.key) && !safeHistory.repeatQuestionKeys.has(entry.key)
+  );
+  let generalPool = uniqueEntries.filter(entry =>
+    safeHistory.usedQuestionKeys.has(entry.key) && !safeHistory.repeatQuestionKeys.has(entry.key)
+  );
+  let repeatReason = "wrong-first";
+  let picked = pickRandomItem(wrongPool);
+
+  if (!picked) {
+    repeatReason = "general-repeat";
+    picked = pickRandomItem(generalPool);
+  }
+  if (!picked) {
+    safeHistory.repeatQuestionKeys.clear();
+    safeHistory.repeatCycle += 1;
+    wrongPool = uniqueEntries.filter(entry => safeHistory.wrongQuestionKeys.has(entry.key));
+    generalPool = uniqueEntries.filter(entry => safeHistory.usedQuestionKeys.has(entry.key));
+    picked = pickRandomItem(wrongPool);
+    repeatReason = picked ? "wrong-first-new-cycle" : "general-new-cycle";
+    if (!picked) {
+      picked = pickRandomItem(generalPool.length ? generalPool : uniqueEntries);
+    }
+  }
+  if (!picked) {
+    return null;
+  }
+  safeHistory.repeatQuestionKeys.add(picked.key);
+  return { ...picked, repeatMode: true, repeatReason, repeatNoticeJustStarted };
+}
+
 function prepareQuestion(rawQuestion, index = 0) {
   const options = rawQuestion.options || rawQuestion.choices || [];
   return {
@@ -25314,51 +25441,19 @@ function pickBattleQuestionWithFallback(stage, context = "attack") {
     });
   }
 
-  const usedSet = context === "focus" ? battle.usedFocusQuestionIds : battle.usedQuestionIds;
-  const lastBaseVerb = context === "focus" ? battle.lastFocusQuestionBaseVerb : battle.lastQuestionBaseVerb;
-
-  for (const sourceData of sources) {
-    const entry = pickUnusedBattleQuestionEntry(sourceData.questions, {
-      battle,
-      usedSet,
-      lastBaseVerb: lastBaseVerb || "",
-      prefix: sourceData.prefix
-    });
-    if (entry?.question) {
-      return {
-        question: entry.question,
-        index: entry.index,
-        source: sourceData.source,
-        prefix: sourceData.prefix,
-        exhausted: false
-      };
-    }
-  }
-
-  if (context === "attack" && state.enemyHp > 0 && getStageBattleQuestionPool(stage, context).length) {
-    battle.usedQuestionIds = new Set();
-    battle.usedQuestionKeys = new Set();
-    battle.attackQuestionCycleCount = (battle.attackQuestionCycleCount || 0) + 1;
-    battle.questionCycleNoticePending = true;
-    const cycleUsedSet = context === "focus" ? battle.usedFocusQuestionIds : battle.usedQuestionIds;
-    for (const sourceData of sources) {
-      const entry = pickUnusedBattleQuestionEntry(sourceData.questions, {
-        battle,
-        usedSet: cycleUsedSet,
-        lastBaseVerb: lastBaseVerb || "",
-        prefix: sourceData.prefix
-      });
-      if (entry?.question) {
-        return {
-          question: entry.question,
-          index: entry.index,
-          source: sourceData.source,
-          prefix: sourceData.prefix,
-          exhausted: false,
-          cycled: true
-        };
-      }
-    }
+  const entries = sources.flatMap(sourceData => sourceData.questions.map((question, index) => ({
+    question,
+    index,
+    source: sourceData.source,
+    prefix: sourceData.prefix
+  })));
+  const history = getBattleQuestionRepeatHistory(context, battle);
+  const picked = pickQuestionWithSmartRepeat(entries, history, `${context}-${stage.id || "stage"}`);
+  if (picked?.question) {
+    return {
+      ...picked,
+      exhausted: false
+    };
   }
 
   return {
@@ -25371,7 +25466,12 @@ function pickBattleQuestionWithFallback(stage, context = "attack") {
 }
 
 function hasAvailableBattleQuestion(stage, context = "attack") {
-  return Boolean(pickBattleQuestionWithFallback(stage, context)?.question);
+  if (!stage) {
+    return false;
+  }
+  return context === "focus"
+    ? getStageFocusQuestionPool(stage).length > 0 || getExpandedStageQuestionPool(stage, context).length > 0
+    : getStageBattleQuestionPool(stage, context).length > 0 || getExpandedStageQuestionPool(stage, context).length > 0;
 }
 
 function getFocusRecoveryQuestion(stage) {
@@ -29116,6 +29216,22 @@ function hydrateBattleSnapshot(snapshot, stage) {
     usedBossQuestionIds: restoreSet(snapshot.usedBossQuestionIds),
     usedFocusQuestionIds: restoreSet(snapshot.usedFocusQuestionIds)
   };
+  battle.attackQuestionHistory = ensureQuestionRepeatHistory(snapshot.attackQuestionHistory);
+  battle.focusQuestionHistory = ensureQuestionRepeatHistory(snapshot.focusQuestionHistory);
+  battle.bossQuestionHistory = ensureQuestionRepeatHistory(snapshot.bossQuestionHistory);
+  setToArray(snapshot.usedQuestionIds).forEach(id => battle.attackQuestionHistory.usedQuestionKeys.add(String(id)));
+  setToArray(snapshot.usedFocusQuestionIds).forEach(id => battle.focusQuestionHistory.usedQuestionKeys.add(String(id)));
+  setToArray(snapshot.usedBossQuestionIds).forEach(id => battle.bossQuestionHistory.usedQuestionKeys.add(String(id)));
+  if (battle.currentQuestion) {
+    battle.attackQuestionHistory.usedQuestionKeys.add(getQuestionStableKey(battle.currentQuestion, "attack"));
+  }
+  if (battle.currentFocusQuestion) {
+    battle.focusQuestionHistory.usedQuestionKeys.add(getQuestionStableKey(battle.currentFocusQuestion, "focus"));
+  }
+  if (battle.currentBossQuestion) {
+    battle.bossQuestionHistory.usedQuestionKeys.add(getQuestionStableKey(battle.currentBossQuestion, "boss"));
+  }
+  battle.attackQuestionsExhausted = false;
   markBattleQuestionIdsAsUsed(snapshot.usedQuestionIds, battle);
   markBattleQuestionIdsAsUsed(snapshot.usedBossQuestionIds, battle);
   markBattleQuestionIdsAsUsed(snapshot.usedFocusQuestionIds, battle);
@@ -29185,7 +29301,9 @@ function renderRestoredBossQuestion() {
   showOnlyBattlePanel(els.questionPanel);
   setBattleTurnOwner("enemy");
   els.continueBattleButton.classList.add("hidden");
-  els.battleMessage.textContent = "บอส: “ถ้าเจ้าจำอดีตผิด ความทรงจำก็จะแตกสลาย... ตอบข้ามา!”";
+  els.battleMessage.textContent = question.repeatNoticeJustStarted
+    ? "คำถามบอสชุดแรกถูกใช้ครบแล้ว ระบบจะสุ่มทบทวนข้อที่เคยตอบผิดก่อน"
+    : "บอส: “ถ้าเจ้าจำอดีตผิด ความทรงจำก็จะแตกสลาย... ตอบข้ามา!”";
   els.questionText.textContent = resolveBattleQuestionPrompt(question);
   els.answerOptions.innerHTML = "";
   question.options.forEach(option => {
@@ -32935,12 +33053,15 @@ function startActBattle(stageIndex) {
     recentCharmIds: [],
     usedQuestionKeys: new Set(),
     usedQuestionIds: new Set(),
+    attackQuestionHistory: createQuestionRepeatHistory(),
     lastQuestionBaseVerb: "",
     currentQuestion: null,
     attackQuestionsExhausted: false,
     usedBossQuestionIds: new Set(),
+    bossQuestionHistory: createQuestionRepeatHistory(),
     lastBossQuestionBaseVerb: "",
     usedFocusQuestionIds: new Set(),
+    focusQuestionHistory: createQuestionRepeatHistory(),
     lastFocusQuestionId: "",
     lastFocusQuestionBaseVerb: "",
     lastFocusRecoveryQuestionId: "",
@@ -33250,6 +33371,9 @@ function startActFocusAction() {
   showOnlyBattlePanel(els.questionPanel);
   setBattleTurnOwner("player");
   els.battleMessage.textContent = "ตั้งสมาธิ: ตอบคำถามสั้น ๆ เพื่อรวบรวม Grammaria และฟื้น AP";
+  if (rawFocusQuestion.repeatNoticeJustStarted) {
+    els.battleMessage.textContent = "คำถามตั้งสมาธิชุดแรกถูกใช้ครบแล้ว ระบบจะสุ่มทบทวนข้อที่เคยตอบผิดก่อน";
+  }
   els.questionText.textContent = getQuestionText(focusQuestion);
   els.answerOptions.innerHTML = "";
 
@@ -33272,6 +33396,12 @@ function chooseActFocusAnswer(option, question) {
 
   const correctAnswer = question.correctAnswer || question.answer;
   const isCorrect = option === correctAnswer;
+  markQuestionResult(
+    question,
+    isCorrect ? "correct" : "wrong",
+    getBattleQuestionRepeatHistory("focus", battle),
+    `focus-${battle.stage?.id || "stage"}`
+  );
   els.answerOptions.querySelectorAll("button").forEach(button => {
     button.disabled = true;
     if (button.textContent === correctAnswer) {
@@ -33538,9 +33668,10 @@ function showActBattleQuestion() {
   setBattleTurnOwner("player");
   els.continueBattleButton.classList.add("hidden");
   els.battleMessage.textContent = `${battle.stage.title} - คำถาม ${battle.questionIndex + 1} / ${battle.stage.questions.length}`;
-  if (picked.cycled || battle.questionCycleNoticePending) {
-    els.battleMessage.textContent += " | คำถามรอบแรกถูกใช้ครบแล้ว ระบบเริ่มวนคำถามรอบใหม่เพื่อให้การต่อสู้ดำเนินต่อได้";
-    battle.questionCycleNoticePending = false;
+  if (picked.repeatNoticeJustStarted) {
+    els.battleMessage.textContent = "คำถามชุดแรกถูกใช้ครบแล้ว ระบบจะสุ่มทบทวนข้อที่เคยตอบผิดก่อน เพื่อให้การต่อสู้ดำเนินต่อได้";
+  } else if (picked.repeatMode) {
+    els.battleMessage.textContent += " | โหมดทบทวนคำถามซ้ำแบบสุ่ม";
   }
   els.questionText.textContent = resolveBattleQuestionPrompt(question);
   els.answerOptions.innerHTML = "";
@@ -33646,6 +33777,12 @@ function chooseActAnswer(option, selectedButton = null) {
   });
 
   if (isCorrect) {
+    markQuestionResult(
+      question,
+      "correct",
+      getBattleQuestionRepeatHistory("attack", battle),
+      `attack-${battle.stage?.id || "stage"}`
+    );
     showBattleCorrectAnswerFeedback(selectedButton);
     setBattleTurnOwner("player");
     battle.correctAnswers += 1;
@@ -33674,6 +33811,13 @@ function chooseActAnswer(option, selectedButton = null) {
       els.battleMessage.textContent = "เครื่องรางย้อนคิดช่วยให้ลองตอบใหม่ในคำถามเดิม";
       return;
     }
+
+    markQuestionResult(
+      question,
+      "wrong",
+      getBattleQuestionRepeatHistory("attack", battle),
+      `attack-${battle.stage?.id || "stage"}`
+    );
 
     setBattleTurnOwner("enemy");
     recordWrongAnswerForGrammaria();
@@ -35860,7 +36004,12 @@ function getFocusQuestion(stage) {
 
   const picked = pickBattleQuestionWithFallback(stage, "focus");
   if (picked.question) {
-    return picked.question;
+    return {
+      ...picked.question,
+      repeatMode: Boolean(picked.repeatMode),
+      repeatReason: picked.repeatReason || "unused",
+      repeatNoticeJustStarted: Boolean(picked.repeatNoticeJustStarted)
+    };
   }
 
   return getFocusRecoveryQuestion(stage);
@@ -35945,41 +36094,19 @@ function getBossQuestion(stage) {
     battle.usedBossQuestionIds = new Set();
   }
 
-  const hasDifficultyMetadata = source === "boss" && bank.some(question => question.difficulty);
-  const weights = bossDifficultyWeights[key] || { medium: 50, hard: 35, boss: 15 };
-  const preferredDifficulty = hasDifficultyMetadata ? weightedPickFromTable(weights) : null;
-  let pool = hasDifficultyMetadata
-    ? bank.filter(question =>
-      question.difficulty === preferredDifficulty &&
-      !battle.usedBossQuestionIds.has(question.id) &&
-      !hasUsedBattleQuestion(question, battle, 0, `boss-${stage?.id || "stage"}`) &&
-      getQuestionBaseWord(question) !== battle.lastBossQuestionBaseVerb
-    )
-    : [];
-
-  if (source === "boss" && key === "memoryBreaker" && battle.simpleIrregularStreak >= 2) {
-    pool = pool.filter(question => !["irregular-v2", "mixed-rule"].includes(question.type));
-  }
-
-  if (!pool.length) {
-    pool = bank.filter(question =>
-      !battle.usedBossQuestionIds.has(question.id) &&
-      !hasUsedBattleQuestion(question, battle, 0, `boss-${stage?.id || "stage"}`) &&
-      getQuestionBaseWord(question) !== battle.lastBossQuestionBaseVerb
-    );
-  }
-
-  if (!pool.length) {
-    pool = bank.filter((question, index) =>
-      !battle.usedBossQuestionIds.has(question.id) &&
-      !hasUsedBattleQuestion(question, battle, index, `boss-${stage?.id || "stage"}`)
-    );
-  }
-
-  const question = sample(pool, 1)[0];
+  const history = getBattleQuestionRepeatHistory("boss", battle);
+  const picked = pickQuestionWithSmartRepeat(
+    bank.map((question, index) => ({ question, index })),
+    history,
+    `boss-${stage?.id || "stage"}`
+  );
+  const question = picked?.question;
   if (!question) {
     return null;
   }
+  question.repeatMode = Boolean(picked.repeatMode);
+  question.repeatReason = picked.repeatReason || "unused";
+  question.repeatNoticeJustStarted = Boolean(picked.repeatNoticeJustStarted);
   battle.usedBossQuestionIds.add(question.id);
   markBattleQuestionUsed(question, battle, bank.indexOf(question), `boss-${stage?.id || "stage"}`);
   battle.lastBossQuestionBaseVerb = getQuestionBaseWord(question) || "";
@@ -37991,6 +38118,12 @@ function chooseBossQuestionAnswer(option, question) {
   battle.bossQuestionState.resolved = true;
 
   const isCorrect = option === (question.correctAnswer || question.answer);
+  markQuestionResult(
+    question,
+    isCorrect ? "correct" : "wrong",
+    getBattleQuestionRepeatHistory("boss", battle),
+    `boss-${battle.stage?.id || "stage"}`
+  );
   const feedback = document.createElement("div");
   feedback.className = "answer-feedback";
 
