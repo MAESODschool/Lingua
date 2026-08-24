@@ -22,6 +22,7 @@ import {
 const scenes = {
   login: document.getElementById("loginScene"),
   mainMenu: document.getElementById("mainMenuScene"),
+  pvp: document.getElementById("pvpDuelScene"),
   tutorialGuide: document.getElementById("tutorialGuideScene"),
   creatorCredits: document.getElementById("creatorCreditsScene"),
   createCharacter: document.getElementById("createCharacterScene"),
@@ -21996,6 +21997,97 @@ const skipBattleEnemies = [
 
 let playerData = null;
 
+const PVP_DEFAULT_MAX_HP = 120;
+const PVP_SKILLS = [
+  { id: "pvp_core_spark", name: "Core Spark", thaiName: "ประกายแกนไวยากรณ์", multiplier: 1, cooldown: 0, description: "โจมตีพื้นฐาน ใช้ได้เสมอ" },
+  { id: "pvp_syntax_blade", name: "Syntax Blade", thaiName: "คมวากยสัมพันธ์", multiplier: 1.35, cooldown: 1, description: "โจมตีแรงขึ้น เหมาะกับคำถามระดับกลางขึ้นไป" },
+  { id: "pvp_grammaria_surge", name: "Grammaria Surge", thaiName: "คลื่นแกรมมาเรีย", multiplier: 1.75, cooldown: 2, description: "โจมตีหนัก เหมาะกับจังหวะปิดเกม" }
+];
+const PVP_CHARMS = [
+  { id: "pvp_power_charm", name: "ชามคมเวท", type: "attack", multiplier: 1.15, description: "เพิ่มพลังโจมตี 15%" },
+  { id: "pvp_heal_charm", name: "ชามเยียวยา", type: "heal", multiplier: 1.2, description: "เพิ่มพลังรักษา 20%" },
+  { id: "pvp_charge_charm", name: "ชามจังหวะชาร์จ", type: "charge", chargeBonus: 0.1, description: "เพิ่มผลของ Grammaria Charge เล็กน้อย" },
+  { id: "pvp_comeback_charm", name: "ชามพลิกจังหวะ", type: "comeback", multiplier: 1.25, condition: "lowHp", description: "เมื่อ HP ไม่เกิน 40% เพิ่มผล 25%" }
+];
+const PVP_CHARGE_MULTIPLIERS = { Weak: 0.9, Good: 1, Great: 1.2, Perfect: 1.5 };
+const PVP_MOCK_QUESTION_BANK = [
+  { id: "pvp-easy-001", topic: "was_were", topicLabel: "was / were", difficulty: "easy", difficultyLabel: "ง่าย", basePower: 10, type: "multiple-choice", prompt: "เติมคำให้ถูกต้อง: He ____ tired yesterday.", options: ["was", "were", "is", "are"], answer: "was", acceptedAnswers: ["was"], explanation: "He ใช้ was เมื่อพูดถึงอดีต" },
+  { id: "pvp-easy-002", topic: "was_were", topicLabel: "was / were", difficulty: "easy", difficultyLabel: "ง่าย", basePower: 10, type: "multiple-choice", prompt: "เติมคำให้ถูกต้อง: They ____ happy last night.", options: ["was", "were", "is", "am"], answer: "were", acceptedAnswers: ["were"], explanation: "They ใช้ were" },
+  { id: "pvp-easy-003", topic: "was_were", topicLabel: "was / were", difficulty: "easy", difficultyLabel: "ง่าย", basePower: 10, type: "multiple-choice", prompt: "เติมคำให้ถูกต้อง: I ____ at school yesterday.", options: ["were", "was", "am", "are"], answer: "was", acceptedAnswers: ["was"], explanation: "I ใช้ was ในอดีต" },
+  { id: "pvp-easy-004", topic: "was_were", topicLabel: "was / were", difficulty: "easy", difficultyLabel: "ง่าย", basePower: 10, type: "multiple-choice", prompt: "เติมคำให้ถูกต้อง: We ____ in the room.", options: ["was", "were", "is", "am"], answer: "were", acceptedAnswers: ["were"], explanation: "We ใช้ were" },
+  { id: "pvp-easy-005", topic: "regular_verbs", topicLabel: "Regular Verbs", difficulty: "easy", difficultyLabel: "ง่าย", basePower: 10, type: "typing", prompt: "พิมพ์ V2 ของคำว่า play", answer: "played", acceptedAnswers: ["played"], explanation: "play เติม -ed เป็น played" },
+  { id: "pvp-easy-006", topic: "regular_verbs", topicLabel: "Regular Verbs", difficulty: "easy", difficultyLabel: "ง่าย", basePower: 10, type: "typing", prompt: "พิมพ์ V2 ของคำว่า walk", answer: "walked", acceptedAnswers: ["walked"], explanation: "walk เติม -ed เป็น walked" },
+  { id: "pvp-easy-007", topic: "irregular_verbs", topicLabel: "Irregular Verbs", difficulty: "easy", difficultyLabel: "ง่าย", basePower: 10, type: "typing", prompt: "พิมพ์ V2 ของคำว่า go", answer: "went", acceptedAnswers: ["went"], explanation: "go เปลี่ยนเป็น went" },
+  { id: "pvp-easy-008", topic: "irregular_verbs", topicLabel: "Irregular Verbs", difficulty: "easy", difficultyLabel: "ง่าย", basePower: 10, type: "typing", prompt: "พิมพ์ V2 ของคำว่า eat", answer: "ate", acceptedAnswers: ["ate"], explanation: "eat เปลี่ยนเป็น ate" },
+  { id: "pvp-easy-009", topic: "sentence", topicLabel: "เรียงประโยค", difficulty: "easy", difficultyLabel: "ง่าย", basePower: 10, type: "word-arrangement", prompt: "เรียงคำให้เป็นประโยคที่ถูกต้อง", tiles: ["She", "was", "happy", "yesterday"], answer: "She was happy yesterday.", acceptedAnswers: ["She was happy yesterday."], explanation: "She ใช้ was" },
+  { id: "pvp-easy-010", topic: "sentence", topicLabel: "เรียงประโยค", difficulty: "easy", difficultyLabel: "ง่าย", basePower: 10, type: "word-arrangement", prompt: "เรียงคำให้เป็นประโยคที่ถูกต้อง", tiles: ["They", "were", "at school", "yesterday"], answer: "They were at school yesterday.", acceptedAnswers: ["They were at school yesterday."], explanation: "They ใช้ were" },
+  { id: "pvp-easy-011", topic: "sentence", topicLabel: "เรียงประโยค", difficulty: "easy", difficultyLabel: "ง่าย", basePower: 10, type: "word-arrangement", prompt: "เรียงคำให้เป็นประโยคที่ถูกต้อง", tiles: ["I", "played", "football", "yesterday"], answer: "I played football yesterday.", acceptedAnswers: ["I played football yesterday."], explanation: "played เป็น V2 ของ play" },
+  { id: "pvp-easy-012", topic: "sentence", topicLabel: "เรียงประโยค", difficulty: "easy", difficultyLabel: "ง่าย", basePower: 10, type: "word-arrangement", prompt: "เรียงคำให้เป็นประโยคที่ถูกต้อง", tiles: ["We", "walked", "home", "last night"], answer: "We walked home last night.", acceptedAnswers: ["We walked home last night."], explanation: "last night บอกเวลาอดีต" },
+  { id: "pvp-medium-001", topic: "past_time", topicLabel: "Past Time Words", difficulty: "medium", difficultyLabel: "ปานกลาง", basePower: 16, type: "multiple-choice", prompt: "คำใดเป็นคำบอกเวลาอดีต", options: ["tomorrow", "now", "yesterday", "next week"], answer: "yesterday", acceptedAnswers: ["yesterday"], explanation: "yesterday หมายถึงเมื่อวาน" },
+  { id: "pvp-medium-002", topic: "was_were", topicLabel: "was / were", difficulty: "medium", difficultyLabel: "ปานกลาง", basePower: 16, type: "multiple-choice", prompt: "The boys ____ quiet yesterday.", options: ["was", "were", "is", "am"], answer: "were", acceptedAnswers: ["were"], explanation: "The boys เป็นพหูพจน์จึงใช้ were" },
+  { id: "pvp-medium-003", topic: "regular_verbs", topicLabel: "Regular Verbs", difficulty: "medium", difficultyLabel: "ปานกลาง", basePower: 16, type: "multiple-choice", prompt: "ข้อใดเป็น V2 ของ study", options: ["studied", "studyed", "studys", "study"], answer: "studied", acceptedAnswers: ["studied"], explanation: "เปลี่ยน y เป็น i แล้วเติม -ed" },
+  { id: "pvp-medium-004", topic: "irregular_verbs", topicLabel: "Irregular Verbs", difficulty: "medium", difficultyLabel: "ปานกลาง", basePower: 16, type: "multiple-choice", prompt: "ข้อใดเป็น V2 ของ see", options: ["seed", "saw", "seen", "see"], answer: "saw", acceptedAnswers: ["saw"], explanation: "see เปลี่ยนเป็น saw" },
+  { id: "pvp-medium-005", topic: "irregular_verbs", topicLabel: "Irregular Verbs", difficulty: "medium", difficultyLabel: "ปานกลาง", basePower: 16, type: "typing", prompt: "พิมพ์ V2 ของคำว่า see", answer: "saw", acceptedAnswers: ["saw"], explanation: "see เปลี่ยนเป็น saw" },
+  { id: "pvp-medium-006", topic: "irregular_verbs", topicLabel: "Irregular Verbs", difficulty: "medium", difficultyLabel: "ปานกลาง", basePower: 16, type: "typing", prompt: "พิมพ์ V2 ของคำว่า come", answer: "came", acceptedAnswers: ["came"], explanation: "come เปลี่ยนเป็น came" },
+  { id: "pvp-medium-007", topic: "irregular_verbs", topicLabel: "Irregular Verbs", difficulty: "medium", difficultyLabel: "ปานกลาง", basePower: 16, type: "typing", prompt: "พิมพ์ V2 ของคำว่า have", answer: "had", acceptedAnswers: ["had"], explanation: "have เปลี่ยนเป็น had" },
+  { id: "pvp-medium-008", topic: "irregular_verbs", topicLabel: "Irregular Verbs", difficulty: "medium", difficultyLabel: "ปานกลาง", basePower: 16, type: "typing", prompt: "พิมพ์ V2 ของคำว่า make", answer: "made", acceptedAnswers: ["made"], explanation: "make เปลี่ยนเป็น made" },
+  { id: "pvp-medium-009", topic: "sentence", topicLabel: "เรียงประโยค", difficulty: "medium", difficultyLabel: "ปานกลาง", basePower: 16, type: "word-arrangement", prompt: "เรียงคำให้เป็นประโยคที่ถูกต้อง", tiles: ["The boys", "were", "quiet", "yesterday"], answer: "The boys were quiet yesterday.", acceptedAnswers: ["The boys were quiet yesterday."], explanation: "The boys ใช้ were" },
+  { id: "pvp-medium-010", topic: "sentence", topicLabel: "เรียงประโยค", difficulty: "medium", difficultyLabel: "ปานกลาง", basePower: 16, type: "word-arrangement", prompt: "เรียงคำให้เป็นประโยคที่ถูกต้อง", tiles: ["My mother", "was", "busy", "last Monday"], answer: "My mother was busy last Monday.", acceptedAnswers: ["My mother was busy last Monday."], explanation: "My mother ใช้ was" },
+  { id: "pvp-medium-011", topic: "sentence", topicLabel: "เรียงประโยค", difficulty: "medium", difficultyLabel: "ปานกลาง", basePower: 16, type: "word-arrangement", prompt: "เรียงคำให้เป็นประโยคที่ถูกต้อง", tiles: ["She", "studied", "English", "last night"], answer: "She studied English last night.", acceptedAnswers: ["She studied English last night."], explanation: "studied เป็น V2 ของ study" },
+  { id: "pvp-medium-012", topic: "sentence", topicLabel: "เรียงประโยค", difficulty: "medium", difficultyLabel: "ปานกลาง", basePower: 16, type: "word-arrangement", prompt: "เรียงคำให้เป็นประโยคที่ถูกต้อง", tiles: ["They", "came", "home", "yesterday"], answer: "They came home yesterday.", acceptedAnswers: ["They came home yesterday."], explanation: "came เป็น V2 ของ come" },
+  { id: "pvp-hard-001", topic: "irregular_verbs", topicLabel: "Irregular Verbs", difficulty: "hard", difficultyLabel: "ยาก", basePower: 24, type: "multiple-choice", prompt: "ข้อใดเป็น V2 ของ write", options: ["writed", "wrote", "written", "writes"], answer: "wrote", acceptedAnswers: ["wrote"], explanation: "write เปลี่ยนเป็น wrote" },
+  { id: "pvp-hard-002", topic: "irregular_verbs", topicLabel: "Irregular Verbs", difficulty: "hard", difficultyLabel: "ยาก", basePower: 24, type: "multiple-choice", prompt: "ข้อใดเป็น V2 ของ buy", options: ["buyed", "bought", "brought", "buys"], answer: "bought", acceptedAnswers: ["bought"], explanation: "buy เปลี่ยนเป็น bought" },
+  { id: "pvp-hard-003", topic: "mixed_past", topicLabel: "Mixed Past", difficulty: "hard", difficultyLabel: "ยาก", basePower: 24, type: "multiple-choice", prompt: "ประโยคใดถูกต้อง", options: ["She goed home.", "She went home.", "She go home yesterday.", "She gone home."], answer: "She went home.", acceptedAnswers: ["She went home."], explanation: "V2 ของ go คือ went" },
+  { id: "pvp-hard-004", topic: "mixed_past", topicLabel: "Mixed Past", difficulty: "hard", difficultyLabel: "ยาก", basePower: 24, type: "multiple-choice", prompt: "ประโยคใดไม่ถูกต้อง", options: ["We were ready.", "He was late.", "They was hungry.", "I was tired."], answer: "They was hungry.", acceptedAnswers: ["They was hungry."], explanation: "They ต้องใช้ were" },
+  { id: "pvp-hard-005", topic: "irregular_verbs", topicLabel: "Irregular Verbs", difficulty: "hard", difficultyLabel: "ยาก", basePower: 24, type: "typing", prompt: "พิมพ์ V2 ของคำว่า write", answer: "wrote", acceptedAnswers: ["wrote"], explanation: "write เปลี่ยนเป็น wrote" },
+  { id: "pvp-hard-006", topic: "irregular_verbs", topicLabel: "Irregular Verbs", difficulty: "hard", difficultyLabel: "ยาก", basePower: 24, type: "typing", prompt: "พิมพ์ V2 ของคำว่า take", answer: "took", acceptedAnswers: ["took"], explanation: "take เปลี่ยนเป็น took" },
+  { id: "pvp-hard-007", topic: "irregular_verbs", topicLabel: "Irregular Verbs", difficulty: "hard", difficultyLabel: "ยาก", basePower: 24, type: "typing", prompt: "พิมพ์ V2 ของคำว่า buy", answer: "bought", acceptedAnswers: ["bought"], explanation: "buy เปลี่ยนเป็น bought" },
+  { id: "pvp-hard-008", topic: "irregular_verbs", topicLabel: "Irregular Verbs", difficulty: "hard", difficultyLabel: "ยาก", basePower: 24, type: "typing", prompt: "พิมพ์ V2 ของคำว่า think", answer: "thought", acceptedAnswers: ["thought"], explanation: "think เปลี่ยนเป็น thought" },
+  { id: "pvp-hard-009", topic: "sentence", topicLabel: "เรียงประโยค", difficulty: "hard", difficultyLabel: "ยาก", basePower: 24, type: "word-arrangement", prompt: "เรียงคำให้เป็นประโยคที่ถูกต้อง", tiles: ["The students", "wrote", "a story", "last week"], answer: "The students wrote a story last week.", acceptedAnswers: ["The students wrote a story last week."], explanation: "wrote เป็น V2 ของ write" },
+  { id: "pvp-hard-010", topic: "sentence", topicLabel: "เรียงประโยค", difficulty: "hard", difficultyLabel: "ยาก", basePower: 24, type: "word-arrangement", prompt: "เรียงคำให้เป็นประโยคที่ถูกต้อง", tiles: ["My friends", "bought", "new books", "yesterday"], answer: "My friends bought new books yesterday.", acceptedAnswers: ["My friends bought new books yesterday."], explanation: "bought เป็น V2 ของ buy" },
+  { id: "pvp-hard-011", topic: "sentence", topicLabel: "เรียงประโยค", difficulty: "hard", difficultyLabel: "ยาก", basePower: 24, type: "word-arrangement", prompt: "เรียงคำให้เป็นประโยคที่ถูกต้อง", tiles: ["We", "thought", "the test", "was difficult"], answer: "We thought the test was difficult.", acceptedAnswers: ["We thought the test was difficult."], explanation: "thought เป็น V2 ของ think" },
+  { id: "pvp-hard-012", topic: "sentence", topicLabel: "เรียงประโยค", difficulty: "hard", difficultyLabel: "ยาก", basePower: 24, type: "word-arrangement", prompt: "เรียงคำให้เป็นประโยคที่ถูกต้อง", tiles: ["She", "took", "the bus", "last morning"], answer: "She took the bus last morning.", acceptedAnswers: ["She took the bus last morning."], explanation: "took เป็น V2 ของ take" }
+];
+
+const pvpState = {
+  active: false,
+  mode: "local-mock",
+  roomCode: "",
+  connectionStatus: "offline-mock",
+  phase: "lobby",
+  player: {
+    uid: "",
+    name: "Player 1",
+    avatar: "",
+    hp: PVP_DEFAULT_MAX_HP,
+    maxHp: PVP_DEFAULT_MAX_HP,
+    charge: 0,
+    statusEffects: [], skillCooldowns: {}, incomingQuestion: null, incomingQuestionAnswered: false,
+    questionChoicesToSend: [], lastQuestionPower: 0, lastAnswerCorrect: false,
+    pendingAction: "", selectedSkill: "", selectedCharm: "", chargeResult: "", canSendQuestion: true
+  },
+  opponent: {
+    uid: "mock-opponent",
+    name: "คู่ต่อสู้จำลอง",
+    avatar: "",
+    hp: PVP_DEFAULT_MAX_HP,
+    maxHp: PVP_DEFAULT_MAX_HP,
+    charge: 0,
+    statusEffects: [], skillCooldowns: {}, incomingQuestion: null, incomingQuestionAnswered: false,
+    questionChoicesToSend: [], lastQuestionPower: 0, lastAnswerCorrect: false,
+    pendingAction: "", selectedSkill: "", selectedCharm: "", chargeResult: "", canSendQuestion: true
+  },
+  selectedMockQuestion: null,
+  activeIncomingQuestion: null,
+  selectedAnswer: "",
+  selectedTiles: [],
+  answerResult: null,
+  battleLog: [],
+  winner: "",
+  matchEnded: false,
+  mockOpponent: { enabled: true, autoSendQuestion: false, autoAnswer: false }
+};
+
 const playerStorage = {
   get(key) {
     return localStorage.getItem(key);
@@ -22754,12 +22846,73 @@ const els = {
   mainMenuCollection: document.getElementById("mainMenuCollection"),
   continueJourneyButton: document.getElementById("continueJourneyButton"),
   lessonMapButton: document.getElementById("lessonMapButton"),
+  pvpModeButton: document.getElementById("pvpModeButton"),
   assessmentResultButton: document.getElementById("assessmentResultButton"),
   tutorialGuideButton: document.getElementById("tutorialGuideButton"),
   accountSettingsButton: document.getElementById("accountSettingsButton"),
   teacherDashboardButton: document.getElementById("teacherDashboardButton"),
   creatorCreditsButton: document.getElementById("creatorCreditsButton"),
   mainMenuLogoutButton: document.getElementById("mainMenuLogoutButton"),
+  pvpBackButton: document.getElementById("pvpBackButton"),
+  pvpExitButton: document.getElementById("pvpExitButton"),
+  pvpRoomCodeDisplay: document.getElementById("pvpRoomCodeDisplay"),
+  pvpConnectionStatus: document.getElementById("pvpConnectionStatus"),
+  pvpCreateRoomButton: document.getElementById("pvpCreateRoomButton"),
+  pvpJoinRoomButton: document.getElementById("pvpJoinRoomButton"),
+  pvpLeaveRoomButton: document.getElementById("pvpLeaveRoomButton"),
+  pvpRoomCodeInput: document.getElementById("pvpRoomCodeInput"),
+  pvpRoomStatus: document.getElementById("pvpRoomStatus"),
+  pvpPlayerName: document.getElementById("pvpPlayerName"),
+  pvpPlayerAvatar: document.getElementById("pvpPlayerAvatar"),
+  pvpPlayerHpFill: document.getElementById("pvpPlayerHpFill"),
+  pvpPlayerHpText: document.getElementById("pvpPlayerHpText"),
+  pvpPlayerCharge: document.getElementById("pvpPlayerCharge"),
+  pvpPlayerCharmSlots: document.getElementById("pvpPlayerCharmSlots"),
+  pvpPlayerStatusIcons: document.getElementById("pvpPlayerStatusIcons"),
+  pvpOpponentName: document.getElementById("pvpOpponentName"),
+  pvpOpponentHpFill: document.getElementById("pvpOpponentHpFill"),
+  pvpOpponentHpText: document.getElementById("pvpOpponentHpText"),
+  pvpOpponentCharge: document.getElementById("pvpOpponentCharge"),
+  pvpOpponentCharmSlots: document.getElementById("pvpOpponentCharmSlots"),
+  pvpOpponentStatusIcons: document.getElementById("pvpOpponentStatusIcons"),
+  pvpPhaseIndicator: document.getElementById("pvpPhaseIndicator"),
+  pvpQuestionPreview: document.getElementById("pvpQuestionPreview"),
+  pvpQuestionChoices: document.getElementById("pvpQuestionChoices"),
+  pvpIncomingQuestionPanel: document.getElementById("pvpIncomingQuestionPanel"),
+  pvpIncomingQuestionMeta: document.getElementById("pvpIncomingQuestionMeta"),
+  pvpIncomingQuestionText: document.getElementById("pvpIncomingQuestionText"),
+  pvpAnswerOptions: document.getElementById("pvpAnswerOptions"),
+  pvpTypingAnswerInput: document.getElementById("pvpTypingAnswerInput"),
+  pvpArrangementSelected: document.getElementById("pvpArrangementSelected"),
+  pvpArrangementControls: document.getElementById("pvpArrangementControls"),
+  pvpArrangementUndoButton: document.getElementById("pvpArrangementUndoButton"),
+  pvpArrangementClearButton: document.getElementById("pvpArrangementClearButton"),
+  pvpAnswerConfirmButton: document.getElementById("pvpAnswerConfirmButton"),
+  pvpAnswerResultPanel: document.getElementById("pvpAnswerResultPanel"),
+  pvpAnswerResultTitle: document.getElementById("pvpAnswerResultTitle"),
+  pvpAnswerResultText: document.getElementById("pvpAnswerResultText"),
+  pvpAnswerResultContinueButton: document.getElementById("pvpAnswerResultContinueButton"),
+  pvpActionPanel: document.getElementById("pvpActionPanel"),
+  pvpSkillPanel: document.getElementById("pvpSkillPanel"),
+  pvpSkillChoices: document.getElementById("pvpSkillChoices"),
+  pvpCharmPanel: document.getElementById("pvpCharmPanel"),
+  pvpCharmChoices: document.getElementById("pvpCharmChoices"),
+  pvpChargePanel: document.getElementById("pvpChargePanel"),
+  pvpResolvePanel: document.getElementById("pvpResolvePanel"),
+  pvpResolveTitle: document.getElementById("pvpResolveTitle"),
+  pvpResolveText: document.getElementById("pvpResolveText"),
+  pvpResolveContinueButton: document.getElementById("pvpResolveContinueButton"),
+  pvpSelectionSummary: document.getElementById("pvpSelectionSummary"),
+  pvpMatchEndPanel: document.getElementById("pvpMatchEndPanel"),
+  pvpMatchEndTitle: document.getElementById("pvpMatchEndTitle"),
+  pvpMatchEndText: document.getElementById("pvpMatchEndText"),
+  pvpRestartMatchButton: document.getElementById("pvpRestartMatchButton"),
+  pvpBattleLog: document.getElementById("pvpBattleLog"),
+  pvpMockOpponentSendQuestionButton: document.getElementById("pvpMockOpponentSendQuestionButton"),
+  pvpMockOpponentAnswerCorrectButton: document.getElementById("pvpMockOpponentAnswerCorrectButton"),
+  pvpMockOpponentAttackButton: document.getElementById("pvpMockOpponentAttackButton"),
+  pvpAttackActionButton: document.getElementById("pvpAttackActionButton"),
+  pvpHealActionButton: document.getElementById("pvpHealActionButton"),
   creatorCreditsImage: document.getElementById("creatorCreditsImage"),
   creatorCreditsBackButton: document.getElementById("creatorCreditsBackButton"),
   tutorialGuideImage: document.getElementById("tutorialGuideImage"),
@@ -23020,7 +23173,7 @@ function updateDeveloperCreditVisibility(sceneName) {
   if (!credit) {
     return;
   }
-  credit.classList.toggle("is-hidden", ["story", "battle", "creatorCredits"].includes(sceneName));
+  credit.classList.toggle("is-hidden", ["story", "battle", "creatorCredits", "pvp"].includes(sceneName));
 }
 
 function showScene(name) {
@@ -29746,6 +29899,595 @@ function renderMainMenuCollection(collection = []) {
   });
 }
 
+function resetPvpMockState() {
+  const playerName = playerData?.characterName || playerData?.displayName || playerData?.username || "Player 1";
+  pvpState.active = true;
+  pvpState.mode = "local-mock";
+  pvpState.roomCode = "";
+  pvpState.connectionStatus = "offline-mock";
+  pvpState.phase = "lobby";
+  pvpState.player = {
+    uid: playerData?.uid || playerData?.userId || "",
+    name: playerName,
+    avatar: "",
+    hp: PVP_DEFAULT_MAX_HP,
+    maxHp: PVP_DEFAULT_MAX_HP,
+    charge: 0,
+    statusEffects: [], skillCooldowns: {}, incomingQuestion: null, incomingQuestionAnswered: false,
+    questionChoicesToSend: [], lastQuestionPower: 0, lastAnswerCorrect: false,
+    pendingAction: "", selectedSkill: "", selectedCharm: "", chargeResult: "", canSendQuestion: true
+  };
+  pvpState.opponent = {
+    uid: "mock-opponent",
+    name: "คู่ต่อสู้จำลอง",
+    avatar: "",
+    hp: PVP_DEFAULT_MAX_HP,
+    maxHp: PVP_DEFAULT_MAX_HP,
+    charge: 0,
+    statusEffects: [], skillCooldowns: {}, incomingQuestion: null, incomingQuestionAnswered: false,
+    questionChoicesToSend: [], lastQuestionPower: 0, lastAnswerCorrect: false,
+    pendingAction: "", selectedSkill: "", selectedCharm: "", chargeResult: "", canSendQuestion: true
+  };
+  pvpState.selectedMockQuestion = null;
+  pvpState.activeIncomingQuestion = null;
+  pvpState.selectedAnswer = "";
+  pvpState.selectedTiles = [];
+  pvpState.answerResult = null;
+  pvpState.winner = "";
+  pvpState.matchEnded = false;
+  pvpState.battleLog = [
+    "ยินดีต้อนรับสู่ Grammaria Duel",
+    "Round 2 เป็นการดวลแบบ local/mock และไม่บันทึกผล"
+  ];
+}
+
+function appendPvpLog(message) {
+  const cleanMessage = String(message || "").trim();
+  if (!cleanMessage) {
+    return;
+  }
+  pvpState.battleLog.push(cleanMessage);
+  pvpState.battleLog = pvpState.battleLog.slice(-30);
+  renderPvpBattleLog();
+}
+
+function renderPvpBattleLog() {
+  if (!els.pvpBattleLog) {
+    return;
+  }
+  els.pvpBattleLog.innerHTML = "";
+  pvpState.battleLog.forEach(message => {
+    const entry = document.createElement("p");
+    entry.textContent = message;
+    els.pvpBattleLog.appendChild(entry);
+  });
+  els.pvpBattleLog.scrollTop = els.pvpBattleLog.scrollHeight;
+}
+
+function renderPvpHud() {
+  const playerPercent = Math.max(0, Math.min(100, (pvpState.player.hp / pvpState.player.maxHp) * 100));
+  const opponentPercent = Math.max(0, Math.min(100, (pvpState.opponent.hp / pvpState.opponent.maxHp) * 100));
+  els.pvpPlayerName.textContent = pvpState.player.name;
+  els.pvpPlayerHpFill.style.width = `${playerPercent}%`;
+  els.pvpPlayerHpText.textContent = `HP ${pvpState.player.hp} / ${pvpState.player.maxHp}`;
+  els.pvpPlayerCharge.textContent = `Grammaria Charge ${pvpState.player.charge} / 100`;
+  els.pvpOpponentName.textContent = pvpState.opponent.name;
+  els.pvpOpponentHpFill.style.width = `${opponentPercent}%`;
+  els.pvpOpponentHpText.textContent = `HP ${pvpState.opponent.hp} / ${pvpState.opponent.maxHp}`;
+  els.pvpOpponentCharge.textContent = `Grammaria Charge ${pvpState.opponent.charge} / 100`;
+  els.pvpPlayerStatusIcons.textContent = "สถานะ: พร้อมดวล";
+  els.pvpOpponentStatusIcons.textContent = pvpState.roomCode ? "สถานะ: คู่ต่อสู้จำลองพร้อม" : "สถานะ: กำลังรอคู่ต่อสู้";
+  if (els.pvpPlayerAvatar) {
+    const characterId = normalizePlayerCharacterId(playerData?.characterId || getCharacterIdFromAvatar(playerData?.avatar || {}));
+    applyPlayerCharacterImage(els.pvpPlayerAvatar, characterId);
+  }
+}
+
+const PVP_PHASE_LABELS = {
+  lobby: "ห้องรอจำลอง",
+  "send-question": "เลือกคำถามให้คู่ต่อสู้",
+  "waiting-incoming-question": "กำลังรอคำถามจากคู่ต่อสู้",
+  "answer-question": "คำถามที่ได้รับ",
+  "answer-result": "ผลคำตอบ",
+  "choose-action": "เลือกการกระทำ",
+  "choose-skill": "เลือกสกิล",
+  "choose-charm": "เลือกชาม",
+  "grammaria-charge": "Grammaria Charge",
+  "resolve-action": "ส่งผลลัพธ์",
+  "match-end": "จบการดวลจำลอง"
+};
+
+function renderPvpPhase() {
+  const phase = pvpState.phase;
+  els.pvpPhaseIndicator.textContent = PVP_PHASE_LABELS[phase] || "โหมดจำลอง";
+  document.querySelectorAll("[data-pvp-phase]").forEach(step => {
+    const stepPhase = step.dataset.pvpPhase;
+    let activePhase = phase === "waiting-incoming-question" || phase === "answer-result" ? "answer-question" : phase;
+    if (phase === "choose-charm") activePhase = "choose-skill";
+    step.classList.toggle("is-active", stepPhase === activePhase);
+  });
+  els.pvpQuestionChoices.classList.toggle("hidden", phase !== "send-question");
+  els.pvpIncomingQuestionPanel.classList.toggle("hidden", !["waiting-incoming-question", "answer-question"].includes(phase));
+  els.pvpAnswerResultPanel.classList.toggle("hidden", phase !== "answer-result");
+  els.pvpActionPanel.classList.toggle("hidden", phase !== "choose-action");
+  els.pvpSkillPanel.classList.toggle("hidden", phase !== "choose-skill");
+  els.pvpCharmPanel.classList.toggle("hidden", phase !== "choose-charm");
+  els.pvpChargePanel.classList.toggle("hidden", phase !== "grammaria-charge");
+  els.pvpResolvePanel.classList.toggle("hidden", phase !== "resolve-action");
+  els.pvpMatchEndPanel.classList.toggle("hidden", phase !== "match-end");
+}
+
+function pvpRandomItem(items) {
+  return items[Math.floor(Math.random() * items.length)] || null;
+}
+
+function generatePvpQuestionChoices() {
+  const choices = ["easy", "medium", "hard"].map(difficulty => {
+    const pool = PVP_MOCK_QUESTION_BANK.filter(question => question.difficulty === difficulty);
+    return pvpRandomItem(pool);
+  }).filter(Boolean);
+  pvpState.player.questionChoicesToSend = choices.map(question => ({ ...question }));
+  pvpState.selectedMockQuestion = null;
+  return pvpState.player.questionChoicesToSend;
+}
+
+const PVP_QUESTION_TYPE_LABELS = {
+  "multiple-choice": "เลือกคำตอบ",
+  typing: "พิมพ์คำตอบ",
+  "word-arrangement": "เรียงคำ"
+};
+
+function renderPvpQuestionCards() {
+  if (!els.pvpQuestionChoices) return;
+  els.pvpQuestionChoices.innerHTML = "";
+  pvpState.player.questionChoicesToSend.forEach(question => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "pvp-question-card";
+    const title = document.createElement("strong");
+    title.textContent = `คำถาม${question.difficultyLabel}`;
+    const topic = document.createElement("span");
+    topic.textContent = `หัวข้อ: ${question.topicLabel}`;
+    const power = document.createElement("span");
+    power.textContent = `พลังพื้นฐาน: ${question.basePower}`;
+    const type = document.createElement("small");
+    type.textContent = `ประเภท: ${PVP_QUESTION_TYPE_LABELS[question.type] || question.type}`;
+    card.append(title, topic, power, type);
+    card.addEventListener("click", () => submitPvpQuestionToOpponent(question.id));
+    els.pvpQuestionChoices.appendChild(card);
+  });
+  els.pvpQuestionPreview.textContent = pvpState.selectedMockQuestion
+    ? `ส่งคำถาม${pvpState.selectedMockQuestion.difficultyLabel} หัวข้อ ${pvpState.selectedMockQuestion.topicLabel} แล้ว`
+    : pvpState.phase === "waiting-incoming-question" ? "ส่งคำถามแล้ว กำลังรอคำถามจากคู่ต่อสู้" : "เลือกคำถามหนึ่งข้อเพื่อส่งให้คู่ต่อสู้";
+}
+
+function normalizePvpAnswer(value) {
+  return String(value || "").trim().toLowerCase().replace(/\s+/g, " ").replace(/\s+([?.!,])/g, "$1");
+}
+
+function evaluatePvpAnswer(question, userAnswer) {
+  const accepted = question?.acceptedAnswers?.length ? question.acceptedAnswers : [question?.answer];
+  return {
+    correct: accepted.some(answer => normalizePvpAnswer(answer) === normalizePvpAnswer(userAnswer)),
+    correctAnswer: question?.answer || "",
+    explanation: question?.explanation || ""
+  };
+}
+
+function renderPvpIncomingQuestion() {
+  const question = pvpState.player.incomingQuestion;
+  els.pvpAnswerOptions.innerHTML = "";
+  els.pvpTypingAnswerInput.classList.add("hidden");
+  els.pvpArrangementSelected.classList.add("hidden");
+  els.pvpArrangementControls.classList.add("hidden");
+  els.pvpAnswerConfirmButton.classList.toggle("hidden", !question || pvpState.phase === "waiting-incoming-question");
+  if (!question) {
+    els.pvpIncomingQuestionMeta.textContent = "Waiting / กำลังรอ";
+    els.pvpIncomingQuestionText.textContent = "ยังไม่มีคำถามเข้ามา ใช้ปุ่มคู่ต่อสู้จำลองเพื่อทดสอบ";
+    return;
+  }
+  els.pvpIncomingQuestionMeta.textContent = `${question.difficultyLabel} · ${question.topicLabel} · พลัง ${question.basePower}`;
+  els.pvpIncomingQuestionText.textContent = question.prompt;
+  if (question.type === "multiple-choice") {
+    question.options.forEach(option => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `pvp-choice-button${pvpState.selectedAnswer === option ? " is-selected" : ""}`;
+      button.textContent = option;
+      button.addEventListener("click", () => {
+        pvpState.selectedAnswer = option;
+        renderPvpIncomingQuestion();
+      });
+      els.pvpAnswerOptions.appendChild(button);
+    });
+  } else if (question.type === "typing") {
+    els.pvpTypingAnswerInput.classList.remove("hidden");
+    els.pvpTypingAnswerInput.value = pvpState.selectedAnswer;
+  } else if (question.type === "word-arrangement") {
+    els.pvpArrangementSelected.classList.remove("hidden");
+    els.pvpArrangementControls.classList.remove("hidden");
+    els.pvpArrangementSelected.textContent = pvpState.selectedTiles.length
+      ? pvpState.selectedTiles.map(tile => tile.text).join(" ")
+      : "แตะคำด้านล่างเพื่อเรียงประโยค";
+    question.tiles.forEach((tile, index) => {
+      if (pvpState.selectedTiles.some(selected => selected.index === index)) return;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "pvp-choice-button";
+      button.textContent = tile;
+      button.addEventListener("click", () => {
+        pvpState.selectedTiles.push({ index, text: tile });
+        renderPvpIncomingQuestion();
+      });
+      els.pvpAnswerOptions.appendChild(button);
+    });
+  }
+}
+
+function renderPvpActionPanel() {
+  els.pvpActionPanel?.classList.toggle("has-pending-action", Boolean(pvpState.player.pendingAction));
+}
+
+function renderPvpSkillPanel() {
+  els.pvpSkillChoices.innerHTML = "";
+  PVP_SKILLS.forEach(skill => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "pvp-choice-button pvp-detail-choice";
+    button.innerHTML = `<strong>${skill.name}</strong><span>${skill.thaiName}</span><small>พลัง ×${skill.multiplier} · Cooldown ${skill.cooldown}</small><small>${skill.description}</small>`;
+    button.addEventListener("click", () => choosePvpSkill(skill.id));
+    els.pvpSkillChoices.appendChild(button);
+  });
+}
+
+function renderPvpCharmPanel() {
+  els.pvpCharmChoices.innerHTML = "";
+  PVP_CHARMS.forEach(charm => {
+    const button = document.createElement("button");
+    button.type = "button";
+    const lessUseful = (pvpState.player.pendingAction === "attack" && charm.type === "heal") || (pvpState.player.pendingAction === "heal" && charm.type === "attack");
+    button.className = `pvp-choice-button pvp-detail-choice${lessUseful ? " is-less-useful" : ""}`;
+    button.innerHTML = `<strong>${charm.name}</strong><span>ประเภท: ${charm.type}</span><small>${charm.description}</small>`;
+    button.addEventListener("click", () => choosePvpCharm(charm.id));
+    els.pvpCharmChoices.appendChild(button);
+  });
+}
+
+function renderPvpChargePanel() {
+  const skill = PVP_SKILLS.find(item => item.id === pvpState.player.selectedSkill);
+  const charm = PVP_CHARMS.find(item => item.id === pvpState.player.selectedCharm);
+  els.pvpSelectionSummary.textContent = `${pvpState.player.pendingAction === "attack" ? `สกิล: ${skill?.name || "-"} · ` : ""}ชาม: ${charm?.name || "-"} · เลือกผลชาร์จ`;
+}
+
+function renderPvpAnswerResult() {
+  if (!pvpState.answerResult) return;
+  els.pvpAnswerResultTitle.textContent = pvpState.answerResult.correct ? "ตอบถูก!" : "ตอบผิด!";
+  els.pvpAnswerResultText.textContent = pvpState.answerResult.correct
+    ? `${pvpState.answerResult.explanation} เลือกว่าจะโจมตีหรือรักษา`
+    : `คำตอบที่ถูกคือ ${pvpState.answerResult.correctAnswer} · ${pvpState.answerResult.explanation} เสียโอกาสลงมือและต้องส่งคำถามกลับก่อน`;
+}
+
+function renderPvpMatchEnd() {
+  if (!pvpState.matchEnded) return;
+  const playerWon = pvpState.winner === "player";
+  els.pvpMatchEndTitle.textContent = playerWon ? "คุณชนะ!" : "คุณแพ้";
+  els.pvpMatchEndText.textContent = playerWon ? "คุณชนะการดวล Grammaria Duel" : "คู่ต่อสู้ชนะการดวล";
+}
+
+function renderPvpScene() {
+  els.pvpRoomCodeDisplay.textContent = pvpState.roomCode ? `ห้อง: ${pvpState.roomCode}` : "ห้อง: ยังไม่ได้สร้าง";
+  els.pvpConnectionStatus.textContent = "สถานะ: โหมดจำลอง";
+  els.pvpRoomStatus.textContent = pvpState.roomCode
+    ? `ห้องจำลอง ${pvpState.roomCode} พร้อมใช้งาน รอระบบเชื่อมต่อจริงในรอบถัดไป`
+    : "ยังไม่ได้สร้างห้อง";
+  renderPvpHud();
+  renderPvpPhase();
+  renderPvpQuestionCards();
+  renderPvpIncomingQuestion();
+  renderPvpAnswerResult();
+  renderPvpActionPanel();
+  renderPvpSkillPanel();
+  renderPvpCharmPanel();
+  renderPvpChargePanel();
+  renderPvpMatchEnd();
+  renderPvpBattleLog();
+}
+
+function setPvpPhase(phase) {
+  if (!PVP_PHASE_LABELS[phase]) {
+    return;
+  }
+  pvpState.phase = phase;
+  renderPvpPhase();
+}
+
+function enterPvpMode() {
+  resetPvpMockState();
+  Object.values(scenes).forEach(scene => scene?.classList.remove("active"));
+  scenes.pvp.classList.add("active");
+  updateDeveloperCreditVisibility("pvp");
+  playBgmForScene("mainMenu");
+  renderPvpScene();
+}
+
+function exitPvpMode() {
+  pvpState.active = false;
+  pvpState.mode = "idle";
+  renderMainMenu();
+  Object.values(scenes).forEach(scene => scene?.classList.remove("active"));
+  scenes.mainMenu.classList.add("active");
+  updateDeveloperCreditVisibility("mainMenu");
+  applyDebugButtonVisibility();
+  updateManualSaveButtonVisibility("mainMenu");
+  playBgmForScene("mainMenu");
+}
+
+function createMockPvpRoom() {
+  pvpState.roomCode = `LGX${Math.floor(100 + Math.random() * 900)}`;
+  pvpState.connectionStatus = "host-mock";
+  pvpState.opponent.name = "คู่ต่อสู้จำลอง";
+  els.pvpRoomCodeInput.value = pvpState.roomCode;
+  appendPvpLog(`สร้างห้องจำลองแล้ว: ${pvpState.roomCode}`);
+  generatePvpQuestionChoices();
+  setPvpPhase("send-question");
+  renderPvpScene();
+}
+
+function joinMockPvpRoom(roomCode) {
+  const cleanCode = String(roomCode || "").trim().toUpperCase();
+  if (!cleanCode) {
+    els.pvpRoomStatus.textContent = "กรุณากรอกรหัสห้อง";
+    return;
+  }
+  pvpState.roomCode = cleanCode.slice(0, 8);
+  pvpState.connectionStatus = "joined-mock";
+  pvpState.opponent.name = "คู่ต่อสู้จำลอง";
+  appendPvpLog(`เข้าร่วมห้องจำลองแล้ว: ${pvpState.roomCode}`);
+  generatePvpQuestionChoices();
+  setPvpPhase("send-question");
+  renderPvpScene();
+}
+
+function leaveMockPvpRoom() {
+  const previousCode = pvpState.roomCode;
+  resetPvpMockState();
+  els.pvpRoomCodeInput.value = "";
+  appendPvpLog(previousCode ? `ออกจากห้องจำลอง: ${previousCode}` : "ยังไม่ได้เข้าร่วมห้อง");
+  renderPvpScene();
+}
+
+function submitPvpQuestionToOpponent(questionId) {
+  if (pvpState.phase !== "send-question" || pvpState.matchEnded) return;
+  const question = pvpState.player.questionChoicesToSend.find(item => item.id === questionId);
+  if (!question) return;
+  if (pvpState.opponent.incomingQuestion && !pvpState.opponent.incomingQuestionAnswered) {
+    appendPvpLog("คู่ต่อสู้ยังมีคำถามค้างอยู่ รอให้ตอบก่อน");
+    els.pvpQuestionPreview.textContent = "คู่ต่อสู้ยังมีคำถามค้างอยู่ รอให้ตอบก่อน";
+    return;
+  }
+  pvpState.selectedMockQuestion = { ...question };
+  pvpState.opponent.incomingQuestion = { ...question };
+  pvpState.opponent.incomingQuestionAnswered = false;
+  pvpState.player.questionChoicesToSend = [];
+  appendPvpLog(`คุณส่งคำถามระดับ${question.difficultyLabel}ให้คู่ต่อสู้แล้ว`);
+  continueAfterSendingPvpQuestion();
+}
+
+function continueAfterSendingPvpQuestion() {
+  pvpState.selectedAnswer = "";
+  pvpState.selectedTiles = [];
+  setPvpPhase(pvpState.player.incomingQuestion ? "answer-question" : "waiting-incoming-question");
+  renderPvpScene();
+}
+
+function submitPvpAnswer() {
+  if (pvpState.phase !== "answer-question") return;
+  const question = pvpState.player.incomingQuestion;
+  if (!question) return;
+  let userAnswer = pvpState.selectedAnswer;
+  if (question.type === "typing") userAnswer = els.pvpTypingAnswerInput.value;
+  if (question.type === "word-arrangement") userAnswer = `${pvpState.selectedTiles.map(tile => tile.text).join(" ")}.`;
+  if (!normalizePvpAnswer(userAnswer)) {
+    appendPvpLog("กรุณาเลือกหรือกรอกคำตอบก่อนยืนยัน");
+    return;
+  }
+  const result = evaluatePvpAnswer(question, userAnswer);
+  pvpState.answerResult = { ...result, nextPhase: result.correct ? "choose-action" : "send-question" };
+  pvpState.player.lastAnswerCorrect = result.correct;
+  pvpState.player.lastQuestionPower = result.correct ? question.basePower : 0;
+  pvpState.player.incomingQuestionAnswered = true;
+  pvpState.player.incomingQuestion = null;
+  pvpState.activeIncomingQuestion = null;
+  appendPvpLog(result.correct ? "ตอบถูก! เลือกว่าจะโจมตีหรือรักษา" : "ตอบผิด! เสียโอกาสลงมือ รอบนี้ต้องเลือกคำถามส่งกลับก่อน");
+  setPvpPhase("answer-result");
+  renderPvpScene();
+}
+
+function continueAfterPvpAnswerResult() {
+  const nextPhase = pvpState.answerResult?.nextPhase;
+  if (!nextPhase) return;
+  pvpState.answerResult = null;
+  if (nextPhase === "send-question") generatePvpQuestionChoices();
+  setPvpPhase(nextPhase);
+  renderPvpScene();
+}
+
+function choosePvpAction(action) {
+  if (action !== "attack" && action !== "heal") {
+    return;
+  }
+  if (pvpState.phase !== "choose-action" || !pvpState.player.lastAnswerCorrect) return;
+  pvpState.player.pendingAction = action;
+  pvpState.player.selectedSkill = "";
+  pvpState.player.selectedCharm = "";
+  pvpState.player.chargeResult = "";
+  appendPvpLog(`เลือกการกระทำ: ${action === "attack" ? "โจมตี" : "รักษา"}`);
+  setPvpPhase(action === "attack" ? "choose-skill" : "choose-charm");
+  renderPvpScene();
+}
+
+function choosePvpSkill(skillId) {
+  if (pvpState.phase !== "choose-skill" || pvpState.player.pendingAction !== "attack") return;
+  const skill = PVP_SKILLS.find(item => item.id === skillId);
+  if (!skill) return;
+  pvpState.player.selectedSkill = skill.id;
+  appendPvpLog(`เลือกสกิล: ${skill.name}`);
+  setPvpPhase("choose-charm");
+  renderPvpScene();
+}
+
+function choosePvpCharm(charmId) {
+  if (pvpState.phase !== "choose-charm") return;
+  const charm = PVP_CHARMS.find(item => item.id === charmId);
+  if (!charm) return;
+  pvpState.player.selectedCharm = charm.id;
+  appendPvpLog(`เลือกชาม: ${charm.name}`);
+  setPvpPhase("grammaria-charge");
+  renderPvpScene();
+}
+
+function choosePvpChargeResult(chargeResult) {
+  if (pvpState.phase !== "grammaria-charge" || !PVP_CHARGE_MULTIPLIERS[chargeResult]) return;
+  pvpState.player.chargeResult = chargeResult;
+  pvpState.player.charge = Math.round(PVP_CHARGE_MULTIPLIERS[chargeResult] * 60);
+  appendPvpLog(`Grammaria Charge: ${chargeResult}`);
+  setPvpPhase("resolve-action");
+  resolvePvpAction();
+}
+
+function pvpGetChargeMultiplier(chargeResult, charm) {
+  const base = PVP_CHARGE_MULTIPLIERS[chargeResult] || 1;
+  return Math.min(1.6, base + (charm?.type === "charge" ? charm.chargeBonus || 0 : 0));
+}
+
+function calculatePvpDamage({ basePower, skill, charm, chargeResult, player }) {
+  const charmAttackMultiplier = charm?.type === "attack" ? charm.multiplier : 1;
+  const comebackMultiplier = charm?.type === "comeback" && player.hp <= player.maxHp * 0.4 ? charm.multiplier : 1;
+  return Math.max(1, Math.round(basePower * skill.multiplier * charmAttackMultiplier * comebackMultiplier * pvpGetChargeMultiplier(chargeResult, charm)));
+}
+
+function calculatePvpHeal({ basePower, charm, chargeResult, player }) {
+  const charmHealMultiplier = charm?.type === "heal" ? charm.multiplier : 1;
+  const comebackMultiplier = charm?.type === "comeback" && player.hp <= player.maxHp * 0.4 ? charm.multiplier : 1;
+  return Math.max(1, Math.round(basePower * 0.75 * charmHealMultiplier * comebackMultiplier * pvpGetChargeMultiplier(chargeResult, charm)));
+}
+
+function showPvpFloatingText(text, side = "opponent", isHeal = false) {
+  const layer = document.getElementById("pvpFloatingTextLayer");
+  if (!layer) return;
+  layer.innerHTML = "";
+  const item = document.createElement("span");
+  item.className = `pvp-floating-result pvp-floating-${side}${isHeal ? " is-heal" : ""}`;
+  item.textContent = text;
+  layer.appendChild(item);
+  window.setTimeout(() => item.remove(), 900);
+}
+
+function applyPvpDamage(targetSide, amount) {
+  const target = pvpState[targetSide];
+  if (!target) return;
+  const safeAmount = Math.max(0, Math.round(Number(amount) || 0));
+  target.hp = Math.max(0, target.hp - safeAmount);
+  showPvpFloatingText(`-${safeAmount}`, targetSide);
+  appendPvpLog(targetSide === "opponent" ? `คุณโจมตีคู่ต่อสู้ ${safeAmount} ดาเมจ` : `คู่ต่อสู้จำลองโจมตีคุณ ${safeAmount} ดาเมจ`);
+  checkPvpVictory();
+  renderPvpHud();
+}
+
+function applyPvpHeal(side, amount) {
+  const target = pvpState[side];
+  if (!target) return;
+  const before = target.hp;
+  target.hp = Math.min(target.maxHp, target.hp + Math.max(0, Math.round(Number(amount) || 0)));
+  const restored = target.hp - before;
+  showPvpFloatingText(`+${restored}`, side, true);
+  appendPvpLog(side === "player" ? `คุณฟื้นฟู HP ${restored} หน่วย` : `คู่ต่อสู้ฟื้นฟู HP ${restored} หน่วย`);
+  checkPvpVictory();
+  renderPvpHud();
+}
+
+function checkPvpVictory() {
+  if (pvpState.opponent.hp <= 0) {
+    pvpState.winner = "player";
+    pvpState.matchEnded = true;
+    pvpState.phase = "match-end";
+    appendPvpLog("คุณชนะการดวล Grammaria Duel");
+  } else if (pvpState.player.hp <= 0) {
+    pvpState.winner = "opponent";
+    pvpState.matchEnded = true;
+    pvpState.phase = "match-end";
+    appendPvpLog("คู่ต่อสู้ชนะการดวล");
+  }
+}
+
+function resolvePvpAction() {
+  const player = pvpState.player;
+  const charm = PVP_CHARMS.find(item => item.id === player.selectedCharm);
+  const basePower = player.lastQuestionPower;
+  if (!player.pendingAction || !charm || !player.chargeResult || basePower <= 0) return;
+  if (player.pendingAction === "attack") {
+    const skill = PVP_SKILLS.find(item => item.id === player.selectedSkill);
+    if (!skill) return;
+    const damage = calculatePvpDamage({ basePower, skill, charm, chargeResult: player.chargeResult, player });
+    els.pvpResolveTitle.textContent = "การโจมตีสำเร็จ";
+    els.pvpResolveText.textContent = `${skill.name} สร้างความเสียหาย ${damage} ดาเมจ`;
+    applyPvpDamage("opponent", damage);
+  } else {
+    const heal = calculatePvpHeal({ basePower, charm, chargeResult: player.chargeResult, player });
+    els.pvpResolveTitle.textContent = "การรักษาสำเร็จ";
+    els.pvpResolveText.textContent = `ฟื้นฟูพลังชีวิต ${heal} หน่วย`;
+    applyPvpHeal("player", heal);
+  }
+  player.pendingAction = "";
+  player.selectedSkill = "";
+  player.selectedCharm = "";
+  player.chargeResult = "";
+  player.charge = 0;
+  player.lastAnswerCorrect = false;
+  player.lastQuestionPower = 0;
+  if (!pvpState.matchEnded) {
+    generatePvpQuestionChoices();
+    appendPvpLog("เลือกคำถามส่งให้คู่ต่อสู้ก่อนเข้าสู่จังหวะถัดไป");
+    pvpState.phase = "send-question";
+  }
+  renderPvpScene();
+}
+
+function pvpMockOpponentSendQuestion() {
+  if (pvpState.matchEnded) return;
+  if (pvpState.player.incomingQuestion) {
+    appendPvpLog("คุณยังมีคำถามค้างอยู่ ต้องตอบคำถามเดิมก่อน");
+    return;
+  }
+  const question = pvpRandomItem(PVP_MOCK_QUESTION_BANK);
+  if (!question) return;
+  pvpState.player.incomingQuestion = { ...question };
+  pvpState.player.incomingQuestionAnswered = false;
+  pvpState.activeIncomingQuestion = pvpState.player.incomingQuestion;
+  pvpState.selectedAnswer = "";
+  pvpState.selectedTiles = [];
+  appendPvpLog("คู่ต่อสู้จำลองส่งคำถามมาแล้ว");
+  if (pvpState.phase === "waiting-incoming-question") pvpState.phase = "answer-question";
+  renderPvpScene();
+}
+
+function pvpMockOpponentAnswerCorrect() {
+  if (!pvpState.opponent.incomingQuestion) {
+    appendPvpLog("คู่ต่อสู้จำลองไม่มีคำถามค้างอยู่");
+    return;
+  }
+  pvpState.opponent.incomingQuestion = null;
+  pvpState.opponent.incomingQuestionAnswered = true;
+  appendPvpLog("คู่ต่อสู้จำลองตอบคำถามถูก ช่องรับคำถามว่างแล้ว");
+  renderPvpScene();
+}
+
+function pvpMockOpponentAttack() {
+  if (pvpState.matchEnded) return;
+  applyPvpDamage("player", 15);
+  renderPvpScene();
+}
+
 function renderMainMenu() {
   const view = buildMainMenuViewModel();
   if (els.mainMenuLogo && els.mainMenuLogoFallback) {
@@ -29777,6 +30519,7 @@ function renderMainMenu() {
 
   setButtonAction(els.continueJourneyButton, view.canContinue ? "เดินทางต่อ" : "เริ่มการเดินทาง", continueJourneyFromMainMenu, { lock: true });
   setButtonAction(els.lessonMapButton, "แผนที่บทเรียน", openMainMenuLessonMap, { lock: false });
+  setButtonAction(els.pvpModeButton, "PvP Duel", enterPvpMode, { lock: false });
   setButtonAction(els.assessmentResultButton, "ผลการประเมิน", openMainMenuAssessmentResult, { lock: false });
   setButtonAction(els.tutorialGuideButton, "วิธีเล่น", openTutorialGuide, { lock: false });
   setButtonAction(els.accountSettingsButton, "ตั้งค่าบัญชี", openAccountSettingsModal, { lock: false });
@@ -38092,7 +38835,11 @@ function showBossQuestionStep() {
   showOnlyBattlePanel(els.questionPanel);
   setBattleTurnOwner("enemy");
   els.continueBattleButton.classList.add("hidden");
-  els.battleMessage.textContent = "บอส: “ถ้าเจ้าจำอดีตผิด ความทรงจำก็จะแตกสลาย... ตอบข้ามา!”";
+  els.battleMessage.textContent = question.repeatNoticeJustStarted
+    ? "คำถามบอสชุดแรกถูกใช้ครบแล้ว ระบบจะสุ่มทบทวนข้อที่เคยตอบผิดก่อน"
+    : question.repeatMode
+      ? "บอส: โหมดทบทวนคำถามซ้ำแบบสุ่ม"
+      : "บอส: “ถ้าเจ้าจำอดีตผิด ความทรงจำก็จะแตกสลาย... ตอบข้ามา!”";
   els.questionText.textContent = resolveBattleQuestionPrompt(question);
   els.answerOptions.innerHTML = "";
 
@@ -40878,6 +41625,56 @@ els.tutorialPreviousButton?.addEventListener("click", previousTutorialSlide);
 els.tutorialNextButton?.addEventListener("click", nextTutorialSlide);
 els.tutorialBackButton?.addEventListener("click", returnToMainMenuFromTutorial);
 els.creatorCreditsBackButton?.addEventListener("click", returnToMainMenuFromCreatorCredits);
+els.pvpBackButton?.addEventListener("click", exitPvpMode);
+els.pvpExitButton?.addEventListener("click", exitPvpMode);
+els.pvpCreateRoomButton?.addEventListener("click", createMockPvpRoom);
+els.pvpJoinRoomButton?.addEventListener("click", () => joinMockPvpRoom(els.pvpRoomCodeInput?.value));
+els.pvpLeaveRoomButton?.addEventListener("click", leaveMockPvpRoom);
+els.pvpRoomCodeInput?.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    joinMockPvpRoom(els.pvpRoomCodeInput.value);
+  }
+});
+els.pvpAnswerConfirmButton?.addEventListener("click", submitPvpAnswer);
+els.pvpTypingAnswerInput?.addEventListener("input", event => {
+  pvpState.selectedAnswer = event.target.value;
+});
+els.pvpTypingAnswerInput?.addEventListener("keydown", event => {
+  if (event.key === "Enter") submitPvpAnswer();
+});
+els.pvpArrangementUndoButton?.addEventListener("click", () => {
+  pvpState.selectedTiles.pop();
+  renderPvpIncomingQuestion();
+});
+els.pvpArrangementClearButton?.addEventListener("click", () => {
+  pvpState.selectedTiles = [];
+  renderPvpIncomingQuestion();
+});
+els.pvpAnswerResultContinueButton?.addEventListener("click", continueAfterPvpAnswerResult);
+els.pvpAttackActionButton?.addEventListener("click", () => choosePvpAction("attack"));
+els.pvpHealActionButton?.addEventListener("click", () => choosePvpAction("heal"));
+document.querySelectorAll("[data-pvp-charge]").forEach(button => {
+  button.addEventListener("click", () => choosePvpChargeResult(button.dataset.pvpCharge));
+});
+els.pvpResolveContinueButton?.addEventListener("click", () => {
+  if (!pvpState.matchEnded) {
+    generatePvpQuestionChoices();
+    setPvpPhase("send-question");
+    renderPvpScene();
+  }
+});
+els.pvpRestartMatchButton?.addEventListener("click", () => {
+  const roomCode = pvpState.roomCode;
+  resetPvpMockState();
+  pvpState.roomCode = roomCode || `LGX${Math.floor(100 + Math.random() * 900)}`;
+  pvpState.connectionStatus = "host-mock";
+  generatePvpQuestionChoices();
+  pvpState.phase = "send-question";
+  renderPvpScene();
+});
+els.pvpMockOpponentSendQuestionButton?.addEventListener("click", pvpMockOpponentSendQuestion);
+els.pvpMockOpponentAnswerCorrectButton?.addEventListener("click", pvpMockOpponentAnswerCorrect);
+els.pvpMockOpponentAttackButton?.addEventListener("click", pvpMockOpponentAttack);
 els.confirmNameButton.addEventListener("click", confirmStoryName);
 els.storyNameInput.addEventListener("keydown", event => {
   if (event.key === "Enter") {

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lingua - RPG แห่งแกรมมาเรีย</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=pvp-round2-20260823">
 </head>
 <body>
   <div class="game-utility-controls" aria-label="ตัวเลือกเกม">
@@ -140,6 +140,7 @@
           <section class="main-menu-card main-menu-actions">
             <button id="continueJourneyButton" class="primary-button main-menu-button" type="button">เดินทางต่อ</button>
             <button id="lessonMapButton" class="secondary-button main-menu-button" type="button">แผนที่บทเรียน</button>
+            <button id="pvpModeButton" class="secondary-button main-menu-button" type="button">PvP Duel</button>
             <button id="assessmentResultButton" class="secondary-button main-menu-button" type="button">ผลการประเมิน</button>
             <button id="tutorialGuideButton" class="secondary-button main-menu-button" type="button">วิธีเล่น</button>
             <button id="accountSettingsButton" class="secondary-button main-menu-button" type="button">ตั้งค่าบัญชี</button>
@@ -148,6 +149,154 @@
             <button id="mainMenuLogoutButton" class="secondary-button main-menu-button danger-button" type="button">ออกจากระบบ</button>
           </section>
         </div>
+      </div>
+    </section>
+
+    <section id="pvpDuelScene" class="scene pvp-duel-scene">
+      <div class="pvp-shell">
+        <header class="pvp-header">
+          <button id="pvpBackButton" class="pvp-action-button pvp-back-button" type="button">กลับหน้าหลัก</button>
+          <div class="pvp-title-block">
+            <span>LINGUA</span>
+            <h2 id="pvpModeTitle">Grammaria Duel</h2>
+            <p>ดวลภาษาแบบเรียลไทม์</p>
+          </div>
+          <div class="pvp-header-status">
+            <strong id="pvpRoomCodeDisplay">ห้อง: ยังไม่ได้สร้าง</strong>
+            <span id="pvpConnectionStatus">สถานะ: โหมดจำลอง</span>
+          </div>
+        </header>
+
+        <section class="pvp-room-panel" aria-label="ห้องดวลจำลอง">
+          <button id="pvpCreateRoomButton" class="pvp-action-button" type="button">สร้างห้อง</button>
+          <label class="pvp-room-input">
+            <span>รหัสห้อง</span>
+            <input id="pvpRoomCodeInput" type="text" maxlength="8" placeholder="กรอกรหัสห้อง" autocomplete="off">
+          </label>
+          <button id="pvpJoinRoomButton" class="pvp-action-button" type="button">เข้าร่วมห้อง</button>
+          <button id="pvpLeaveRoomButton" class="pvp-action-button pvp-muted-action" type="button">ออกจากห้อง</button>
+          <p id="pvpRoomStatus" aria-live="polite">ยังไม่ได้สร้างห้อง</p>
+        </section>
+
+        <section class="pvp-top-hud" aria-label="ข้อมูลผู้ดวล">
+          <article id="pvpPlayerPanel" class="pvp-player-panel">
+            <div class="pvp-avatar-frame"><img id="pvpPlayerAvatar" src="assets/characters/male_wanderer_idle.gif" alt="Player 1"></div>
+            <div class="pvp-hud-copy">
+              <span>Player 1</span>
+              <h3 id="pvpPlayerName">นักเวทแห่ง Lingua</h3>
+              <div class="pvp-hp-track"><i id="pvpPlayerHpFill"></i></div>
+              <p id="pvpPlayerHpText">HP 120 / 120</p>
+              <div id="pvpPlayerCharge" class="pvp-charge-crystals" aria-label="Grammaria Charge">◆ ◇ ◇ ◇</div>
+              <div id="pvpPlayerCharmSlots" class="pvp-mini-slots">ชาม: ว่าง · ว่าง · ว่าง</div>
+              <div id="pvpPlayerStatusIcons" class="pvp-status-icons">สถานะ: พร้อมดวล</div>
+            </div>
+          </article>
+
+          <div class="pvp-vs-badge">VS</div>
+
+          <article id="pvpOpponentPanel" class="pvp-opponent-panel">
+            <div class="pvp-hud-copy">
+              <span>Player 2</span>
+              <h3 id="pvpOpponentName">คู่ต่อสู้จำลอง</h3>
+              <div class="pvp-hp-track"><i id="pvpOpponentHpFill"></i></div>
+              <p id="pvpOpponentHpText">HP 120 / 120</p>
+              <div id="pvpOpponentCharge" class="pvp-charge-crystals" aria-label="Grammaria Charge">◇ ◇ ◇ ◇</div>
+              <div id="pvpOpponentCharmSlots" class="pvp-mini-slots">ชาม: ปกปิด</div>
+              <div id="pvpOpponentStatusIcons" class="pvp-status-icons">สถานะ: กำลังรอคู่ต่อสู้</div>
+            </div>
+            <div class="pvp-avatar-frame pvp-opponent-avatar" id="pvpOpponentAvatar" aria-label="คู่ต่อสู้จำลอง">?</div>
+          </article>
+        </section>
+
+        <section id="pvpArenaStage" class="pvp-arena">
+          <div id="pvpLeftCharacter" class="pvp-arena-character pvp-arena-player">ผู้ท้าดวล</div>
+          <strong id="pvpVsMark" class="pvp-arena-vs">GRAMMARIA<br>DUEL</strong>
+          <div id="pvpRightCharacter" class="pvp-arena-character pvp-arena-opponent">คู่ต่อสู้</div>
+          <div id="pvpEffectLayer" class="pvp-effect-layer" aria-hidden="true"></div>
+          <div id="pvpFloatingTextLayer" class="pvp-floating-text-layer" aria-hidden="true"></div>
+        </section>
+
+        <div id="pvpPhaseTracker" class="pvp-phase-tracker" aria-label="ขั้นตอนการดวล">
+          <span class="pvp-phase-step" data-pvp-phase="send-question">1 เลือกคำถาม</span>
+          <span class="pvp-phase-step" data-pvp-phase="answer-question">2 ตอบคำถาม</span>
+          <span class="pvp-phase-step" data-pvp-phase="choose-action">3 เลือกการกระทำ</span>
+          <span class="pvp-phase-step" data-pvp-phase="choose-skill">4 สกิล/ชาม</span>
+          <span class="pvp-phase-step" data-pvp-phase="grammaria-charge">5 ชาร์จ</span>
+          <span class="pvp-phase-step" data-pvp-phase="resolve-action">6 ผลลัพธ์</span>
+        </div>
+
+        <section id="pvpBottomPanel" class="pvp-bottom-panel">
+          <div class="pvp-panel-heading">
+            <div><span>สถานะปัจจุบัน</span><strong id="pvpPhaseIndicator">ห้องรอจำลอง</strong></div>
+            <p id="pvpQuestionPreview">ยังไม่ได้เลือกคำถามให้คู่ต่อสู้</p>
+          </div>
+
+          <div id="pvpQuestionChoices" class="pvp-question-choices"></div>
+
+          <div id="pvpIncomingQuestionPanel" class="pvp-demo-panel hidden">
+            <h3>คำถามที่ได้รับ</h3>
+            <p id="pvpIncomingQuestionMeta" class="pvp-question-meta"></p>
+            <p id="pvpIncomingQuestionText">กำลังรอคำถามจากคู่ต่อสู้</p>
+            <div id="pvpAnswerOptions" class="pvp-answer-options"></div>
+            <div id="pvpArrangementSelected" class="pvp-arrangement-selected hidden" aria-live="polite"></div>
+            <div id="pvpArrangementControls" class="pvp-control-grid hidden"><button id="pvpArrangementUndoButton" class="pvp-action-button pvp-muted-action" type="button">ย้อนคำล่าสุด</button><button id="pvpArrangementClearButton" class="pvp-action-button pvp-muted-action" type="button">ล้างคำตอบ</button></div>
+            <input id="pvpTypingAnswerInput" class="pvp-answer-input hidden" type="text" autocomplete="off" placeholder="พิมพ์คำตอบ">
+            <button id="pvpAnswerConfirmButton" class="pvp-action-button" type="button">ยืนยันคำตอบ</button>
+          </div>
+
+          <div id="pvpAnswerResultPanel" class="pvp-demo-panel hidden">
+            <h3 id="pvpAnswerResultTitle">ผลคำตอบ</h3>
+            <p id="pvpAnswerResultText"></p>
+            <button id="pvpAnswerResultContinueButton" class="pvp-action-button" type="button">ดำเนินการต่อ</button>
+          </div>
+
+          <div id="pvpActionPanel" class="pvp-demo-panel hidden">
+            <h3>ตอบถูก! เลือกการกระทำ</h3>
+            <div class="pvp-control-grid"><button id="pvpAttackActionButton" class="pvp-action-button" type="button">โจมตี</button><button id="pvpHealActionButton" class="pvp-action-button" type="button">รักษา</button></div>
+          </div>
+
+          <div id="pvpSkillPanel" class="pvp-demo-panel hidden">
+            <h3>เลือกสกิลโจมตี</h3>
+            <div id="pvpSkillChoices" class="pvp-choice-grid"></div>
+          </div>
+
+          <div id="pvpCharmPanel" class="pvp-demo-panel hidden">
+            <h3>เลือกชาม Grammaria</h3>
+            <div id="pvpCharmChoices" class="pvp-choice-grid"></div>
+          </div>
+
+          <div id="pvpChargePanel" class="pvp-demo-panel hidden">
+            <h3>Grammaria Charge</h3>
+            <p id="pvpSelectionSummary">เลือกผลชาร์จจำลอง</p>
+            <div id="pvpChargeChoices" class="pvp-control-grid">
+              <button class="pvp-choice-button" type="button" data-pvp-charge="Weak">Weak ×0.9</button>
+              <button class="pvp-choice-button" type="button" data-pvp-charge="Good">Good ×1.0</button>
+              <button class="pvp-choice-button" type="button" data-pvp-charge="Great">Great ×1.2</button>
+              <button class="pvp-choice-button" type="button" data-pvp-charge="Perfect">Perfect ×1.5</button>
+            </div>
+          </div>
+
+          <div id="pvpResolvePanel" class="pvp-demo-panel hidden">
+            <h3 id="pvpResolveTitle">จำลองการโจมตีสำเร็จ</h3>
+            <p id="pvpResolveText">Round 1 แสดงผลลัพธ์ใน UI เท่านั้น ไม่มีการคำนวณดาเมจจริง</p>
+            <button id="pvpResolveContinueButton" class="pvp-action-button" type="button">เลือกคำถามให้คู่ต่อสู้</button>
+          </div>
+
+          <div id="pvpMatchEndPanel" class="pvp-demo-panel hidden">
+            <h3 id="pvpMatchEndTitle">จบการดวล</h3>
+            <p id="pvpMatchEndText"></p>
+            <button id="pvpRestartMatchButton" class="pvp-action-button" type="button">เริ่มการดวลจำลองใหม่</button>
+          </div>
+
+          <nav class="pvp-quick-actions" aria-label="เครื่องมือทดสอบคู่ต่อสู้จำลอง">
+            <button id="pvpMockOpponentSendQuestionButton" class="pvp-action-button pvp-muted-action" type="button">จำลอง: คู่ต่อสู้ส่งคำถาม</button>
+            <button id="pvpMockOpponentAnswerCorrectButton" class="pvp-action-button pvp-muted-action" type="button">จำลอง: คู่ต่อสู้ตอบถูก</button>
+            <button id="pvpMockOpponentAttackButton" class="pvp-action-button pvp-muted-action" type="button">จำลอง: คู่ต่อสู้โจมตี</button>
+          </nav>
+        </section>
+
+        <aside class="pvp-log-panel"><h3>Battle Log</h3><div id="pvpBattleLog" aria-live="polite"></div></aside>
+        <footer class="pvp-footer"><button id="pvpExitButton" class="pvp-action-button" type="button">กลับหน้าหลัก</button><button class="pvp-action-button pvp-muted-action" type="button" disabled>รายงาน</button><button class="pvp-action-button pvp-muted-action" type="button" disabled>ตั้งค่า</button><span>Round 2: local/mock เท่านั้น ไม่มีการบันทึกผล</span></footer>
       </div>
     </section>
 
@@ -665,6 +814,6 @@
     <p id="developerCredit" class="developer-credit">Lingua: Digital Game-based Learning Platform | พัฒนาโดย นายนครินทร์ พร้อมสุข ครูโรงเรียนแม่สอด</p>
   </main>
 
-  <script type="module" src="script.js?v=firebase-login-20260629"></script>
+  <script type="module" src="script.js?v=pvp-round2-20260823"></script>
 </body>
 </html>
