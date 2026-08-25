@@ -29412,7 +29412,7 @@ function renderRestoredPlayerQuestion() {
   els.battleMessage.textContent = `${battle.stage.title} - คำถาม ${battle.questionIndex + 1} / ${battle.stage.questions.length}`;
   els.questionText.textContent = resolveBattleQuestionPrompt(question);
   els.answerOptions.innerHTML = "";
-  renderActBattleQuestionControls(question, question.options || []);
+  renderActBattleQuestionControls(question, getActQuestionOptions(question));
   showOnlyBattlePanel(els.questionPanel);
 }
 
@@ -29427,14 +29427,11 @@ function renderRestoredFocusQuestion() {
   els.battleMessage.textContent = "ตั้งสมาธิ: ตอบคำถามสั้น ๆ เพื่อรวบรวม Grammaria และฟื้น AP";
   els.questionText.textContent = getQuestionText(question);
   els.answerOptions.innerHTML = "";
-  question.options.forEach(option => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "answer-button";
-    button.textContent = option;
-    button.addEventListener("click", () => chooseActFocusAnswer(option, question));
-    els.answerOptions.appendChild(button);
-  });
+  renderActBattleQuestionControls(
+    question,
+    getActQuestionOptions(question),
+    answer => chooseActFocusAnswer(answer, question)
+  );
   showOnlyBattlePanel(els.questionPanel);
 }
 
@@ -30065,31 +30062,54 @@ function normalizePvpAnswer(value) {
   return String(value || "").trim().toLowerCase().replace(/\s+/g, " ").replace(/\s+([?.!,])/g, "$1");
 }
 
+function getPvpQuestionType(question) {
+  const type = String(question?.type || "multiple-choice").trim().toLowerCase();
+  if (["typing", "type", "text-input", "text"].includes(type)) return "typing";
+  if (["word-arrangement", "arrangement", "word-arrange", "arrange"].includes(type)) return "word-arrangement";
+  return "multiple-choice";
+}
+
+function getPvpAcceptedAnswers(question) {
+  if (Array.isArray(question?.acceptedAnswers) && question.acceptedAnswers.length) {
+    return question.acceptedAnswers.filter(answer => String(answer || "").trim());
+  }
+  return String(question?.answer || "").trim() ? [question.answer] : [];
+}
+
 function evaluatePvpAnswer(question, userAnswer) {
-  const accepted = question?.acceptedAnswers?.length ? question.acceptedAnswers : [question?.answer];
+  const accepted = getPvpAcceptedAnswers(question);
   return {
     correct: accepted.some(answer => normalizePvpAnswer(answer) === normalizePvpAnswer(userAnswer)),
     correctAnswer: question?.answer || "",
-    explanation: question?.explanation || ""
+    explanation: question?.explanation || "",
+    canEvaluate: accepted.length > 0
   };
 }
 
-function renderPvpIncomingQuestion() {
-  const question = pvpState.player.incomingQuestion;
-  els.pvpAnswerOptions.innerHTML = "";
-  els.pvpTypingAnswerInput.classList.add("hidden");
-  els.pvpArrangementSelected.classList.add("hidden");
-  els.pvpArrangementControls.classList.add("hidden");
-  els.pvpAnswerConfirmButton.classList.toggle("hidden", !question || pvpState.phase === "waiting-incoming-question");
-  if (!question) {
-    els.pvpIncomingQuestionMeta.textContent = "Waiting / กำลังรอ";
-    els.pvpIncomingQuestionText.textContent = "ยังไม่มีคำถามเข้ามา ใช้ปุ่มคู่ต่อสู้จำลองเพื่อทดสอบ";
+function logPvpQuestionWarningOnce(question, warningKey, message) {
+  if (!question || !message) return;
+  if (!question._pvpLoggedWarnings) question._pvpLoggedWarnings = {};
+  if (question._pvpLoggedWarnings[warningKey]) return;
+  question._pvpLoggedWarnings[warningKey] = true;
+  appendPvpLog(message);
+}
+
+function renderPvpQuestionDataError(question, message) {
+  const error = document.createElement("p");
+  error.className = "pvp-question-error";
+  error.textContent = message;
+  els.pvpAnswerOptions.appendChild(error);
+  els.pvpAnswerConfirmButton.classList.add("hidden");
+  logPvpQuestionWarningOnce(question, message, message);
+}
+
+function renderPvpMultipleChoiceQuestion(question) {
+  const options = Array.isArray(question?.options) ? question.options.filter(option => String(option || "").trim()) : [];
+  if (!options.length) {
+    renderPvpQuestionDataError(question, "โจทย์นี้ไม่มีตัวเลือกที่ใช้ตอบได้");
     return;
   }
-  els.pvpIncomingQuestionMeta.textContent = `${question.difficultyLabel} · ${question.topicLabel} · พลัง ${question.basePower}`;
-  els.pvpIncomingQuestionText.textContent = question.prompt;
-  if (question.type === "multiple-choice") {
-    question.options.forEach(option => {
+  options.forEach(option => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = `pvp-choice-button${pvpState.selectedAnswer === option ? " is-selected" : ""}`;
@@ -30099,28 +30119,87 @@ function renderPvpIncomingQuestion() {
         renderPvpIncomingQuestion();
       });
       els.pvpAnswerOptions.appendChild(button);
+  });
+}
+
+function renderPvpTypingQuestion(question) {
+  if (!getPvpAcceptedAnswers(question).length) {
+    renderPvpQuestionDataError(question, "โจทย์นี้ไม่มีคำตอบที่ใช้ตรวจได้");
+    return;
+  }
+  els.pvpTypingAnswerInput.classList.remove("hidden");
+  els.pvpTypingAnswerInput.value = pvpState.selectedAnswer;
+}
+
+function shufflePvpTiles(tiles) {
+  const shuffled = [...tiles];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
+}
+
+function getPvpArrangementTiles(question) {
+  if (Array.isArray(question?.tiles) && question.tiles.length) {
+    return question.tiles.filter(tile => String(tile || "").trim());
+  }
+  if (!String(question?.answer || "").trim()) return [];
+  if (!Array.isArray(question._pvpGeneratedTiles)) {
+    question._pvpGeneratedTiles = shufflePvpTiles(String(question.answer).trim().split(/\s+/));
+    logPvpQuestionWarningOnce(question, "generated-tiles", "โจทย์เรียงคำไม่มี tiles ระบบสร้าง tiles จาก answer ชั่วคราว");
+  }
+  return question._pvpGeneratedTiles;
+}
+
+function renderPvpWordArrangementQuestion(question) {
+  const tiles = getPvpArrangementTiles(question);
+  if (!tiles.length || !getPvpAcceptedAnswers(question).length) {
+    renderPvpQuestionDataError(question, "โจทย์เรียงคำไม่มีข้อมูลที่ใช้ตอบหรือตรวจคำตอบได้");
+    return;
+  }
+  els.pvpAnswerOptions.classList.add("is-arrangement");
+  els.pvpArrangementSelected.classList.remove("hidden");
+  els.pvpArrangementControls.classList.remove("hidden");
+  els.pvpArrangementSelected.textContent = pvpState.selectedTiles.length
+    ? pvpState.selectedTiles.map(tile => tile.text).join(" ")
+    : "แตะคำด้านล่างเพื่อเรียงประโยค";
+  tiles.forEach((tile, index) => {
+    if (pvpState.selectedTiles.some(selected => selected.index === index)) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "pvp-choice-button pvp-word-tile";
+    button.textContent = tile;
+    button.addEventListener("click", () => {
+      pvpState.selectedTiles.push({ index, text: tile });
+      renderPvpIncomingQuestion();
     });
-  } else if (question.type === "typing") {
-    els.pvpTypingAnswerInput.classList.remove("hidden");
-    els.pvpTypingAnswerInput.value = pvpState.selectedAnswer;
-  } else if (question.type === "word-arrangement") {
-    els.pvpArrangementSelected.classList.remove("hidden");
-    els.pvpArrangementControls.classList.remove("hidden");
-    els.pvpArrangementSelected.textContent = pvpState.selectedTiles.length
-      ? pvpState.selectedTiles.map(tile => tile.text).join(" ")
-      : "แตะคำด้านล่างเพื่อเรียงประโยค";
-    question.tiles.forEach((tile, index) => {
-      if (pvpState.selectedTiles.some(selected => selected.index === index)) return;
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "pvp-choice-button";
-      button.textContent = tile;
-      button.addEventListener("click", () => {
-        pvpState.selectedTiles.push({ index, text: tile });
-        renderPvpIncomingQuestion();
-      });
-      els.pvpAnswerOptions.appendChild(button);
-    });
+    els.pvpAnswerOptions.appendChild(button);
+  });
+}
+
+function renderPvpIncomingQuestion() {
+  const question = pvpState.player.incomingQuestion;
+  els.pvpAnswerOptions.innerHTML = "";
+  els.pvpAnswerOptions.classList.remove("is-arrangement");
+  els.pvpTypingAnswerInput.classList.add("hidden");
+  els.pvpArrangementSelected.classList.add("hidden");
+  els.pvpArrangementControls.classList.add("hidden");
+  els.pvpAnswerConfirmButton.classList.toggle("hidden", !question || pvpState.phase === "waiting-incoming-question");
+  if (!question) {
+    els.pvpIncomingQuestionMeta.textContent = "Waiting / กำลังรอ";
+    els.pvpIncomingQuestionText.textContent = "ยังไม่มีคำถามเข้ามา ใช้ปุ่มคู่ต่อสู้จำลองเพื่อทดสอบ";
+    return;
+  }
+  const type = getPvpQuestionType(question);
+  els.pvpIncomingQuestionMeta.textContent = `${question.difficultyLabel || "ไม่ระบุระดับ"} · ${question.topicLabel || "แบบฝึกภาษา"} · พลัง ${Number(question.basePower) || 0}`;
+  els.pvpIncomingQuestionText.textContent = question.prompt || "โจทย์นี้ไม่มีข้อความคำถาม";
+  if (type === "typing") {
+    renderPvpTypingQuestion(question);
+  } else if (type === "word-arrangement") {
+    renderPvpWordArrangementQuestion(question);
+  } else {
+    renderPvpMultipleChoiceQuestion(question);
   }
 }
 
@@ -30284,9 +30363,20 @@ function submitPvpAnswer() {
   if (pvpState.phase !== "answer-question") return;
   const question = pvpState.player.incomingQuestion;
   if (!question) return;
+  const questionType = getPvpQuestionType(question);
+  if (!getPvpAcceptedAnswers(question).length) {
+    appendPvpLog("โจทย์นี้ไม่มีคำตอบที่ใช้ตรวจได้");
+    renderPvpIncomingQuestion();
+    return;
+  }
   let userAnswer = pvpState.selectedAnswer;
-  if (question.type === "typing") userAnswer = els.pvpTypingAnswerInput.value;
-  if (question.type === "word-arrangement") userAnswer = `${pvpState.selectedTiles.map(tile => tile.text).join(" ")}.`;
+  if (questionType === "typing") userAnswer = els.pvpTypingAnswerInput.value;
+  if (questionType === "word-arrangement") {
+    userAnswer = pvpState.selectedTiles.map(tile => tile.text).join(" ").trim();
+    const acceptedAnswers = getPvpAcceptedAnswers(question);
+    const acceptedNeedsPunctuation = acceptedAnswers.some(answer => /[.!?]$/.test(String(answer).trim()));
+    if (userAnswer && acceptedNeedsPunctuation && !/[.!?]$/.test(userAnswer)) userAnswer += ".";
+  }
   if (!normalizePvpAnswer(userAnswer)) {
     appendPvpLog("กรุณาเลือกหรือกรอกคำตอบก่อนยืนยัน");
     return;
@@ -34119,15 +34209,11 @@ function startActFocusAction() {
   }
   els.questionText.textContent = getQuestionText(focusQuestion);
   els.answerOptions.innerHTML = "";
-
-  focusQuestion.options.forEach(option => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "answer-button";
-    button.textContent = option;
-    button.addEventListener("click", () => chooseActFocusAnswer(option, focusQuestion));
-    els.answerOptions.appendChild(button);
-  });
+  renderActBattleQuestionControls(
+    focusQuestion,
+    getActQuestionOptions(focusQuestion),
+    answer => chooseActFocusAnswer(answer, focusQuestion)
+  );
 }
 
 function chooseActFocusAnswer(option, question) {
@@ -34137,8 +34223,8 @@ function chooseActFocusAnswer(option, question) {
   }
   ensureBattleApEconomyState(battle);
 
-  const correctAnswer = question.correctAnswer || question.answer;
-  const isCorrect = option === correctAnswer;
+  const correctAnswer = getActQuestionPrimaryAnswer(question);
+  const isCorrect = isActQuestionAnswerCorrect(question, option);
   markQuestionResult(
     question,
     isCorrect ? "correct" : "wrong",
@@ -34147,10 +34233,10 @@ function chooseActFocusAnswer(option, question) {
   );
   els.answerOptions.querySelectorAll("button").forEach(button => {
     button.disabled = true;
-    if (button.textContent === correctAnswer) {
+    if (isActQuestionAnswerCorrect(question, button.textContent)) {
       button.classList.add("correct");
     }
-    if (button.textContent === option && !isCorrect) {
+    if (normalizeActFreeAnswer(button.textContent) === normalizeActFreeAnswer(option) && !isCorrect) {
       button.classList.add("wrong");
     }
   });
@@ -34226,8 +34312,41 @@ function getActQuestionAcceptedAnswers(question = {}) {
     question.answer,
     question.correctAnswer,
     question.correct,
-    ...(Array.isArray(question.acceptedAnswers) ? question.acceptedAnswers : [])
+    ...(Array.isArray(question.acceptedAnswers) ? question.acceptedAnswers : []),
+    ...(Array.isArray(question.answers) ? question.answers : [])
   ].filter(answer => answer !== undefined && answer !== null && String(answer).trim());
+}
+
+function getActBattleQuestionType(question = {}) {
+  const rawType = String(
+    question.type || question.questionType || question.answerType || "multiple-choice"
+  ).trim().toLowerCase();
+  if (["typing", "type", "text", "text-input", "input"].includes(rawType)) {
+    return "typing";
+  }
+  if (["word-arrangement", "arrangement", "word-arrange", "arrange", "ordering", "sentence-order"].includes(rawType)) {
+    return "word-arrangement";
+  }
+  return "multiple-choice";
+}
+
+function getActQuestionOptions(question = {}) {
+  const options = Array.isArray(question.options)
+    ? question.options
+    : Array.isArray(question.choices) ? question.choices : [];
+  return options.filter(option => option !== undefined && option !== null && String(option).trim());
+}
+
+function renderActQuestionDataError(question, message) {
+  const error = document.createElement("p");
+  error.className = "answer-feedback battle-question-data-error";
+  error.textContent = message;
+  els.answerOptions.appendChild(error);
+  console.warn("[PvE Question] Unable to render answer controls", {
+    message,
+    questionId: question?.id || "",
+    questionType: getActBattleQuestionType(question)
+  });
 }
 
 function getActQuestionPrimaryAnswer(question = {}) {
@@ -34235,14 +34354,18 @@ function getActQuestionPrimaryAnswer(question = {}) {
 }
 
 function isActQuestionAnswerCorrect(question, selectedAnswer) {
-  const ignoreFinalPeriod = question?.type === "word-arrangement";
+  const ignoreFinalPeriod = getActBattleQuestionType(question) === "word-arrangement";
   const selected = normalizeActFreeAnswer(selectedAnswer, { ignoreFinalPeriod });
   return getActQuestionAcceptedAnswers(question).some(answer =>
     normalizeActFreeAnswer(answer, { ignoreFinalPeriod }) === selected
   );
 }
 
-function renderActTypingQuestion(question) {
+function renderActTypingQuestion(question, onSubmit = chooseActAnswer) {
+  if (!getActQuestionAcceptedAnswers(question).length) {
+    renderActQuestionDataError(question, "โจทย์นี้ไม่มีคำตอบที่ใช้ตรวจได้");
+    return;
+  }
   const panel = document.createElement("div");
   panel.className = "boss-v2-challenge-panel boss-v2-typing-panel";
 
@@ -34271,7 +34394,7 @@ function renderActTypingQuestion(question) {
   });
   confirmButton.addEventListener("click", () => {
     if (input.value.trim()) {
-      chooseActAnswer(input.value, confirmButton);
+      onSubmit(input.value, confirmButton);
     }
   });
 
@@ -34280,13 +34403,25 @@ function renderActTypingQuestion(question) {
   input.focus({ preventScroll: true });
 }
 
-function renderActWordArrangementQuestion(question) {
+function renderActWordArrangementQuestion(question, onSubmit = chooseActAnswer) {
   const panel = document.createElement("div");
   panel.className = "boss-v2-challenge-panel boss-v2-arrangement-panel";
   const selectedWords = [];
-  const tiles = (Array.isArray(question.tiles) && question.tiles.length)
-    ? question.tiles
-    : String(getActQuestionPrimaryAnswer(question)).split(/\s+/).filter(Boolean);
+  let tiles = Array.isArray(question.tiles) && question.tiles.length
+    ? question.tiles.filter(tile => String(tile || "").trim())
+    : Array.isArray(question.words) && question.words.length
+      ? question.words.filter(word => String(word || "").trim())
+      : [];
+  if (!tiles.length && getActQuestionPrimaryAnswer(question)) {
+    tiles = String(getActQuestionPrimaryAnswer(question)).split(/\s+/).filter(Boolean);
+    console.warn("[PvE Question] Generated arrangement tiles from the accepted answer", {
+      questionId: question?.id || ""
+    });
+  }
+  if (!tiles.length) {
+    renderActQuestionDataError(question, "โจทย์เรียงคำนี้ไม่มีคำให้เรียง");
+    return;
+  }
   const arrangementJoiner = tiles.every(tile => String(tile).length === 1) ? "" : " ";
   const tileState = shuffleArray(tiles).map((word, index) => ({
     id: `${index}-${word}`,
@@ -34357,7 +34492,7 @@ function renderActWordArrangementQuestion(question) {
   });
   confirmButton.addEventListener("click", () => {
     if (selectedWords.length) {
-      chooseActAnswer(selectedWords.join(arrangementJoiner), confirmButton);
+      onSubmit(selectedWords.join(arrangementJoiner), confirmButton);
     }
   });
 
@@ -34368,22 +34503,28 @@ function renderActWordArrangementQuestion(question) {
   render();
 }
 
-function renderActBattleQuestionControls(question, visibleOptions) {
-  if (question.type === "typing") {
-    renderActTypingQuestion(question);
+function renderActBattleQuestionControls(question, visibleOptions = [], onSubmit = chooseActAnswer) {
+  const questionType = getActBattleQuestionType(question);
+  if (questionType === "typing") {
+    renderActTypingQuestion(question, onSubmit);
     return;
   }
-  if (question.type === "word-arrangement") {
-    renderActWordArrangementQuestion(question);
+  if (questionType === "word-arrangement") {
+    renderActWordArrangementQuestion(question, onSubmit);
     return;
   }
 
-  visibleOptions.forEach(option => {
+  const options = visibleOptions.length ? visibleOptions : getActQuestionOptions(question);
+  if (!options.length) {
+    renderActQuestionDataError(question, "โจทย์นี้ไม่มีตัวเลือกคำตอบ");
+    return;
+  }
+  options.forEach(option => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "answer-button";
     button.textContent = option;
-    button.addEventListener("click", () => chooseActAnswer(option, button));
+    button.addEventListener("click", () => onSubmit(option, button));
     els.answerOptions.appendChild(button);
   });
 }
@@ -34419,11 +34560,11 @@ function showActBattleQuestion() {
   els.questionText.textContent = resolveBattleQuestionPrompt(question);
   els.answerOptions.innerHTML = "";
 
-  let visibleOptions = [...question.options];
+  let visibleOptions = getActQuestionOptions(question);
   const hintCount = Math.min(state.battleActiveEffects?.hint || 0, 2);
-  if (hintCount > 0 && visibleOptions.length) {
+  if (getActBattleQuestionType(question) === "multiple-choice" && hintCount > 0 && visibleOptions.length) {
     state.battleActiveEffects.hint = Math.max((state.battleActiveEffects.hint || 0) - hintCount, 0);
-    const wrongOptions = visibleOptions.filter(option => option !== (question.correctAnswer || question.answer));
+    const wrongOptions = visibleOptions.filter(option => !isActQuestionAnswerCorrect(question, option));
     const removedWrong = sample(wrongOptions, hintCount);
     visibleOptions = visibleOptions.filter(option => !removedWrong.includes(option));
     els.battleMessage.textContent += " | แสงชี้คำตอบลบตัวเลือกผิดออก 1 ข้อ";
