@@ -15,7 +15,9 @@ import {
   getDoc,
   getDocs,
   setDoc,
-  serverTimestamp
+  serverTimestamp,
+  onSnapshot,
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 
 // Lingua Prototype 1 uses small scene switches and one shared state object.
@@ -159,6 +161,49 @@ const BOSS_ACTION_FAIRNESS_CONFIG = {
 };
 
 const PLAYER_DAMAGE_TO_BOSS_MULTIPLIER = 0.90;
+
+const PVE_GRAMMARIA_ATTACK_RANKS = Object.freeze([
+  Object.freeze({
+    id: "spark_apprentice",
+    thaiTitle: "ผู้ฝึกเวทเริ่มต้น",
+    min: 0,
+    max: 149,
+    multiplier: 1,
+    minFinalDamage: 6,
+    bonusText: "พลังโจมตีปกติ",
+    nextAt: 150
+  }),
+  Object.freeze({
+    id: "crystal_adept",
+    thaiTitle: "ผู้ถือผลึกแกรมมาเรีย",
+    min: 150,
+    max: 299,
+    multiplier: 1.25,
+    minFinalDamage: 9,
+    bonusText: "พลังโจมตี +25%",
+    nextAt: 300
+  }),
+  Object.freeze({
+    id: "arcane_scholar",
+    thaiTitle: "นักเวทแกรมมาเรีย",
+    min: 300,
+    max: 499,
+    multiplier: 1.55,
+    minFinalDamage: 12,
+    bonusText: "พลังโจมตี +55%",
+    nextAt: 500
+  }),
+  Object.freeze({
+    id: "grammaria_archmage",
+    thaiTitle: "ปรมาจารย์แกรมมาเรีย",
+    min: 500,
+    max: Infinity,
+    multiplier: 1.9,
+    minFinalDamage: 16,
+    bonusText: "พลังโจมตี +90%",
+    nextAt: null
+  })
+]);
 
 const BOSS_GRAMMAR_CHALLENGE_CONFIG = {
   enabled: true,
@@ -22085,6 +22130,12 @@ const pvpState = {
   battleLog: [],
   winner: "",
   matchEnded: false,
+  onlineRoom: null,
+  onlineSide: "",
+  onlineBusy: false,
+  onlineError: "",
+  onlineUnsubscribe: null,
+  lastSubmittedActionKey: "",
   mockOpponent: { enabled: true, autoSendQuestion: false, autoAnswer: false }
 };
 
@@ -22860,6 +22911,12 @@ const els = {
   pvpCreateRoomButton: document.getElementById("pvpCreateRoomButton"),
   pvpJoinRoomButton: document.getElementById("pvpJoinRoomButton"),
   pvpLeaveRoomButton: document.getElementById("pvpLeaveRoomButton"),
+  pvpCreateOnlineRoomButton: document.getElementById("pvpCreateOnlineRoomButton"),
+  pvpJoinOnlineRoomButton: document.getElementById("pvpJoinOnlineRoomButton"),
+  pvpCopyRoomCodeButton: document.getElementById("pvpCopyRoomCodeButton"),
+  pvpResumeOnlineRoomButton: document.getElementById("pvpResumeOnlineRoomButton"),
+  pvpLeaveOnlineRoomButton: document.getElementById("pvpLeaveOnlineRoomButton"),
+  pvpForfeitButton: document.getElementById("pvpForfeitButton"),
   pvpRoomCodeInput: document.getElementById("pvpRoomCodeInput"),
   pvpRoomStatus: document.getElementById("pvpRoomStatus"),
   pvpPlayerName: document.getElementById("pvpPlayerName"),
@@ -22968,6 +23025,8 @@ const els = {
   playerHpText: document.getElementById("playerHpText"),
   enemyHpText: document.getElementById("enemyHpText"),
   grammariaText: document.getElementById("grammariaText"),
+  grammariaRankProgressText: document.getElementById("grammariaRankProgressText"),
+  battlePlayerName: document.getElementById("battlePlayerName"),
   shieldText: document.getElementById("shieldText"),
   battleBoostStatus: document.getElementById("battleBoostStatus"),
   bossStatusText: document.getElementById("bossStatusText"),
@@ -26071,6 +26130,102 @@ function consumeMarkOnDamage(target) {
   }
 }
 
+function getPlayerAccumulatedGrammaria() {
+  const candidates = [
+    state?.grammaria,
+    playerData?.progress?.grammaria?.total,
+    playerData?.grammaria
+  ]
+    .map(value => Number(value))
+    .filter(value => Number.isFinite(value) && value >= 0);
+  return candidates.length ? Math.floor(Math.max(...candidates)) : 0;
+}
+
+function getGrammariaAttackRank(grammaria) {
+  const value = Math.max(0, Number(grammaria) || 0);
+  return PVE_GRAMMARIA_ATTACK_RANKS.find(rank => value >= rank.min && value <= rank.max)
+    || PVE_GRAMMARIA_ATTACK_RANKS[0];
+}
+
+function getGrammariaRankProgressText(grammaria) {
+  const value = Math.max(0, Number(grammaria) || 0);
+  const rank = getGrammariaAttackRank(value);
+  if (rank.nextAt === null) {
+    return "ถึงระดับสูงสุดแล้ว";
+  }
+  return `อีก ${Math.max(0, rank.nextAt - value)} Grammaria ถึงยศถัดไป`;
+}
+
+function getActivePveCharmDamageModifier(charm = getSelectedBattleCharm()) {
+  if (!charm) {
+    return { multiplier: 1, flatBonus: 0, label: "", isDamageCharm: false };
+  }
+  const normalized = normalizeCharmEffect(charm);
+  const legacyDamageCharmIds = new Set(["actPower", "actEcho", "doubleHit", "pastBonus"]);
+  const typeTokens = String(charm.type || "").toLowerCase().split("-");
+  const isDamageCharm = normalized.handler?.category === "damage"
+    || (normalized.handler?.category === "hybrid" && Number(charm.damageMultiplier || 1) > 1)
+    || typeTokens.includes("attack")
+    || typeTokens.includes("break")
+    || legacyDamageCharmIds.has(charm.id);
+  return {
+    multiplier: 1,
+    flatBonus: 0,
+    label: charm.name || charm.thaiName || "",
+    isDamageCharm
+  };
+}
+
+function getGrammariaCharmSynergyMultiplier(rank, charmModifier) {
+  if (!charmModifier?.isDamageCharm) {
+    return 1;
+  }
+  if (rank?.id === "grammaria_archmage") {
+    return 1.1;
+  }
+  if (rank?.id === "arcane_scholar") {
+    return 1.05;
+  }
+  return 1;
+}
+
+function calculateFinalPvePlayerDamage({ baseDamage, charm = null, isSuccessfulAttack = true } = {}) {
+  const safeBaseDamage = Math.max(0, Number(baseDamage) || 0);
+  const grammaria = getPlayerAccumulatedGrammaria();
+  const rank = getGrammariaAttackRank(grammaria);
+  const charmModifier = getActivePveCharmDamageModifier(charm);
+  const charmSynergyMultiplier = getGrammariaCharmSynergyMultiplier(rank, charmModifier);
+  const preMitigationDamage = isSuccessfulAttack && safeBaseDamage > 0
+    ? Math.max(1, Math.round(safeBaseDamage * rank.multiplier * charmSynergyMultiplier))
+    : Math.round(safeBaseDamage);
+  return {
+    preMitigationDamage,
+    grammaria,
+    rank,
+    charmModifier,
+    charmSynergyMultiplier,
+    breakdown: {
+      damageAfterSkillCharmChargeAndBoost: safeBaseDamage,
+      grammariaMultiplier: rank.multiplier,
+      charmSynergyMultiplier,
+      minFinalDamage: rank.minFinalDamage
+    }
+  };
+}
+
+function getPvePlayerRankDisplayText() {
+  const grammaria = getPlayerAccumulatedGrammaria();
+  const rank = getGrammariaAttackRank(grammaria);
+  return {
+    nameSuffix: ` · ${rank.thaiTitle}`,
+    hudText: `Grammaria ${grammaria} แต้ม · ยศ: ${rank.thaiTitle} · ${rank.bonusText}`,
+    compactHudText: `G ${grammaria} · ${rank.thaiTitle} · ${rank.bonusText.replace("พลังโจมตี", "ATK")}`,
+    progressText: getGrammariaRankProgressText(grammaria),
+    rank,
+    grammaria
+  };
+}
+
 function applyIncomingDamageModifiers(target, rawDamage, context = {}) {
   const status = getBattleStatus(target);
   let finalDamage = Math.max(0, Math.round(Number(rawDamage) || 0));
@@ -26127,7 +26282,60 @@ function applyIncomingDamageModifiers(target, rawDamage, context = {}) {
 }
 
 function applyStatusDamageToTarget(target, rawDamage, source = "", context = {}) {
-  const damageResult = applyIncomingDamageModifiers(target, rawDamage, { source, ...context });
+  const isRankScaledPlayerAttack = target === "boss"
+    && context.pvePlayerAttack === true
+    && context.isSuccessfulAttack === true
+    && state.enemyHp > 0;
+  const rankScaling = isRankScaledPlayerAttack
+    ? calculateFinalPvePlayerDamage({
+      baseDamage: rawDamage,
+      charm: context.charm || null,
+      isSuccessfulAttack: true
+    })
+    : null;
+  const damageBeforeMitigation = rankScaling?.preMitigationDamage ?? rawDamage;
+  const damageResult = applyIncomingDamageModifiers(target, damageBeforeMitigation, { source, ...context });
+  if (rankScaling) {
+    damageResult.grammaria = rankScaling.grammaria;
+    damageResult.grammariaRank = rankScaling.rank;
+    damageResult.grammariaMultiplier = rankScaling.rank.multiplier;
+    damageResult.charmSynergyMultiplier = rankScaling.charmSynergyMultiplier;
+    damageResult.damageBeforeGrammariaScaling = Math.max(0, Math.round(Number(rawDamage) || 0));
+    damageResult.damageBeforeMitigation = damageBeforeMitigation;
+    damageResult.damageBeforeRankMinimum = damageResult.finalDamage;
+    if (damageResult.finalDamage > 0 && !damageResult.absorbedByHitShield) {
+      damageResult.finalDamage = Math.max(damageResult.finalDamage, rankScaling.rank.minFinalDamage);
+    }
+    damageResult.rankMinimumAdded = Math.max(0, damageResult.finalDamage - damageResult.damageBeforeRankMinimum);
+
+    if (Array.isArray(context.feedbackLines)) {
+      if (rankScaling.rank.multiplier > 1) {
+        const bonusPercent = Math.round((rankScaling.rank.multiplier - 1) * 100);
+        addBattleMessageLine(context.feedbackLines, `ยศพลัง Grammaria: ${rankScaling.rank.thaiTitle} (+${bonusPercent}%)`);
+      }
+      if (rankScaling.charmSynergyMultiplier > 1) {
+        addBattleMessageLine(
+          context.feedbackLines,
+          `ชามและพลัง Grammaria สอดประสานกัน! โบนัสเสริม x${rankScaling.charmSynergyMultiplier.toFixed(2)}`
+        );
+      }
+      if (damageResult.rankMinimumAdded > 0) {
+        addBattleMessageLine(context.feedbackLines, `พลังขั้นต่ำของยศเพิ่มดาเมจเป็น ${damageResult.finalDamage}`);
+      }
+    }
+
+    console.debug("[PvE Damage]", {
+      source,
+      charm: rankScaling.charmModifier.label || "none",
+      charmIsDamageCharm: rankScaling.charmModifier.isDamageCharm,
+      grammaria: rankScaling.grammaria,
+      rank: rankScaling.rank.thaiTitle,
+      ...rankScaling.breakdown,
+      damageBeforeMitigation,
+      damageAfterMitigation: damageResult.damageBeforeRankMinimum,
+      finalDamage: damageResult.finalDamage
+    });
+  }
   const damage = damageResult.finalDamage;
   if (target === "boss") {
     state.enemyHp = clamp(state.enemyHp - damage, 0, state.enemyMaxHp);
@@ -29896,7 +30104,358 @@ function renderMainMenuCollection(collection = []) {
   });
 }
 
+const PVP_ONLINE_COLLECTION = "pvpRooms";
+const PVP_ONLINE_SESSION_KEY = "linguaPvpOnlineRoom";
+const PVP_ONLINE_LOG_LIMIT = 30;
+
+function generatePvpRoomCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
+}
+
+function getPvpOpponentSide(side) {
+  return side === "A" ? "B" : side === "B" ? "A" : "";
+}
+
+function getPvpLocalSide(room = pvpState.onlineRoom) {
+  const uid = firebaseAuth?.currentUser?.uid || getSessionUserId();
+  if (!uid || !room) return "";
+  if (room.playerAUid === uid) return "A";
+  if (room.playerBUid === uid) return "B";
+  return "";
+}
+
+function buildPvpLogEntry(actorSide, type, message) {
+  return {
+    id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    time: Date.now(),
+    actorSide: actorSide || "",
+    type: type || "info",
+    message: String(message || "").trim()
+  };
+}
+
+function trimPvpActionLog(logs = []) {
+  return (Array.isArray(logs) ? logs : []).filter(item => item?.message).slice(-PVP_ONLINE_LOG_LIMIT);
+}
+
+function createPvpOnlineQuestionChoices() {
+  return ["easy", "medium", "hard"].map(difficulty => {
+    const pool = PVP_MOCK_QUESTION_BANK.filter(question => question.difficulty === difficulty);
+    const picked = pvpRandomItem(pool);
+    return picked ? { ...picked } : null;
+  }).filter(Boolean);
+}
+
+function createPvpOnlineLane() {
+  return {
+    phase: "send-question",
+    incomingQuestion: null,
+    incomingQuestionAnswered: false,
+    lastQuestionPower: 0,
+    lastAnswerCorrect: false,
+    pendingAction: "",
+    selectedSkill: "",
+    selectedCharm: "",
+    chargeResult: "",
+    questionChoicesToSend: createPvpOnlineQuestionChoices(),
+    lastActionId: "",
+    lastResolvedActionId: "",
+    updatedAt: Date.now()
+  };
+}
+
+function createPvpOnlinePlayer(side, uid, name, avatar = "") {
+  return {
+    uid: uid || "",
+    name: name || `Player ${side}`,
+    avatar: avatar || "",
+    hp: PVP_DEFAULT_MAX_HP,
+    maxHp: PVP_DEFAULT_MAX_HP,
+    charge: 0,
+    ready: true,
+    connected: Boolean(uid),
+    lastSeenAt: Date.now()
+  };
+}
+
+function getPvpOnlineIdentity(fallback = "Player A") {
+  const user = getCurrentUser();
+  const avatarCandidate = playerData?.avatar?.asset || playerData?.avatar || "";
+  return {
+    uid: firebaseAuth?.currentUser?.uid || getSessionUserId(user),
+    name: playerData?.characterName || playerData?.displayName || user?.displayName || user?.username || fallback,
+    avatar: typeof avatarCandidate === "string" ? avatarCandidate : ""
+  };
+}
+
+function savePvpOnlineSession(roomCode, side) {
+  const uid = firebaseAuth?.currentUser?.uid || getSessionUserId();
+  if (!roomCode || !side || !uid) return;
+  playerStorage.set(PVP_ONLINE_SESSION_KEY, JSON.stringify({ roomCode, side, uid, savedAt: Date.now() }));
+}
+
+function clearPvpOnlineSession() {
+  playerStorage.remove(PVP_ONLINE_SESSION_KEY);
+}
+
+function getSavedPvpOnlineSession() {
+  try {
+    const parsed = JSON.parse(playerStorage.get(PVP_ONLINE_SESSION_KEY) || "null");
+    return parsed?.roomCode && parsed?.uid ? parsed : null;
+  } catch (error) {
+    clearPvpOnlineSession();
+    return null;
+  }
+}
+
+function setPvpOnlineBusy(isBusy) {
+  pvpState.onlineBusy = Boolean(isBusy);
+  const controls = [
+    els.pvpCreateOnlineRoomButton, els.pvpJoinOnlineRoomButton, els.pvpResumeOnlineRoomButton,
+    els.pvpLeaveOnlineRoomButton, els.pvpForfeitButton, els.pvpAnswerConfirmButton,
+    els.pvpAttackActionButton, els.pvpHealActionButton
+  ];
+  controls.forEach(button => {
+    if (!button) return;
+    const lobbyOnly = [els.pvpCreateOnlineRoomButton, els.pvpJoinOnlineRoomButton, els.pvpResumeOnlineRoomButton].includes(button);
+    button.disabled = pvpState.onlineBusy || (pvpState.mode === "online" && lobbyOnly);
+  });
+  document.querySelectorAll("#pvpDuelScene .pvp-question-card, #pvpDuelScene .pvp-detail-choice, #pvpDuelScene [data-pvp-charge]")
+    .forEach(button => { button.disabled = pvpState.onlineBusy; });
+  if (pvpState.onlineBusy && els.pvpRoomStatus) els.pvpRoomStatus.textContent = "กำลังบันทึก...";
+}
+
+function showPvpOnlineError(message) {
+  pvpState.onlineError = String(message || "การเชื่อมต่อห้องดวลมีปัญหา");
+  if (els.pvpRoomStatus) els.pvpRoomStatus.textContent = pvpState.onlineError;
+  appendPvpLog(pvpState.onlineError);
+}
+
+function unsubscribeFromPvpRoom() {
+  if (typeof pvpState.onlineUnsubscribe === "function") pvpState.onlineUnsubscribe();
+  pvpState.onlineUnsubscribe = null;
+}
+
+function mapOnlineRoomToPvpState(roomData) {
+  const side = getPvpLocalSide(roomData);
+  const opponentSide = getPvpOpponentSide(side);
+  if (!side || !opponentSide) return false;
+  const localPlayer = roomData.players?.[side] || createPvpOnlinePlayer(side, "", `Player ${side}`);
+  const opponentPlayer = roomData.players?.[opponentSide] || createPvpOnlinePlayer(opponentSide, "", `Player ${opponentSide}`);
+  const localLane = roomData.lanes?.[side] || createPvpOnlineLane();
+  const opponentLane = roomData.lanes?.[opponentSide] || createPvpOnlineLane();
+  pvpState.onlineSide = side;
+  pvpState.roomCode = roomData.roomCode || pvpState.roomCode;
+  pvpState.player = { ...localPlayer, ...localLane };
+  pvpState.opponent = { ...opponentPlayer, ...opponentLane };
+  pvpState.activeIncomingQuestion = localLane.incomingQuestion || null;
+  pvpState.matchEnded = roomData.status === "finished";
+  pvpState.winner = roomData.winnerSide === side ? "player" : roomData.winnerSide ? "opponent" : "";
+  if (roomData.status === "waiting") {
+    pvpState.phase = "lobby";
+  } else if (roomData.status === "finished") {
+    pvpState.phase = "match-end";
+  } else {
+    pvpState.phase = localLane.phase || "send-question";
+  }
+  pvpState.battleLog = trimPvpActionLog(roomData.actionLog).map(entry => entry.message);
+  return true;
+}
+
+function handlePvpRoomSnapshot(snapshot) {
+  if (!snapshot.exists()) {
+    showPvpOnlineError("ไม่พบห้องเดิมแล้ว");
+    clearPvpOnlineSession();
+    unsubscribeFromPvpRoom();
+    return;
+  }
+  const room = snapshot.data() || {};
+  pvpState.onlineRoom = room;
+  pvpState.connectionStatus = room.status === "waiting" ? "waiting" : room.status === "finished" ? "finished" : "online";
+  if (!mapOnlineRoomToPvpState(room)) {
+    showPvpOnlineError("บัญชีนี้ไม่ได้อยู่ในห้องดวล");
+    return;
+  }
+  pvpState.onlineError = "";
+  renderPvpScene();
+}
+
+function subscribeToPvpRoom(roomCode) {
+  unsubscribeFromPvpRoom();
+  const roomRef = doc(firestoreDb, PVP_ONLINE_COLLECTION, roomCode);
+  pvpState.onlineUnsubscribe = onSnapshot(roomRef, handlePvpRoomSnapshot, error => {
+    console.warn("[PvP Online] Room listener failed", error);
+    pvpState.connectionStatus = "disconnected";
+    showPvpOnlineError("สถานะ: เชื่อมต่อหลุด กรุณาลองใหม่");
+  });
+}
+
+async function createOnlinePvpRoom() {
+  if (pvpState.onlineBusy) return;
+  const identity = getPvpOnlineIdentity("Player A");
+  if (!firebaseReady || !identity.uid || getCurrentUser()?.isGuest) {
+    showPvpOnlineError("กรุณาเข้าสู่ระบบด้วยบัญชีออนไลน์ก่อนสร้างห้อง");
+    return;
+  }
+  setPvpOnlineBusy(true);
+  try {
+    let roomCode = "";
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const candidate = generatePvpRoomCode();
+      if (!(await getDoc(doc(firestoreDb, PVP_ONLINE_COLLECTION, candidate))).exists()) {
+        roomCode = candidate;
+        break;
+      }
+    }
+    if (!roomCode) throw new Error("room-code-exhausted");
+    const room = {
+      roomCode,
+      status: "waiting",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      hostUid: identity.uid,
+      guestUid: "",
+      playerAUid: identity.uid,
+      playerBUid: "",
+      players: {
+        A: createPvpOnlinePlayer("A", identity.uid, identity.name, identity.avatar),
+        B: createPvpOnlinePlayer("B", "", "รอคู่ต่อสู้")
+      },
+      lanes: { A: createPvpOnlineLane(), B: createPvpOnlineLane() },
+      actionLog: [buildPvpLogEntry("A", "info", `${identity.name} สร้างห้องแล้ว`)],
+      winnerSide: "",
+      loserSide: "",
+      finishReason: ""
+    };
+    await setDoc(doc(firestoreDb, PVP_ONLINE_COLLECTION, roomCode), room);
+    pvpState.mode = "online";
+    pvpState.roomCode = roomCode;
+    pvpState.onlineSide = "A";
+    pvpState.connectionStatus = "waiting";
+    savePvpOnlineSession(roomCode, "A");
+    subscribeToPvpRoom(roomCode);
+  } catch (error) {
+    console.warn("[PvP Online] Create room failed", error);
+    showPvpOnlineError("ไม่สามารถสร้างห้องได้ กรุณาลองใหม่");
+  } finally {
+    setPvpOnlineBusy(false);
+    renderPvpScene();
+  }
+}
+
+async function joinOnlinePvpRoom(roomCode) {
+  if (pvpState.onlineBusy) return;
+  const cleanCode = String(roomCode || "").trim().toUpperCase();
+  const identity = getPvpOnlineIdentity("Player B");
+  if (!cleanCode) return showPvpOnlineError("กรุณากรอกรหัสห้อง");
+  if (!firebaseReady || !identity.uid || getCurrentUser()?.isGuest) return showPvpOnlineError("กรุณาเข้าสู่ระบบด้วยบัญชีออนไลน์ก่อนเข้าห้อง");
+  setPvpOnlineBusy(true);
+  try {
+    const roomRef = doc(firestoreDb, PVP_ONLINE_COLLECTION, cleanCode);
+    let joinedSide = "";
+    await runTransaction(firestoreDb, async transaction => {
+      const snapshot = await transaction.get(roomRef);
+      if (!snapshot.exists()) throw new Error("room-not-found");
+      const room = snapshot.data();
+      if (room.playerAUid === identity.uid) joinedSide = "A";
+      else if (room.playerBUid === identity.uid) joinedSide = "B";
+      else if (["finished", "abandoned"].includes(room.status)) throw new Error("room-finished");
+      else if (!room.playerBUid) joinedSide = "B";
+      else throw new Error("room-full");
+      const nextRoom = { ...room, players: { ...room.players }, lanes: { ...room.lanes } };
+      nextRoom.players[joinedSide] = {
+        ...(nextRoom.players[joinedSide] || createPvpOnlinePlayer(joinedSide, identity.uid, identity.name)),
+        uid: identity.uid, name: identity.name, avatar: identity.avatar || "", connected: true, lastSeenAt: Date.now()
+      };
+      nextRoom.lanes[joinedSide] = nextRoom.lanes[joinedSide] || createPvpOnlineLane();
+      if (joinedSide === "B") {
+        nextRoom.playerBUid = identity.uid;
+        nextRoom.guestUid = identity.uid;
+      }
+      if (!["finished", "abandoned"].includes(nextRoom.status)) {
+        nextRoom.status = nextRoom.playerAUid && nextRoom.playerBUid ? "playing" : "waiting";
+      }
+      nextRoom.updatedAt = Date.now();
+      nextRoom.actionLog = trimPvpActionLog([...(nextRoom.actionLog || []), buildPvpLogEntry(joinedSide, "join", `${identity.name} เข้าร่วมห้อง`)]);
+      transaction.set(roomRef, nextRoom);
+    });
+    pvpState.mode = "online";
+    pvpState.roomCode = cleanCode;
+    pvpState.onlineSide = joinedSide;
+    pvpState.connectionStatus = "connecting";
+    savePvpOnlineSession(cleanCode, joinedSide);
+    subscribeToPvpRoom(cleanCode);
+  } catch (error) {
+    const messages = { "room-not-found": "ไม่พบห้องนี้", "room-finished": "ห้องนี้จบการดวลแล้ว", "room-full": "ห้องนี้มีผู้เล่นครบแล้ว" };
+    console.warn("[PvP Online] Join room failed", error);
+    showPvpOnlineError(messages[error.message] || "ไม่สามารถเข้าร่วมห้องได้");
+  } finally {
+    setPvpOnlineBusy(false);
+    renderPvpScene();
+  }
+}
+
+async function resumePvpOnlineRoom() {
+  const saved = getSavedPvpOnlineSession();
+  const uid = firebaseAuth?.currentUser?.uid || getSessionUserId();
+  if (!saved || saved.uid !== uid) return showPvpOnlineError("ไม่พบห้องเดิมแล้ว");
+  await joinOnlinePvpRoom(saved.roomCode);
+}
+
+async function leaveOnlinePvpRoom() {
+  const roomCode = pvpState.roomCode;
+  const side = getPvpLocalSide();
+  unsubscribeFromPvpRoom();
+  try {
+    if (roomCode && side) {
+      const roomRef = doc(firestoreDb, PVP_ONLINE_COLLECTION, roomCode);
+      await runTransaction(firestoreDb, async transaction => {
+        const snapshot = await transaction.get(roomRef);
+        if (!snapshot.exists()) return;
+        const room = snapshot.data();
+        const players = { ...room.players, [side]: { ...room.players?.[side], connected: false, lastSeenAt: Date.now() } };
+        transaction.set(roomRef, { ...room, players, updatedAt: Date.now() });
+      });
+    }
+  } catch (error) {
+    console.warn("[PvP Online] Leave room update failed", error);
+  }
+  clearPvpOnlineSession();
+  resetPvpMockState();
+  renderPvpScene();
+}
+
+async function forfeitOnlinePvpMatch() {
+  if (pvpState.onlineBusy || pvpState.mode !== "online") return;
+  const roomCode = pvpState.roomCode;
+  const side = getPvpLocalSide();
+  const opponentSide = getPvpOpponentSide(side);
+  if (!roomCode || !side || !opponentSide) return;
+  setPvpOnlineBusy(true);
+  try {
+    const roomRef = doc(firestoreDb, PVP_ONLINE_COLLECTION, roomCode);
+    await runTransaction(firestoreDb, async transaction => {
+      const snapshot = await transaction.get(roomRef);
+      if (!snapshot.exists()) throw new Error("room-not-found");
+      const room = snapshot.data();
+      if (room.status === "finished") return;
+      const name = room.players?.[side]?.name || `Player ${side}`;
+      transaction.set(roomRef, {
+        ...room, status: "finished", winnerSide: opponentSide, loserSide: side, finishReason: "forfeit",
+        updatedAt: Date.now(), actionLog: trimPvpActionLog([...(room.actionLog || []), buildPvpLogEntry(side, "forfeit", `${name} ยอมแพ้`)] )
+      });
+    });
+  } catch (error) {
+    console.warn("[PvP Online] Forfeit failed", error);
+    showPvpOnlineError("บันทึกการยอมแพ้ไม่สำเร็จ กรุณาลองอีกครั้ง");
+  } finally {
+    setPvpOnlineBusy(false);
+  }
+}
+
 function resetPvpMockState() {
+  unsubscribeFromPvpRoom();
   const playerName = playerData?.characterName || playerData?.displayName || playerData?.username || "Player 1";
   pvpState.active = true;
   pvpState.mode = "local-mock";
@@ -29932,6 +30491,11 @@ function resetPvpMockState() {
   pvpState.answerResult = null;
   pvpState.winner = "";
   pvpState.matchEnded = false;
+  pvpState.onlineRoom = null;
+  pvpState.onlineSide = "";
+  pvpState.onlineBusy = false;
+  pvpState.onlineError = "";
+  pvpState.lastSubmittedActionKey = "";
   pvpState.battleLog = [
     "ยินดีต้อนรับสู่ Grammaria Duel",
     "Round 2 เป็นการดวลแบบ local/mock และไม่บันทึกผล"
@@ -29972,8 +30536,13 @@ function renderPvpHud() {
   els.pvpOpponentHpFill.style.width = `${opponentPercent}%`;
   els.pvpOpponentHpText.textContent = `HP ${pvpState.opponent.hp} / ${pvpState.opponent.maxHp}`;
   els.pvpOpponentCharge.textContent = `Grammaria Charge ${pvpState.opponent.charge} / 100`;
-  els.pvpPlayerStatusIcons.textContent = "สถานะ: พร้อมดวล";
-  els.pvpOpponentStatusIcons.textContent = pvpState.roomCode ? "สถานะ: คู่ต่อสู้จำลองพร้อม" : "สถานะ: กำลังรอคู่ต่อสู้";
+  const onlineMode = pvpState.mode === "online";
+  const localConnected = onlineMode ? Boolean(pvpState.player.connected) : true;
+  const opponentConnected = onlineMode ? Boolean(pvpState.opponent.connected) : Boolean(pvpState.roomCode);
+  els.pvpPlayerStatusIcons.textContent = localConnected ? "สถานะ: พร้อมดวล" : "สถานะ: ออฟไลน์";
+  els.pvpOpponentStatusIcons.textContent = opponentConnected
+    ? `สถานะ: ${onlineMode ? "ออนไลน์" : "คู่ต่อสู้จำลองพร้อม"}`
+    : "สถานะ: กำลังรอคู่ต่อสู้";
   if (els.pvpPlayerAvatar) {
     const characterId = normalizePlayerCharacterId(playerData?.characterId || getCharacterIdFromAvatar(playerData?.avatar || {}));
     applyPlayerCharacterImage(els.pvpPlayerAvatar, characterId);
@@ -29981,7 +30550,7 @@ function renderPvpHud() {
 }
 
 const PVP_PHASE_LABELS = {
-  lobby: "ห้องรอจำลอง",
+  lobby: "ห้องรอคู่ต่อสู้",
   "send-question": "เลือกคำถามให้คู่ต่อสู้",
   "waiting-incoming-question": "กำลังรอคำถามจากคู่ต่อสู้",
   "answer-question": "คำถามที่ได้รับ",
@@ -29991,7 +30560,7 @@ const PVP_PHASE_LABELS = {
   "choose-charm": "เลือกชาม",
   "grammaria-charge": "Grammaria Charge",
   "resolve-action": "ส่งผลลัพธ์",
-  "match-end": "จบการดวลจำลอง"
+  "match-end": "จบการดวล"
 };
 
 function renderPvpPhase() {
@@ -30050,6 +30619,7 @@ function renderPvpQuestionCards() {
     const type = document.createElement("small");
     type.textContent = `ประเภท: ${PVP_QUESTION_TYPE_LABELS[question.type] || question.type}`;
     card.append(title, topic, power, type);
+    card.disabled = pvpState.onlineBusy;
     card.addEventListener("click", () => submitPvpQuestionToOpponent(question.id));
     els.pvpQuestionChoices.appendChild(card);
   });
@@ -30188,7 +30758,9 @@ function renderPvpIncomingQuestion() {
   els.pvpAnswerConfirmButton.classList.toggle("hidden", !question || pvpState.phase === "waiting-incoming-question");
   if (!question) {
     els.pvpIncomingQuestionMeta.textContent = "Waiting / กำลังรอ";
-    els.pvpIncomingQuestionText.textContent = "ยังไม่มีคำถามเข้ามา ใช้ปุ่มคู่ต่อสู้จำลองเพื่อทดสอบ";
+    els.pvpIncomingQuestionText.textContent = pvpState.mode === "online"
+      ? "ยังไม่มีคำถามเข้ามา กำลังรอคู่ต่อสู้ส่งคำถาม"
+      : "ยังไม่มีคำถามเข้ามา ใช้ปุ่มคู่ต่อสู้จำลองเพื่อทดสอบ";
     return;
   }
   const type = getPvpQuestionType(question);
@@ -30213,6 +30785,7 @@ function renderPvpSkillPanel() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "pvp-choice-button pvp-detail-choice";
+    button.disabled = pvpState.onlineBusy;
     button.innerHTML = `<strong>${skill.name}</strong><span>${skill.thaiName}</span><small>พลัง ×${skill.multiplier} · Cooldown ${skill.cooldown}</small><small>${skill.description}</small>`;
     button.addEventListener("click", () => choosePvpSkill(skill.id));
     els.pvpSkillChoices.appendChild(button);
@@ -30226,6 +30799,7 @@ function renderPvpCharmPanel() {
     button.type = "button";
     const lessUseful = (pvpState.player.pendingAction === "attack" && charm.type === "heal") || (pvpState.player.pendingAction === "heal" && charm.type === "attack");
     button.className = `pvp-choice-button pvp-detail-choice${lessUseful ? " is-less-useful" : ""}`;
+    button.disabled = pvpState.onlineBusy;
     button.innerHTML = `<strong>${charm.name}</strong><span>ประเภท: ${charm.type}</span><small>${charm.description}</small>`;
     button.addEventListener("click", () => choosePvpCharm(charm.id));
     els.pvpCharmChoices.appendChild(button);
@@ -30250,15 +30824,43 @@ function renderPvpMatchEnd() {
   if (!pvpState.matchEnded) return;
   const playerWon = pvpState.winner === "player";
   els.pvpMatchEndTitle.textContent = playerWon ? "คุณชนะ!" : "คุณแพ้";
-  els.pvpMatchEndText.textContent = playerWon ? "คุณชนะการดวล Grammaria Duel" : "คู่ต่อสู้ชนะการดวล";
+  const noRewardNote = pvpState.mode === "online" ? " การดวลนี้ไม่มีรางวัลหรือผลต่อความคืบหน้า" : "";
+  els.pvpMatchEndText.textContent = `${playerWon ? "คุณชนะการดวล Grammaria Duel" : "คู่ต่อสู้ชนะการดวล"}${noRewardNote}`;
+  els.pvpRestartMatchButton.textContent = pvpState.mode === "online" ? "กลับล็อบบี้ PvP" : "เริ่มการดวลจำลองใหม่";
 }
 
 function renderPvpScene() {
+  const onlineMode = pvpState.mode === "online";
+  const savedSession = getSavedPvpOnlineSession();
   els.pvpRoomCodeDisplay.textContent = pvpState.roomCode ? `ห้อง: ${pvpState.roomCode}` : "ห้อง: ยังไม่ได้สร้าง";
-  els.pvpConnectionStatus.textContent = "สถานะ: โหมดจำลอง";
-  els.pvpRoomStatus.textContent = pvpState.roomCode
-    ? `ห้องจำลอง ${pvpState.roomCode} พร้อมใช้งาน รอระบบเชื่อมต่อจริงในรอบถัดไป`
-    : "ยังไม่ได้สร้างห้อง";
+  const onlineStatusLabels = {
+    waiting: "สถานะ: รอคู่ต่อสู้",
+    connecting: "สถานะ: กำลังเชื่อมต่อ",
+    online: "สถานะ: ออนไลน์",
+    disconnected: "สถานะ: การเชื่อมต่อหลุด",
+    finished: "สถานะ: จบการดวล"
+  };
+  els.pvpConnectionStatus.textContent = onlineMode
+    ? (onlineStatusLabels[pvpState.connectionStatus] || "สถานะ: ออนไลน์")
+    : "สถานะ: โหมดจำลอง";
+  if (!pvpState.onlineError) {
+    els.pvpRoomStatus.textContent = onlineMode
+      ? (pvpState.connectionStatus === "waiting"
+        ? `สร้างห้อง ${pvpState.roomCode} แล้ว ส่งรหัสนี้ให้คู่ต่อสู้`
+        : pvpState.connectionStatus === "disconnected"
+          ? "การเชื่อมต่อหลุด สามารถกลับเข้าห้องเดิมได้"
+          : `เชื่อมต่อห้อง ${pvpState.roomCode} แล้ว`)
+      : (pvpState.roomCode ? `ห้องจำลอง ${pvpState.roomCode} พร้อมใช้งาน` : "ยังไม่ได้สร้างห้อง");
+  }
+  els.pvpCopyRoomCodeButton?.classList.toggle("hidden", !onlineMode || !pvpState.roomCode);
+  els.pvpLeaveOnlineRoomButton?.classList.toggle("hidden", !onlineMode);
+  els.pvpForfeitButton?.classList.toggle("hidden", !onlineMode || pvpState.matchEnded || pvpState.connectionStatus === "waiting");
+  els.pvpResumeOnlineRoomButton?.classList.toggle("hidden", onlineMode || !savedSession);
+  els.pvpRoomCodeInput.disabled = onlineMode || pvpState.onlineBusy;
+  [els.pvpCreateRoomButton, els.pvpJoinRoomButton, els.pvpLeaveRoomButton]
+    .forEach(button => button?.classList.toggle("hidden", onlineMode));
+  [els.pvpMockOpponentSendQuestionButton, els.pvpMockOpponentAnswerCorrectButton, els.pvpMockOpponentAttackButton]
+    .forEach(button => button?.classList.toggle("hidden", onlineMode));
   renderPvpHud();
   renderPvpPhase();
   renderPvpQuestionCards();
@@ -30290,6 +30892,7 @@ function enterPvpMode() {
 }
 
 function exitPvpMode() {
+  unsubscribeFromPvpRoom();
   pvpState.active = false;
   pvpState.mode = "idle";
   renderMainMenu();
@@ -30335,7 +30938,225 @@ function leaveMockPvpRoom() {
   renderPvpScene();
 }
 
+async function updateOnlinePvpLane(operationName, updater) {
+  if (pvpState.onlineBusy) return false;
+  const roomCode = pvpState.roomCode;
+  const side = getPvpLocalSide();
+  if (!roomCode || !side) {
+    showPvpOnlineError("การเชื่อมต่อห้องดวลมีปัญหา");
+    return false;
+  }
+  setPvpOnlineBusy(true);
+  try {
+    const roomRef = doc(firestoreDb, PVP_ONLINE_COLLECTION, roomCode);
+    await runTransaction(firestoreDb, async transaction => {
+      const snapshot = await transaction.get(roomRef);
+      if (!snapshot.exists()) throw new Error("room-not-found");
+      const room = snapshot.data();
+      if (room.status !== "playing") throw new Error("room-not-playing");
+      if ((Number(room.players?.[side]?.hp) || 0) <= 0) throw new Error("player-defeated");
+      const nextRoom = updater(room, side, getPvpOpponentSide(side));
+      if (nextRoom) transaction.set(roomRef, { ...nextRoom, updatedAt: Date.now() });
+    });
+    return true;
+  } catch (error) {
+    console.warn(`[PvP Online] ${operationName} failed`, error);
+    showPvpOnlineError("บันทึกการกระทำไม่สำเร็จ กรุณาลองอีกครั้ง");
+    return false;
+  } finally {
+    setPvpOnlineBusy(false);
+  }
+}
+
+async function submitOnlinePvpQuestion(questionId) {
+  return updateOnlinePvpLane("send question", (room, side, opponentSide) => {
+    const localLane = { ...(room.lanes?.[side] || createPvpOnlineLane()) };
+    const opponentLane = { ...(room.lanes?.[opponentSide] || createPvpOnlineLane()) };
+    if (localLane.phase !== "send-question") return null;
+    const question = (localLane.questionChoicesToSend || []).find(item => item.id === questionId);
+    if (!question) throw new Error("question-not-found");
+    if (opponentLane.incomingQuestion && !opponentLane.incomingQuestionAnswered) {
+      showPvpOnlineError("คู่ต่อสู้ยังมีคำถามค้างอยู่ รอให้ตอบก่อน");
+      return null;
+    }
+    opponentLane.incomingQuestion = { ...question };
+    opponentLane.incomingQuestionAnswered = false;
+    if (["waiting-incoming-question", "send-question"].includes(opponentLane.phase)) opponentLane.phase = "answer-question";
+    localLane.questionChoicesToSend = [];
+    localLane.phase = localLane.incomingQuestion ? "answer-question" : "waiting-incoming-question";
+    localLane.updatedAt = Date.now();
+    opponentLane.updatedAt = Date.now();
+    const name = room.players?.[side]?.name || `Player ${side}`;
+    return {
+      ...room,
+      lanes: { ...room.lanes, [side]: localLane, [opponentSide]: opponentLane },
+      actionLog: trimPvpActionLog([...(room.actionLog || []), buildPvpLogEntry(side, "question", `${name} ส่งคำถามระดับ${question.difficultyLabel}`)])
+    };
+  });
+}
+
+function continueAfterOnlinePvpQuestionSent() {
+  pvpState.selectedAnswer = "";
+  pvpState.selectedTiles = [];
+  renderPvpScene();
+}
+
+async function submitOnlinePvpAnswer(userAnswer) {
+  // Client-side PvP answer checking is acceptable for classroom prototype, but can be cheated. A secure tournament version should move verification to trusted backend logic.
+  const question = pvpState.player.incomingQuestion;
+  if (!question || pvpState.phase !== "answer-question") return false;
+  const result = evaluatePvpAnswer(question, userAnswer);
+  if (!result.canEvaluate) {
+    showPvpOnlineError("โจทย์นี้ไม่มีคำตอบที่ใช้ตรวจได้");
+    return false;
+  }
+  pvpState.answerResult = { ...result, nextPhase: result.correct ? "choose-action" : "send-question" };
+  const success = await updateOnlinePvpLane("submit answer", (room, side) => {
+    const lane = { ...(room.lanes?.[side] || createPvpOnlineLane()) };
+    if (!lane.incomingQuestion || lane.phase !== "answer-question") return null;
+    lane.lastAnswerCorrect = result.correct;
+    lane.lastQuestionPower = result.correct ? Number(lane.incomingQuestion.basePower) || 0 : 0;
+    lane.incomingQuestionAnswered = true;
+    lane.incomingQuestion = null;
+    lane.phase = result.correct ? "choose-action" : "send-question";
+    lane.questionChoicesToSend = result.correct ? lane.questionChoicesToSend || [] : createPvpOnlineQuestionChoices();
+    lane.updatedAt = Date.now();
+    const name = room.players?.[side]?.name || `Player ${side}`;
+    const message = result.correct ? `${name} ตอบถูก` : `${name} ตอบผิดและเสียโอกาสลงมือ`;
+    return { ...room, lanes: { ...room.lanes, [side]: lane }, actionLog: trimPvpActionLog([...(room.actionLog || []), buildPvpLogEntry(side, "answer", message)]) };
+  });
+  if (success) {
+    pvpState.selectedAnswer = "";
+    pvpState.selectedTiles = [];
+  }
+  return success;
+}
+
+async function chooseOnlinePvpAction(action) {
+  if (!['attack', 'heal'].includes(action)) return false;
+  return updateOnlinePvpLane("choose action", (room, side) => {
+    const lane = { ...(room.lanes?.[side] || createPvpOnlineLane()) };
+    if (lane.phase !== "choose-action" || !lane.lastAnswerCorrect) return null;
+    lane.pendingAction = action;
+    lane.selectedSkill = "";
+    lane.selectedCharm = "";
+    lane.chargeResult = "";
+    lane.phase = action === "attack" ? "choose-skill" : "choose-charm";
+    lane.updatedAt = Date.now();
+    const label = action === "attack" ? "โจมตี" : "รักษา";
+    return { ...room, lanes: { ...room.lanes, [side]: lane }, actionLog: trimPvpActionLog([...(room.actionLog || []), buildPvpLogEntry(side, "action", `${room.players?.[side]?.name || `Player ${side}`} เลือก${label}`)]) };
+  });
+}
+
+async function chooseOnlinePvpSkill(skillId) {
+  const skill = PVP_SKILLS.find(item => item.id === skillId);
+  if (!skill) return false;
+  return updateOnlinePvpLane("choose skill", (room, side) => {
+    const lane = { ...(room.lanes?.[side] || createPvpOnlineLane()) };
+    if (lane.phase !== "choose-skill" || lane.pendingAction !== "attack") return null;
+    lane.selectedSkill = skillId;
+    lane.phase = "choose-charm";
+    lane.updatedAt = Date.now();
+    return { ...room, lanes: { ...room.lanes, [side]: lane } };
+  });
+}
+
+async function chooseOnlinePvpCharm(charmId) {
+  const charm = PVP_CHARMS.find(item => item.id === charmId);
+  if (!charm) return false;
+  return updateOnlinePvpLane("choose charm", (room, side) => {
+    const lane = { ...(room.lanes?.[side] || createPvpOnlineLane()) };
+    if (lane.phase !== "choose-charm") return null;
+    lane.selectedCharm = charmId;
+    lane.phase = "grammaria-charge";
+    lane.updatedAt = Date.now();
+    return { ...room, lanes: { ...room.lanes, [side]: lane } };
+  });
+}
+
+async function chooseOnlinePvpCharge(chargeResult) {
+  if (!PVP_CHARGE_MULTIPLIERS[chargeResult]) return false;
+  const actionId = `${getPvpLocalSide()}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const saved = await updateOnlinePvpLane("choose charge", (room, side) => {
+    const lane = { ...(room.lanes?.[side] || createPvpOnlineLane()) };
+    if (lane.phase !== "grammaria-charge") return null;
+    lane.chargeResult = chargeResult;
+    lane.lastActionId = actionId;
+    lane.phase = "resolve-action";
+    lane.updatedAt = Date.now();
+    return { ...room, lanes: { ...room.lanes, [side]: lane } };
+  });
+  if (saved) return resolveOnlinePvpAction();
+  return false;
+}
+
+function calculateOnlinePvpDamage({ basePower, skill, charm, chargeResult, player }) {
+  return calculatePvpDamage({ basePower, skill, charm, chargeResult, player });
+}
+
+function calculateOnlinePvpHeal({ basePower, charm, chargeResult, player }) {
+  return calculatePvpHeal({ basePower, charm, chargeResult, player });
+}
+
+function checkOnlinePvpVictory(room, localSide, opponentSide) {
+  const localHp = Number(room.players?.[localSide]?.hp) || 0;
+  const opponentHp = Number(room.players?.[opponentSide]?.hp) || 0;
+  if (opponentHp <= 0) return { status: "finished", winnerSide: localSide, loserSide: opponentSide, finishReason: "hp_zero" };
+  if (localHp <= 0) return { status: "finished", winnerSide: opponentSide, loserSide: localSide, finishReason: "hp_zero" };
+  return {};
+}
+
+async function resolveOnlinePvpAction() {
+  // Prototype note: PvP action resolution is client-side for classroom testing. For secure competitive use, move validation and damage resolution to Cloud Functions or another trusted backend.
+  if (pvpState.onlineBusy) return false;
+  return updateOnlinePvpLane("resolve action", (room, side, opponentSide) => {
+    const lane = { ...(room.lanes?.[side] || createPvpOnlineLane()) };
+    if (lane.phase !== "resolve-action" || !lane.lastActionId || lane.lastResolvedActionId === lane.lastActionId) return null;
+    const players = { ...room.players, [side]: { ...room.players?.[side] }, [opponentSide]: { ...room.players?.[opponentSide] } };
+    const charm = PVP_CHARMS.find(item => item.id === lane.selectedCharm);
+    const actorName = players[side].name || `Player ${side}`;
+    const opponentName = players[opponentSide].name || `Player ${opponentSide}`;
+    let resultMessage = "";
+    if (lane.pendingAction === "attack") {
+      const skill = PVP_SKILLS.find(item => item.id === lane.selectedSkill);
+      if (!skill || !charm) throw new Error("invalid-attack-selection");
+      const damage = calculateOnlinePvpDamage({ basePower: lane.lastQuestionPower, skill, charm, chargeResult: lane.chargeResult, player: players[side] });
+      players[opponentSide].hp = Math.max(0, (Number(players[opponentSide].hp) || 0) - damage);
+      resultMessage = `${actorName} โจมตี ${opponentName} ${damage} ดาเมจ`;
+    } else if (lane.pendingAction === "heal") {
+      if (!charm) throw new Error("invalid-heal-selection");
+      const heal = calculateOnlinePvpHeal({ basePower: lane.lastQuestionPower, charm, chargeResult: lane.chargeResult, player: players[side] });
+      const before = Number(players[side].hp) || 0;
+      players[side].hp = Math.min(Number(players[side].maxHp) || PVP_DEFAULT_MAX_HP, before + heal);
+      resultMessage = `${actorName} ฟื้นฟู HP ${players[side].hp - before} หน่วย`;
+    } else {
+      throw new Error("invalid-pending-action");
+    }
+    lane.lastResolvedActionId = lane.lastActionId;
+    lane.pendingAction = "";
+    lane.selectedSkill = "";
+    lane.selectedCharm = "";
+    lane.chargeResult = "";
+    lane.lastQuestionPower = 0;
+    lane.lastAnswerCorrect = false;
+    lane.questionChoicesToSend = createPvpOnlineQuestionChoices();
+    lane.phase = "send-question";
+    lane.updatedAt = Date.now();
+    const nextRoom = {
+      ...room,
+      players,
+      lanes: { ...room.lanes, [side]: lane },
+      actionLog: trimPvpActionLog([...(room.actionLog || []), buildPvpLogEntry(side, "resolve", resultMessage)])
+    };
+    return { ...nextRoom, ...checkOnlinePvpVictory(nextRoom, side, opponentSide) };
+  });
+}
+
 function submitPvpQuestionToOpponent(questionId) {
+  if (pvpState.mode === "online") {
+    submitOnlinePvpQuestion(questionId);
+    return;
+  }
   if (pvpState.phase !== "send-question" || pvpState.matchEnded) return;
   const question = pvpState.player.questionChoicesToSend.find(item => item.id === questionId);
   if (!question) return;
@@ -30381,6 +31202,10 @@ function submitPvpAnswer() {
     appendPvpLog("กรุณาเลือกหรือกรอกคำตอบก่อนยืนยัน");
     return;
   }
+  if (pvpState.mode === "online") {
+    submitOnlinePvpAnswer(userAnswer);
+    return;
+  }
   const result = evaluatePvpAnswer(question, userAnswer);
   pvpState.answerResult = { ...result, nextPhase: result.correct ? "choose-action" : "send-question" };
   pvpState.player.lastAnswerCorrect = result.correct;
@@ -30406,6 +31231,10 @@ function choosePvpAction(action) {
   if (action !== "attack" && action !== "heal") {
     return;
   }
+  if (pvpState.mode === "online") {
+    chooseOnlinePvpAction(action);
+    return;
+  }
   if (pvpState.phase !== "choose-action" || !pvpState.player.lastAnswerCorrect) return;
   pvpState.player.pendingAction = action;
   pvpState.player.selectedSkill = "";
@@ -30417,6 +31246,10 @@ function choosePvpAction(action) {
 }
 
 function choosePvpSkill(skillId) {
+  if (pvpState.mode === "online") {
+    chooseOnlinePvpSkill(skillId);
+    return;
+  }
   if (pvpState.phase !== "choose-skill" || pvpState.player.pendingAction !== "attack") return;
   const skill = PVP_SKILLS.find(item => item.id === skillId);
   if (!skill) return;
@@ -30427,6 +31260,10 @@ function choosePvpSkill(skillId) {
 }
 
 function choosePvpCharm(charmId) {
+  if (pvpState.mode === "online") {
+    chooseOnlinePvpCharm(charmId);
+    return;
+  }
   if (pvpState.phase !== "choose-charm") return;
   const charm = PVP_CHARMS.find(item => item.id === charmId);
   if (!charm) return;
@@ -30437,6 +31274,10 @@ function choosePvpCharm(charmId) {
 }
 
 function choosePvpChargeResult(chargeResult) {
+  if (pvpState.mode === "online") {
+    chooseOnlinePvpCharge(chargeResult);
+    return;
+  }
   if (pvpState.phase !== "grammaria-charge" || !PVP_CHARGE_MULTIPLIERS[chargeResult]) return;
   pvpState.player.chargeResult = chargeResult;
   pvpState.player.charge = Math.round(PVP_CHARGE_MULTIPLIERS[chargeResult] * 60);
@@ -36019,7 +36860,11 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
     skillId: skill.id,
     charmId: charm.id,
     chargePercent: damageResult.chargePercent,
-    bypassShield: damageResult.bypassBossShield
+    bypassShield: damageResult.bypassBossShield,
+    pvePlayerAttack: true,
+    isSuccessfulAttack: damageResult.isCorrect,
+    charm,
+    feedbackLines: damageResult.bonusLines
   });
   damageResult.rawFinalDamage = rawPlayerDamage;
   damageResult.finalDamage = bossDamageModifiers.finalDamage;
@@ -37602,7 +38447,11 @@ function resolveActCharmAttack(charm, chargePercent = 0) {
   const rawTotalDamage = totalDamage;
   const bossDamageResult = applyStatusDamageToTarget("boss", rawTotalDamage, "grammariaCharge", {
     chargePercent: normalizedChargePercent,
-    bypassShield: damageResult.bypassBossShield
+    bypassShield: damageResult.bypassBossShield,
+    pvePlayerAttack: true,
+    isSuccessfulAttack: true,
+    charm,
+    feedbackLines: bonusLines
   });
   appendDamageModifierLines(bonusLines, "boss", bossDamageResult);
   totalDamage = bossDamageResult.finalDamage;
@@ -37726,7 +38575,12 @@ function chooseActCharm(charm) {
   }
 
   triggerMotion(els.battlePlayer, "player-attack-motion");
-  const bossDamageResult = applyStatusDamageToTarget("boss", damage, "charmAttack");
+  const bossDamageResult = applyStatusDamageToTarget("boss", damage, "charmAttack", {
+    pvePlayerAttack: true,
+    isSuccessfulAttack: true,
+    charm,
+    feedbackLines: bonusLines
+  });
   appendDamageModifierLines(bonusLines, "boss", bossDamageResult);
   damage = bossDamageResult.finalDamage;
   if (damage > 0) {
@@ -39958,7 +40812,18 @@ function updateBattleStats() {
   els.enemyHpFill.style.width = `${enemyPercent}%`;
   els.playerHpText.textContent = `พลังชีวิต ${state.playerHp} / 100`;
   els.enemyHpText.textContent = `พลังชีวิต ${state.enemyHp} / ${enemyMaxHp}`;
-  els.grammariaText.textContent = state.grammaria;
+  const rankDisplay = getPvePlayerRankDisplayText();
+  const playerName = playerData?.characterName || playerData?.displayName || playerData?.username || "ผู้พเนจร";
+  if (els.battlePlayerName) {
+    els.battlePlayerName.textContent = `${playerName}${rankDisplay.nameSuffix}`;
+  }
+  if (els.grammariaText) {
+    const useCompactRankText = window.matchMedia?.("(max-width: 768px)")?.matches;
+    els.grammariaText.textContent = useCompactRankText ? rankDisplay.compactHudText : rankDisplay.hudText;
+  }
+  if (els.grammariaRankProgressText) {
+    els.grammariaRankProgressText.textContent = rankDisplay.progressText;
+  }
 
   const statuses = ensureBattleStatuses();
   renderPlayerBattleStatuses(statuses?.player || null);
@@ -41768,12 +42633,36 @@ els.tutorialBackButton?.addEventListener("click", returnToMainMenuFromTutorial);
 els.creatorCreditsBackButton?.addEventListener("click", returnToMainMenuFromCreatorCredits);
 els.pvpBackButton?.addEventListener("click", exitPvpMode);
 els.pvpExitButton?.addEventListener("click", exitPvpMode);
+els.pvpCreateOnlineRoomButton?.addEventListener("click", createOnlinePvpRoom);
+els.pvpJoinOnlineRoomButton?.addEventListener("click", () => joinOnlinePvpRoom(els.pvpRoomCodeInput?.value));
+els.pvpResumeOnlineRoomButton?.addEventListener("click", resumePvpOnlineRoom);
+els.pvpCopyRoomCodeButton?.addEventListener("click", async () => {
+  if (!pvpState.roomCode) return;
+  try {
+    await navigator.clipboard.writeText(pvpState.roomCode);
+    els.pvpRoomStatus.textContent = `คัดลอกรหัสห้อง ${pvpState.roomCode} แล้ว`;
+  } catch (error) {
+    console.warn("[PvP Online] Copy room code failed", error);
+    els.pvpRoomStatus.textContent = `รหัสห้อง: ${pvpState.roomCode}`;
+  }
+});
+els.pvpLeaveOnlineRoomButton?.addEventListener("click", leaveOnlinePvpRoom);
+els.pvpForfeitButton?.addEventListener("click", () => {
+  openGameModal({
+    title: "ยอมแพ้การดวล",
+    body: "ยืนยันว่าจะยอมแพ้หรือไม่? คู่ต่อสู้จะเป็นผู้ชนะทันที",
+    actions: [
+      { label: "ยกเลิก", onClick: closeGameModal },
+      { label: "ยืนยันยอมแพ้", primary: true, onClick: () => { closeGameModal(); forfeitOnlinePvpMatch(); } }
+    ]
+  });
+});
 els.pvpCreateRoomButton?.addEventListener("click", createMockPvpRoom);
 els.pvpJoinRoomButton?.addEventListener("click", () => joinMockPvpRoom(els.pvpRoomCodeInput?.value));
 els.pvpLeaveRoomButton?.addEventListener("click", leaveMockPvpRoom);
 els.pvpRoomCodeInput?.addEventListener("keydown", event => {
   if (event.key === "Enter") {
-    joinMockPvpRoom(els.pvpRoomCodeInput.value);
+    joinOnlinePvpRoom(els.pvpRoomCodeInput.value);
   }
 });
 els.pvpAnswerConfirmButton?.addEventListener("click", submitPvpAnswer);
@@ -41798,6 +42687,7 @@ document.querySelectorAll("[data-pvp-charge]").forEach(button => {
   button.addEventListener("click", () => choosePvpChargeResult(button.dataset.pvpCharge));
 });
 els.pvpResolveContinueButton?.addEventListener("click", () => {
+  if (pvpState.mode === "online") return;
   if (!pvpState.matchEnded) {
     generatePvpQuestionChoices();
     setPvpPhase("send-question");
@@ -41805,6 +42695,10 @@ els.pvpResolveContinueButton?.addEventListener("click", () => {
   }
 });
 els.pvpRestartMatchButton?.addEventListener("click", () => {
+  if (pvpState.mode === "online") {
+    leaveOnlinePvpRoom();
+    return;
+  }
   const roomCode = pvpState.roomCode;
   resetPvpMockState();
   pvpState.roomCode = roomCode || `LGX${Math.floor(100 + Math.random() * 900)}`;

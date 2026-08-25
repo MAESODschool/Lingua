@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lingua - RPG แห่งแกรมมาเรีย</title>
-  <link rel="stylesheet" href="style.css?v=pve-answer-ui-20260825">
+  <link rel="stylesheet" href="style.css?v=pve-grammaria-rank-20260825">
 </head>
 <body>
   <div class="game-utility-controls" aria-label="ตัวเลือกเกม">
@@ -167,14 +167,20 @@
           </div>
         </header>
 
-        <section class="pvp-room-panel" aria-label="ห้องดวลจำลอง">
-          <button id="pvpCreateRoomButton" class="pvp-action-button" type="button">สร้างห้อง</button>
+        <section class="pvp-room-panel" aria-label="ห้อง Grammaria Duel">
+          <button id="pvpCreateOnlineRoomButton" class="pvp-action-button" type="button">สร้างห้องออนไลน์</button>
           <label class="pvp-room-input">
             <span>รหัสห้อง</span>
-            <input id="pvpRoomCodeInput" type="text" maxlength="8" placeholder="กรอกรหัสห้อง" autocomplete="off">
+            <input id="pvpRoomCodeInput" type="text" maxlength="6" placeholder="กรอกรหัสห้อง" autocomplete="off">
           </label>
-          <button id="pvpJoinRoomButton" class="pvp-action-button" type="button">เข้าร่วมห้อง</button>
-          <button id="pvpLeaveRoomButton" class="pvp-action-button pvp-muted-action" type="button">ออกจากห้อง</button>
+          <button id="pvpJoinOnlineRoomButton" class="pvp-action-button" type="button">เข้าร่วมห้องออนไลน์</button>
+          <button id="pvpCopyRoomCodeButton" class="pvp-action-button pvp-muted-action hidden" type="button">คัดลอกรหัสห้อง</button>
+          <button id="pvpResumeOnlineRoomButton" class="pvp-action-button pvp-muted-action hidden" type="button">กลับเข้าห้องเดิม</button>
+          <button id="pvpLeaveOnlineRoomButton" class="pvp-action-button pvp-muted-action hidden" type="button">ออกจากห้อง</button>
+          <button id="pvpForfeitButton" class="pvp-action-button pvp-danger-action hidden" type="button">ยอมแพ้</button>
+          <button id="pvpCreateRoomButton" class="pvp-action-button pvp-muted-action" type="button">จำลอง: สร้างห้อง</button>
+          <button id="pvpJoinRoomButton" class="pvp-action-button pvp-muted-action" type="button">จำลอง: เข้าร่วมห้อง</button>
+          <button id="pvpLeaveRoomButton" class="pvp-action-button pvp-muted-action" type="button">ออกจากห้องจำลอง</button>
           <p id="pvpRoomStatus" aria-live="polite">ยังไม่ได้สร้างห้อง</p>
         </section>
 
@@ -296,7 +302,7 @@
         </section>
 
         <aside class="pvp-log-panel"><h3>Battle Log</h3><div id="pvpBattleLog" aria-live="polite"></div></aside>
-        <footer class="pvp-footer"><button id="pvpExitButton" class="pvp-action-button" type="button">กลับหน้าหลัก</button><button class="pvp-action-button pvp-muted-action" type="button" disabled>รายงาน</button><button class="pvp-action-button pvp-muted-action" type="button" disabled>ตั้งค่า</button><span>Round 2: local/mock เท่านั้น ไม่มีการบันทึกผล</span></footer>
+        <footer class="pvp-footer"><button id="pvpExitButton" class="pvp-action-button" type="button">กลับหน้าหลัก</button><button class="pvp-action-button pvp-muted-action" type="button" disabled>รายงาน</button><button class="pvp-action-button pvp-muted-action" type="button" disabled>ตั้งค่า</button><span>Round 3: ออนไลน์แบบห้องเรียน ไม่มีรางวัลและไม่บันทึกผลลงโปรไฟล์</span></footer>
       </div>
     </section>
 
@@ -656,7 +662,7 @@
               <img id="battlePlayerSprite" class="character-avatar wanderer-avatar main-character-gif small battle-player-model" data-character-view="battle-back" src="assets/characters/male_wanderer_back.png" alt="ผู้พเนจร" draggable="false">
             </div>
             <div class="combat-text player-status-panel">
-              <h3>ผู้พเนจร</h3>
+              <h3 id="battlePlayerName">ผู้พเนจร · ผู้ฝึกเวทเริ่มต้น</h3>
               <div class="hp-bar" aria-label="Player HP">
                 <span id="playerHpFill"></span>
               </div>
@@ -687,8 +693,9 @@
             <strong id="shieldText">ไม่มี</strong>
           </div>
           <div class="stat-pill battle-grammaria-status">
-            <span>แกรมมาเรีย</span>
+            <span>ยศพลัง Grammaria</span>
             <strong id="grammariaText">0</strong>
+            <small id="grammariaRankProgressText">อีก 150 Grammaria ถึงยศถัดไป</small>
           </div>
           <div id="battleBoostStatus" class="battle-boost-status hidden">พลังโจมตี x2 พร้อมใช้</div>
         </div>
@@ -814,6 +821,6 @@
     <p id="developerCredit" class="developer-credit">Lingua: Digital Game-based Learning Platform | พัฒนาโดย นายนครินทร์ พร้อมสุข ครูโรงเรียนแม่สอด</p>
   </main>
 
-  <script type="module" src="script.js?v=pve-answer-ui-20260825"></script>
+  <script type="module" src="script.js?v=pve-grammaria-rank-20260825"></script>
 </body>
 </html>

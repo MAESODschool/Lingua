@@ -7975,6 +7975,32 @@ h3 {
   line-height: 1.18;
 }
 
+#battleScene #battlePlayerName {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  line-height: 1.18;
+}
+
+#battleScene .battle-grammaria-status {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+}
+
+#battleScene .battle-grammaria-status > span,
+#battleScene .battle-grammaria-status strong {
+  grid-column: 1;
+  text-align: left;
+}
+
+#battleScene .battle-grammaria-status small {
+  grid-column: 1;
+  color: #c8d8ff;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  text-align: left;
+}
+
 @media (max-width: 768px) {
   body:has(#battleScene.active) .game-utility-controls {
     top: max(28px, calc(env(safe-area-inset-top) + 28px));
@@ -8182,6 +8208,25 @@ h3 {
     padding: 4px 5px;
     gap: 4px;
     font-size: clamp(0.56rem, 2vw, 0.68rem);
+  }
+
+  #battleScene .battle-grammaria-status {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+  }
+
+  #battleScene .battle-grammaria-status > span {
+    display: none;
+  }
+
+  #battleScene .battle-grammaria-status strong,
+  #battleScene .battle-grammaria-status small {
+    grid-column: 1;
+    text-align: left;
+  }
+
+  #battleScene .battle-grammaria-status small {
+    font-size: clamp(0.5rem, 1.7vw, 0.6rem);
   }
 
   #battleScene .battle-panel {
@@ -8452,6 +8497,11 @@ h3 {
 .pvp-panel-heading p,
 .pvp-footer span {
   margin: 0;
+}
+
+.pvp-danger-action {
+  border-color: rgba(255, 105, 120, 0.62);
+  color: #ffd8dc;
 }
 
 .pvp-header-status {
