@@ -366,7 +366,7 @@ const BATTLE_FLOW_V2_CONFIG = {
   requireChargeBeforeAttack: true,
   allowNoCharmOption: true,
   allowAttackWithoutCharge: true,
-  wrongAnswerCanStillAttack: true,
+  wrongAnswerCanStillAttack: false,
   wrongAnswerDamageMultiplier: 0.45,
   maxChargePercent: 100,
   debug: true
@@ -1495,7 +1495,6 @@ const regularRuleOneQuestions = [
       "cleand",
       "cleaned",
       "clean",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "cleaned",
     "explanation": "clean เติม -ed จึงเป็น cleaned",
@@ -1509,7 +1508,6 @@ const regularRuleOneQuestions = [
     "options": [
       "worked",
       "work",
-      "ตัวเลือกหลอก 3",
       "workd"
     ],
     "answer": "worked",
@@ -1523,7 +1521,6 @@ const regularRuleOneQuestions = [
     "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: look)",
     "options": [
       "lookd",
-      "ตัวเลือกหลอก 3",
       "looked",
       "look"
     ],
@@ -1540,7 +1537,6 @@ const regularRuleOneQuestions = [
       "talkd",
       "talked",
       "talk",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "talked",
     "explanation": "talk เติม -ed จึงเป็น talked",
@@ -1555,7 +1551,6 @@ const regularRuleOneQuestions = [
       "cookd",
       "cooked",
       "cook",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "cooked",
     "explanation": "cook เติม -ed จึงเป็น cooked",
@@ -1570,7 +1565,6 @@ const regularRuleOneQuestions = [
       "washed",
       "wash",
       "washd",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "washed",
     "explanation": "wash เติม -ed จึงเป็น washed",
@@ -1583,7 +1577,6 @@ const regularRuleOneQuestions = [
     "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: finish)",
     "options": [
       "finishd",
-      "ตัวเลือกหลอก 3",
       "finish",
       "finished"
     ],
@@ -1599,7 +1592,6 @@ const regularRuleOneQuestions = [
     "options": [
       "listen",
       "listend",
-      "ตัวเลือกหลอก 3",
       "listened"
     ],
     "answer": "listened",
@@ -1615,7 +1607,6 @@ const regularRuleOneQuestions = [
       "visitd",
       "visit",
       "visited",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "visited",
     "explanation": "visit เติม -ed จึงเป็น visited",
@@ -1629,7 +1620,6 @@ const regularRuleOneQuestions = [
     "options": [
       "startd",
       "start",
-      "ตัวเลือกหลอก 3",
       "started"
     ],
     "answer": "started",
@@ -1643,7 +1633,6 @@ const regularRuleOneQuestions = [
     "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: need)",
     "options": [
       "need",
-      "ตัวเลือกหลอก 3",
       "needd",
       "needed"
     ],
@@ -1658,7 +1647,6 @@ const regularRuleOneQuestions = [
     "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: want)",
     "options": [
       "want",
-      "ตัวเลือกหลอก 3",
       "wanted",
       "wantd"
     ],
@@ -1673,7 +1661,6 @@ const regularRuleOneQuestions = [
     "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: call)",
     "options": [
       "call",
-      "ตัวเลือกหลอก 3",
       "calld",
       "called"
     ],
@@ -1690,7 +1677,6 @@ const regularRuleOneQuestions = [
       "paint",
       "painted",
       "paintd",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "painted",
     "explanation": "paint เติม -ed จึงเป็น painted",
@@ -1702,7 +1688,6 @@ const regularRuleOneQuestions = [
     "type": "multiple-choice",
     "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: ask)",
     "options": [
-      "ตัวเลือกหลอก 3",
       "asked",
       "ask",
       "askd"
@@ -1720,7 +1705,6 @@ const regularRuleOneQuestions = [
       "I walk yesterday.",
       "I walked yesterday.",
       "I walkied yesterday.",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "I walked yesterday.",
     "explanation": "walk → walked",
@@ -1733,7 +1717,6 @@ const regularRuleOneQuestions = [
     "prompt": "ประโยคใดใช้ V2 ของ jump ได้ถูกต้อง",
     "options": [
       "I jumped yesterday.",
-      "ตัวเลือกหลอก 3",
       "I jump yesterday.",
       "I jumpied yesterday."
     ],
@@ -1748,7 +1731,6 @@ const regularRuleOneQuestions = [
     "prompt": "ประโยคใดใช้ V2 ของ help ได้ถูกต้อง",
     "options": [
       "I helpied yesterday.",
-      "ตัวเลือกหลอก 3",
       "I help yesterday.",
       "I helped yesterday."
     ],
@@ -1764,7 +1746,6 @@ const regularRuleOneQuestions = [
     "options": [
       "I watch yesterday.",
       "I watched yesterday.",
-      "ตัวเลือกหลอก 3",
       "I watchied yesterday."
     ],
     "answer": "I watched yesterday.",
@@ -1779,7 +1760,6 @@ const regularRuleOneQuestions = [
     "options": [
       "I openied yesterday.",
       "I open yesterday.",
-      "ตัวเลือกหลอก 3",
       "I opened yesterday."
     ],
     "answer": "I opened yesterday.",
@@ -1792,7 +1772,6 @@ const regularRuleOneQuestions = [
     "type": "correct-sentence",
     "prompt": "ประโยคใดใช้ V2 ของ clean ได้ถูกต้อง",
     "options": [
-      "ตัวเลือกหลอก 3",
       "I clean yesterday.",
       "I cleaned yesterday.",
       "I cleanied yesterday."
@@ -1810,7 +1789,6 @@ const regularRuleOneQuestions = [
       "I worked yesterday.",
       "I workied yesterday.",
       "I work yesterday.",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "I worked yesterday.",
     "explanation": "work → worked",
@@ -1824,7 +1802,6 @@ const regularRuleOneQuestions = [
     "options": [
       "I lookied yesterday.",
       "I looked yesterday.",
-      "ตัวเลือกหลอก 3",
       "I look yesterday."
     ],
     "answer": "I looked yesterday.",
@@ -1837,7 +1814,6 @@ const regularRuleOneQuestions = [
     "type": "correct-sentence",
     "prompt": "ประโยคใดใช้ V2 ของ talk ได้ถูกต้อง",
     "options": [
-      "ตัวเลือกหลอก 3",
       "I talked yesterday.",
       "I talkied yesterday.",
       "I talk yesterday."
@@ -1852,7 +1828,6 @@ const regularRuleOneQuestions = [
     "type": "correct-sentence",
     "prompt": "ประโยคใดใช้ V2 ของ cook ได้ถูกต้อง",
     "options": [
-      "ตัวเลือกหลอก 3",
       "I cooked yesterday.",
       "I cookied yesterday.",
       "I cook yesterday."
@@ -1869,7 +1844,6 @@ const regularRuleOneQuestions = [
     "options": [
       "I washied yesterday.",
       "I wash yesterday.",
-      "ตัวเลือกหลอก 3",
       "I washed yesterday."
     ],
     "answer": "I washed yesterday.",
@@ -1885,7 +1859,6 @@ const regularRuleOneQuestions = [
       "I finish yesterday.",
       "I finished yesterday.",
       "I finishied yesterday.",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "I finished yesterday.",
     "explanation": "finish → finished",
@@ -1899,7 +1872,6 @@ const regularRuleOneQuestions = [
     "options": [
       "I listened yesterday.",
       "I listen yesterday.",
-      "ตัวเลือกหลอก 3",
       "I listenied yesterday."
     ],
     "answer": "I listened yesterday.",
@@ -1913,7 +1885,6 @@ const regularRuleOneQuestions = [
     "prompt": "ประโยคใดใช้ V2 ของ visit ได้ถูกต้อง",
     "options": [
       "I visit yesterday.",
-      "ตัวเลือกหลอก 3",
       "I visitied yesterday.",
       "I visited yesterday."
     ],
@@ -1930,7 +1901,6 @@ const regularRuleOneQuestions = [
       "I start yesterday.",
       "I startied yesterday.",
       "I started yesterday.",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "I started yesterday.",
     "explanation": "start → started",
@@ -3029,7 +2999,6 @@ const regularRuleTwoQuestions = [
     "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: move)",
     "options": [
       "moveed",
-      "ตัวเลือกหลอก 3",
       "move",
       "moved"
     ],
@@ -3046,7 +3015,6 @@ const regularRuleTwoQuestions = [
       "use",
       "useed",
       "used",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "used",
     "explanation": "use ลงท้ายด้วย e จึงเติม -d จึงเป็น used",
@@ -3058,7 +3026,6 @@ const regularRuleTwoQuestions = [
     "type": "multiple-choice",
     "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: smile)",
     "options": [
-      "ตัวเลือกหลอก 3",
       "smiled",
       "smile",
       "smileed"
@@ -3076,7 +3043,6 @@ const regularRuleTwoQuestions = [
       "arrived",
       "arrive",
       "arriveed",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "arrived",
     "explanation": "arrive ลงท้ายด้วย e จึงเติม -d จึงเป็น arrived",
@@ -3090,7 +3056,6 @@ const regularRuleTwoQuestions = [
     "options": [
       "decided",
       "decideed",
-      "ตัวเลือกหลอก 3",
       "decide"
     ],
     "answer": "decided",
@@ -3104,7 +3069,6 @@ const regularRuleTwoQuestions = [
     "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: practice)",
     "options": [
       "practice",
-      "ตัวเลือกหลอก 3",
       "practiceed",
       "practiced"
     ],
@@ -3121,7 +3085,6 @@ const regularRuleTwoQuestions = [
       "changeed",
       "changed",
       "change",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "changed",
     "explanation": "change ลงท้ายด้วย e จึงเติม -d จึงเป็น changed",
@@ -3136,7 +3099,6 @@ const regularRuleTwoQuestions = [
       "save",
       "saved",
       "saveed",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "saved",
     "explanation": "save ลงท้ายด้วย e จึงเติม -d จึงเป็น saved",
@@ -3151,7 +3113,6 @@ const regularRuleTwoQuestions = [
       "hopeed",
       "hoped",
       "hope",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "hoped",
     "explanation": "hope ลงท้ายด้วย e จึงเติม -d จึงเป็น hoped",
@@ -3165,7 +3126,6 @@ const regularRuleTwoQuestions = [
     "options": [
       "invite",
       "inviteed",
-      "ตัวเลือกหลอก 3",
       "invited"
     ],
     "answer": "invited",
@@ -3181,7 +3141,6 @@ const regularRuleTwoQuestions = [
       "bakeed",
       "baked",
       "bake",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "baked",
     "explanation": "bake ลงท้ายด้วย e จึงเติม -d จึงเป็น baked",
@@ -3193,7 +3152,6 @@ const regularRuleTwoQuestions = [
     "type": "multiple-choice",
     "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: phone)",
     "options": [
-      "ตัวเลือกหลอก 3",
       "phoned",
       "phone",
       "phoneed"
@@ -3209,7 +3167,6 @@ const regularRuleTwoQuestions = [
     "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: notice)",
     "options": [
       "noticeed",
-      "ตัวเลือกหลอก 3",
       "noticed",
       "notice"
     ],
@@ -3224,7 +3181,6 @@ const regularRuleTwoQuestions = [
     "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: agree)",
     "options": [
       "agreed",
-      "ตัวเลือกหลอก 3",
       "agreeed",
       "agree"
     ],
@@ -3241,7 +3197,6 @@ const regularRuleTwoQuestions = [
       "careed",
       "cared",
       "care",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "cared",
     "explanation": "care ลงท้ายด้วย e จึงเติม -d จึงเป็น cared",
@@ -4407,7 +4362,6 @@ const regularRuleThreeQuestions = [
     "options": [
       "destroyd",
       "destroy",
-      "ตัวเลือกหลอก 3",
       "destroyed"
     ],
     "answer": "destroyed",
@@ -4423,7 +4377,6 @@ const regularRuleThreeQuestions = [
       "delay",
       "delayed",
       "delayd",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "delayed",
     "explanation": "delay ใช้กฎ y rule จึงเป็น delayed",
@@ -4438,7 +4391,6 @@ const regularRuleThreeQuestions = [
       "obey",
       "obeyed",
       "obeyd",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "obeyed",
     "explanation": "obey ใช้กฎ y rule จึงเป็น obeyed",
@@ -4450,7 +4402,6 @@ const regularRuleThreeQuestions = [
     "type": "multiple-choice",
     "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ the task. (V1: survey)",
     "options": [
-      "ตัวเลือกหลอก 3",
       "surveyed",
       "survey",
       "surveyd"
@@ -4468,7 +4419,6 @@ const regularRuleThreeQuestions = [
       "displayed",
       "display",
       "displayd",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "displayed",
     "explanation": "display ใช้กฎ y rule จึงเป็น displayed",
@@ -4630,7 +4580,6 @@ const regularRuleThreeQuestions = [
     "type": "correct-sentence",
     "prompt": "ประโยคใดใช้ V2 ของ play ได้ถูกต้อง",
     "options": [
-      "ตัวเลือกหลอก 3",
       "I playied yesterday.",
       "I played yesterday.",
       "I play yesterday."
@@ -4647,7 +4596,6 @@ const regularRuleThreeQuestions = [
     "options": [
       "I enjoy yesterday.",
       "I enjoyied yesterday.",
-      "ตัวเลือกหลอก 3",
       "I enjoyed yesterday."
     ],
     "answer": "I enjoyed yesterday.",
@@ -4662,7 +4610,6 @@ const regularRuleThreeQuestions = [
     "options": [
       "I stayed yesterday.",
       "I stayied yesterday.",
-      "ตัวเลือกหลอก 3",
       "I stay yesterday."
     ],
     "answer": "I stayed yesterday.",
@@ -4676,7 +4623,6 @@ const regularRuleThreeQuestions = [
     "prompt": "ประโยคใดใช้ V2 ของ pray ได้ถูกต้อง",
     "options": [
       "I prayed yesterday.",
-      "ตัวเลือกหลอก 3",
       "I pray yesterday.",
       "I prayied yesterday."
     ],
@@ -4690,7 +4636,6 @@ const regularRuleThreeQuestions = [
     "type": "correct-sentence",
     "prompt": "ประโยคใดใช้ V2 ของ employ ได้ถูกต้อง",
     "options": [
-      "ตัวเลือกหลอก 3",
       "I employed yesterday.",
       "I employied yesterday.",
       "I employ yesterday."
@@ -4706,7 +4651,6 @@ const regularRuleThreeQuestions = [
     "prompt": "ประโยคใดใช้ V2 ของ destroy ได้ถูกต้อง",
     "options": [
       "I destroyied yesterday.",
-      "ตัวเลือกหลอก 3",
       "I destroy yesterday.",
       "I destroyed yesterday."
     ],
@@ -4720,7 +4664,6 @@ const regularRuleThreeQuestions = [
     "type": "correct-sentence",
     "prompt": "ประโยคใดใช้ V2 ของ delay ได้ถูกต้อง",
     "options": [
-      "ตัวเลือกหลอก 3",
       "I delayed yesterday.",
       "I delay yesterday.",
       "I delayied yesterday."
@@ -4738,7 +4681,6 @@ const regularRuleThreeQuestions = [
       "I obey yesterday.",
       "I obeyed yesterday.",
       "I obeyied yesterday.",
-      "ตัวเลือกหลอก 3"
     ],
     "answer": "I obeyed yesterday.",
     "explanation": "obey → obeyed",
@@ -4751,7 +4693,6 @@ const regularRuleThreeQuestions = [
     "prompt": "ประโยคใดใช้ V2 ของ survey ได้ถูกต้อง",
     "options": [
       "I surveyied yesterday.",
-      "ตัวเลือกหลอก 3",
       "I survey yesterday.",
       "I surveyed yesterday."
     ],
@@ -4766,7 +4707,6 @@ const regularRuleThreeQuestions = [
     "prompt": "ประโยคใดใช้ V2 ของ display ได้ถูกต้อง",
     "options": [
       "I displayed yesterday.",
-      "ตัวเลือกหลอก 3",
       "I displayied yesterday.",
       "I display yesterday."
     ],
@@ -9743,7 +9683,6 @@ const irregularPracticeQuestions = [
     "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: read)",
     "options": [
       "readed",
-      "ตัวเลือกหลอก 3",
       "readd",
       "read"
     ],
@@ -11216,7 +11155,6 @@ const irregularWraithQuestions = [
     "prompt": "เติม V2 ให้ถูกต้อง: Yesterday, I ____ to the past. (V1: read)",
     "options": [
       "readed",
-      "ตัวเลือกหลอก 3",
       "readd",
       "read"
     ],
@@ -22132,6 +22070,8 @@ const pvpState = {
   matchEnded: false,
   onlineRoom: null,
   onlineSide: "",
+  localSide: "",
+  opponentSide: "",
   onlineBusy: false,
   onlineError: "",
   onlineUnsubscribe: null,
@@ -22746,6 +22686,93 @@ const state = {
   victoryMusicActive: false
 };
 
+const LINGUA_ADVISOR_SCOPES = Object.freeze({
+  lesson: {
+    type: "lesson",
+    title: "บทเรียนของฉัน",
+    description: "ถามเกี่ยวกับบทเรียนที่กำลังเรียนหรือบทเรียนที่เคยผ่าน",
+    placeholder: "พิมพ์คำถามเกี่ยวกับบทเรียนนี้...",
+    actions: [
+      ["lesson_hint", "ขอใบ้บทเรียนนี้"],
+      ["lesson_explain", "อธิบายบทเรียนนี้"],
+      ["lesson_summary", "สรุปบทเรียนนี้"],
+      ["lesson_practice", "ขอโจทย์ฝึกเพิ่ม"],
+      ["lesson_wrong_answer", "ทำไมข้อนี้ผิด"]
+    ]
+  },
+  game_help: {
+    type: "game_help",
+    title: "ตัวเกมและวิธีเล่น",
+    description: "ถามเรื่องปุ่ม เมนู การต่อสู้ ไอเทม ชาม และระบบต่าง ๆ ในเกม",
+    placeholder: "พิมพ์คำถามเกี่ยวกับวิธีเล่นเกม...",
+    actions: [
+      ["game_overview", "วิธีเล่นเกมนี้"],
+      ["game_battle", "วิธีต่อสู้"],
+      ["game_skill", "วิธีใช้สกิล"],
+      ["game_charm", "วิธีใช้ชาม"],
+      ["game_item", "วิธีใช้ไอเทม"]
+    ]
+  },
+  assessment: {
+    type: "assessment",
+    title: "ระบบประเมินผล",
+    description: "ถามเรื่องคะแนน ความคืบหน้า Grammaria และผลการเรียนรู้",
+    placeholder: "พิมพ์คำถามเกี่ยวกับระบบประเมินผล...",
+    actions: [
+      ["assessment_grammaria", "Grammaria คืออะไร"],
+      ["assessment_progress", "ดูความคืบหน้าตรงไหน"],
+      ["assessment_reward", "ทำไมไม่ได้รางวัลเพิ่ม"],
+      ["assessment_result", "ผลการประเมินคืออะไร"]
+    ]
+  },
+  story: {
+    type: "story",
+    title: "เนื้อเรื่องและโลกของเกม",
+    description: "ถามเรื่องเนื้อเรื่อง ตัวละคร บอส และโลกแห่ง Grammaria",
+    placeholder: "พิมพ์คำถามเกี่ยวกับเนื้อเรื่อง...",
+    actions: [
+      ["story_current", "เล่าเนื้อเรื่องตอนนี้"],
+      ["story_boss", "บอสตัวนี้คือใคร"],
+      ["story_fragment", "Fragment คืออะไร"],
+      ["story_world", "โลก Grammaria คืออะไร"]
+    ]
+  },
+  other_english: {
+    type: "other_english",
+    title: "คำถามอื่น ๆ เกี่ยวกับภาษาอังกฤษ",
+    description: "ถามภาษาอังกฤษเพิ่มเติมที่เกี่ยวข้องกับระดับ ม.1–ม.3",
+    placeholder: "พิมพ์คำถามภาษาอังกฤษที่อยากรู้...",
+    actions: [
+      ["english_grammar", "ถามไวยากรณ์"],
+      ["english_vocabulary", "ถามคำศัพท์"],
+      ["english_example", "ขอตัวอย่างประโยค"],
+      ["english_practice", "ขอแบบฝึกเพิ่ม"]
+    ]
+  }
+});
+
+const linguaAdvisorState = {
+  isOpen: false,
+  mode: "mock",
+  screen: "scope-selection",
+  scope: null,
+  selectedLesson: null,
+  messages: [],
+  context: null,
+  isLoading: false,
+  lastQuickAction: "",
+  source: "",
+  previousFocus: null,
+  nextMessageId: 1,
+  advisorCharacter: {
+    id: "master_verion",
+    name: "Master Verion",
+    thaiName: "มาสเตอร์เวอริออน",
+    role: "ที่ปรึกษาแกรมมาเรีย",
+    imageSrc: TEACHER_CHARACTER_IMAGE_PATH
+  }
+};
+
 const BGM_PATHS = {
   login: "assets/bgm/into-lingua-v1.mp3",
   hall: "assets/bgm/verions-grammar-hall.mp3",
@@ -22900,6 +22927,7 @@ const els = {
   pvpModeButton: document.getElementById("pvpModeButton"),
   assessmentResultButton: document.getElementById("assessmentResultButton"),
   tutorialGuideButton: document.getElementById("tutorialGuideButton"),
+  linguaAdvisorButton: document.getElementById("linguaAdvisorButton"),
   accountSettingsButton: document.getElementById("accountSettingsButton"),
   teacherDashboardButton: document.getElementById("teacherDashboardButton"),
   creatorCreditsButton: document.getElementById("creatorCreditsButton"),
@@ -23032,6 +23060,7 @@ const els = {
   bossStatusText: document.getElementById("bossStatusText"),
   battleTitle: document.getElementById("battleTitle"),
   battleExitButton: document.getElementById("battleExitButton"),
+  battleLinguaAdvisorButton: document.getElementById("battleLinguaAdvisorButton"),
   battleTurnIndicator: document.getElementById("battleTurnIndicator"),
   battleCurrentTurn: document.getElementById("battleCurrentTurn"),
   battleCurrentTurnActor: document.getElementById("battleCurrentTurnActor"),
@@ -23113,6 +23142,12 @@ const els = {
   gameModalBody: document.getElementById("gameModalBody"),
   gameModalContent: document.getElementById("gameModalContent"),
   gameModalActions: document.getElementById("gameModalActions"),
+  linguaAdvisorOverlay: document.getElementById("linguaAdvisorOverlay"),
+  linguaAdvisorPanel: document.getElementById("linguaAdvisorPanel"),
+  linguaAdvisorCloseButton: document.getElementById("linguaAdvisorCloseButton"),
+  linguaAdvisorBody: document.getElementById("linguaAdvisorBody"),
+  advisorMasterVerionImage: document.getElementById("advisorMasterVerionImage"),
+  advisorMasterVerionPlaceholder: document.getElementById("advisorMasterVerionPlaceholder"),
   teacherDashboardBackButton: document.getElementById("teacherDashboardBackButton"),
   teacherDashboardSummary: document.getElementById("teacherDashboardSummary"),
   teacherClassLevelFilter: document.getElementById("teacherClassLevelFilter"),
@@ -25309,11 +25344,14 @@ function pickQuestionWithSmartRepeat(questionEntries, history, prefix = "battle"
 }
 
 function prepareQuestion(rawQuestion, index = 0) {
-  const options = rawQuestion.options || rawQuestion.choices || [];
+  const rawOptions = getRawBattleQuestionOptions(rawQuestion);
+  const options = getActBattleQuestionType(rawQuestion) === "multiple-choice"
+    ? ensureEnoughBattleDistractors(rawQuestion, rawOptions, getBattleCorrectAnswer(rawQuestion))
+    : normalizeBattleOptions(rawOptions);
   return {
     ...rawQuestion,
     id: getQuestionId(rawQuestion, index),
-    correctAnswer: rawQuestion.answer ?? rawQuestion.correct,
+    correctAnswer: getBattleCorrectAnswer(rawQuestion),
     options: shuffleArray(options)
   };
 }
@@ -29620,8 +29658,8 @@ function renderRestoredPlayerQuestion() {
   els.battleMessage.textContent = `${battle.stage.title} - คำถาม ${battle.questionIndex + 1} / ${battle.stage.questions.length}`;
   els.questionText.textContent = resolveBattleQuestionPrompt(question);
   els.answerOptions.innerHTML = "";
-  renderActBattleQuestionControls(question, getActQuestionOptions(question));
   showOnlyBattlePanel(els.questionPanel);
+  renderActBattleQuestionControls(question, getActQuestionOptions(question));
 }
 
 function renderRestoredFocusQuestion() {
@@ -29635,12 +29673,12 @@ function renderRestoredFocusQuestion() {
   els.battleMessage.textContent = "ตั้งสมาธิ: ตอบคำถามสั้น ๆ เพื่อรวบรวม Grammaria และฟื้น AP";
   els.questionText.textContent = getQuestionText(question);
   els.answerOptions.innerHTML = "";
+  showOnlyBattlePanel(els.questionPanel);
   renderActBattleQuestionControls(
     question,
     getActQuestionOptions(question),
     answer => chooseActFocusAnswer(answer, question)
   );
-  showOnlyBattlePanel(els.questionPanel);
 }
 
 function renderRestoredBossQuestion() {
@@ -29664,14 +29702,11 @@ function renderRestoredBossQuestion() {
     : "บอส: “ถ้าเจ้าจำอดีตผิด ความทรงจำก็จะแตกสลาย... ตอบข้ามา!”";
   els.questionText.textContent = resolveBattleQuestionPrompt(question);
   els.answerOptions.innerHTML = "";
-  question.options.forEach(option => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "answer-button";
-    button.textContent = option;
-    button.addEventListener("click", () => chooseBossQuestionAnswer(option, question));
-    els.answerOptions.appendChild(button);
-  });
+  renderActBattleQuestionControls(
+    question,
+    getActQuestionOptions(question),
+    answer => chooseBossQuestionAnswer(answer, question)
+  );
 }
 
 function renderRestoredBattleCheckpoint(resumeMode) {
@@ -30015,6 +30050,564 @@ function buildReachedLessonReviewEntries(progress = loadProgress()) {
     .filter(Boolean);
 }
 
+function getMasterVerionAssetPath() {
+  return TEACHER_CHARACTER_IMAGE_PATH || "";
+}
+
+function getLinguaAdvisorSource(source = "") {
+  if (source) {
+    return source;
+  }
+  const sceneName = getActiveSceneName();
+  return {
+    mainMenu: "main-menu",
+    battle: "battle",
+    story: "lesson-map",
+    pvp: "pvp"
+  }[sceneName] || sceneName || "unknown";
+}
+
+function getLinguaAdvisorLessonList() {
+  const stages = getPlayableStages();
+  const progress = playerData?.progress || {};
+  const completed = new Set([
+    ...(Array.isArray(progress.completedLessons) ? progress.completedLessons : []),
+    ...(Array.isArray(progress.completedStages) ? progress.completedStages : [])
+  ]);
+  const unlocked = new Set(Array.isArray(progress.unlockedStages) ? progress.unlockedStages : []);
+  const savedCurrentStageId = progress.currentStageId || progress.currentLessonId || DEFAULT_ACT_PROGRESS.currentStageId;
+  const furthestIndex = getFurthestReachedPlayableStageIndex(progress);
+
+  return stages.map((stage, index) => {
+    const isCurrent = stage.id === savedCurrentStageId;
+    const isCompleted = completed.has(stage.id);
+    const isUnlocked = isCurrent || isCompleted || unlocked.has(stage.id) || index <= furthestIndex;
+    const status = isCurrent
+      ? "current"
+      : isCompleted
+        ? "completed"
+        : isUnlocked
+          ? "unlocked"
+          : "locked";
+    const statusLabel = {
+      current: "กำลังเรียน",
+      completed: "ผ่านแล้ว",
+      unlocked: "ปลดล็อกแล้ว",
+      locked: "ยังไม่ปลดล็อก"
+    }[status];
+
+    return {
+      id: stage.id,
+      title: safeDisplayText(stage.title || stage.thaiTitle, "บทเรียน"),
+      thaiTitle: safeDisplayText(stage.thaiTitle || stage.title, "บทเรียน"),
+      stageTitle: safeDisplayText(stage.thaiEnemy || stage.enemy, "ยังไม่มีข้อมูลศัตรู"),
+      topic: safeDisplayText(stage.thaiTitle || stage.title, "ยังไม่มีข้อมูลบทเรียน"),
+      status,
+      statusLabel,
+      selectable: status !== "locked"
+    };
+  });
+}
+
+function getLinguaAdvisorContext() {
+  const progress = playerData?.progress || {};
+  const battle = state.actBattle;
+  const activeStage = battle?.stage || state.currentLessonStage || getStageById(progress.currentStageId || progress.currentLessonId);
+  const question = battle?.currentQuestion || state.currentQuestion || null;
+  const pendingAnswer = battle?.pendingPlayerAnswer || null;
+  const legacyAnswerSubmitted = Boolean(question && els.questionPanel?.classList.contains("hidden") && state.selectedCharm);
+  const answerAlreadySubmitted = Boolean(pendingAnswer || legacyAnswerSubmitted);
+  const correctAnswer = answerAlreadySubmitted && question
+    ? safeDisplayText(getBattleCorrectAnswer(question), "")
+    : "";
+
+  return {
+    source: getLinguaAdvisorSource(linguaAdvisorState.source),
+    scene: getActiveSceneName() || "unknown",
+    lessonTitle: safeDisplayText(
+      linguaAdvisorState.selectedLesson?.title || activeStage?.title,
+      "ยังไม่มีข้อมูลบทเรียน"
+    ),
+    stageTitle: safeDisplayText(
+      linguaAdvisorState.selectedLesson?.stageTitle || activeStage?.thaiEnemy || activeStage?.enemy,
+      "ยังไม่มีข้อมูลด่าน"
+    ),
+    enemyName: safeDisplayText(activeStage?.thaiEnemy || activeStage?.enemy, "ยังไม่มีข้อมูลศัตรู"),
+    questionPrompt: safeDisplayText(
+      question?.promptTh || question?.prompt || question?.text,
+      "ยังไม่มีโจทย์ปัจจุบัน"
+    ),
+    questionType: safeDisplayText(question ? getBattleQuestionType(question) : "", "ยังไม่มีข้อมูลประเภทโจทย์"),
+    selectedAnswer: safeDisplayText(pendingAnswer?.selectedAnswer, ""),
+    answerAlreadySubmitted,
+    correctAnswerAvailable: Boolean(correctAnswer),
+    correctAnswer,
+    playerName: safeDisplayText(
+      playerData?.characterName || playerData?.displayName || playerData?.username,
+      "นักเดินทางแห่งภาษา"
+    )
+  };
+}
+
+function renderLinguaAdvisorMasterVerion() {
+  const image = els.advisorMasterVerionImage;
+  const placeholder = els.advisorMasterVerionPlaceholder;
+  if (!image || !placeholder) {
+    return;
+  }
+
+  const imageSrc = getMasterVerionAssetPath();
+  linguaAdvisorState.advisorCharacter.imageSrc = imageSrc;
+  if (!imageSrc) {
+    image.classList.add("hidden");
+    placeholder.classList.remove("hidden");
+    return;
+  }
+
+  image.classList.remove("hidden");
+  placeholder.classList.add("hidden");
+  image.alt = "มาสเตอร์เวอริออน ที่ปรึกษาแกรมมาเรีย";
+  image.dataset.fallbackApplied = "false";
+  image.onerror = () => {
+    if (image.dataset.fallbackApplied !== "true" && TEACHER_CHARACTER_FALLBACK_IMAGE_PATH) {
+      image.dataset.fallbackApplied = "true";
+      image.src = TEACHER_CHARACTER_FALLBACK_IMAGE_PATH;
+      return;
+    }
+    image.onerror = null;
+    image.classList.add("hidden");
+    placeholder.classList.remove("hidden");
+  };
+  if (!image.getAttribute("src") || !image.getAttribute("src").endsWith(imageSrc)) {
+    image.src = imageSrc;
+  }
+}
+
+function getLinguaAdvisorWelcomeMessage() {
+  const scope = linguaAdvisorState.scope;
+  if (!scope) {
+    return "ยินดีต้อนรับ นักเดินทางแห่งภาษา ข้าคือมาสเตอร์เวอริออน เลือกหัวข้อที่เจ้าต้องการถามก่อน แล้วข้าจะช่วยชี้ทางให้";
+  }
+  if (scope.type === "lesson") {
+    return `ข้าพร้อมช่วยทบทวนบทเรียน ${linguaAdvisorState.selectedLesson?.title || "นี้"} เลือกคำถามสั้น ๆ หรือพิมพ์สิ่งที่สงสัยได้เลย`;
+  }
+  return `ข้าพร้อมแนะนำเรื่อง${scope.title} เลือกคำถามด้านล่าง หรือพิมพ์สิ่งที่อยากรู้ได้เลย`;
+}
+
+function addLinguaAdvisorMessage(role, text) {
+  const cleanText = String(text || "").trim();
+  if (!cleanText) {
+    return null;
+  }
+  const message = {
+    id: linguaAdvisorState.nextMessageId,
+    role: role === "user" ? "user" : "assistant",
+    text: cleanText
+  };
+  linguaAdvisorState.nextMessageId += 1;
+  linguaAdvisorState.messages.push(message);
+  return message;
+}
+
+function initializeLinguaAdvisorMessages() {
+  linguaAdvisorState.messages = [];
+  addLinguaAdvisorMessage("assistant", getLinguaAdvisorWelcomeMessage());
+}
+
+function openLinguaAdvisor(source = "") {
+  if (!els.linguaAdvisorOverlay || linguaAdvisorState.isOpen) {
+    return;
+  }
+  linguaAdvisorState.previousFocus = document.activeElement;
+  linguaAdvisorState.isOpen = true;
+  linguaAdvisorState.screen = "scope-selection";
+  linguaAdvisorState.scope = null;
+  linguaAdvisorState.selectedLesson = null;
+  linguaAdvisorState.messages = [];
+  linguaAdvisorState.lastQuickAction = "";
+  linguaAdvisorState.source = getLinguaAdvisorSource(source);
+  linguaAdvisorState.context = getLinguaAdvisorContext();
+  els.linguaAdvisorOverlay.classList.remove("hidden");
+  document.body.classList.add("lingua-advisor-open");
+  renderLinguaAdvisorMasterVerion();
+  renderLinguaAdvisorPanel();
+  window.requestAnimationFrame(() => els.linguaAdvisorCloseButton?.focus());
+}
+
+function closeLinguaAdvisor() {
+  if (!linguaAdvisorState.isOpen) {
+    return;
+  }
+  linguaAdvisorState.isOpen = false;
+  linguaAdvisorState.isLoading = false;
+  els.linguaAdvisorOverlay?.classList.add("hidden");
+  document.body.classList.remove("lingua-advisor-open");
+  const previousFocus = linguaAdvisorState.previousFocus;
+  linguaAdvisorState.previousFocus = null;
+  if (previousFocus && typeof previousFocus.focus === "function" && document.contains(previousFocus)) {
+    previousFocus.focus();
+  }
+}
+
+function resetLinguaAdvisorScope() {
+  linguaAdvisorState.screen = "scope-selection";
+  linguaAdvisorState.scope = null;
+  linguaAdvisorState.selectedLesson = null;
+  linguaAdvisorState.messages = [];
+  linguaAdvisorState.lastQuickAction = "";
+  linguaAdvisorState.context = getLinguaAdvisorContext();
+  renderLinguaAdvisorPanel();
+}
+
+function selectLinguaAdvisorScope(scopeType) {
+  const scopeConfig = LINGUA_ADVISOR_SCOPES[scopeType];
+  if (!scopeConfig) {
+    return;
+  }
+  if (scopeType === "lesson") {
+    linguaAdvisorState.screen = "lesson-selection";
+    linguaAdvisorState.scope = null;
+    linguaAdvisorState.selectedLesson = null;
+    linguaAdvisorState.messages = [];
+    renderLinguaAdvisorPanel();
+    return;
+  }
+  linguaAdvisorState.scope = {
+    type: scopeConfig.type,
+    title: scopeConfig.title
+  };
+  linguaAdvisorState.selectedLesson = null;
+  linguaAdvisorState.screen = "chat";
+  linguaAdvisorState.context = getLinguaAdvisorContext();
+  initializeLinguaAdvisorMessages();
+  renderLinguaAdvisorPanel();
+}
+
+function selectLinguaAdvisorLesson(lessonId) {
+  const lesson = getLinguaAdvisorLessonList().find(item => item.id === lessonId);
+  if (!lesson || !lesson.selectable) {
+    return;
+  }
+  linguaAdvisorState.selectedLesson = lesson;
+  linguaAdvisorState.scope = {
+    type: "lesson",
+    title: `บทเรียน - ${lesson.title}`,
+    lessonId: lesson.id,
+    lessonTitle: lesson.title,
+    stageTitle: lesson.stageTitle,
+    status: lesson.status,
+    statusLabel: lesson.statusLabel,
+    topic: lesson.topic
+  };
+  linguaAdvisorState.screen = "chat";
+  linguaAdvisorState.context = getLinguaAdvisorContext();
+  initializeLinguaAdvisorMessages();
+  renderLinguaAdvisorPanel();
+}
+
+function returnLinguaAdvisorToLessonSelection() {
+  linguaAdvisorState.screen = "lesson-selection";
+  linguaAdvisorState.scope = null;
+  linguaAdvisorState.selectedLesson = null;
+  linguaAdvisorState.messages = [];
+  linguaAdvisorState.lastQuickAction = "";
+  renderLinguaAdvisorPanel();
+}
+
+function renderLinguaAdvisorScopeSelection() {
+  const scopeCards = Object.values(LINGUA_ADVISOR_SCOPES).map(scope => `
+    <button class="advisor-scope-card" type="button" data-advisor-scope="${escapeHtml(scope.type)}">
+      <strong class="advisor-scope-card-title">${escapeHtml(scope.title)}</strong>
+      <span class="advisor-scope-card-desc">${escapeHtml(scope.description)}</span>
+    </button>
+  `).join("");
+
+  els.linguaAdvisorBody.innerHTML = `
+    <div class="advisor-screen advisor-scope-selection">
+      <div class="advisor-npc">
+        <strong>ต้องการถามที่ปรึกษาเรื่องอะไร?</strong>
+        <p>เลือกหัวข้อก่อน เพื่อให้ที่ปรึกษาตอบเฉพาะเรื่องที่เกี่ยวข้อง</p>
+        <blockquote>${escapeHtml(getLinguaAdvisorWelcomeMessage())}</blockquote>
+      </div>
+      <div class="advisor-scope-grid">${scopeCards}</div>
+      <p class="advisor-mode-note">ระบบที่ปรึกษายังเป็นโหมดจำลอง ยังไม่ได้เชื่อม AI จริง</p>
+    </div>
+  `;
+  els.linguaAdvisorBody.querySelectorAll("[data-advisor-scope]").forEach(button => {
+    button.addEventListener("click", () => selectLinguaAdvisorScope(button.dataset.advisorScope));
+  });
+}
+
+function renderLinguaAdvisorLessonSelection() {
+  const lessonCards = getLinguaAdvisorLessonList().map(lesson => `
+    <button
+      class="advisor-lesson-card is-${escapeHtml(lesson.status)}"
+      type="button"
+      data-advisor-lesson-id="${escapeHtml(lesson.id)}"
+      ${lesson.selectable ? "" : "disabled aria-disabled=\"true\""}
+    >
+      <span class="advisor-lesson-copy">
+        <strong>${escapeHtml(lesson.title)}</strong>
+        <small>${escapeHtml(lesson.thaiTitle)}</small>
+        <small>${escapeHtml(lesson.stageTitle)}</small>
+      </span>
+      <span class="advisor-lesson-status">${escapeHtml(lesson.statusLabel)}</span>
+    </button>
+  `).join("");
+
+  els.linguaAdvisorBody.innerHTML = `
+    <div class="advisor-screen advisor-lesson-selection">
+      <div class="advisor-screen-heading">
+        <div>
+          <h3>เลือกบทเรียนที่ต้องการถาม</h3>
+          <p>เลือกบทเรียนก่อน เพื่อให้มาสเตอร์เวอริออนตอบเฉพาะเนื้อหานั้น</p>
+        </div>
+        <button class="advisor-change-scope-button" type="button" data-advisor-back-scopes>กลับไปเลือกหัวข้อ</button>
+      </div>
+      <div class="advisor-lesson-list">${lessonCards || '<p class="advisor-empty-state">ยังไม่มีข้อมูลบทเรียน</p>'}</div>
+      <p class="advisor-locked-note">บทเรียนที่ยังไม่ปลดล็อกต้องผ่านบทเรียนก่อนหน้าในเส้นทางหลักก่อน</p>
+    </div>
+  `;
+  els.linguaAdvisorBody.querySelector("[data-advisor-back-scopes]")?.addEventListener("click", resetLinguaAdvisorScope);
+  els.linguaAdvisorBody.querySelectorAll("[data-advisor-lesson-id]:not(:disabled)").forEach(button => {
+    button.addEventListener("click", () => selectLinguaAdvisorLesson(button.dataset.advisorLessonId));
+  });
+}
+
+function renderLinguaAdvisorScopeBadge() {
+  const scope = linguaAdvisorState.scope;
+  if (!scope) {
+    return "";
+  }
+  const label = scope.type === "other_english" ? "ภาษาอังกฤษเพิ่มเติม" : scope.title;
+  return `<span class="advisor-scope-badge">ขอบเขต: ${escapeHtml(label)}</span>`;
+}
+
+function renderLinguaAdvisorContextBox() {
+  const scope = linguaAdvisorState.scope;
+  const context = linguaAdvisorState.context || getLinguaAdvisorContext();
+  if (!scope) {
+    return "";
+  }
+
+  const rows = scope.type === "lesson"
+    ? [
+        ["บทเรียน", linguaAdvisorState.selectedLesson?.title || context.lessonTitle],
+        ["สถานะ", linguaAdvisorState.selectedLesson?.statusLabel || "ไม่ทราบสถานะ"],
+        ["หัวข้อ", linguaAdvisorState.selectedLesson?.topic || "ยังไม่มีข้อมูลบทเรียน"]
+      ]
+    : [["หัวข้อ", scope.type === "other_english" ? "ภาษาอังกฤษเพิ่มเติม" : scope.title]];
+
+  if (scope.type === "lesson" && context.source === "battle" && context.questionPrompt !== "ยังไม่มีโจทย์ปัจจุบัน") {
+    rows.push(["โจทย์ปัจจุบัน", context.questionPrompt]);
+  }
+  return `
+    <dl class="advisor-context-box">
+      ${rows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}
+    </dl>
+  `;
+}
+
+function renderLinguaAdvisorQuickActions() {
+  const scopeConfig = LINGUA_ADVISOR_SCOPES[linguaAdvisorState.scope?.type];
+  if (!scopeConfig) {
+    return "";
+  }
+  return `
+    <div class="advisor-quick-actions" aria-label="คำถามแนะนำ">
+      ${scopeConfig.actions.map(([actionType, label]) => `
+        <button type="button" data-advisor-action="${escapeHtml(actionType)}" data-advisor-action-label="${escapeHtml(label)}">${escapeHtml(label)}</button>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderLinguaAdvisorMessages() {
+  const messages = linguaAdvisorState.messages.map(message => `
+    <div class="advisor-message advisor-message-${escapeHtml(message.role)}">
+      ${message.role === "assistant" ? '<span class="advisor-message-avatar" aria-hidden="true">V</span>' : ""}
+      <div>
+        <small>${message.role === "assistant" ? "มาสเตอร์เวอริออน" : "นักเดินทาง"}</small>
+        <p>${escapeHtml(message.text)}</p>
+      </div>
+    </div>
+  `).join("");
+  return `<div id="linguaAdvisorChatBody" class="advisor-chat" aria-live="polite">${messages}</div>`;
+}
+
+function getLinguaAdvisorInputPlaceholder() {
+  return LINGUA_ADVISOR_SCOPES[linguaAdvisorState.scope?.type]?.placeholder || "พิมพ์คำถาม...";
+}
+
+function renderLinguaAdvisorChat() {
+  const isLessonScope = linguaAdvisorState.scope?.type === "lesson";
+  els.linguaAdvisorBody.innerHTML = `
+    <div class="advisor-screen advisor-chat-screen">
+      <div class="advisor-screen-heading advisor-chat-heading">
+        ${renderLinguaAdvisorScopeBadge()}
+        <div class="advisor-chat-nav">
+          ${isLessonScope ? '<button class="advisor-change-scope-button" type="button" data-advisor-back-lessons>กลับไปเลือกบทเรียน</button>' : ""}
+          <button class="advisor-change-scope-button" type="button" data-advisor-change-scope>เปลี่ยนหัวข้อ</button>
+        </div>
+      </div>
+      ${renderLinguaAdvisorContextBox()}
+      ${renderLinguaAdvisorQuickActions()}
+      ${renderLinguaAdvisorMessages()}
+      <div class="advisor-input-row">
+        <input id="linguaAdvisorInput" type="text" maxlength="280" autocomplete="off" placeholder="${escapeHtml(getLinguaAdvisorInputPlaceholder())}">
+        <button id="linguaAdvisorSendButton" type="button">ส่ง</button>
+      </div>
+      <p class="advisor-mode-note">ระบบที่ปรึกษายังเป็นโหมดจำลอง ยังไม่ได้เชื่อม AI จริง</p>
+    </div>
+  `;
+
+  els.linguaAdvisorBody.querySelector("[data-advisor-change-scope]")?.addEventListener("click", resetLinguaAdvisorScope);
+  els.linguaAdvisorBody.querySelector("[data-advisor-back-lessons]")?.addEventListener("click", returnLinguaAdvisorToLessonSelection);
+  els.linguaAdvisorBody.querySelectorAll("[data-advisor-action]").forEach(button => {
+    button.addEventListener("click", () => handleLinguaAdvisorQuickAction(
+      button.dataset.advisorAction,
+      button.dataset.advisorActionLabel
+    ));
+  });
+  const input = document.getElementById("linguaAdvisorInput");
+  document.getElementById("linguaAdvisorSendButton")?.addEventListener("click", handleLinguaAdvisorSendMessage);
+  input?.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleLinguaAdvisorSendMessage();
+    }
+  });
+  const chatBody = document.getElementById("linguaAdvisorChatBody");
+  if (chatBody) {
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+}
+
+function renderLinguaAdvisorPanel() {
+  if (!linguaAdvisorState.isOpen || !els.linguaAdvisorBody) {
+    return;
+  }
+  els.linguaAdvisorPanel.dataset.advisorScreen = linguaAdvisorState.screen;
+  if (linguaAdvisorState.screen === "lesson-selection") {
+    renderLinguaAdvisorLessonSelection();
+    return;
+  }
+  if (linguaAdvisorState.screen === "chat" && linguaAdvisorState.scope) {
+    renderLinguaAdvisorChat();
+    return;
+  }
+  renderLinguaAdvisorScopeSelection();
+}
+
+function buildLinguaAdvisorScopePayload(studentMessage) {
+  const context = getLinguaAdvisorContext();
+  const scope = linguaAdvisorState.scope ? { ...linguaAdvisorState.scope } : null;
+  return {
+    advisorCharacter: {
+      id: "master_verion",
+      name: "Master Verion",
+      thaiName: "มาสเตอร์เวอริออน",
+      role: "ที่ปรึกษาแกรมมาเรีย"
+    },
+    scope,
+    context,
+    studentMessage: String(studentMessage || "").trim(),
+    rules: {
+      answerOnlyWithinSelectedScope: true,
+      doNotAffectGameState: true,
+      doNotAwardRewards: true,
+      doNotChangeHp: true,
+      doNotChangeAp: true,
+      doNotUnlockLessons: true,
+      doNotModifyProgress: true,
+      doNotWriteFirestore: true,
+      doNotCallExternalApi: true
+    }
+  };
+}
+
+function getMockLinguaAdvisorResponse(actionType, context = {}, studentMessage = "") {
+  const lessonTitle = linguaAdvisorState.selectedLesson?.title || context.lessonTitle || "บทเรียนนี้";
+  const responses = {
+    lesson_hint: `ลองดูหัวข้อของ ${lessonTitle} ก่อนนะ นักเดินทาง หากเป็น was / were ให้ดูว่าประธานเป็นเอกพจน์หรือพหูพจน์`,
+    lesson_explain: "บทเรียนนี้ต้องดูโครงสร้างประโยค คำบอกเวลา และรูปของคำกริยาให้สัมพันธ์กัน",
+    lesson_summary: "บทเรียนนี้เน้นการใช้ภาษาอังกฤษในอดีต โดยสังเกตคำบอกเวลา เช่น yesterday, last night และ ago",
+    lesson_practice: "ตัวอย่างฝึกเพิ่ม: Yesterday, she ____ happy. ลองคิดว่าควรใช้ was หรือ were",
+    lesson_wrong_answer: context.answerAlreadySubmitted
+      ? "ลองเทียบประธาน คำบอกเวลา และรูปกริยาอีกครั้ง แล้วอ่านคำอธิบายของข้อที่ตอบเพื่อดูจุดที่ต่างกัน"
+      : "ตอบโจทย์ให้เสร็จก่อน แล้วข้าจะช่วยชี้จุดที่ควรสังเกตโดยไม่เฉลยล่วงหน้า",
+    game_overview: "เรียนบทสนทนา ตอบคำถาม และใช้พลังภาษาเอาชนะศัตรู เมื่อผ่านด่าน ความคืบหน้าจะพาเจ้าไปยังบทเรียนถัดไป",
+    game_battle: "ในการต่อสู้ ให้ตอบคำถามให้ถูกเพื่อสร้างโอกาสโจมตี ใช้สกิลและชามเพื่อเสริมพลังในจังหวะที่เหมาะสม",
+    game_skill: "สกิลช่วยเพิ่มพลังโจมตีหรือสร้างผลพิเศษ แต่ต้องเลือกใช้ให้เหมาะกับจังหวะและ AP ที่มี",
+    game_charm: "ชาม Grammaria เป็นตัวช่วยเสริมพลัง เช่น เพิ่มดาเมจ เพิ่มการฟื้นฟู หรือช่วยเรื่องจังหวะการต่อสู้",
+    game_item: "เปิดเมนูไอเทมในเทิร์นของผู้เล่น แล้วเลือกยาที่เหมาะกับ HP, AP หรือการโจมตีครั้งถัดไป",
+    assessment_grammaria: "Grammaria คือแต้มพลังการเรียนรู้ที่สะสมจากการผ่านด่าน ใช้แสดงความก้าวหน้าของผู้เรียน",
+    assessment_progress: "ดูบทเรียนปัจจุบัน ด่านปัจจุบัน เป้าหมายถัดไป และความคืบหน้าได้จากเมนูผู้เล่น",
+    assessment_reward: "บางโหมด เช่น การฝึกซ้ำ อาจไม่ให้รางวัลเพิ่ม เพื่อป้องกันการสะสมคะแนนซ้ำจากด่านเดิม",
+    assessment_result: "ผลการประเมินสรุปคะแนน Grammaria และความก้าวหน้า เพื่อช่วยให้เห็นหัวข้อที่ทำได้ดีและหัวข้อที่ควรทบทวน",
+    story_current: `ตอนนี้เส้นทางของเจ้าอยู่ใกล้ ${context.stageTitle || context.lessonTitle || "ดินแดนแห่งอดีต"} ซึ่งเป็นส่วนหนึ่งของการฟื้นฟู Past Fragment`,
+    story_boss: context.enemyName && context.enemyName !== "ยังไม่มีข้อมูลศัตรู"
+      ? `${context.enemyName} เป็นอุปสรรคแห่งภาษาในด่านนี้ เข้าใจบทเรียนให้แม่น แล้วการต่อสู้จะง่ายขึ้น`
+      : "บอสแต่ละตัวแทนบทเรียนหรืออุปสรรคทางภาษา เมื่อเข้าใจบทเรียน ก็จะเอาชนะบอสได้ง่ายขึ้น",
+    story_fragment: "Fragment คือเศษพลังของภาษาและกาลเวลา การผ่านบทเรียนช่วยฟื้นคืนเศษพลังเหล่านี้กลับสู่ Lingua",
+    story_world: "โลก Grammaria คือดินแดนแห่งภาษา ที่พลังของคำและไวยากรณ์ส่งผลต่อการต่อสู้",
+    english_grammar: "บอกหัวข้อไวยากรณ์ที่สงสัยได้เลย เช่น was / were, Past Simple หรือการเปลี่ยนกริยาเป็น V2",
+    english_vocabulary: "พิมพ์คำศัพท์ที่อยากรู้ได้ ระบบจำลองจะช่วยแนะนำแนวทางค้นความหมายและการใช้ในประโยค",
+    english_example: "ตัวอย่างประโยคง่าย ๆ: She was happy yesterday. คำว่า yesterday ช่วยบอกว่าเป็นเหตุการณ์ในอดีต",
+    english_practice: "ลองเติมคำ: They ____ at school yesterday. เลือกระหว่าง was และ were แล้วอธิบายเหตุผลสั้น ๆ"
+  };
+  if (responses[actionType]) {
+    return responses[actionType];
+  }
+  const scopeTitle = linguaAdvisorState.scope?.title || "หัวข้อที่เลือก";
+  const questionText = String(studentMessage || "").trim();
+  return questionText
+    ? `ข้าได้รับคำถามของเจ้าแล้ว ตอนนี้มาสเตอร์เวอริออนยังเป็นโหมดจำลอง จึงให้คำแนะนำเฉพาะขอบเขต: ${scopeTitle}`
+    : `ตอนนี้มาสเตอร์เวอริออนยังเป็นโหมดจำลอง และจะตอบเฉพาะขอบเขต: ${scopeTitle}`;
+}
+
+function handleLinguaAdvisorQuickAction(actionType, actionLabel = "") {
+  if (!linguaAdvisorState.scope || linguaAdvisorState.isLoading) {
+    return;
+  }
+  linguaAdvisorState.isLoading = true;
+  linguaAdvisorState.lastQuickAction = actionType;
+  linguaAdvisorState.context = getLinguaAdvisorContext();
+  addLinguaAdvisorMessage("user", actionLabel || "ขอคำแนะนำ");
+  addLinguaAdvisorMessage("assistant", getMockLinguaAdvisorResponse(
+    actionType,
+    linguaAdvisorState.context,
+    actionLabel
+  ));
+  linguaAdvisorState.isLoading = false;
+  renderLinguaAdvisorChat();
+}
+
+function handleLinguaAdvisorSendMessage() {
+  if (!linguaAdvisorState.scope || linguaAdvisorState.isLoading) {
+    return;
+  }
+  const input = document.getElementById("linguaAdvisorInput");
+  const studentMessage = String(input?.value || "").trim();
+  if (!studentMessage) {
+    input?.focus();
+    return;
+  }
+
+  linguaAdvisorState.isLoading = true;
+  linguaAdvisorState.context = getLinguaAdvisorContext();
+  buildLinguaAdvisorScopePayload(studentMessage);
+  addLinguaAdvisorMessage("user", studentMessage);
+  addLinguaAdvisorMessage("assistant", getMockLinguaAdvisorResponse(
+    "free_text",
+    linguaAdvisorState.context,
+    studentMessage
+  ));
+  linguaAdvisorState.isLoading = false;
+  renderLinguaAdvisorChat();
+  document.getElementById("linguaAdvisorInput")?.focus();
+}
+
 function calculateMainMenuActProgress(progress) {
   if (!progress) {
     return 0;
@@ -30113,12 +30706,16 @@ function generatePvpRoomCode() {
   return Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
 }
 
+function normalizePvpRoomCode(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
 function getPvpOpponentSide(side) {
   return side === "A" ? "B" : side === "B" ? "A" : "";
 }
 
 function getPvpLocalSide(room = pvpState.onlineRoom) {
-  const uid = firebaseAuth?.currentUser?.uid || getSessionUserId();
+  const uid = firebaseAuth?.currentUser?.uid || "";
   if (!uid || !room) return "";
   if (room.playerAUid === uid) return "A";
   if (room.playerBUid === uid) return "B";
@@ -30158,7 +30755,7 @@ function createPvpOnlineLane() {
     selectedSkill: "",
     selectedCharm: "",
     chargeResult: "",
-    questionChoicesToSend: createPvpOnlineQuestionChoices(),
+    questionChoicesToSend: [],
     lastActionId: "",
     lastResolvedActionId: "",
     updatedAt: Date.now()
@@ -30166,6 +30763,7 @@ function createPvpOnlineLane() {
 }
 
 function createPvpOnlinePlayer(side, uid, name, avatar = "") {
+  const hasPlayer = Boolean(uid);
   return {
     uid: uid || "",
     name: name || `Player ${side}`,
@@ -30173,26 +30771,41 @@ function createPvpOnlinePlayer(side, uid, name, avatar = "") {
     hp: PVP_DEFAULT_MAX_HP,
     maxHp: PVP_DEFAULT_MAX_HP,
     charge: 0,
-    ready: true,
-    connected: Boolean(uid),
-    lastSeenAt: Date.now()
+    ready: hasPlayer,
+    connected: hasPlayer,
+    lastSeenAt: hasPlayer ? Date.now() : null
   };
 }
 
-function getPvpOnlineIdentity(fallback = "Player A") {
+function getPvpOnlinePlayerIdentity(fallback = "Player") {
   const user = getCurrentUser();
+  const firebaseUser = firebaseAuth?.currentUser || null;
   const avatarCandidate = playerData?.avatar?.asset || playerData?.avatar || "";
   return {
-    uid: firebaseAuth?.currentUser?.uid || getSessionUserId(user),
-    name: playerData?.characterName || playerData?.displayName || user?.displayName || user?.username || fallback,
+    uid: firebaseUser?.uid || "",
+    name: playerData?.characterName
+      || playerData?.displayName
+      || playerData?.username
+      || user?.displayName
+      || user?.username
+      || firebaseUser?.displayName
+      || fallback,
     avatar: typeof avatarCandidate === "string" ? avatarCandidate : ""
   };
 }
 
+async function getAuthenticatedPvpFirebaseUser() {
+  if (!firebaseReady || getAuthMode() !== "firebase" || getCurrentUser()?.isGuest) {
+    return null;
+  }
+  return waitForFirebaseAuthReady();
+}
+
 function savePvpOnlineSession(roomCode, side) {
-  const uid = firebaseAuth?.currentUser?.uid || getSessionUserId();
-  if (!roomCode || !side || !uid) return;
-  playerStorage.set(PVP_ONLINE_SESSION_KEY, JSON.stringify({ roomCode, side, uid, savedAt: Date.now() }));
+  const cleanCode = normalizePvpRoomCode(roomCode);
+  const uid = firebaseAuth?.currentUser?.uid || "";
+  if (!cleanCode || !["A", "B"].includes(side) || !uid) return;
+  playerStorage.set(PVP_ONLINE_SESSION_KEY, JSON.stringify({ roomCode: cleanCode, side, uid, savedAt: Date.now() }));
 }
 
 function clearPvpOnlineSession() {
@@ -30202,7 +30815,10 @@ function clearPvpOnlineSession() {
 function getSavedPvpOnlineSession() {
   try {
     const parsed = JSON.parse(playerStorage.get(PVP_ONLINE_SESSION_KEY) || "null");
-    return parsed?.roomCode && parsed?.uid ? parsed : null;
+    if (!parsed?.roomCode || !parsed?.uid || !["A", "B"].includes(parsed.side)) {
+      return null;
+    }
+    return { ...parsed, roomCode: normalizePvpRoomCode(parsed.roomCode) };
   } catch (error) {
     clearPvpOnlineSession();
     return null;
@@ -30226,10 +30842,40 @@ function setPvpOnlineBusy(isBusy) {
   if (pvpState.onlineBusy && els.pvpRoomStatus) els.pvpRoomStatus.textContent = "กำลังบันทึก...";
 }
 
-function showPvpOnlineError(message) {
+function showPvpOnlineError(message, connectionStatus = "error") {
   pvpState.onlineError = String(message || "การเชื่อมต่อห้องดวลมีปัญหา");
+  pvpState.connectionStatus = connectionStatus;
   if (els.pvpRoomStatus) els.pvpRoomStatus.textContent = pvpState.onlineError;
   appendPvpLog(pvpState.onlineError);
+}
+
+function getPvpOnlineErrorMessage(error, fallbackMessage) {
+  const code = String(error?.code || "").toLowerCase();
+  const message = String(error?.message || "").toLowerCase();
+  if (code.includes("permission-denied") || message.includes("permission-denied") || message.includes("missing or insufficient permissions")) {
+    return "ยังไม่สามารถใช้ห้องออนไลน์ได้ อาจต้องเพิ่มสิทธิ์ pvpRooms ใน Firestore Rules";
+  }
+  if (code.includes("unauthenticated") || message.includes("unauthenticated")) {
+    return "ต้องเข้าสู่ระบบก่อนใช้ห้องออนไลน์";
+  }
+  if (message === "room-not-found") {
+    return "ไม่พบห้องนี้ กรุณาตรวจรหัสห้องอีกครั้ง";
+  }
+  if (message === "room-finished") {
+    return "ห้องนี้จบการดวลแล้ว";
+  }
+  if (message === "room-full") {
+    return "ห้องนี้มีผู้เล่นครบแล้ว";
+  }
+  if (message === "room-code-exhausted") {
+    return "ไม่สามารถสร้างรหัสห้องได้ กรุณาลองใหม่";
+  }
+  return fallbackMessage;
+}
+
+function reportPvpOnlineError(operation, error, fallbackMessage) {
+  console.error(`[PvP Online] ${operation} failed:`, error);
+  showPvpOnlineError(getPvpOnlineErrorMessage(error, fallbackMessage));
 }
 
 function unsubscribeFromPvpRoom() {
@@ -30245,6 +30891,8 @@ function mapOnlineRoomToPvpState(roomData) {
   const opponentPlayer = roomData.players?.[opponentSide] || createPvpOnlinePlayer(opponentSide, "", `Player ${opponentSide}`);
   const localLane = roomData.lanes?.[side] || createPvpOnlineLane();
   const opponentLane = roomData.lanes?.[opponentSide] || createPvpOnlineLane();
+  pvpState.localSide = side;
+  pvpState.opponentSide = opponentSide;
   pvpState.onlineSide = side;
   pvpState.roomCode = roomData.roomCode || pvpState.roomCode;
   pvpState.player = { ...localPlayer, ...localLane };
@@ -30265,6 +30913,7 @@ function mapOnlineRoomToPvpState(roomData) {
 
 function handlePvpRoomSnapshot(snapshot) {
   if (!snapshot.exists()) {
+    pvpState.onlineRoom = null;
     showPvpOnlineError("ไม่พบห้องเดิมแล้ว");
     clearPvpOnlineSession();
     unsubscribeFromPvpRoom();
@@ -30283,23 +30932,31 @@ function handlePvpRoomSnapshot(snapshot) {
 
 function subscribeToPvpRoom(roomCode) {
   unsubscribeFromPvpRoom();
-  const roomRef = doc(firestoreDb, PVP_ONLINE_COLLECTION, roomCode);
+  const cleanCode = normalizePvpRoomCode(roomCode);
+  if (!cleanCode) {
+    showPvpOnlineError("กรุณากรอกรหัสห้อง");
+    return;
+  }
+  const roomRef = doc(firestoreDb, PVP_ONLINE_COLLECTION, cleanCode);
   pvpState.onlineUnsubscribe = onSnapshot(roomRef, handlePvpRoomSnapshot, error => {
-    console.warn("[PvP Online] Room listener failed", error);
-    pvpState.connectionStatus = "disconnected";
-    showPvpOnlineError("สถานะ: เชื่อมต่อหลุด กรุณาลองใหม่");
+    pvpState.connectionStatus = "error";
+    reportPvpOnlineError("room listener", error, "สถานะ: เชื่อมต่อมีปัญหา กรุณาลองใหม่");
+    renderPvpScene();
   });
 }
 
 async function createOnlinePvpRoom() {
   if (pvpState.onlineBusy) return;
-  const identity = getPvpOnlineIdentity("Player A");
-  if (!firebaseReady || !identity.uid || getCurrentUser()?.isGuest) {
-    showPvpOnlineError("กรุณาเข้าสู่ระบบด้วยบัญชีออนไลน์ก่อนสร้างห้อง");
+  const firebaseUser = await getAuthenticatedPvpFirebaseUser();
+  if (!firebaseUser) {
+    showPvpOnlineError("ต้องเข้าสู่ระบบก่อนใช้ห้องออนไลน์");
     return;
   }
+  const identity = getPvpOnlinePlayerIdentity("Player A");
   setPvpOnlineBusy(true);
   try {
+    unsubscribeFromPvpRoom();
+    pvpState.onlineError = "";
     let roomCode = "";
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const candidate = generatePvpRoomCode();
@@ -30323,7 +30980,7 @@ async function createOnlinePvpRoom() {
         B: createPvpOnlinePlayer("B", "", "รอคู่ต่อสู้")
       },
       lanes: { A: createPvpOnlineLane(), B: createPvpOnlineLane() },
-      actionLog: [buildPvpLogEntry("A", "info", `${identity.name} สร้างห้องแล้ว`)],
+      actionLog: [buildPvpLogEntry("A", "room", "สร้างห้องออนไลน์แล้ว")],
       winnerSide: "",
       loserSide: "",
       finishReason: ""
@@ -30331,13 +30988,18 @@ async function createOnlinePvpRoom() {
     await setDoc(doc(firestoreDb, PVP_ONLINE_COLLECTION, roomCode), room);
     pvpState.mode = "online";
     pvpState.roomCode = roomCode;
+    pvpState.localSide = "A";
+    pvpState.opponentSide = "B";
     pvpState.onlineSide = "A";
     pvpState.connectionStatus = "waiting";
+    pvpState.onlineRoom = room;
+    mapOnlineRoomToPvpState(room);
     savePvpOnlineSession(roomCode, "A");
+    if (els.pvpRoomCodeInput) els.pvpRoomCodeInput.value = roomCode;
+    appendPvpLog(`สร้างห้องออนไลน์แล้ว รหัสห้อง: ${roomCode}`);
     subscribeToPvpRoom(roomCode);
   } catch (error) {
-    console.warn("[PvP Online] Create room failed", error);
-    showPvpOnlineError("ไม่สามารถสร้างห้องได้ กรุณาลองใหม่");
+    reportPvpOnlineError("create room", error, "ไม่สามารถสร้างห้องได้ กรุณาลองใหม่");
   } finally {
     setPvpOnlineBusy(false);
     renderPvpScene();
@@ -30346,50 +31008,63 @@ async function createOnlinePvpRoom() {
 
 async function joinOnlinePvpRoom(roomCode) {
   if (pvpState.onlineBusy) return;
-  const cleanCode = String(roomCode || "").trim().toUpperCase();
-  const identity = getPvpOnlineIdentity("Player B");
+  const cleanCode = normalizePvpRoomCode(roomCode);
   if (!cleanCode) return showPvpOnlineError("กรุณากรอกรหัสห้อง");
-  if (!firebaseReady || !identity.uid || getCurrentUser()?.isGuest) return showPvpOnlineError("กรุณาเข้าสู่ระบบด้วยบัญชีออนไลน์ก่อนเข้าห้อง");
+  const firebaseUser = await getAuthenticatedPvpFirebaseUser();
+  if (!firebaseUser) return showPvpOnlineError("ต้องเข้าสู่ระบบก่อนใช้ห้องออนไลน์");
+  const identity = getPvpOnlinePlayerIdentity("Player B");
   setPvpOnlineBusy(true);
   try {
+    unsubscribeFromPvpRoom();
+    pvpState.onlineError = "";
     const roomRef = doc(firestoreDb, PVP_ONLINE_COLLECTION, cleanCode);
     let joinedSide = "";
     await runTransaction(firestoreDb, async transaction => {
       const snapshot = await transaction.get(roomRef);
       if (!snapshot.exists()) throw new Error("room-not-found");
       const room = snapshot.data();
+      if (["finished", "abandoned"].includes(room.status)) throw new Error("room-finished");
       if (room.playerAUid === identity.uid) joinedSide = "A";
       else if (room.playerBUid === identity.uid) joinedSide = "B";
-      else if (["finished", "abandoned"].includes(room.status)) throw new Error("room-finished");
       else if (!room.playerBUid) joinedSide = "B";
       else throw new Error("room-full");
-      const nextRoom = { ...room, players: { ...room.players }, lanes: { ...room.lanes } };
-      nextRoom.players[joinedSide] = {
-        ...(nextRoom.players[joinedSide] || createPvpOnlinePlayer(joinedSide, identity.uid, identity.name)),
+      const players = { ...(room.players || {}) };
+      const lanes = { ...(room.lanes || {}) };
+      const wasConnected = Boolean(players[joinedSide]?.connected);
+      players[joinedSide] = {
+        ...(players[joinedSide] || createPvpOnlinePlayer(joinedSide, identity.uid, identity.name)),
         uid: identity.uid, name: identity.name, avatar: identity.avatar || "", connected: true, lastSeenAt: Date.now()
       };
-      nextRoom.lanes[joinedSide] = nextRoom.lanes[joinedSide] || createPvpOnlineLane();
-      if (joinedSide === "B") {
-        nextRoom.playerBUid = identity.uid;
-        nextRoom.guestUid = identity.uid;
-      }
-      if (!["finished", "abandoned"].includes(nextRoom.status)) {
-        nextRoom.status = nextRoom.playerAUid && nextRoom.playerBUid ? "playing" : "waiting";
-      }
-      nextRoom.updatedAt = Date.now();
-      nextRoom.actionLog = trimPvpActionLog([...(nextRoom.actionLog || []), buildPvpLogEntry(joinedSide, "join", `${identity.name} เข้าร่วมห้อง`)]);
-      transaction.set(roomRef, nextRoom);
+      lanes[joinedSide] = lanes[joinedSide] || createPvpOnlineLane();
+      const playerBUid = joinedSide === "B" ? identity.uid : (room.playerBUid || "");
+      const status = room.playerAUid && playerBUid ? "playing" : "waiting";
+      const joinMessage = joinedSide === "B" && !room.playerBUid
+        ? "ผู้เล่นคนที่ 2 เข้าร่วมห้องแล้ว"
+        : `${identity.name} กลับเข้าห้องออนไลน์แล้ว`;
+      const actionLog = wasConnected
+        ? trimPvpActionLog(room.actionLog)
+        : trimPvpActionLog([...(room.actionLog || []), buildPvpLogEntry(joinedSide, "join", joinMessage)]);
+      transaction.update(roomRef, {
+        playerBUid,
+        guestUid: playerBUid,
+        players,
+        lanes,
+        status,
+        updatedAt: serverTimestamp(),
+        actionLog
+      });
     });
     pvpState.mode = "online";
     pvpState.roomCode = cleanCode;
+    pvpState.localSide = joinedSide;
+    pvpState.opponentSide = getPvpOpponentSide(joinedSide);
     pvpState.onlineSide = joinedSide;
     pvpState.connectionStatus = "connecting";
     savePvpOnlineSession(cleanCode, joinedSide);
+    if (els.pvpRoomCodeInput) els.pvpRoomCodeInput.value = cleanCode;
     subscribeToPvpRoom(cleanCode);
   } catch (error) {
-    const messages = { "room-not-found": "ไม่พบห้องนี้", "room-finished": "ห้องนี้จบการดวลแล้ว", "room-full": "ห้องนี้มีผู้เล่นครบแล้ว" };
-    console.warn("[PvP Online] Join room failed", error);
-    showPvpOnlineError(messages[error.message] || "ไม่สามารถเข้าร่วมห้องได้");
+    reportPvpOnlineError("join room", error, "ไม่สามารถเข้าร่วมห้องได้ กรุณาลองใหม่");
   } finally {
     setPvpOnlineBusy(false);
     renderPvpScene();
@@ -30398,15 +31073,52 @@ async function joinOnlinePvpRoom(roomCode) {
 
 async function resumePvpOnlineRoom() {
   const saved = getSavedPvpOnlineSession();
-  const uid = firebaseAuth?.currentUser?.uid || getSessionUserId();
-  if (!saved || saved.uid !== uid) return showPvpOnlineError("ไม่พบห้องเดิมแล้ว");
+  const firebaseUser = await getAuthenticatedPvpFirebaseUser();
+  if (!saved) return showPvpOnlineError("ไม่พบห้องเดิมแล้ว");
+  if (!firebaseUser) return showPvpOnlineError("ต้องเข้าสู่ระบบก่อนใช้ห้องออนไลน์");
+  if (saved.uid !== firebaseUser.uid) {
+    clearPvpOnlineSession();
+    return showPvpOnlineError("บัญชีนี้ไม่ได้อยู่ในห้องเดิม");
+  }
+  setPvpOnlineBusy(true);
+  try {
+    const roomRef = doc(firestoreDb, PVP_ONLINE_COLLECTION, saved.roomCode);
+    const snapshot = await getDoc(roomRef);
+    if (!snapshot.exists()) {
+      clearPvpOnlineSession();
+      showPvpOnlineError("ไม่พบห้องเดิมแล้ว");
+      return;
+    }
+    const room = snapshot.data() || {};
+    const side = room.playerAUid === firebaseUser.uid ? "A" : room.playerBUid === firebaseUser.uid ? "B" : "";
+    if (!side) {
+      clearPvpOnlineSession();
+      showPvpOnlineError("บัญชีนี้ไม่ได้อยู่ในห้องเดิม");
+      return;
+    }
+    if (room.status === "finished") {
+      pvpState.mode = "online";
+      pvpState.onlineRoom = room;
+      pvpState.roomCode = saved.roomCode;
+      pvpState.connectionStatus = "finished";
+      mapOnlineRoomToPvpState(room);
+      subscribeToPvpRoom(saved.roomCode);
+      return;
+    }
+  } catch (error) {
+    reportPvpOnlineError("resume room", error, "ไม่สามารถกลับเข้าห้องเดิมได้ กรุณาลองใหม่");
+    return;
+  } finally {
+    setPvpOnlineBusy(false);
+  }
   await joinOnlinePvpRoom(saved.roomCode);
 }
 
 async function leaveOnlinePvpRoom() {
   const roomCode = pvpState.roomCode;
-  const side = getPvpLocalSide();
+  const side = pvpState.localSide || pvpState.onlineSide || getPvpLocalSide();
   unsubscribeFromPvpRoom();
+  setPvpOnlineBusy(true);
   try {
     if (roomCode && side) {
       const roomRef = doc(firestoreDb, PVP_ONLINE_COLLECTION, roomCode);
@@ -30415,15 +31127,38 @@ async function leaveOnlinePvpRoom() {
         if (!snapshot.exists()) return;
         const room = snapshot.data();
         const players = { ...room.players, [side]: { ...room.players?.[side], connected: false, lastSeenAt: Date.now() } };
-        transaction.set(roomRef, { ...room, players, updatedAt: Date.now() });
+        const name = players[side]?.name || `Player ${side}`;
+        const actionLog = trimPvpActionLog([...(room.actionLog || []), buildPvpLogEntry(side, "leave", `${name} ออกจากห้องออนไลน์แล้ว`)]);
+        transaction.update(roomRef, { players, actionLog, updatedAt: serverTimestamp() });
       });
     }
   } catch (error) {
-    console.warn("[PvP Online] Leave room update failed", error);
+    console.error("[PvP Online] leave room update failed:", error);
+  } finally {
+    setPvpOnlineBusy(false);
   }
   clearPvpOnlineSession();
   resetPvpMockState();
+  appendPvpLog("ออกจากห้องออนไลน์แล้ว");
   renderPvpScene();
+}
+
+async function copyPvpRoomCode() {
+  const roomCode = normalizePvpRoomCode(pvpState.roomCode);
+  if (!roomCode) return;
+  try {
+    await navigator.clipboard.writeText(roomCode);
+    els.pvpRoomStatus.textContent = "คัดลอกรหัสห้องแล้ว";
+  } catch (error) {
+    console.error("[PvP Online] copy room code failed:", error);
+    if (els.pvpRoomCodeInput) {
+      els.pvpRoomCodeInput.disabled = false;
+      els.pvpRoomCodeInput.value = roomCode;
+      els.pvpRoomCodeInput.select();
+      els.pvpRoomCodeInput.disabled = pvpState.mode === "online";
+    }
+    els.pvpRoomStatus.textContent = `รหัสห้อง: ${roomCode}`;
+  }
 }
 
 async function forfeitOnlinePvpMatch() {
@@ -30493,6 +31228,8 @@ function resetPvpMockState() {
   pvpState.matchEnded = false;
   pvpState.onlineRoom = null;
   pvpState.onlineSide = "";
+  pvpState.localSide = "";
+  pvpState.opponentSide = "";
   pvpState.onlineBusy = false;
   pvpState.onlineError = "";
   pvpState.lastSubmittedActionKey = "";
@@ -30829,6 +31566,33 @@ function renderPvpMatchEnd() {
   els.pvpRestartMatchButton.textContent = pvpState.mode === "online" ? "กลับล็อบบี้ PvP" : "เริ่มการดวลจำลองใหม่";
 }
 
+function renderPvpOnlineFoundationState() {
+  if (pvpState.mode !== "online") {
+    return;
+  }
+  const combatPanels = [
+    els.pvpQuestionChoices,
+    els.pvpIncomingQuestionPanel,
+    els.pvpAnswerResultPanel,
+    els.pvpActionPanel,
+    els.pvpSkillPanel,
+    els.pvpCharmPanel,
+    els.pvpChargePanel,
+    els.pvpResolvePanel
+  ];
+  combatPanels.forEach(panel => panel?.classList.add("hidden"));
+  document.querySelectorAll("#pvpDuelScene [data-pvp-phase]").forEach(step => step.classList.remove("is-active"));
+  if (!pvpState.matchEnded) {
+    els.pvpMatchEndPanel?.classList.add("hidden");
+  }
+  els.pvpPhaseIndicator.textContent = pvpState.connectionStatus === "waiting"
+    ? "รอคู่ต่อสู้เข้าห้องออนไลน์"
+    : pvpState.connectionStatus === "finished"
+      ? "ห้องออนไลน์สิ้นสุดแล้ว"
+      : "ห้องออนไลน์พร้อม";
+  els.pvpQuestionPreview.textContent = "ระบบต่อสู้ออนไลน์จะเปิดในรอบถัดไป";
+}
+
 function renderPvpScene() {
   const onlineMode = pvpState.mode === "online";
   const savedSession = getSavedPvpOnlineSession();
@@ -30838,6 +31602,7 @@ function renderPvpScene() {
     connecting: "สถานะ: กำลังเชื่อมต่อ",
     online: "สถานะ: ออนไลน์",
     disconnected: "สถานะ: การเชื่อมต่อหลุด",
+    error: "สถานะ: เชื่อมต่อมีปัญหา",
     finished: "สถานะ: จบการดวล"
   };
   els.pvpConnectionStatus.textContent = onlineMode
@@ -30854,7 +31619,7 @@ function renderPvpScene() {
   }
   els.pvpCopyRoomCodeButton?.classList.toggle("hidden", !onlineMode || !pvpState.roomCode);
   els.pvpLeaveOnlineRoomButton?.classList.toggle("hidden", !onlineMode);
-  els.pvpForfeitButton?.classList.toggle("hidden", !onlineMode || pvpState.matchEnded || pvpState.connectionStatus === "waiting");
+  els.pvpForfeitButton?.classList.add("hidden");
   els.pvpResumeOnlineRoomButton?.classList.toggle("hidden", onlineMode || !savedSession);
   els.pvpRoomCodeInput.disabled = onlineMode || pvpState.onlineBusy;
   [els.pvpCreateRoomButton, els.pvpJoinRoomButton, els.pvpLeaveRoomButton]
@@ -30872,6 +31637,7 @@ function renderPvpScene() {
   renderPvpChargePanel();
   renderPvpMatchEnd();
   renderPvpBattleLog();
+  renderPvpOnlineFoundationState();
 }
 
 function setPvpPhase(phase) {
@@ -31453,6 +32219,7 @@ function renderMainMenu() {
   setButtonAction(els.pvpModeButton, "PvP Duel", enterPvpMode, { lock: false });
   setButtonAction(els.assessmentResultButton, "ผลการประเมิน", openMainMenuAssessmentResult, { lock: false });
   setButtonAction(els.tutorialGuideButton, "วิธีเล่น", openTutorialGuide, { lock: false });
+  setButtonAction(els.linguaAdvisorButton, "ถามที่ปรึกษา", () => openLinguaAdvisor("main-menu"), { lock: false });
   setButtonAction(els.accountSettingsButton, "ตั้งค่าบัญชี", openAccountSettingsModal, { lock: false });
   setButtonAction(els.teacherDashboardButton, "Teacher Dashboard", openTeacherDashboardPasswordModal, { lock: false });
   setButtonAction(els.creatorCreditsButton, "เครดิตผู้สร้าง", openCreatorCredits, { lock: false });
@@ -32307,7 +33074,7 @@ function buildLessonDisplayItems(stage) {
   if (firstQuestion) {
     items.push("ตรวจความเข้าใจ");
     items.push(`คำถาม: ${firstQuestion.prompt || firstQuestion.sentence}`);
-    firstQuestion.options.forEach(option => {
+    getActQuestionOptions(firstQuestion).forEach(option => {
       items.push(`ตัวเลือก: ${option}`);
     });
   }
@@ -35140,25 +35907,43 @@ function chooseActFocusAnswer(option, question) {
   setTimeout(startActBossWarning, 1100);
 }
 
+function normalizeBattleAnswer(value = "") {
+  return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 function normalizeActFreeAnswer(value = "", { ignoreFinalPeriod = false } = {}) {
-  let normalized = String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  let normalized = normalizeBattleAnswer(value);
   if (ignoreFinalPeriod) {
     normalized = normalized.replace(/[.。]+$/g, "").trim();
   }
   return normalized;
 }
 
-function getActQuestionAcceptedAnswers(question = {}) {
-  return [
+function getBattleAcceptedAnswers(question = {}) {
+  const answers = [
     question.answer,
     question.correctAnswer,
     question.correct,
+    question.v2,
     ...(Array.isArray(question.acceptedAnswers) ? question.acceptedAnswers : []),
     ...(Array.isArray(question.answers) ? question.answers : [])
   ].filter(answer => answer !== undefined && answer !== null && String(answer).trim());
+  const seen = new Set();
+  return answers.filter(answer => {
+    const key = normalizeBattleAnswer(answer);
+    if (!key || seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 }
 
-function getActBattleQuestionType(question = {}) {
+function getActQuestionAcceptedAnswers(question = {}) {
+  return getBattleAcceptedAnswers(question);
+}
+
+function getBattleQuestionType(question = {}) {
   const rawType = String(
     question.type || question.questionType || question.answerType || "multiple-choice"
   ).trim().toLowerCase();
@@ -35171,11 +35956,167 @@ function getActBattleQuestionType(question = {}) {
   return "multiple-choice";
 }
 
+function getActBattleQuestionType(question = {}) {
+  return getBattleQuestionType(question);
+}
+
+function isInvalidBattleOption(option) {
+  const text = String(option ?? "").trim();
+  if (!text) {
+    return true;
+  }
+  const lowered = text.toLowerCase();
+  return [
+    "ตัวเลือกหลอก",
+    "distractor",
+    "wrong option",
+    "placeholder",
+    "todo",
+    "undefined",
+    "null"
+  ].some(pattern => lowered.includes(pattern.toLowerCase()));
+}
+
+function normalizeBattleOptions(options) {
+  const seen = new Set();
+  return (Array.isArray(options) ? options : [])
+    .map(option => String(option ?? "").trim())
+    .filter(option => !isInvalidBattleOption(option))
+    .filter(option => {
+      const key = normalizeBattleAnswer(option);
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+}
+
+function getBattleCorrectAnswer(question = {}) {
+  return String(
+    question.answer ?? question.correctAnswer ?? question.correct ?? question.v2 ?? ""
+  ).trim();
+}
+
+function getRawBattleQuestionOptions(question = {}) {
+  const options = Array.isArray(question.options) ? question.options : [];
+  const choices = Array.isArray(question.choices) ? question.choices : [];
+  const distractors = Array.isArray(question.distractors) ? question.distractors : [];
+  const primaryOptions = options.length ? options : choices;
+  return [...primaryOptions, ...distractors];
+}
+
+function inferBattleOptionBaseVerb(question = {}, correctAnswer = "") {
+  const explicit = question.baseVerb || question.baseWord || question.targetWord || question.v1 || question.word?.v1;
+  if (explicit) {
+    return String(explicit).trim().toLowerCase();
+  }
+  const prompt = String(question.prompt || question.sentence || question.text || "");
+  const promptMatch = prompt.match(/\(V1:\s*([a-z]+)\)/i)
+    || prompt.match(/(?:คำว่า|ของ)\s+([a-z]+)/i)
+    || prompt.match(/(?:past form of|V2 of)\s+([a-z]+)/i);
+  if (promptMatch) {
+    return promptMatch[1].toLowerCase();
+  }
+  const answer = String(correctAnswer || "").trim().toLowerCase();
+  return /^[a-z]+$/.test(answer) ? answer.replace(/ied$/, "y").replace(/ed$/, "").replace(/d$/, "") : "";
+}
+
+function buildBattleFallbackDistractors(question = {}, correctAnswer = "") {
+  const correct = String(correctAnswer || "").trim();
+  const normalizedCorrect = normalizeBattleAnswer(correct);
+  if (normalizedCorrect === "was") {
+    return ["were", "is", "are", "am"];
+  }
+  if (normalizedCorrect === "were") {
+    return ["was", "is", "are", "am"];
+  }
+  if (normalizedCorrect === "had") {
+    return ["has", "have", "having"];
+  }
+
+  const baseVerb = inferBattleOptionBaseVerb(question, correct);
+  if (!baseVerb) {
+    return [
+      ...(Array.isArray(question.distractors) ? question.distractors : []),
+      "was",
+      "were",
+      "had",
+      "is",
+      "are"
+    ];
+  }
+
+  const consonantY = /[^aeiou]y$/i.test(baseVerb);
+  const gerund = baseVerb.endsWith("e") && !baseVerb.endsWith("ee")
+    ? `${baseVerb.slice(0, -1)}ing`
+    : `${baseVerb}ing`;
+  const wordForms = consonantY
+    ? [baseVerb, `${baseVerb}ed`, `${baseVerb.slice(0, -1)}ies`, gerund]
+    : [baseVerb, `${baseVerb}d`, `${baseVerb}ed`, gerund, `${baseVerb}s`];
+
+  if (/\s/.test(correct)) {
+    return [
+      ...(Array.isArray(question.distractors) ? question.distractors : []),
+      ...wordForms.map(form => `I ${form} yesterday.`)
+    ];
+  }
+  return [
+    ...(Array.isArray(question.distractors) ? question.distractors : []),
+    ...wordForms
+  ];
+}
+
+const reportedInvalidBattleOptionQuestionIds = new Set();
+
+function ensureEnoughBattleDistractors(question = {}, options = [], correctAnswer = "") {
+  const rawOptions = Array.isArray(options) ? options : [];
+  const safeOptions = normalizeBattleOptions(rawOptions);
+  const correct = String(correctAnswer || "").trim();
+  const normalizedCorrect = normalizeBattleAnswer(correct);
+  const questionKey = question.id || question.prompt || question.sentence || "unknown-question";
+
+  if (safeOptions.length !== rawOptions.length && !reportedInvalidBattleOptionQuestionIds.has(questionKey)) {
+    reportedInvalidBattleOptionQuestionIds.add(questionKey);
+    console.warn("[PvE Question] Removed invalid answer option", { questionId: question.id || "" });
+  }
+
+  if (correct && !safeOptions.some(option => normalizeBattleAnswer(option) === normalizedCorrect)) {
+    safeOptions.push(correct);
+  }
+
+  const fallbackCandidates = normalizeBattleOptions(buildBattleFallbackDistractors(question, correct));
+  fallbackCandidates.forEach(candidate => {
+    if (safeOptions.length >= 4) {
+      return;
+    }
+    const key = normalizeBattleAnswer(candidate);
+    if (key !== normalizedCorrect && !safeOptions.some(option => normalizeBattleAnswer(option) === key)) {
+      safeOptions.push(candidate);
+    }
+  });
+
+  if (safeOptions.length < 3 && !reportedInvalidBattleOptionQuestionIds.has(`${questionKey}:few-options`)) {
+    reportedInvalidBattleOptionQuestionIds.add(`${questionKey}:few-options`);
+    console.warn("[PvE Question] Too few usable answer options", {
+      questionId: question.id || "",
+      optionCount: safeOptions.length
+    });
+  }
+
+  const limitedOptions = safeOptions.slice(0, 4);
+  if (correct && !limitedOptions.some(option => normalizeBattleAnswer(option) === normalizedCorrect)) {
+    limitedOptions[Math.max(0, limitedOptions.length - 1)] = correct;
+  }
+  return normalizeBattleOptions(limitedOptions);
+}
+
 function getActQuestionOptions(question = {}) {
-  const options = Array.isArray(question.options)
-    ? question.options
-    : Array.isArray(question.choices) ? question.choices : [];
-  return options.filter(option => option !== undefined && option !== null && String(option).trim());
+  const options = getRawBattleQuestionOptions(question);
+  if (getActBattleQuestionType(question) !== "multiple-choice") {
+    return normalizeBattleOptions(options);
+  }
+  return ensureEnoughBattleDistractors(question, options, getBattleCorrectAnswer(question));
 }
 
 function renderActQuestionDataError(question, message) {
@@ -35191,7 +36132,7 @@ function renderActQuestionDataError(question, message) {
 }
 
 function getActQuestionPrimaryAnswer(question = {}) {
-  return getActQuestionAcceptedAnswers(question)[0] || "";
+  return getBattleCorrectAnswer(question) || getActQuestionAcceptedAnswers(question)[0] || "";
 }
 
 function isActQuestionAnswerCorrect(question, selectedAnswer) {
@@ -35346,6 +36287,9 @@ function renderActWordArrangementQuestion(question, onSubmit = chooseActAnswer) 
 
 function renderActBattleQuestionControls(question, visibleOptions = [], onSubmit = chooseActAnswer) {
   const questionType = getActBattleQuestionType(question);
+  const isArrangement = questionType === "word-arrangement";
+  els.questionPanel?.classList.toggle("boss-v2-arrangement-active", isArrangement);
+  scenes.battle?.classList.toggle("arrangement-layout-active", isArrangement);
   if (questionType === "typing") {
     renderActTypingQuestion(question, onSubmit);
     return;
@@ -35355,7 +36299,17 @@ function renderActBattleQuestionControls(question, visibleOptions = [], onSubmit
     return;
   }
 
-  const options = visibleOptions.length ? visibleOptions : getActQuestionOptions(question);
+  const hasVisibleOptions = Array.isArray(visibleOptions) && visibleOptions.length > 0;
+  let options = hasVisibleOptions
+    ? normalizeBattleOptions(visibleOptions)
+    : getActQuestionOptions(question);
+  const correctAnswer = getBattleCorrectAnswer(question);
+  if (correctAnswer && !options.some(option => normalizeBattleAnswer(option) === normalizeBattleAnswer(correctAnswer))) {
+    options.push(correctAnswer);
+  }
+  if (options.length < 2) {
+    options = ensureEnoughBattleDistractors(question, options, correctAnswer);
+  }
   if (!options.length) {
     renderActQuestionDataError(question, "โจทย์นี้ไม่มีตัวเลือกคำตอบ");
     return;
@@ -35424,9 +36378,8 @@ function showActBattleQuestion() {
     }
   }
 
-  renderActBattleQuestionControls(question, visibleOptions);
-
   showOnlyBattlePanel(els.questionPanel);
+  renderActBattleQuestionControls(question, visibleOptions);
 }
 
 const BATTLE_CORRECT_SUCCESS_MESSAGE = "ถูกต้อง! พลังแกรมมาเรียตอบสนอง กดไปต่อเพื่อเลือกสกิลโจมตี";
@@ -37388,8 +38341,9 @@ function showBossTypingChallenge() {
     confirmButton.disabled = challenge.inputLocked || !input.value.trim();
   });
   input.addEventListener("keydown", event => {
-    if (event.key === "Enter") {
+    if (event.key === "Enter" && input.value.trim() && !challenge.inputLocked) {
       event.preventDefault();
+      confirmButton.click();
     }
   });
   confirmButton.addEventListener("click", () => confirmBossTypingChallenge(input.value));
@@ -39046,15 +40000,24 @@ function isRenderableBossQuestion(question) {
   if (!question) {
     return false;
   }
-  const answer = question.correctAnswer || question.answer;
+  const questionType = getActBattleQuestionType(question);
   const questionText = getQuestionText(question);
-  return Boolean(
-    questionText &&
-    answer &&
-    Array.isArray(question.options) &&
-    question.options.length >= 2 &&
-    question.options.includes(answer)
-  );
+  const acceptedAnswers = getActQuestionAcceptedAnswers(question);
+  if (!questionText || !acceptedAnswers.length) {
+    return false;
+  }
+  if (questionType === "typing") {
+    return true;
+  }
+  if (questionType === "word-arrangement") {
+    return Boolean(
+      (Array.isArray(question.tiles) && question.tiles.length) ||
+      (Array.isArray(question.words) && question.words.length) ||
+      getActQuestionPrimaryAnswer(question)
+    );
+  }
+  const options = getActQuestionOptions(question);
+  return options.length >= 2 && options.some(option => isActQuestionAnswerCorrect(question, option));
 }
 
 function fallbackBossQuestionToStoredAttack(reason = "missing-question") {
@@ -39837,15 +40800,11 @@ function showBossQuestionStep() {
       : "บอส: “ถ้าเจ้าจำอดีตผิด ความทรงจำก็จะแตกสลาย... ตอบข้ามา!”";
   els.questionText.textContent = resolveBattleQuestionPrompt(question);
   els.answerOptions.innerHTML = "";
-
-  question.options.forEach(option => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "answer-button";
-    button.textContent = option;
-    button.addEventListener("click", () => chooseBossQuestionAnswer(option, question));
-    els.answerOptions.appendChild(button);
-  });
+  renderActBattleQuestionControls(
+    question,
+    getActQuestionOptions(question),
+    answer => chooseBossQuestionAnswer(answer, question)
+  );
 }
 
 function chooseBossQuestionAnswer(option, question) {
@@ -39859,7 +40818,8 @@ function chooseBossQuestionAnswer(option, question) {
   battle.bossQuestionState.inputLocked = true;
   battle.bossQuestionState.resolved = true;
 
-  const isCorrect = option === (question.correctAnswer || question.answer);
+  const correctAnswer = getActQuestionPrimaryAnswer(question);
+  const isCorrect = isActQuestionAnswerCorrect(question, option);
   markQuestionResult(
     question,
     isCorrect ? "correct" : "wrong",
@@ -39871,10 +40831,10 @@ function chooseBossQuestionAnswer(option, question) {
 
   els.answerOptions.querySelectorAll("button").forEach(button => {
     button.disabled = true;
-    if (button.textContent === (question.correctAnswer || question.answer)) {
+    if (isActQuestionAnswerCorrect(question, button.textContent)) {
       button.classList.add("correct");
     }
-    if (button.textContent === option && !isCorrect) {
+    if (normalizeBattleAnswer(button.textContent) === normalizeBattleAnswer(option) && !isCorrect) {
       button.classList.add("wrong");
     }
   });
@@ -39892,7 +40852,7 @@ function chooseBossQuestionAnswer(option, question) {
     const chipResult = applyStatusDamageToTarget("player", chipDamage, "bossChipDamage", { source: "bossQuestion" });
     playAttackSfx();
     triggerMotion(els.battleEnemy, "enemy-attack-motion");
-    feedback.innerHTML = `<strong>ยังไม่ถูกต้อง!</strong><br>บอสโจมตีแรงขึ้น รับดาเมจ ${chipResult.finalDamage}<br>คำตอบที่ถูกคือ <strong>${question.correctAnswer || question.answer}</strong><br>${question.explanation}`;
+    feedback.innerHTML = `<strong>ยังไม่ถูกต้อง!</strong><br>บอสโจมตีแรงขึ้น รับดาเมจ ${chipResult.finalDamage}<br>คำตอบที่ถูกคือ <strong>${escapeHtml(correctAnswer)}</strong><br>${escapeHtml(question.explanation || "")}`;
   }
 
   els.answerOptions.appendChild(feedback);
@@ -40849,22 +41809,17 @@ function startAttack() {
 
   els.questionText.textContent = state.currentQuestion.text;
   els.answerOptions.innerHTML = "";
-
-  state.currentQuestion.options.forEach(option => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "answer-button";
-    button.textContent = option;
-    button.addEventListener("click", () => chooseAnswer(option));
-    els.answerOptions.appendChild(button);
-  });
-
   els.battleMessage.textContent = "ระบุความหมายก่อนร่ายเวท";
   showOnlyBattlePanel(els.questionPanel);
+  renderActBattleQuestionControls(
+    state.currentQuestion,
+    getActQuestionOptions(state.currentQuestion),
+    answer => chooseAnswer(answer)
+  );
 }
 
 function chooseAnswer(option) {
-  state.answerCorrect = option === (state.currentQuestion.correctAnswer || state.currentQuestion.correct);
+  state.answerCorrect = isActQuestionAnswerCorrect(state.currentQuestion, option);
   els.battleMessage.textContent = state.answerCorrect
     ? "คำนั้นเปล่งแสงแห่งความหมาย เลือกเครื่องรางหนึ่งชิ้น"
     : "ความหมายเริ่มสั่นไหว เครื่องรางอาจยังช่วยปกป้องเจ้าได้";
@@ -42636,16 +43591,7 @@ els.pvpExitButton?.addEventListener("click", exitPvpMode);
 els.pvpCreateOnlineRoomButton?.addEventListener("click", createOnlinePvpRoom);
 els.pvpJoinOnlineRoomButton?.addEventListener("click", () => joinOnlinePvpRoom(els.pvpRoomCodeInput?.value));
 els.pvpResumeOnlineRoomButton?.addEventListener("click", resumePvpOnlineRoom);
-els.pvpCopyRoomCodeButton?.addEventListener("click", async () => {
-  if (!pvpState.roomCode) return;
-  try {
-    await navigator.clipboard.writeText(pvpState.roomCode);
-    els.pvpRoomStatus.textContent = `คัดลอกรหัสห้อง ${pvpState.roomCode} แล้ว`;
-  } catch (error) {
-    console.warn("[PvP Online] Copy room code failed", error);
-    els.pvpRoomStatus.textContent = `รหัสห้อง: ${pvpState.roomCode}`;
-  }
-});
+els.pvpCopyRoomCodeButton?.addEventListener("click", copyPvpRoomCode);
 els.pvpLeaveOnlineRoomButton?.addEventListener("click", leaveOnlinePvpRoom);
 els.pvpForfeitButton?.addEventListener("click", () => {
   openGameModal({
@@ -42728,6 +43674,19 @@ els.lessonSelectButton.addEventListener("click", openLessonSelectModal);
 els.lessonProgressCard?.addEventListener("click", openLessonProgressReviewModal);
 els.lessonProgressCard?.addEventListener("keydown", handleLessonProgressBadgeKeydown);
 els.battleExitButton.addEventListener("click", confirmExitBattle);
+els.battleLinguaAdvisorButton?.addEventListener("click", () => openLinguaAdvisor("battle"));
+els.linguaAdvisorCloseButton?.addEventListener("click", closeLinguaAdvisor);
+els.linguaAdvisorOverlay?.addEventListener("click", event => {
+  if (event.target === els.linguaAdvisorOverlay) {
+    closeLinguaAdvisor();
+  }
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && linguaAdvisorState.isOpen) {
+    event.preventDefault();
+    closeLinguaAdvisor();
+  }
+});
 els.lessonDictionaryButton.addEventListener("click", () => {
   openGameModal({
     title: "พจนานุกรมแกรมมาเรีย",

@@ -7178,6 +7178,7 @@ h3 {
 
 .boss-v2-challenge-panel {
   display: grid;
+  grid-column: 1 / -1;
   gap: 12px;
   width: min(100%, 620px);
   margin: 0 auto;
@@ -9048,5 +9049,588 @@ h3 {
 @media (max-width: 360px), (max-width: 768px) and (max-height: 620px) {
   #battleScene.active .battlefield-stage #battlePlayer.has-female-battle-model .player-model-motion {
     top: calc(-1 * (var(--battle-player-model-lift) + clamp(36px, 14%, 44px)));
+  }
+}
+
+body.lingua-advisor-open {
+  overflow: hidden;
+}
+
+.battle-lingua-advisor-button {
+  position: fixed;
+  top: max(76px, calc(env(safe-area-inset-top) + 62px));
+  right: max(14px, env(safe-area-inset-right));
+  z-index: 38;
+  min-height: 42px;
+  padding: 8px 13px;
+  border: 1px solid rgba(255, 220, 132, 0.9);
+  border-radius: 8px;
+  color: #fff7df;
+  background: rgba(15, 22, 61, 0.92);
+  box-shadow: 0 0 14px rgba(82, 199, 242, 0.34), inset 0 0 10px rgba(134, 92, 219, 0.24);
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.battle-lingua-advisor-button:hover,
+.battle-lingua-advisor-button:focus-visible {
+  border-color: #fff1b5;
+  box-shadow: 0 0 20px rgba(82, 199, 242, 0.55), inset 0 0 12px rgba(134, 92, 219, 0.3);
+}
+
+.advisor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(4, 7, 24, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.advisor-panel {
+  width: min(560px, 100%);
+  max-height: min(90dvh, 820px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid rgba(244, 204, 109, 0.88);
+  border-radius: 8px;
+  color: #f8f3ff;
+  background:
+    radial-gradient(circle at 16% 0%, rgba(83, 205, 244, 0.16), transparent 30%),
+    linear-gradient(155deg, rgba(17, 24, 66, 0.98), rgba(30, 18, 67, 0.98));
+  box-shadow:
+    0 22px 60px rgba(0, 0, 0, 0.58),
+    0 0 24px rgba(103, 79, 213, 0.26),
+    inset 0 0 0 1px rgba(255, 244, 202, 0.08);
+}
+
+.advisor-header {
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(244, 204, 109, 0.46);
+  background: rgba(8, 13, 42, 0.72);
+}
+
+.advisor-master-verion {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.advisor-master-portrait {
+  flex: 0 0 70px;
+  width: 70px;
+  height: 78px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(244, 204, 109, 0.78);
+  border-radius: 8px;
+  background: rgba(14, 20, 57, 0.92);
+  box-shadow: 0 0 15px rgba(97, 205, 246, 0.28);
+}
+
+.advisor-master-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center 18%;
+}
+
+.advisor-master-placeholder {
+  color: #f8da82;
+  font-family: Georgia, serif;
+  font-size: 2rem;
+  font-weight: 900;
+}
+
+.advisor-title,
+.advisor-master-name,
+.advisor-master-role {
+  display: block;
+  letter-spacing: 0;
+}
+
+.advisor-title {
+  margin: 0 0 3px;
+  color: #7be2ff;
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.advisor-master-name {
+  overflow-wrap: anywhere;
+  color: #ffe39a;
+  font-size: 1.08rem;
+}
+
+.advisor-master-role {
+  margin-top: 2px;
+  color: #ddd5ff;
+  font-size: 0.82rem;
+}
+
+.advisor-close-button,
+.advisor-change-scope-button,
+.advisor-quick-actions button,
+.advisor-input-row button {
+  min-height: 40px;
+  border: 1px solid rgba(244, 204, 109, 0.72);
+  border-radius: 7px;
+  color: #fff7df;
+  background: rgba(51, 39, 105, 0.9);
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.advisor-close-button {
+  flex: 0 0 auto;
+  min-width: 58px;
+  padding: 8px 12px;
+}
+
+.advisor-body {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.advisor-screen {
+  height: 100%;
+  min-height: 0;
+  padding: 16px;
+}
+
+.advisor-scope-selection,
+.advisor-lesson-selection,
+.advisor-chat-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.advisor-npc {
+  padding: 12px;
+  border-left: 3px solid #68d5fa;
+  border-radius: 6px;
+  background: rgba(13, 22, 62, 0.72);
+}
+
+.advisor-npc strong,
+.advisor-screen-heading h3 {
+  color: #ffe29a;
+}
+
+.advisor-npc p,
+.advisor-screen-heading p,
+.advisor-npc blockquote {
+  margin: 5px 0 0;
+  color: #e7e1ff;
+  line-height: 1.48;
+}
+
+.advisor-npc blockquote {
+  padding-top: 8px;
+  border-top: 1px solid rgba(126, 210, 244, 0.2);
+  font-size: 0.9rem;
+}
+
+.advisor-scope-grid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.advisor-scope-card {
+  min-height: 104px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid rgba(115, 218, 250, 0.44);
+  border-radius: 8px;
+  color: #f8f3ff;
+  text-align: left;
+  background: rgba(24, 31, 80, 0.84);
+  box-shadow: inset 0 0 14px rgba(125, 86, 220, 0.12);
+}
+
+.advisor-scope-card:hover,
+.advisor-scope-card:focus-visible {
+  border-color: #ffe29a;
+  background: rgba(45, 44, 107, 0.96);
+}
+
+.advisor-scope-card-title {
+  color: #ffe29a;
+  font-size: 0.98rem;
+}
+
+.advisor-scope-card-desc {
+  color: #d8d4eb;
+  font-size: 0.78rem;
+  line-height: 1.42;
+}
+
+.advisor-screen-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.advisor-screen-heading h3,
+.advisor-screen-heading p {
+  margin: 0;
+}
+
+.advisor-screen-heading p {
+  margin-top: 4px;
+  font-size: 0.86rem;
+}
+
+.advisor-lesson-list {
+  min-height: 0;
+  display: grid;
+  gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 3px;
+}
+
+.advisor-lesson-card {
+  width: 100%;
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid rgba(115, 218, 250, 0.4);
+  border-radius: 8px;
+  color: #f9f5ff;
+  text-align: left;
+  background: rgba(21, 31, 75, 0.86);
+}
+
+.advisor-lesson-card.is-current {
+  border-color: #ffe29a;
+  box-shadow: inset 3px 0 0 #ffe29a;
+}
+
+.advisor-lesson-card.is-completed {
+  border-color: rgba(104, 213, 250, 0.76);
+  box-shadow: inset 3px 0 0 #68d5fa;
+}
+
+.advisor-lesson-card.is-unlocked {
+  border-color: rgba(129, 230, 168, 0.64);
+  box-shadow: inset 3px 0 0 #81e6a8;
+}
+
+.advisor-lesson-card.is-locked {
+  cursor: not-allowed;
+  opacity: 0.5;
+  border-color: rgba(195, 189, 214, 0.26);
+  box-shadow: inset 3px 0 0 #8f899f;
+}
+
+.advisor-lesson-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.advisor-lesson-copy strong,
+.advisor-lesson-copy small {
+  overflow-wrap: anywhere;
+}
+
+.advisor-lesson-copy strong {
+  color: #fff3c9;
+}
+
+.advisor-lesson-copy small {
+  color: #d6d1e9;
+}
+
+.advisor-lesson-status {
+  flex: 0 0 auto;
+  padding: 5px 7px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  color: #b8eaff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.advisor-locked-note,
+.advisor-mode-note,
+.advisor-empty-state {
+  margin: 0;
+  color: #cfc9df;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.advisor-chat-heading {
+  align-items: center;
+}
+
+.advisor-chat-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.advisor-scope-badge {
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(115, 218, 250, 0.58);
+  border-radius: 6px;
+  color: #dff8ff;
+  background: rgba(18, 42, 78, 0.78);
+  font-size: 0.82rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.advisor-change-scope-button {
+  min-height: 34px;
+  padding: 6px 9px;
+  font-size: 0.76rem;
+}
+
+.advisor-context-box {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid rgba(244, 204, 109, 0.3);
+  border-radius: 7px;
+  background: rgba(8, 17, 49, 0.68);
+}
+
+.advisor-context-box div {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.advisor-context-box dt {
+  color: #f3d689;
+  font-weight: 800;
+}
+
+.advisor-context-box dd {
+  margin: 0;
+  color: #e9e5f7;
+  overflow-wrap: anywhere;
+}
+
+.advisor-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.advisor-quick-actions button {
+  min-height: 34px;
+  padding: 6px 9px;
+  font-size: 0.76rem;
+}
+
+.advisor-chat {
+  min-height: 128px;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 3px 4px 0;
+}
+
+.advisor-message {
+  max-width: 88%;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.advisor-message > div {
+  padding: 9px 10px;
+  border: 1px solid rgba(115, 218, 250, 0.32);
+  border-radius: 8px;
+  background: rgba(19, 36, 77, 0.88);
+}
+
+.advisor-message-user {
+  align-self: flex-end;
+}
+
+.advisor-message-user > div {
+  border-color: rgba(244, 204, 109, 0.45);
+  background: rgba(65, 45, 104, 0.92);
+}
+
+.advisor-message-avatar {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e6c568;
+  border-radius: 50%;
+  color: #ffe9a8;
+  background: #172b5c;
+  font-family: Georgia, serif;
+  font-weight: 900;
+}
+
+.advisor-message small {
+  color: #99e4fb;
+  font-weight: 800;
+}
+
+.advisor-message p {
+  margin: 3px 0 0;
+  color: #f7f3ff;
+  line-height: 1.48;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.advisor-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.advisor-input-row input {
+  min-width: 0;
+  min-height: 44px;
+  padding: 9px 11px;
+  border: 1px solid rgba(115, 218, 250, 0.5);
+  border-radius: 7px;
+  color: #fff;
+  background: rgba(6, 13, 39, 0.9);
+}
+
+.advisor-input-row input::placeholder {
+  color: #aaa4c7;
+}
+
+.advisor-input-row button {
+  min-width: 64px;
+  padding: 8px 13px;
+  color: #1d1830;
+  background: #f1cf70;
+}
+
+.advisor-footer-note {
+  margin: 0;
+  padding: 9px 14px;
+  border-top: 1px solid rgba(244, 204, 109, 0.3);
+  color: #c9c3dc;
+  background: rgba(7, 12, 35, 0.76);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .battle-lingua-advisor-button {
+    top: max(66px, calc(env(safe-area-inset-top) + 54px));
+    right: max(8px, env(safe-area-inset-right));
+    min-height: 36px;
+    padding: 6px 9px;
+    font-size: 0.74rem;
+  }
+
+  .advisor-overlay {
+    align-items: stretch;
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
+  .advisor-panel {
+    width: 100%;
+    max-height: none;
+  }
+
+  .advisor-header {
+    min-height: 80px;
+    padding: 8px 10px;
+  }
+
+  .advisor-master-portrait {
+    flex-basis: 54px;
+    width: 54px;
+    height: 62px;
+  }
+
+  .advisor-master-name {
+    font-size: 0.94rem;
+  }
+
+  .advisor-master-role,
+  .advisor-title {
+    font-size: 0.7rem;
+  }
+
+  .advisor-screen {
+    padding: 11px;
+  }
+
+  .advisor-scope-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .advisor-scope-card {
+    min-height: 80px;
+  }
+
+  .advisor-screen-heading,
+  .advisor-chat-heading {
+    display: grid;
+  }
+
+  .advisor-chat-nav {
+    justify-content: flex-start;
+  }
+
+  .advisor-context-box div {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .advisor-lesson-card {
+    align-items: flex-start;
+  }
+
+  .advisor-lesson-status {
+    white-space: normal;
+    text-align: center;
+  }
+
+  .advisor-message {
+    max-width: 95%;
+  }
+
+  .advisor-footer-note {
+    padding: 7px 10px;
   }
 }

@@ -143,6 +143,7 @@
             <button id="pvpModeButton" class="secondary-button main-menu-button" type="button">PvP Duel</button>
             <button id="assessmentResultButton" class="secondary-button main-menu-button" type="button">ผลการประเมิน</button>
             <button id="tutorialGuideButton" class="secondary-button main-menu-button" type="button">วิธีเล่น</button>
+            <button id="linguaAdvisorButton" class="secondary-button main-menu-button" type="button">ถามที่ปรึกษา</button>
             <button id="accountSettingsButton" class="secondary-button main-menu-button" type="button">ตั้งค่าบัญชี</button>
             <button id="teacherDashboardButton" class="secondary-button main-menu-button" type="button">Teacher Dashboard</button>
             <button id="creatorCreditsButton" class="secondary-button main-menu-button" type="button">เครดิตผู้สร้าง</button>
@@ -176,7 +177,7 @@
           <button id="pvpJoinOnlineRoomButton" class="pvp-action-button" type="button">เข้าร่วมห้องออนไลน์</button>
           <button id="pvpCopyRoomCodeButton" class="pvp-action-button pvp-muted-action hidden" type="button">คัดลอกรหัสห้อง</button>
           <button id="pvpResumeOnlineRoomButton" class="pvp-action-button pvp-muted-action hidden" type="button">กลับเข้าห้องเดิม</button>
-          <button id="pvpLeaveOnlineRoomButton" class="pvp-action-button pvp-muted-action hidden" type="button">ออกจากห้อง</button>
+          <button id="pvpLeaveOnlineRoomButton" class="pvp-action-button pvp-muted-action hidden" type="button">ออกจากห้องออนไลน์</button>
           <button id="pvpForfeitButton" class="pvp-action-button pvp-danger-action hidden" type="button">ยอมแพ้</button>
           <button id="pvpCreateRoomButton" class="pvp-action-button pvp-muted-action" type="button">จำลอง: สร้างห้อง</button>
           <button id="pvpJoinRoomButton" class="pvp-action-button pvp-muted-action" type="button">จำลอง: เข้าร่วมห้อง</button>
@@ -644,6 +645,8 @@
         <h2 id="battleTitle">The Memory Breaker</h2>
       </header>
 
+      <button id="battleLinguaAdvisorButton" class="battle-lingua-advisor-button" type="button">ถามที่ปรึกษา</button>
+
       <div class="lingua-battle-upper" aria-label="สนามต่อสู้">
         <div id="battleTurnIndicator" class="battle-turn-indicator hidden" aria-live="polite">
           <div id="battleCurrentTurn" class="battle-current-turn">
@@ -818,9 +821,30 @@
         <div id="gameModalActions" class="game-modal-actions"></div>
       </div>
     </div>
+
+    <div id="linguaAdvisorOverlay" class="advisor-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="linguaAdvisorTitle">
+      <section id="linguaAdvisorPanel" class="advisor-panel">
+        <header class="advisor-header">
+          <div id="advisorMasterVerionPortrait" class="advisor-master-verion">
+            <div class="advisor-master-portrait">
+              <img id="advisorMasterVerionImage" class="advisor-master-image" src="assets/characters/master_verion_idle.gif" alt="มาสเตอร์เวอริออน ที่ปรึกษาแกรมมาเรีย" draggable="false">
+              <span id="advisorMasterVerionPlaceholder" class="advisor-master-placeholder hidden" aria-hidden="true">V</span>
+            </div>
+            <div>
+              <p id="linguaAdvisorTitle" class="advisor-title">Lingua Advisor</p>
+              <strong id="advisorMasterVerionName" class="advisor-master-name">มาสเตอร์เวอริออน</strong>
+              <span id="advisorMasterVerionRole" class="advisor-master-role">ที่ปรึกษาแกรมมาเรีย</span>
+            </div>
+          </div>
+          <button id="linguaAdvisorCloseButton" class="advisor-close-button" type="button" aria-label="ปิดที่ปรึกษา">ปิด</button>
+        </header>
+        <div id="linguaAdvisorBody" class="advisor-body" aria-live="polite"></div>
+        <p class="advisor-footer-note">มาสเตอร์เวอริออนให้คำแนะนำเฉพาะหัวข้อที่เลือก และไม่ส่งผลต่อคะแนน HP หรือ Grammaria</p>
+      </section>
+    </div>
     <p id="developerCredit" class="developer-credit">Lingua: Digital Game-based Learning Platform | พัฒนาโดย นายนครินทร์ พร้อมสุข ครูโรงเรียนแม่สอด</p>
   </main>
 
-  <script type="module" src="script.js?v=pve-grammaria-rank-20260825"></script>
+  <script type="module" src="script.js?v=pvp-room-foundation-20260826"></script>
 </body>
 </html>
