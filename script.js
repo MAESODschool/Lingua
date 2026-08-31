@@ -15,6 +15,7 @@ import {
   getDoc,
   getDocs,
   setDoc,
+  updateDoc,
   serverTimestamp,
   onSnapshot,
   runTransaction
@@ -23013,8 +23014,8 @@ const AUTH_COPY = {
   remoteLoginFailed: "ไม่พบบัญชีนี้ หรือ PIN ไม่ถูกต้อง"
 };
 
-// Phase 1 classroom lock only. For production, replace with role-based
-// authentication and Firestore Security Rules.
+// This PIN only hides the classroom UI. Firestore rules and teacher custom
+// claims provide the real authorization boundary.
 const TEACHER_DASHBOARD_PASSWORD_SHA256 = "b687b757bd658e9ae5624be7705283c8d3a560d9dc488f8413d3bd91aa183d5e";
 let teacherDashboardStudents = [];
 let teacherDashboardLoadError = "";
@@ -23210,6 +23211,32 @@ async function waitForFirebaseAuthReady() {
   await firebasePersistenceReady;
   await firebaseAuthReady;
   return firebaseAuth.currentUser;
+}
+
+function isFirebasePermissionDeniedError(error) {
+  const code = String(error?.code || "").toLowerCase();
+  const message = String(error?.message || "").toLowerCase();
+  return code.includes("permission-denied") ||
+    message.includes("permission-denied") ||
+    message.includes("missing or insufficient permissions");
+}
+
+async function isCurrentUserTeacherClaimed() {
+  // UI preflight only. Firestore and Storage rules remain authoritative.
+  if (getAuthMode() !== "firebase") {
+    return false;
+  }
+  const currentFirebaseUser = firebaseAuth.currentUser || await waitForFirebaseAuthReady();
+  if (!currentFirebaseUser?.getIdTokenResult) {
+    return false;
+  }
+  try {
+    const tokenResult = await currentFirebaseUser.getIdTokenResult();
+    return tokenResult.claims?.role === "teacher" || tokenResult.claims?.admin === true;
+  } catch (error) {
+    console.error("[Teacher Authorization] unable to inspect custom claims:", error);
+    return false;
+  }
 }
 
 // Auth Service
@@ -30218,9 +30245,11 @@ function createBattleStageFromCheckpoint(stageId) {
   if (!stageConfig) {
     return null;
   }
+  const filteredQuestions = filterQuestionsForStage(stageConfig.questions || [], stageConfig);
+  const questionAnalysis = analyzeBattleQuestionPool(filteredQuestions, stageConfig);
   return {
     ...stageConfig,
-    questions: filterQuestionsForStage(stageConfig.questions || [], stageConfig)
+    questions: questionAnalysis.usableQuestions
   };
 }
 
@@ -30407,8 +30436,16 @@ function getRestoredEnemyHpFromCheckpoint(checkpointBattle = {}, stage = null) {
 function restoreBattleResumeCheckpoint(checkpoint) {
   const stage = createBattleStageFromCheckpoint(checkpoint.stageId);
   const stageIndex = getStageIndexById(checkpoint.stageId);
-  if (!stage || stageIndex < 0 || !stage.questions.length) {
+  if (!stage || stageIndex < 0) {
     return false;
+  }
+  if (!hasUsableBattleQuestions(stage.questions, stage)) {
+    showBattleContentError(stage, {
+      stageIndex,
+      source: "battle-resume",
+      reason: "saved battle stage has no usable questions"
+    });
+    return true;
   }
 
   cleanupBossHeavyAttackChain({ clearParryUi: true });
@@ -31478,8 +31515,8 @@ function showPvpOnlineError(message, connectionStatus = "error") {
 function getPvpOnlineErrorMessage(error, fallbackMessage) {
   const code = String(error?.code || "").toLowerCase();
   const message = String(error?.message || "").toLowerCase();
-  if (code.includes("permission-denied") || message.includes("permission-denied") || message.includes("missing or insufficient permissions")) {
-    return "ยังไม่สามารถใช้ห้องออนไลน์ได้ อาจต้องเพิ่มสิทธิ์ pvpRooms ใน Firestore Rules";
+  if (isFirebasePermissionDeniedError(error)) {
+    return "ไม่มีสิทธิ์เข้าถึงห้อง PvP นี้ เฉพาะผู้เล่นในห้องเท่านั้น";
   }
   if (code.includes("unauthenticated") || message.includes("unauthenticated")) {
     return "ต้องเข้าสู่ระบบก่อนใช้ห้องออนไลน์";
@@ -31590,14 +31627,22 @@ async function createOnlinePvpRoom() {
     unsubscribeFromPvpRoom();
     pvpState.onlineError = "";
     let roomCode = "";
+    let roomLookupPermissionError = null;
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const candidate = generatePvpRoomCode();
-      if (!(await getDoc(doc(firestoreDb, PVP_ONLINE_COLLECTION, candidate))).exists()) {
-        roomCode = candidate;
-        break;
+      try {
+        if (!(await getDoc(doc(firestoreDb, PVP_ONLINE_COLLECTION, candidate))).exists()) {
+          roomCode = candidate;
+          break;
+        }
+      } catch (error) {
+        if (!isFirebasePermissionDeniedError(error)) {
+          throw error;
+        }
+        roomLookupPermissionError = error;
       }
     }
-    if (!roomCode) throw new Error("room-code-exhausted");
+    if (!roomCode) throw roomLookupPermissionError || new Error("room-code-exhausted");
     const room = {
       roomCode,
       status: "waiting",
@@ -31638,6 +31683,55 @@ async function createOnlinePvpRoom() {
   }
 }
 
+async function reconnectOnlinePvpParticipant(roomRef, identity, joinedSide) {
+  await runTransaction(firestoreDb, async transaction => {
+    const snapshot = await transaction.get(roomRef);
+    if (!snapshot.exists()) throw new Error("room-not-found");
+    const room = snapshot.data();
+    if (["finished", "abandoned"].includes(room.status)) throw new Error("room-finished");
+    const players = { ...(room.players || {}) };
+    const lanes = { ...(room.lanes || {}) };
+    const wasConnected = Boolean(players[joinedSide]?.connected);
+    players[joinedSide] = {
+      ...(players[joinedSide] || createPvpOnlinePlayer(joinedSide, identity.uid, identity.name)),
+      uid: identity.uid,
+      name: identity.name,
+      avatar: identity.avatar || "",
+      connected: true,
+      lastSeenAt: Date.now()
+    };
+    lanes[joinedSide] = lanes[joinedSide] || createPvpOnlineLane();
+    const playerBUid = room.playerBUid || "";
+    const status = room.playerAUid && playerBUid ? "playing" : "waiting";
+    const actionLog = wasConnected
+      ? trimPvpActionLog(room.actionLog)
+      : trimPvpActionLog([
+        ...(room.actionLog || []),
+        buildPvpLogEntry(joinedSide, "join", `${identity.name} กลับเข้าห้องออนไลน์แล้ว`)
+      ]);
+    transaction.update(roomRef, {
+      players,
+      lanes,
+      status,
+      updatedAt: serverTimestamp(),
+      actionLog
+    });
+  });
+}
+
+async function joinOnlinePvpRoomAsPlayerB(roomRef, identity) {
+  // A new player B cannot read the private room until this guarded update makes
+  // them a participant. Firestore rules validate the empty slot and immutable A data.
+  await updateDoc(roomRef, {
+    playerBUid: identity.uid,
+    guestUid: identity.uid,
+    "players.B": createPvpOnlinePlayer("B", identity.uid, identity.name, identity.avatar),
+    "lanes.B": createPvpOnlineLane(),
+    status: "playing",
+    updatedAt: serverTimestamp()
+  });
+}
+
 async function joinOnlinePvpRoom(roomCode) {
   if (pvpState.onlineBusy) return;
   const cleanCode = normalizePvpRoomCode(roomCode);
@@ -31651,41 +31745,38 @@ async function joinOnlinePvpRoom(roomCode) {
     pvpState.onlineError = "";
     const roomRef = doc(firestoreDb, PVP_ONLINE_COLLECTION, cleanCode);
     let joinedSide = "";
-    await runTransaction(firestoreDb, async transaction => {
-      const snapshot = await transaction.get(roomRef);
-      if (!snapshot.exists()) throw new Error("room-not-found");
-      const room = snapshot.data();
+    let readableSnapshot = null;
+    try {
+      readableSnapshot = await getDoc(roomRef);
+    } catch (error) {
+      if (!isFirebasePermissionDeniedError(error)) {
+        throw error;
+      }
+    }
+
+    if (readableSnapshot && !readableSnapshot.exists()) {
+      throw new Error("room-not-found");
+    }
+
+    if (readableSnapshot?.exists()) {
+      const room = readableSnapshot.data() || {};
       if (["finished", "abandoned"].includes(room.status)) throw new Error("room-finished");
-      if (room.playerAUid === identity.uid) joinedSide = "A";
-      else if (room.playerBUid === identity.uid) joinedSide = "B";
-      else if (!room.playerBUid) joinedSide = "B";
-      else throw new Error("room-full");
-      const players = { ...(room.players || {}) };
-      const lanes = { ...(room.lanes || {}) };
-      const wasConnected = Boolean(players[joinedSide]?.connected);
-      players[joinedSide] = {
-        ...(players[joinedSide] || createPvpOnlinePlayer(joinedSide, identity.uid, identity.name)),
-        uid: identity.uid, name: identity.name, avatar: identity.avatar || "", connected: true, lastSeenAt: Date.now()
-      };
-      lanes[joinedSide] = lanes[joinedSide] || createPvpOnlineLane();
-      const playerBUid = joinedSide === "B" ? identity.uid : (room.playerBUid || "");
-      const status = room.playerAUid && playerBUid ? "playing" : "waiting";
-      const joinMessage = joinedSide === "B" && !room.playerBUid
-        ? "ผู้เล่นคนที่ 2 เข้าร่วมห้องแล้ว"
-        : `${identity.name} กลับเข้าห้องออนไลน์แล้ว`;
-      const actionLog = wasConnected
-        ? trimPvpActionLog(room.actionLog)
-        : trimPvpActionLog([...(room.actionLog || []), buildPvpLogEntry(joinedSide, "join", joinMessage)]);
-      transaction.update(roomRef, {
-        playerBUid,
-        guestUid: playerBUid,
-        players,
-        lanes,
-        status,
-        updatedAt: serverTimestamp(),
-        actionLog
-      });
-    });
+      if (room.playerAUid === identity.uid) {
+        joinedSide = "A";
+        await reconnectOnlinePvpParticipant(roomRef, identity, joinedSide);
+      } else if (room.playerBUid === identity.uid) {
+        joinedSide = "B";
+        await reconnectOnlinePvpParticipant(roomRef, identity, joinedSide);
+      } else if (!room.playerBUid) {
+        joinedSide = "B";
+        await joinOnlinePvpRoomAsPlayerB(roomRef, identity);
+      } else {
+        throw new Error("room-full");
+      }
+    } else {
+      joinedSide = "B";
+      await joinOnlinePvpRoomAsPlayerB(roomRef, identity);
+    }
     pvpState.mode = "online";
     pvpState.roomCode = cleanCode;
     pvpState.localSide = joinedSide;
@@ -33067,10 +33158,15 @@ async function loadTeacherDashboardRecords() {
       console.log("[Teacher Dashboard] loaded student count:", students.length);
       return students;
     } catch (error) {
-      teacherDashboardLoadError = error?.code === "permission-denied"
-        ? "Firestore Rules ยังไม่อนุญาตให้ Teacher Dashboard อ่านรายชื่อนักเรียนทั้งหมด"
+      const permissionDenied = isFirebasePermissionDeniedError(error);
+      teacherDashboardLoadError = permissionDenied
+        ? "ไม่มีสิทธิ์อ่านข้อมูลผู้เรียน กรุณาตรวจสอบสิทธิ์บัญชีครูใน Firestore Rules / Custom Claims"
         : "ไม่สามารถอ่านข้อมูลนักเรียนจาก Firestore ได้";
-      console.error("[Teacher Dashboard] Failed to load all students", error);
+      if (permissionDenied) {
+        console.error("[Teacher Dashboard] permission denied:", error);
+      } else {
+        console.error("[Teacher Dashboard] failed to load all students:", error);
+      }
       return [];
     }
   }
@@ -33569,8 +33665,8 @@ async function restoreStudent(studentUid, reason) {
 }
 
 function getStudentManagementWriteErrorMessage(error) {
-  if (error?.code === "permission-denied" || error?.code === "firestore/permission-denied") {
-    return "ไม่สามารถปรับข้อมูลผู้เรียนได้ อาจต้องตรวจสอบสิทธิ์ Firestore";
+  if (isFirebasePermissionDeniedError(error)) {
+    return "ไม่มีสิทธิ์แก้ไขข้อมูลผู้เรียน กรุณาตรวจสอบสิทธิ์บัญชีครู";
   }
   return error?.message || "ไม่สามารถปรับข้อมูลผู้เรียนได้ กรุณาลองใหม่";
 }
@@ -34126,16 +34222,27 @@ function getAssetManagerAdminIdentifier() {
 }
 
 function getAssetManagerErrorMessage(error) {
-  if (error?.code === "permission-denied" ||
-      error?.code === "firestore/permission-denied" ||
-      error?.code === "storage/unauthorized") {
-    return "ไม่สามารถจัดการ Asset ได้ อาจต้องตรวจสอบสิทธิ์ Firebase Storage/Firestore";
+  if (isFirebasePermissionDeniedError(error) ||
+      error?.code === "storage/unauthorized" ||
+      error?.code === "asset-manager/teacher-claim-required") {
+    return "ไม่มีสิทธิ์จัดการ Asset เกม กรุณาตรวจสอบสิทธิ์บัญชีครู";
   }
   return error?.message || "อัปโหลดไม่สำเร็จ กรุณาลองใหม่";
 }
 
+async function requireAssetManagerTeacherClaim() {
+  if (await isCurrentUserTeacherClaimed()) {
+    return true;
+  }
+  throw createStudentManagementError(
+    "asset-manager/teacher-claim-required",
+    "ไม่มีสิทธิ์จัดการ Asset เกม กรุณาตรวจสอบสิทธิ์บัญชีครู"
+  );
+}
+
 async function uploadGameAssetOverride(assetKey, file, note = "") {
   validateAssetManagerWriteAccess(assetKey);
+  await requireAssetManagerTeacherClaim();
   const item = getGameAssetRegistryItem(assetKey);
   const validationMessage = validateGameAssetFile(file);
   if (validationMessage) {
@@ -34178,6 +34285,7 @@ async function uploadGameAssetOverride(assetKey, file, note = "") {
 
 async function resetGameAssetToDefault(assetKey) {
   validateAssetManagerWriteAccess(assetKey);
+  await requireAssetManagerTeacherClaim();
   const item = getGameAssetRegistryItem(assetKey);
   const resetBy = getAssetManagerAdminIdentifier();
   const resetMetadata = {
@@ -35042,12 +35150,22 @@ function startVsBossPracticeBattle(bossId) {
   const primaryStage = getVsBossPrimaryStage(config);
   const stageIndex = primaryStage ? getStageIndexById(primaryStage.id) : -1;
   const questionPool = getVsBossQuestionPool(bossId);
-  if (!config || !primaryStage || stageIndex < 0 || !questionPool.length) {
-    console.error("[VS Bosses] failed to start practice:", { bossId, primaryStage, questionCount: questionPool.length });
-    openGameModal({
-      title: "ไม่สามารถเริ่มโหมดฝึกฝนกับบอสได้",
-      body: "ไม่พบชุดคำถามของบอสนี้",
-      actions: [{ label: "กลับไปเลือกบอส", primary: true, onClick: closeGameModal }]
+  const questionAnalysis = analyzeBattleQuestionPool(questionPool, primaryStage);
+  if (!config || !primaryStage || stageIndex < 0 || !questionAnalysis.ok) {
+    showBattleContentError(primaryStage || {
+      id: bossId || "unknown-vs-boss",
+      type: "mini-boss",
+      title: config?.name || "VS Bosses",
+      enemy: config?.name || ""
+    }, {
+      stageIndex,
+      source: "vs-boss-selection",
+      reason: !config || !primaryStage || stageIndex < 0
+        ? "VS boss configuration is missing"
+        : "VS boss question pool is empty or invalid",
+      failures: questionAnalysis.failures,
+      returnToVsBosses: true,
+      retryAction: () => startVsBossPracticeBattle(bossId)
     });
     return;
   }
@@ -36845,7 +36963,7 @@ function buildLessonSegmentDialogue(stage) {
     steps.push(guidedPracticeNode(practice.prompt, practice.choices, practice.answer, practice.feedback, practice.promptTh));
   });
   appendLessonSegmentLines(steps, segment.preBossDialogue, "preBossDialogue");
-  if (stage.questions && stage.questions.length) {
+  if (isBattleStageConfig(stage)) {
     steps.push(createBattleIntroStep(stage));
   }
   return steps;
@@ -36938,7 +37056,7 @@ function buildStageDialogueSequence(stage) {
 
   return [
     createDialogueNode("มาสเตอร์เวรีออน", `${stage.thaiTitle || stage.title} กำลังเริ่มขึ้น`),
-    createDialogueNode("มาสเตอร์เวรีออน", stage.questions && stage.questions.length
+    createDialogueNode("มาสเตอร์เวรีออน", isBattleStageConfig(stage)
       ? "เมื่อพร้อมแล้ว จงเข้าสู่บทฝึกเพื่อทดสอบพลังแกรมมาเรียของเจ้า"
       : "บทเรียนช่วงนี้เสร็จสิ้นแล้ว เราจะเดินหน้าต่อไป")
   ];
@@ -37170,7 +37288,7 @@ function finishPastDialogueLesson() {
   const stage = state.currentLessonStage;
   const lastStoryStepIndex = Math.max(0, state.lessonStorySteps.length - 1);
   const lastStoryStep = state.lessonStorySteps[lastStoryStepIndex] || null;
-  const battleReturnContext = stage?.questions?.length
+  const battleReturnContext = isBattleStageConfig(stage)
     ? createBattleReturnContext(stage, {
       source: isReplayingStage(stage) ? "replay" : "lesson",
       mode: "dialogue",
@@ -37213,7 +37331,7 @@ function finishPastDialogueLesson() {
     showStageReward(completedStage);
     return;
   }
-  if (stage && stage.questions && stage.questions.length) {
+  if (stage && isBattleStageConfig(stage)) {
     state.pendingBattleReturnContext = battleReturnContext;
     startBattleFromActivity();
     return;
@@ -37302,7 +37420,7 @@ function buildRegularEdLessonSteps(stage) {
     { type: "dialogue", speaker: "มาสเตอร์เวรีออน", text: "แต่ข้างหน้า เอคโททิกกำลังรออยู่ มันจะทดสอบว่าเจ้าจำได้หรือไม่ว่า คำใดต้องเติม -ed และคำใดเติมเพียง -d" }
   ];
 
-  if (stage.questions && stage.questions.length) {
+  if (isBattleStageConfig(stage)) {
     steps.push(createBattleIntroStep(stage));
   }
 
@@ -37382,14 +37500,14 @@ function buildGuidedLessonSteps(stage) {
   }
 
   steps.push({
-    type: stage.questions && stage.questions.length ? "drill-intro" : "dialogue",
+    type: isBattleStageConfig(stage) ? "drill-intro" : "dialogue",
     speaker: "มาสเตอร์เวรีออน",
-    text: stage.questions && stage.questions.length
+    text: isBattleStageConfig(stage)
       ? "เจ้าพร้อมแล้ว ต่อไปเป็นแบบฝึกสั้น ๆ ก่อนเผชิญพลังของอดีต"
       : "บทเรียนส่วนนี้เสร็จแล้ว เราจะไปยังขั้นต่อไป"
   });
 
-  if (stage.questions && stage.questions.length) {
+  if (isBattleStageConfig(stage)) {
     steps.push({
       type: "battle-intro",
       speaker: "ระบบ",
@@ -37561,6 +37679,17 @@ function advanceLessonStep() {
 
   state.lessonStepIndex += 1;
   if (state.lessonStepIndex >= state.lessonSteps.length) {
+    if (isBattleStageConfig(state.currentLessonStage)) {
+      state.pendingBattleReturnContext = createBattleReturnContext(state.currentLessonStage, {
+        source: isReplayingStage(state.currentLessonStage) ? "replay" : "lesson",
+        mode: "activity",
+        phase: "battleIntro",
+        lessonStepIndex: Math.max(0, state.lessonStepIndex - 1),
+        returnTo: isReplayingStage(state.currentLessonStage) ? "mainMenu" : ""
+      });
+      startBattleFromActivity();
+      return;
+    }
     completeNonBattleStage(state.currentLessonStage);
     return;
   }
@@ -37643,13 +37772,275 @@ function showStageLesson(stageIndex, resumeState = {}) {
   }
 }
 
+const BATTLE_STAGE_TYPES = new Set(["lesson-quiz", "mini-boss", "final-boss"]);
+const NON_BATTLE_STAGE_TYPES = new Set(["story", "story-stage", "lesson-only", "ending"]);
+
+function isBattleStageConfig(stage) {
+  if (!stage || stage.isPostBossDialogue || NON_BATTLE_STAGE_TYPES.has(stage.type)) {
+    return false;
+  }
+  return BATTLE_STAGE_TYPES.has(stage.type) || Boolean(stage.enemy);
+}
+
+function hasBattleContentPlaceholder(value) {
+  const text = String(value ?? "").trim();
+  if (!text) {
+    return false;
+  }
+  return /^(?:todo|tbd|placeholder|undefined|null)$/i.test(text) ||
+    /(?:^|\s)(?:todo|tbd|placeholder)(?:\s|$)/i.test(text);
+}
+
+function inspectBattleQuestion(question, index = 0) {
+  const failures = [];
+  if (!question || typeof question !== "object" || Array.isArray(question)) {
+    return { usable: false, failures: ["question is not an object"], questionId: `index-${index}` };
+  }
+
+  const questionId = String(question.id || question.questionId || `index-${index}`);
+  const prompt = String(getBattleQuestionPromptSource(question) || "").trim();
+  const acceptedAnswers = getBattleAcceptedAnswers(question);
+  const primaryAnswer = String(getBattleCorrectAnswer(question) || acceptedAnswers[0] || "").trim();
+  const rawOptions = getRawBattleQuestionOptions(question);
+  const questionType = getActBattleQuestionType(question);
+
+  if (!prompt) {
+    failures.push("missing prompt");
+  }
+  if (!acceptedAnswers.length || !primaryAnswer) {
+    failures.push("missing correct answer");
+  }
+  if (
+    question.isPlaceholder === true ||
+    hasBattleContentPlaceholder(prompt) ||
+    hasBattleContentPlaceholder(primaryAnswer) ||
+    rawOptions.some(hasBattleContentPlaceholder)
+  ) {
+    failures.push("placeholder content");
+  }
+
+  if (questionType === "multiple-choice" && primaryAnswer) {
+    const options = getActQuestionOptions(question);
+    if (options.length < 2) {
+      failures.push("not enough renderable choices");
+    }
+    if (!options.some(option => normalizeBattleAnswer(option) === normalizeBattleAnswer(primaryAnswer))) {
+      failures.push("correct answer is not renderable");
+    }
+  } else if (questionType === "word-arrangement" && primaryAnswer) {
+    const tiles = Array.isArray(question.tiles) && question.tiles.length
+      ? question.tiles
+      : Array.isArray(question.words) && question.words.length
+        ? question.words
+        : primaryAnswer.split(/\s+/);
+    if (!tiles.some(tile => String(tile ?? "").trim())) {
+      failures.push("missing arrangement tiles");
+    }
+  }
+
+  return {
+    usable: failures.length === 0,
+    failures,
+    questionId,
+    questionType
+  };
+}
+
+function analyzeBattleQuestionPool(questions, stage = null) {
+  const source = Array.isArray(questions) ? questions : [];
+  const usableQuestions = [];
+  const failures = [];
+
+  source.forEach((question, index) => {
+    const inspection = inspectBattleQuestion(question, index);
+    if (inspection.usable) {
+      usableQuestions.push(question);
+      return;
+    }
+    failures.push({
+      stageId: stage?.id || "",
+      questionId: inspection.questionId,
+      reasons: inspection.failures
+    });
+  });
+
+  return {
+    ok: usableQuestions.length > 0,
+    totalQuestions: source.length,
+    usableQuestions,
+    failures
+  };
+}
+
+function hasUsableBattleQuestions(questions, stage = null) {
+  return analyzeBattleQuestionPool(questions, stage).ok;
+}
+
+function filterQuestionsForBattleValidation(questions, stage) {
+  const source = Array.isArray(questions) ? questions : [];
+  const allowedRuleIds = getAllowedRuleIdsForStage(stage);
+  if (!allowedRuleIds.length) {
+    return [...source];
+  }
+  const reservedTeachingWords = getReservedTeachingVerbsForStage(stage);
+  return source.filter(question => {
+    const ruleId = question?.ruleId || inferRuleIdFromQuestion(question);
+    const baseWord = getQuestionBaseWord(question);
+    return ruleId && allowedRuleIds.includes(ruleId) && (!baseWord || !reservedTeachingWords.has(baseWord));
+  });
+}
+
+function validateBattleStageQuestionPools() {
+  const battleStages = PAST_FRAGMENT_ACT.stages.filter(isBattleStageConfig);
+  const failures = [];
+
+  battleStages.forEach(stage => {
+    if (!String(stage.id || "").trim()) failures.push({ stageId: "unknown", reason: "missing stage id" });
+    if (!String(stage.title || "").trim()) failures.push({ stageId: stage.id || "unknown", reason: "missing stage title" });
+    if (!String(stage.enemy || "").trim()) failures.push({ stageId: stage.id || "unknown", reason: "missing enemy" });
+    if (!Array.isArray(stage.questions)) {
+      failures.push({ stageId: stage.id || "unknown", reason: "question bank is missing" });
+      return;
+    }
+
+    const filteredQuestions = filterQuestionsForBattleValidation(stage.questions, stage);
+    const analysis = analyzeBattleQuestionPool(filteredQuestions, stage);
+    if (!analysis.ok) {
+      failures.push({ stageId: stage.id || "unknown", reason: "no usable questions" });
+    }
+    analysis.failures.forEach(failure => failures.push({
+      stageId: stage.id || "unknown",
+      questionId: failure.questionId,
+      reason: failure.reasons.join(", ")
+    }));
+  });
+
+  const result = {
+    ok: failures.length === 0,
+    battleStagesChecked: battleStages.map(stage => stage.id),
+    failures
+  };
+  if (result.ok) {
+    console.info(`[Battle Content] ${result.battleStagesChecked.length} battle stage question pools passed validation.`);
+  } else {
+    console.error("[Battle Content] question pool validation failed:", result);
+  }
+  return result;
+}
+
+function resetFailedBattleStartState() {
+  const pendingReturnContext = state.pendingBattleReturnContext || null;
+  cleanupBattleInputState();
+  cleanupBattleSkillEffects();
+  resetBattleContinueControls();
+  showOnlyBattlePanel(null);
+  state.actBattle = null;
+  state.currentBattleStats = null;
+  state.currentQuestion = null;
+  state.parryAttack = null;
+  state.battleActiveEffects = {};
+  state.pendingBattleReturnContext = pendingReturnContext;
+}
+
+function leaveBattleContentError({ destination = "mainMenu" } = {}) {
+  closeGameModal();
+  cleanupManualBattleExitState();
+  if (isPracticeModeActive()) {
+    endPracticeMode({ restoreProgress: true });
+  }
+  state.vsBossPractice.active = false;
+  state.vsBossPractice.starting = false;
+  state.vsBossPractice.finishing = false;
+  state.vsBossPractice.evaluation = null;
+  state.activeReplayLessonId = null;
+  state.replayReturnProgress = null;
+
+  if (destination === "vsBosses") {
+    renderVsBossesGrid();
+    showScene("vsBosses");
+    return;
+  }
+
+  showMainMenu();
+  if (destination === "lessonMap") {
+    openMainMenuLessonMap();
+  }
+}
+
+function showBattleContentError(stage, options = {}) {
+  const stageId = stage?.id || options.stageId || "unknown-stage";
+  const stageTitle = stage?.title || stage?.thaiTitle || options.stageTitle || "ด่านที่ไม่ทราบชื่อ";
+  const stageIndex = Number.isInteger(options.stageIndex) ? options.stageIndex : getStageIndexById(stageId);
+  const failureDetails = Array.isArray(options.failures) ? options.failures : [];
+  console.error("[Battle Content] empty question pool:", {
+    stageId,
+    stageTitle,
+    stageType: stage?.type || "",
+    enemy: stage?.enemy || "",
+    source: options.source || "battle-start",
+    reason: options.reason || "empty or invalid question pool",
+    invalidQuestions: failureDetails
+  });
+
+  resetFailedBattleStartState();
+  const details = document.createElement("p");
+  details.textContent = `ด่าน: ${stageTitle} (${stageId})`;
+  const retryAction = typeof options.retryAction === "function"
+    ? options.retryAction
+    : stageIndex >= 0
+      ? () => startActBattle(stageIndex)
+      : null;
+  const returnToVsBosses = options.returnToVsBosses || isVsBossPracticeActive();
+  const actions = [
+    {
+      label: "กลับเมนูผู้เล่น",
+      onClick: () => leaveBattleContentError({ destination: "mainMenu" })
+    },
+    returnToVsBosses
+      ? {
+          label: "กลับไปเลือกบอส",
+          onClick: () => leaveBattleContentError({ destination: "vsBosses" })
+        }
+      : {
+          label: "เปิดแผนที่บทเรียน",
+          onClick: () => leaveBattleContentError({ destination: "lessonMap" })
+        }
+  ];
+  if (retryAction) {
+    actions.push({
+      label: "ลองโหลดอีกครั้ง",
+      primary: true,
+      onClick: () => {
+        closeGameModal();
+        runSceneTransition("กำลังตรวจชุดคำถามอีกครั้ง...", retryAction);
+      }
+    });
+  }
+
+  openGameModal({
+    title: "ไม่สามารถเริ่มการต่อสู้ได้",
+    body: "ไม่พบชุดคำถามของด่านนี้ หรือชุดคำถามยังไม่พร้อมใช้งาน",
+    content: details,
+    actions,
+    lockClose: true
+  });
+  return false;
+}
+
 function completeNonBattleStage(stage) {
+  if (isBattleStageConfig(stage)) {
+    return showBattleContentError(stage, {
+      source: "non-battle-completion-guard",
+      reason: "battle stage reached the non-battle completion route"
+    });
+  }
   state.lastStageResult = {
     correctAnswers: 0,
     totalQuestions: 0
   };
   grantActReward(stage, { awardGrammaria: false });
   showStageReward(stage);
+  return true;
 }
 
 function startBattleFromActivity() {
@@ -37664,8 +38055,8 @@ function startBattleFromActivity() {
 }
 
 function getQuestionText(question) {
-  const phase = question.phase ? `[${question.phase}] ` : "";
-  return phase + (question.sentence || question.prompt);
+  const phase = question?.phase ? `[${question.phase}] ` : "";
+  return phase + getBattleQuestionPromptSource(question);
 }
 
 function localizeBattleQuestionText(text, question = {}) {
@@ -37743,32 +38134,61 @@ function localizeBattleQuestionText(text, question = {}) {
 
 function resolveBattleQuestionPrompt(question) {
   const phase = question?.phase ? `[${question.phase}] ` : "";
-  return phase + localizeBattleQuestionText(question?.sentence || question?.prompt, question);
+  return phase + localizeBattleQuestionText(getBattleQuestionPromptSource(question), question);
 }
 
 function startActBattle(stageIndex) {
   cleanupBossHeavyAttackChain({ clearParryUi: true });
   const baseStageConfig = getPlayableStages()[stageIndex];
+  if (!baseStageConfig) {
+    return showBattleContentError(null, {
+      stageIndex,
+      source: "battle-start",
+      reason: "stage configuration is missing"
+    });
+  }
   const vsBossConfig = isVsBossPracticeActive() ? getVsBossConfig(state.vsBossPractice.bossId) : null;
   const stageConfig = vsBossConfig
     ? buildVsBossPracticeStage(baseStageConfig, vsBossConfig)
     : baseStageConfig;
-  setActBackground(getAct1BackgroundKeyForStage(stageConfig), { warnMissing: true });
+  if (!isBattleStageConfig(stageConfig)) {
+    return showBattleContentError(stageConfig, {
+      stageIndex,
+      source: "battle-start",
+      reason: "stage is not configured as a battle stage",
+      returnToVsBosses: Boolean(vsBossConfig)
+    });
+  }
   const allowedRuleIds = getAllowedRuleIdsForStage(stageConfig);
+  const filteredQuestions = vsBossConfig
+    ? (stageConfig.questions || []).map(cloneVsBossQuestion).filter(Boolean)
+    : filterQuestionsForStage(stageConfig.questions || [], stageConfig);
+  const questionAnalysis = analyzeBattleQuestionPool(filteredQuestions, stageConfig);
   const stage = {
     ...stageConfig,
-    questions: vsBossConfig
-      ? (stageConfig.questions || []).map(cloneVsBossQuestion).filter(Boolean)
-      : filterQuestionsForStage(stageConfig.questions || [], stageConfig)
+    questions: questionAnalysis.usableQuestions
   };
   console.log("[Battle Start]", stage.id, "Allowed Rules:", allowedRuleIds);
   console.log("[BattleFlowV2] enabled =", BATTLE_FLOW_V2_CONFIG?.enabled);
   const questionCount = stage.questions.length;
   if (!questionCount) {
-    console.error("[Battle Start] No valid questions for stage:", stage.id);
-    completeNonBattleStage(stageConfig);
-    return;
+    return showBattleContentError(stageConfig, {
+      stageIndex,
+      source: vsBossConfig ? "vs-boss-battle-start" : "battle-start",
+      reason: Array.isArray(stageConfig.questions) && stageConfig.questions.length
+        ? "all configured questions are invalid or cannot render"
+        : "question bank is missing or empty",
+      failures: questionAnalysis.failures,
+      returnToVsBosses: Boolean(vsBossConfig)
+    });
   }
+  if (questionAnalysis.failures.length) {
+    console.warn("[Battle Content] skipped invalid questions:", {
+      stageId: stage.id,
+      skipped: questionAnalysis.failures
+    });
+  }
+  setActBackground(getAct1BackgroundKeyForStage(stage), { warnMissing: true });
   resetVictorySceneMusicForBattle();
   const baseEnemyMaxHp = isFinalBossStage(stage) ? 140 : 100;
   const enemyMaxHp = vsBossConfig
@@ -37909,6 +38329,7 @@ function startActBattle(stageIndex) {
     state.actBattle.practiceNoticeShown = true;
     els.battleMessage.textContent = "โหมดฝึก: บทนี้จะไม่ให้ Grammaria, Fragment, Badge หรือความคืบหน้า";
   }
+  return true;
 }
 
 function startActAttackAction() {
@@ -45702,15 +46123,7 @@ function skipCurrentLessonToBattleIntro(stage) {
   els.dialogueActions.classList.add("hidden");
   els.lessonStoryVisual.classList.add("hidden");
   els.lessonStoryVisual.innerHTML = "";
-  saveProgress({
-    currentLessonId: stage.id,
-    currentStageId: stage.id,
-    currentScreen: stage.questions && stage.questions.length ? "battle" : "lesson",
-    lastSafeScreen: "lesson",
-    currentLessonStepIndex: 0,
-    currentDialogueIndex: 0
-  });
-  if (stage.questions && stage.questions.length) {
+  if (isBattleStageConfig(stage)) {
     startBattleFromActivity();
     return;
   }
@@ -45844,16 +46257,6 @@ function startBattleByEnemy(enemyId) {
   state.lessonStorySteps = [];
   state.lessonStoryStepIndex = 0;
   state.postBossDialogueStage = null;
-
-  saveProgress({
-    currentStageId: stage.id,
-    currentLessonId: stage.id,
-    currentScreen: "battle",
-    lastSafeScreen: "lesson",
-    lessonPhase: "battle",
-    currentDialogueIndex: 0,
-    currentLessonStepIndex: 0
-  });
 
   console.log("[SkipBattle] start", {
     enemyId,
@@ -46184,6 +46587,9 @@ window.debugButtonAudit = function debugButtonAudit() {
   console.table(report);
   return report;
 };
+
+window.validateBattleStageQuestionPools = validateBattleStageQuestionPools;
+validateBattleStageQuestionPools();
 
 function bindGameAudioUnlockEvents() {
   const unlockOptions = { capture: true, passive: true };

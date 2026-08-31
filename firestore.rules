@@ -2,15 +2,113 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    // The dashboard PIN is only a client-side UI gate. Real teacher access must
+    // come from a custom claim set by a trusted backend or the Admin SDK.
+    function isTeacher() {
+      return signedIn() && (
+        request.auth.token.get('role', '') == 'teacher' ||
+        request.auth.token.get('admin', false) == true
+      );
+    }
+
+    function pvpRoomDoesNotExist(roomId) {
+      return !exists(/databases/$(database)/documents/pvpRooms/$(roomId));
+    }
+
+    function isPvpParticipant() {
+      return signedIn() && (
+        resource.data.playerAUid == request.auth.uid ||
+        resource.data.get('playerBUid', '') == request.auth.uid
+      );
+    }
+
+    function keepsPvpRoomIdentity() {
+      return request.resource.data.roomCode == resource.data.roomCode
+        && request.resource.data.hostUid == resource.data.hostUid
+        && request.resource.data.playerAUid == resource.data.playerAUid
+        && request.resource.data.get('playerBUid', '') == resource.data.get('playerBUid', '');
+    }
+
+    function isJoiningAsPlayerB() {
+      return signedIn()
+        && resource.data.status == 'waiting'
+        && resource.data.get('playerBUid', '') == ''
+        && resource.data.playerAUid != request.auth.uid
+        && request.resource.data.roomCode == resource.data.roomCode
+        && request.resource.data.hostUid == resource.data.hostUid
+        && request.resource.data.playerAUid == resource.data.playerAUid
+        && request.resource.data.playerBUid == request.auth.uid
+        && request.resource.data.guestUid == request.auth.uid
+        && request.resource.data.status == 'playing'
+        && request.resource.data.players.A == resource.data.players.A
+        && request.resource.data.players.B.uid == request.auth.uid
+        && request.resource.data.lanes.A == resource.data.lanes.A
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'playerBUid',
+          'guestUid',
+          'players',
+          'lanes',
+          'status',
+          'updatedAt'
+        ]);
+    }
+
     match /players/{playerId} {
-      allow get, list: if request.auth != null;
-      allow create, update: if request.auth != null && request.auth.uid == playerId;
+      allow get: if isOwner(playerId) || isTeacher();
+      allow list: if isTeacher();
+      allow create: if isOwner(playerId);
+      allow update: if isOwner(playerId) || isTeacher();
       allow delete: if false;
     }
 
     match /pvpRooms/{roomId} {
-      allow read, create, update: if request.auth != null;
+      // Reading a missing random room code reveals no player data and lets the
+      // creator safely check for a collision before creating the room.
+      allow get: if pvpRoomDoesNotExist(roomId) || isPvpParticipant() || isTeacher();
+      allow list: if isTeacher();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasAll([
+          'roomCode',
+          'status',
+          'hostUid',
+          'guestUid',
+          'playerAUid',
+          'playerBUid',
+          'players',
+          'lanes'
+        ])
+        && request.resource.data.roomCode == roomId
+        && request.resource.data.status == 'waiting'
+        && request.resource.data.hostUid == request.auth.uid
+        && request.resource.data.playerAUid == request.auth.uid
+        && request.resource.data.playerBUid == ''
+        && request.resource.data.guestUid == '';
+      allow update: if isTeacher()
+        || (isPvpParticipant() && keepsPvpRoomIdentity())
+        || isJoiningAsPlayerB();
       allow delete: if false;
     }
+
+    match /adminLogs/{logId} {
+      allow read, create: if isTeacher();
+      allow update, delete: if false;
+    }
+
+    match /gameAssetOverrides/{assetKey} {
+      allow read: if signedIn();
+      allow create, update: if isTeacher();
+      allow delete: if false;
+    }
+
+    // PvP remains a client-driven prototype. Competitive validation and strict
+    // state transitions should move to trusted Cloud Functions in a later phase.
   }
 }
