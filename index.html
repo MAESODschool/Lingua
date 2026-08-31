@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lingua - RPG แห่งแกรมมาเรีย</title>
-  <link rel="stylesheet" href="style.css?v=pve-grammaria-rank-20260825">
+  <link rel="stylesheet" href="style.css?v=vs-bosses-20260831">
 </head>
 <body>
   <div class="game-utility-controls" aria-label="ตัวเลือกเกม">
@@ -140,6 +140,7 @@
           <section class="main-menu-card main-menu-actions">
             <button id="continueJourneyButton" class="primary-button main-menu-button" type="button">เดินทางต่อ</button>
             <button id="lessonMapButton" class="secondary-button main-menu-button" type="button">แผนที่บทเรียน</button>
+            <button id="vsBossesButton" class="secondary-button main-menu-button" type="button">VS Bosses</button>
             <button id="pvpModeButton" class="secondary-button main-menu-button" type="button">PvP Duel</button>
             <button id="assessmentResultButton" class="secondary-button main-menu-button" type="button">ผลการประเมิน</button>
             <button id="tutorialGuideButton" class="secondary-button main-menu-button" type="button">วิธีเล่น</button>
@@ -150,6 +151,22 @@
             <button id="mainMenuLogoutButton" class="secondary-button main-menu-button danger-button" type="button">ออกจากระบบ</button>
           </section>
         </div>
+      </div>
+    </section>
+
+    <section id="vsBossesScene" class="scene vs-bosses-scene">
+      <div class="vs-bosses-shell">
+        <header class="vs-bosses-header">
+          <button id="vsBossesBackButton" class="secondary-button" type="button">กลับหน้าหลัก</button>
+          <div>
+            <p class="eyebrow">BOSS PRACTICE</p>
+            <h2>VS Bosses</h2>
+            <p class="vs-bosses-thai-title">ฝึกฝนกับบอส</p>
+          </div>
+        </header>
+        <p class="vs-bosses-intro">เลือกบอสเพื่อฝึกฝนและวัดผลจากคะแนน Grammaria โดยไม่กระทบความคืบหน้าหลัก</p>
+        <p id="vsBossesStatus" class="vs-bosses-status" aria-live="polite"></p>
+        <div id="vsBossesGrid" class="vs-bosses-grid" aria-live="polite"></div>
       </div>
     </section>
 
@@ -457,59 +474,199 @@
             <h2>ภาพรวมการเรียนของนักเรียน</h2>
             <p>ดูข้อมูลผู้เล่นจริงจากระบบเท่านั้น โดยไม่แก้ไขความคืบหน้าของนักเรียน</p>
           </div>
-          <button id="teacherDashboardBackButton" class="secondary-button" type="button">กลับหน้าหลัก</button>
+          <div class="teacher-dashboard-header-actions">
+            <button id="studentManagementButton" class="primary-button" type="button">จัดการรายชื่อผู้เรียน</button>
+            <button id="assetManagerButton" class="primary-button" type="button">จัดการภาพและ Asset เกม</button>
+            <button id="teacherDashboardBackButton" class="secondary-button" type="button">กลับหน้าหลัก</button>
+          </div>
         </header>
 
-        <div id="teacherDashboardSummary" class="teacher-summary-grid" aria-live="polite"></div>
+        <div id="teacherDashboardOverviewPanel" class="teacher-dashboard-view">
+          <div id="teacherDashboardSummary" class="teacher-summary-grid" aria-live="polite"></div>
 
-        <div class="teacher-dashboard-filters">
-          <label>
-            <span>ระดับชั้น</span>
-            <select id="teacherClassLevelFilter">
-              <option value="all">ทุกระดับชั้น</option>
-              <option value="ม.1">ม.1</option>
-              <option value="ม.2">ม.2</option>
-              <option value="ม.3">ม.3</option>
-            </select>
-          </label>
-          <label>
-            <span>ห้อง</span>
-            <select id="teacherRoomFilter">
-              <option value="all">ทุกห้อง</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-            </select>
-          </label>
-          <label>
-            <span>ค้นหา</span>
-            <input id="teacherStudentSearchInput" type="search" placeholder="ค้นหาชื่อ / เลขที่">
-          </label>
+          <div class="teacher-dashboard-filters">
+            <label>
+              <span>ระดับชั้น</span>
+              <select id="teacherClassLevelFilter">
+                <option value="all">ทุกระดับชั้น</option>
+                <option value="ม.1">ม.1</option>
+                <option value="ม.2">ม.2</option>
+                <option value="ม.3">ม.3</option>
+              </select>
+            </label>
+            <label>
+              <span>ห้อง</span>
+              <select id="teacherRoomFilter">
+                <option value="all">ทุกห้อง</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+              </select>
+            </label>
+            <label>
+              <span>ค้นหา</span>
+              <input id="teacherStudentSearchInput" type="search" placeholder="ค้นหาชื่อ / เลขที่">
+            </label>
+          </div>
+
+          <div class="teacher-dashboard-table-wrap">
+            <table class="teacher-dashboard-table">
+              <thead>
+                <tr>
+                  <th>ตัวละคร</th>
+                  <th>เลขที่</th>
+                  <th>ชื่อ-สกุล</th>
+                  <th>ชื่อในเกม</th>
+                  <th>ชั้น/ห้อง</th>
+                  <th>บทเรียนปัจจุบัน</th>
+                  <th>ความคืบหน้า</th>
+                  <th>Grammaria</th>
+                  <th>บอสที่ผ่าน</th>
+                  <th>เข้าเล่นล่าสุด</th>
+                </tr>
+              </thead>
+              <tbody id="teacherDashboardTableBody"></tbody>
+            </table>
+            <p id="teacherDashboardEmptyState" class="teacher-dashboard-empty hidden">ยังไม่พบข้อมูลนักเรียน</p>
+          </div>
         </div>
 
-        <div class="teacher-dashboard-table-wrap">
-          <table class="teacher-dashboard-table">
-            <thead>
-              <tr>
-                <th>ตัวละคร</th>
-                <th>เลขที่</th>
-                <th>ชื่อ-สกุล</th>
-                <th>ชื่อในเกม</th>
-                <th>ชั้น/ห้อง</th>
-                <th>บทเรียนปัจจุบัน</th>
-                <th>ความคืบหน้า</th>
-                <th>Grammaria</th>
-                <th>บอสที่ผ่าน</th>
-                <th>เข้าเล่นล่าสุด</th>
-              </tr>
-            </thead>
-            <tbody id="teacherDashboardTableBody"></tbody>
-          </table>
-          <p id="teacherDashboardEmptyState" class="teacher-dashboard-empty hidden">ยังไม่พบข้อมูลนักเรียน</p>
-        </div>
+        <section id="studentManagementPanel" class="student-management-panel hidden" aria-labelledby="studentManagementTitle">
+          <div class="student-management-heading">
+            <div>
+              <p class="eyebrow">Student Management</p>
+              <h3 id="studentManagementTitle">จัดการรายชื่อผู้เรียน</h3>
+              <p>ปรับเฉพาะ Grammaria หรือสถานะซ่อน โดยไม่แก้ความคืบหน้าและรางวัล</p>
+            </div>
+            <button id="studentManagementCloseButton" class="secondary-button" type="button">กลับหน้าภาพรวม</button>
+          </div>
+
+          <div class="student-management-toolbar">
+            <label>
+              <span>ค้นหา</span>
+              <input id="studentManagementSearchInput" type="search" placeholder="ชื่อ ชื่อในเกม ชื่อ-สกุล หรือ UID">
+            </label>
+            <label>
+              <span>ระดับชั้น</span>
+              <select id="studentManagementClassFilter">
+                <option value="all">ทุกระดับชั้น</option>
+                <option value="ม.1">ม.1</option>
+                <option value="ม.2">ม.2</option>
+                <option value="ม.3">ม.3</option>
+              </select>
+            </label>
+            <label>
+              <span>ห้อง</span>
+              <select id="studentManagementRoomFilter">
+                <option value="all">ทุกห้อง</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+              </select>
+            </label>
+            <label>
+              <span>สถานะ</span>
+              <select id="studentManagementStatusFilter">
+                <option value="active">ใช้งานอยู่</option>
+                <option value="deleted">ถูกลบ/ซ่อน</option>
+                <option value="all">ทั้งหมด</option>
+              </select>
+            </label>
+            <label>
+              <span>เรียงตาม</span>
+              <select id="studentManagementSortSelect">
+                <option value="grammaria-desc">Grammaria มากไปน้อย</option>
+                <option value="grammaria-asc">Grammaria น้อยไปมาก</option>
+                <option value="last-active">เข้าเล่นล่าสุด</option>
+                <option value="name">ชื่อผู้เรียน</option>
+              </select>
+            </label>
+          </div>
+
+          <p id="studentManagementStatus" class="student-management-status" aria-live="polite"></p>
+
+          <div class="student-management-content">
+            <div class="student-management-table-wrap">
+              <table class="student-management-table">
+                <thead>
+                  <tr>
+                    <th>ลำดับ</th>
+                    <th>ชื่อผู้เรียน / ชื่อในเกม</th>
+                    <th>ชื่อ-สกุล</th>
+                    <th>ชั้น</th>
+                    <th>ห้อง</th>
+                    <th>เลขที่</th>
+                    <th>Grammaria</th>
+                    <th>ยศพลัง</th>
+                    <th>บทเรียนปัจจุบัน</th>
+                    <th>ความคืบหน้า</th>
+                    <th>เข้าเล่นล่าสุด</th>
+                    <th>สถานะ</th>
+                    <th>จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="studentManagementTableBody"></tbody>
+              </table>
+              <p id="studentManagementEmptyState" class="teacher-dashboard-empty hidden">ไม่พบข้อมูลผู้เรียน</p>
+            </div>
+
+            <aside id="studentManagementDetailPanel" class="student-management-detail hidden" aria-live="polite">
+              <div class="student-management-detail-heading">
+                <h4>รายละเอียดผู้เรียน</h4>
+                <button id="studentManagementDetailCloseButton" class="student-management-icon-button" type="button" aria-label="ปิดรายละเอียด">×</button>
+              </div>
+              <div id="studentManagementDetailContent" class="student-management-detail-content"></div>
+              <div class="student-management-actions">
+                <button id="studentManagementAddPointsButton" class="student-success-button" type="button">เพิ่มแต้ม</button>
+                <button id="studentManagementReducePointsButton" class="student-warning-button" type="button">ลดแต้ม</button>
+                <button id="studentManagementDeleteButton" class="student-danger-button" type="button">ลบ/ซ่อนผู้เรียน</button>
+                <button id="studentManagementRestoreButton" class="student-success-button hidden" type="button">กู้คืนผู้เรียน</button>
+              </div>
+              <p class="student-management-hard-delete-note">การลบถาวรต้องใช้ระบบหลังบ้านเพิ่มเติม เพื่อป้องกันข้อมูลเสียหาย</p>
+            </aside>
+          </div>
+        </section>
+
+        <section id="assetManagerPanel" class="asset-manager-panel hidden" aria-labelledby="assetManagerTitle">
+          <div class="asset-manager-heading">
+            <div>
+              <p class="eyebrow">Game Asset Manager</p>
+              <h3 id="assetManagerTitle">จัดการภาพและ Asset เกม</h3>
+              <p>อัปโหลดภาพทดแทนโดยเก็บไฟล์ต้นฉบับของระบบไว้เป็น fallback เสมอ</p>
+            </div>
+            <button id="assetManagerCloseButton" class="secondary-button" type="button">กลับหน้าภาพรวม</button>
+          </div>
+
+          <div class="asset-manager-toolbar">
+            <label>
+              <span>ค้นหา Asset</span>
+              <input id="assetManagerSearchInput" type="search" placeholder="ค้นหาชื่อ คำอธิบาย หรือ asset key">
+            </label>
+            <label>
+              <span>หมวดหมู่</span>
+              <select id="assetManagerCategoryFilter">
+                <option value="all">ทั้งหมด</option>
+                <option value="characters">ตัวละคร</option>
+                <option value="enemies">บอส/ศัตรู</option>
+                <option value="backgrounds">พื้นหลัง</option>
+                <option value="items">ไอเทม</option>
+                <option value="charms">ชาม Grammaria</option>
+                <option value="ui">UI / เมนู</option>
+              </select>
+            </label>
+          </div>
+
+          <p id="assetManagerStatus" class="asset-manager-status" aria-live="polite"></p>
+          <div id="assetManagerGrid" class="asset-manager-grid" aria-live="polite"></div>
+          <p id="assetManagerEmptyState" class="teacher-dashboard-empty hidden">ไม่พบ Asset ในหมวดนี้</p>
+          <p class="asset-manager-storage-note">ไฟล์ที่อัปโหลดจะอยู่ใน Firebase Storage และการกลับไปใช้ภาพเดิมจะไม่ลบไฟล์ที่เคยอัปโหลด</p>
+        </section>
       </div>
     </section>
 
@@ -845,6 +1002,6 @@
     <p id="developerCredit" class="developer-credit">Lingua: Digital Game-based Learning Platform | พัฒนาโดย นายนครินทร์ พร้อมสุข ครูโรงเรียนแม่สอด</p>
   </main>
 
-  <script type="module" src="script.js?v=pvp-room-foundation-20260826"></script>
+  <script type="module" src="script.js?v=vs-bosses-20260831"></script>
 </body>
 </html>

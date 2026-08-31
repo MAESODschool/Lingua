@@ -19,11 +19,18 @@ import {
   onSnapshot,
   runTransaction
 } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-storage.js";
 
 // Lingua Prototype 1 uses small scene switches and one shared state object.
 const scenes = {
   login: document.getElementById("loginScene"),
   mainMenu: document.getElementById("mainMenuScene"),
+  vsBosses: document.getElementById("vsBossesScene"),
   pvp: document.getElementById("pvpDuelScene"),
   tutorialGuide: document.getElementById("tutorialGuideScene"),
   creatorCredits: document.getElementById("creatorCreditsScene"),
@@ -21223,6 +21230,89 @@ const PAST_FRAGMENT_ACT = {
   ]
 };
 
+const ACT1_STAGE_ORDER = Object.freeze([
+  "what-is-past",
+  "what-is-tense",
+  "act1_phase1_unit3_was_were",
+  "act1_phase1_unit4_there_was_were",
+  "act1_phase1_unit5_had",
+  "regular-rule-1",
+  "regular-rule-2",
+  "regular-rule-3",
+  "regular-rule-4",
+  "ed-mini-boss",
+  "irregular-lesson",
+  "irregular-mini-boss",
+  "final-boss"
+]);
+
+const ACT1_INTERSTITIAL_NEXT_STAGE = Object.freeze({
+  "regular-intro": "regular-rule-1",
+  "merge-twist": "final-boss"
+});
+
+const ACT1_CONTINUOUS_INTERSTITIAL_AFTER_STAGE = Object.freeze({
+  "irregular-mini-boss": "merge-twist"
+});
+
+function getNextAct1StageId(currentStageId) {
+  if (ACT1_INTERSTITIAL_NEXT_STAGE[currentStageId]) {
+    return ACT1_INTERSTITIAL_NEXT_STAGE[currentStageId];
+  }
+  const currentIndex = ACT1_STAGE_ORDER.indexOf(currentStageId);
+  if (currentIndex < 0) {
+    return "";
+  }
+  return ACT1_STAGE_ORDER[currentIndex + 1] || "";
+}
+
+function getAct1ContinuousTransitionStageId(currentStageId) {
+  return ACT1_CONTINUOUS_INTERSTITIAL_AFTER_STAGE[currentStageId] || getNextAct1StageId(currentStageId);
+}
+
+function validateAct1StageProgressionOrder() {
+  const issues = [];
+  const configuredStageIds = PAST_FRAGMENT_ACT.stages.map(stage => stage.id);
+  const configuredStageIdSet = new Set(configuredStageIds);
+  const uniqueOrderIds = new Set(ACT1_STAGE_ORDER);
+
+  if (uniqueOrderIds.size !== ACT1_STAGE_ORDER.length) {
+    issues.push("ACT1_STAGE_ORDER contains duplicate stage IDs.");
+  }
+
+  ACT1_STAGE_ORDER.forEach(stageId => {
+    if (!configuredStageIdSet.has(stageId)) {
+      issues.push(`Missing Act 1 stage: ${stageId}`);
+    }
+  });
+
+  Object.entries(ACT1_CONTINUOUS_INTERSTITIAL_AFTER_STAGE).forEach(([stageId, interstitialStageId]) => {
+    if (!configuredStageIdSet.has(stageId) || !configuredStageIdSet.has(interstitialStageId)) {
+      issues.push(`Invalid Act 1 interstitial route: ${stageId} -> ${interstitialStageId}`);
+    }
+  });
+
+  ACT1_STAGE_ORDER.slice(0, -1).forEach((stageId, index) => {
+    const expectedNextStageId = ACT1_STAGE_ORDER[index + 1];
+    const actualNextStageId = getNextAct1StageId(stageId);
+    if (actualNextStageId !== expectedNextStageId) {
+      issues.push(`${stageId} should lead to ${expectedNextStageId}, received ${actualNextStageId || "none"}.`);
+    }
+  });
+
+  if (getNextAct1StageId("final-boss") !== "") {
+    issues.push("final-boss must not have a next learning stage.");
+  }
+
+  if (issues.length) {
+    console.warn("[Act1Progression] Act 1 progression order validation failed:", issues);
+  } else {
+    console.info("Act 1 progression order validation passed.");
+  }
+
+  return { valid: issues.length === 0, issues };
+}
+
 const nounWords = [];
 
 const questions = PAST_FRAGMENT_ACT.stages
@@ -21670,6 +21760,352 @@ const YESTERDAY_SPIRIT_IMAGE_PATH = "assets/characters/yesterday-spirit-transpar
 const YESTERDAY_SPIRIT_FALLBACK_IMAGE_PATH = assetPath("memory-shade.png");
 const MEMORY_BREAKER_IMAGE_PATH = "assets/bosses/memory_breaker_battle_idle_v3.gif";
 const MEMORY_BREAKER_FALLBACK_IMAGE_PATH = assetPath("enemies/memory-breaker.png");
+const GAME_ASSET_OVERRIDE_COLLECTION = "gameAssetOverrides";
+const GAME_ASSET_MAX_FILE_SIZE = 5 * 1024 * 1024;
+const GAME_ASSET_ALLOWED_TYPES = Object.freeze([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif"
+]);
+const GAME_ASSET_CATEGORY_LABELS = Object.freeze({
+  characters: "ตัวละคร",
+  enemies: "บอส/ศัตรู",
+  backgrounds: "พื้นหลัง",
+  items: "ไอเทม",
+  charms: "ชาม Grammaria",
+  ui: "UI / เมนู"
+});
+const GAME_ASSET_REGISTRY = Object.freeze([
+  {
+    key: "master_verion",
+    category: "characters",
+    displayName: "มาสเตอร์เวรีออน",
+    description: "ภาพตัวละครในหน้าบทเรียนและ Lingua Advisor",
+    defaultPath: TEACHER_CHARACTER_IMAGE_PATH,
+    recommendedSize: "ภาพแนวตั้ง โปร่งใส หรือ GIF"
+  },
+  {
+    key: "male_wanderer",
+    category: "characters",
+    displayName: "ผู้พเนจรชาย",
+    description: "ภาพตัวละครผู้เล่นชายมุมด้านหน้า",
+    defaultPath: MAIN_CHARACTER_IMAGE_PATH,
+    recommendedSize: "ภาพแนวตั้ง โปร่งใส หรือ GIF"
+  },
+  {
+    key: "female_wanderer",
+    category: "characters",
+    displayName: "ผู้พเนจรหญิง",
+    description: "ภาพตัวละครผู้เล่นหญิงมุมด้านหน้า",
+    defaultPath: "assets/characters/female_wanderer_idle.gif",
+    recommendedSize: "ภาพแนวตั้ง โปร่งใส หรือ GIF"
+  },
+  {
+    key: "time_dust_sprite",
+    category: "enemies",
+    displayName: "Time Dust Sprite",
+    description: "ภาพศัตรู Time Dust ในฉากต่อสู้",
+    defaultPath: TIME_DUST_IMAGE_PATH,
+    recommendedSize: "ภาพจัตุรัสหรือโปร่งใส"
+  },
+  {
+    key: "was_were_wisp",
+    category: "enemies",
+    displayName: "Was-Were Wisp",
+    description: "ภาพศัตรูประจำบท was / were",
+    defaultPath: WAS_WERE_WISP_IMAGE_PATH,
+    recommendedSize: "ภาพจัตุรัสหรือโปร่งใส"
+  },
+  {
+    key: "echo_tick",
+    category: "enemies",
+    displayName: "Echo Tick",
+    description: "ภาพศัตรูกลไกแห่งเวลา",
+    defaultPath: ECHO_TRICK_IMAGE_PATH,
+    recommendedSize: "ภาพจัตุรัสหรือโปร่งใส"
+  },
+  {
+    key: "ed_forger",
+    category: "enemies",
+    displayName: "The -ed Forger",
+    description: "ภาพบอสช่างหลอม -ed",
+    defaultPath: "assets/enemies/ed-forger.png",
+    recommendedSize: "ภาพแนวตั้งหรือจัตุรัส"
+  },
+  {
+    key: "irregular_wraith",
+    category: "enemies",
+    displayName: "The Irregular Wraith",
+    description: "ภาพบอสกริยาไร้กฎ",
+    defaultPath: "assets/enemies/irregular-wraith.png",
+    recommendedSize: "ภาพแนวตั้งหรือจัตุรัส"
+  },
+  {
+    key: "memory_breaker",
+    category: "enemies",
+    displayName: "The Memory Breaker",
+    description: "ภาพบอสสุดท้ายของ Act 1",
+    defaultPath: MEMORY_BREAKER_IMAGE_PATH,
+    recommendedSize: "ภาพแนวตั้ง โปร่งใส หรือ GIF"
+  },
+  {
+    key: "login_background",
+    category: "backgrounds",
+    displayName: "พื้นหลังหน้า Login",
+    description: "ภาพพื้นหลังหลักของหน้าเข้าสู่ระบบ",
+    defaultPath: "assets/ui/login_hero_aug5_2026.png",
+    recommendedSize: "แนวตั้ง ความละเอียดสูง"
+  },
+  {
+    key: "act1_time_dust_background",
+    category: "backgrounds",
+    displayName: "Time Dust Fields",
+    description: "พื้นหลังบทเรียนและการต่อสู้ช่วง Time Dust",
+    defaultPath: ACT1_BACKGROUND_MAP.timeDustFields,
+    recommendedSize: "แนวตั้ง ความละเอียดสูง"
+  },
+  {
+    key: "act1_echo_tick_background",
+    category: "backgrounds",
+    displayName: "Echo Tick Ruins",
+    description: "พื้นหลังซากเวลา Echo Tick",
+    defaultPath: ACT1_BACKGROUND_MAP.echoTickRuins,
+    recommendedSize: "แนวตั้ง ความละเอียดสูง"
+  },
+  {
+    key: "act1_ed_forge_background",
+    category: "backgrounds",
+    displayName: "The -ed Forge",
+    description: "พื้นหลังพื้นที่ช่างหลอม -ed",
+    defaultPath: ACT1_BACKGROUND_MAP.edForge,
+    recommendedSize: "แนวตั้ง ความละเอียดสูง"
+  },
+  {
+    key: "act1_irregular_cave_background",
+    category: "backgrounds",
+    displayName: "Irregular Cave",
+    description: "พื้นหลังถ้ำกริยาไร้กฎ",
+    defaultPath: ACT1_BACKGROUND_MAP.irregularCave,
+    recommendedSize: "แนวตั้ง ความละเอียดสูง"
+  },
+  {
+    key: "act1_rewind_background",
+    category: "backgrounds",
+    displayName: "Rewind Clockworks",
+    description: "พื้นหลังกลไกย้อนเวลา",
+    defaultPath: ACT1_BACKGROUND_MAP.rewindClockworks,
+    recommendedSize: "แนวตั้ง ความละเอียดสูง"
+  },
+  {
+    key: "act1_memory_breaker_background",
+    category: "backgrounds",
+    displayName: "Memory Breaker Citadel",
+    description: "พื้นหลังป้อมปราการบอสสุดท้าย",
+    defaultPath: ACT1_BACKGROUND_MAP.memoryBreakerCitadel,
+    recommendedSize: "แนวตั้ง ความละเอียดสูง"
+  },
+  {
+    key: "hp_potion",
+    category: "items",
+    displayName: "ยาฟื้นพลังชีวิต",
+    description: "ไอคอนขวดยาฟื้น HP",
+    defaultPath: "assets/items/hp_potion.png",
+    recommendedSize: "ภาพจัตุรัส พื้นหลังโปร่งใส"
+  },
+  {
+    key: "ap_potion",
+    category: "items",
+    displayName: "ยาฟื้นพลัง AP",
+    description: "ไอคอนขวดยาฟื้น AP",
+    defaultPath: "assets/items/ap_potion.png",
+    recommendedSize: "ภาพจัตุรัส พื้นหลังโปร่งใส"
+  },
+  {
+    key: "attack_boost_potion",
+    category: "items",
+    displayName: "ยาเพิ่มพลังโจมตี",
+    description: "ไอคอนขวดยาเพิ่มพลังโจมตี",
+    defaultPath: "assets/items/attack_boost_potion.png",
+    recommendedSize: "ภาพจัตุรัส พื้นหลังโปร่งใส"
+  },
+  {
+    key: "lingua_logo",
+    category: "ui",
+    displayName: "โลโก้ Lingua",
+    description: "โลโก้ในเมนูผู้เล่น",
+    defaultPath: "assets/ui/lingua_logo_transparent.png",
+    recommendedSize: "PNG หรือ WEBP พื้นหลังโปร่งใส"
+  }
+].map(item => Object.freeze({ ...item, allowedTypes: GAME_ASSET_ALLOWED_TYPES })));
+const GAME_ASSET_REGISTRY_BY_KEY = new Map(GAME_ASSET_REGISTRY.map(item => [item.key, item]));
+const ACT1_BACKGROUND_ASSET_KEYS = Object.freeze({
+  timeDustFields: "act1_time_dust_background",
+  echoTickRuins: "act1_echo_tick_background",
+  edForge: "act1_ed_forge_background",
+  irregularCave: "act1_irregular_cave_background",
+  rewindClockworks: "act1_rewind_background",
+  memoryBreakerCitadel: "act1_memory_breaker_background"
+});
+const gameAssetOverrideState = {
+  loaded: false,
+  loading: false,
+  loadError: "",
+  overrides: {},
+  operationBusy: false
+};
+
+function getGameAssetRegistryItem(assetKey) {
+  return GAME_ASSET_REGISTRY_BY_KEY.get(String(assetKey || "")) || null;
+}
+
+function getGameAssetUrl(assetKey, fallbackPath = "") {
+  const item = getGameAssetRegistryItem(assetKey);
+  const override = gameAssetOverrideState.overrides?.[assetKey];
+  if (override?.isActive === true && typeof override.activeUrl === "string" && override.activeUrl.trim()) {
+    return override.activeUrl.trim();
+  }
+  return fallbackPath || item?.defaultPath || "";
+}
+
+function handleAssetImageError(img, fallbackPath = "") {
+  if (!img) {
+    return;
+  }
+  console.warn("[Asset Override] image failed to load", {
+    assetKey: img.dataset.assetKey || "unknown",
+    failedSrc: img.getAttribute("src") || ""
+  });
+  const cleanFallback = String(fallbackPath || "").trim();
+  if (cleanFallback && img.dataset.assetFallbackApplied !== "true") {
+    img.dataset.assetFallbackApplied = "true";
+    img.src = cleanFallback;
+    return;
+  }
+  img.onerror = null;
+  img.removeAttribute("src");
+  img.classList.add("hidden");
+  img.closest?.(".asset-manager-preview-frame")?.classList.add("is-missing");
+}
+
+function applyGameAssetImage(img, assetKey, fallbackPath = "") {
+  if (!img) {
+    return "";
+  }
+  const item = getGameAssetRegistryItem(assetKey);
+  const fallback = fallbackPath || item?.defaultPath || "";
+  const resolved = getGameAssetUrl(assetKey, fallback);
+  img.dataset.assetKey = assetKey;
+  img.dataset.assetFallbackApplied = "false";
+  img.classList.remove("hidden");
+  img.onerror = () => handleAssetImageError(img, fallback);
+  if (resolved) {
+    img.src = resolved;
+  } else {
+    handleAssetImageError(img, "");
+  }
+  return resolved;
+}
+
+async function loadGameAssetOverrides() {
+  if (gameAssetOverrideState.loading) {
+    return gameAssetOverrideState.overrides;
+  }
+  gameAssetOverrideState.loading = true;
+  gameAssetOverrideState.loadError = "";
+  try {
+    const snapshot = await getDocs(collection(firestoreDb, GAME_ASSET_OVERRIDE_COLLECTION));
+    const overrides = {};
+    snapshot.docs.forEach(assetDocument => {
+      const data = assetDocument.data() || {};
+      const key = data.key || assetDocument.id;
+      if (!getGameAssetRegistryItem(key)) {
+        return;
+      }
+      overrides[key] = { ...data, key };
+    });
+    gameAssetOverrideState.overrides = overrides;
+  } catch (error) {
+    gameAssetOverrideState.overrides = {};
+    gameAssetOverrideState.loadError = error?.code === "permission-denied"
+      ? "ไม่สามารถอ่าน Asset Override ได้ อาจต้องตรวจสอบสิทธิ์ Firestore"
+      : "ไม่สามารถโหลด Asset Override ได้ ระบบกำลังใช้ภาพเดิม";
+    console.warn("[Asset Override] failed to load; using defaults", error);
+  } finally {
+    gameAssetOverrideState.loaded = true;
+    gameAssetOverrideState.loading = false;
+  }
+  applyGameAssetOverridesToUi();
+  return gameAssetOverrideState.overrides;
+}
+
+function applyLoginBackgroundOverride() {
+  const loginScene = scenes.login;
+  const item = getGameAssetRegistryItem("login_background");
+  if (!loginScene || !item) {
+    return;
+  }
+  const resolved = getGameAssetUrl(item.key, item.defaultPath);
+  loginScene.dataset.assetBackgroundRequest = resolved;
+  if (!resolved || resolved === item.defaultPath) {
+    loginScene.style.removeProperty("background-image");
+    return;
+  }
+  const probe = new Image();
+  probe.onload = () => {
+    if (loginScene.dataset.assetBackgroundRequest === resolved) {
+      loginScene.style.backgroundImage = `url(${JSON.stringify(resolved)})`;
+    }
+  };
+  probe.onerror = error => {
+    console.warn("[Asset Override] login background failed; using default", error);
+    if (loginScene.dataset.assetBackgroundRequest === resolved) {
+      loginScene.style.removeProperty("background-image");
+    }
+  };
+  probe.src = resolved;
+}
+
+function applyMainMenuLogoOverride() {
+  if (!els.mainMenuLogo || !els.mainMenuLogoFallback) {
+    return;
+  }
+  const fallback = getGameAssetRegistryItem("lingua_logo")?.defaultPath || "assets/ui/lingua_logo_transparent.png";
+  els.mainMenuLogo.classList.remove("hidden");
+  els.mainMenuLogoFallback.classList.add("hidden");
+  els.mainMenuLogo.dataset.assetKey = "lingua_logo";
+  els.mainMenuLogo.dataset.assetFallbackApplied = "false";
+  els.mainMenuLogo.onerror = () => {
+    if (els.mainMenuLogo.dataset.assetFallbackApplied !== "true") {
+      els.mainMenuLogo.dataset.assetFallbackApplied = "true";
+      els.mainMenuLogo.src = fallback;
+      return;
+    }
+    els.mainMenuLogo.onerror = null;
+    els.mainMenuLogo.classList.add("hidden");
+    els.mainMenuLogoFallback.classList.remove("hidden");
+  };
+  els.mainMenuLogo.src = getGameAssetUrl("lingua_logo", fallback);
+}
+
+function applyGameAssetOverridesToUi() {
+  applyLoginBackgroundOverride();
+  applyMainMenuLogoOverride();
+  refreshPlayerCharacterSprites();
+  setupTeacherCharacterGifs();
+  renderLinguaAdvisorMasterVerion();
+  const backgroundKey = document.body.dataset.actBackgroundKey || DEFAULT_ACT1_BACKGROUND_KEY;
+  setActBackground(backgroundKey);
+  if (state.actBattle && scenes.battle?.classList.contains("active")) {
+    updateBattleEnemyVisual(state.currentLessonStage || state.actBattle.stage || null);
+  }
+  if (state.actBattle && els.itemPanel && !els.itemPanel.classList.contains("hidden")) {
+    renderBattleItemMenu();
+  }
+  if (els.assetManagerPanel && !els.assetManagerPanel.classList.contains("hidden")) {
+    renderAssetManagerGrid();
+  }
+}
 
 function createMainCharacterElement(className = "") {
   const img = document.createElement("img");
@@ -21724,7 +22160,10 @@ function applyPlayerCharacterImage(img, characterId = ensurePlayerCharacterData(
   }
   const character = getPlayerCharacter(characterId);
   const useBattleBackView = img.dataset.characterView === "battle-back";
-  const asset = useBattleBackView ? getPlayerBattleBackModelPath(character.id) : character.asset;
+  const characterAssetKey = character.id === "female_wanderer" ? "female_wanderer" : "male_wanderer";
+  const asset = useBattleBackView
+    ? getPlayerBattleBackModelPath(character.id)
+    : getGameAssetUrl(characterAssetKey, character.asset);
   const fallbackAsset = useBattleBackView ? (character.battleFallbackAsset || "") : character.fallbackAsset;
   img.className = img.className.replace(/\bmain-character-gif-fallback\b/g, "main-character-gif").trim();
   img.classList.toggle("female-battle-back-model", useBattleBackView && character.id === "female_wanderer");
@@ -21786,7 +22225,14 @@ function refreshPlayerCharacterSprites(characterId = ensurePlayerCharacterData()
 
 function handleTeacherCharacterGifError(img) {
   console.warn("[Character] Master Verion character asset failed to load");
+  if (img.dataset.assetFallbackApplied !== "true" && img.src !== TEACHER_CHARACTER_IMAGE_PATH) {
+    img.dataset.assetFallbackApplied = "true";
+    img.src = TEACHER_CHARACTER_IMAGE_PATH;
+    return;
+  }
   if (img.dataset.fallbackApplied === "true") {
+    img.onerror = null;
+    img.classList.add("hidden");
     return;
   }
 
@@ -21796,18 +22242,23 @@ function handleTeacherCharacterGifError(img) {
 
 function setupTeacherCharacterGifs() {
   document.querySelectorAll(".teacher-character-gif").forEach(img => {
-    img.src = TEACHER_CHARACTER_IMAGE_PATH;
+    img.dataset.assetKey = "master_verion";
+    img.dataset.assetFallbackApplied = "false";
+    img.dataset.fallbackApplied = "false";
+    img.classList.remove("hidden");
+    img.src = getGameAssetUrl("master_verion", TEACHER_CHARACTER_IMAGE_PATH);
     img.draggable = false;
-    img.addEventListener("error", () => handleTeacherCharacterGifError(img), { once: true });
+    img.onerror = () => handleTeacherCharacterGifError(img);
   });
 }
 
 function getAct1BackgroundSrc(backgroundKey) {
   const key = backgroundKey || DEFAULT_ACT1_BACKGROUND_KEY;
-  return ACT1_BACKGROUND_MAP[key] ||
+  const defaultPath = ACT1_BACKGROUND_MAP[key] ||
     ACT1_BACKGROUND_FALLBACKS[key] ||
     ACT1_BACKGROUND_MAP[DEFAULT_ACT1_BACKGROUND_KEY] ||
     GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH;
+  return getGameAssetUrl(ACT1_BACKGROUND_ASSET_KEYS[key], defaultPath);
 }
 
 function getAct1BackgroundKeyForStage(stage) {
@@ -21818,9 +22269,8 @@ function getAct1BackgroundKeyForStage(stage) {
 }
 
 function getNextAct1BackgroundKey(stage) {
-  const playableStages = getPlayableStages();
-  const currentIndex = stage ? getStageIndexById(stage.id) : -1;
-  const nextStage = currentIndex >= 0 ? playableStages[currentIndex + 1] : null;
+  const nextStageId = stage ? getNextAct1StageId(stage.id) : "";
+  const nextStage = nextStageId ? getStageById(nextStageId) : null;
   return getAct1BackgroundKeyForStage(nextStage || stage);
 }
 
@@ -21829,7 +22279,12 @@ function shouldTransitionToNextStageFromReward(stage) {
 }
 
 function setActBackground(backgroundKey, options = {}) {
-  const src = getAct1BackgroundSrc(backgroundKey);
+  const key = backgroundKey || DEFAULT_ACT1_BACKGROUND_KEY;
+  const defaultSrc = ACT1_BACKGROUND_MAP[key] ||
+    ACT1_BACKGROUND_FALLBACKS[key] ||
+    ACT1_BACKGROUND_MAP[DEFAULT_ACT1_BACKGROUND_KEY] ||
+    GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH;
+  const src = getAct1BackgroundSrc(key);
   if (!src) {
     if (options.warnMissing) {
       console.warn("[Act1Background] Missing background:", backgroundKey);
@@ -21837,9 +22292,23 @@ function setActBackground(backgroundKey, options = {}) {
     return GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH;
   }
 
-  const cssUrl = `url("${src}")`;
-  document.documentElement.style.setProperty("--act1-scene-background", cssUrl);
-  document.body.dataset.actBackgroundKey = backgroundKey || DEFAULT_ACT1_BACKGROUND_KEY;
+  const applyBackground = resolvedSrc => {
+    if (document.body.dataset.actBackgroundKey !== key) {
+      return;
+    }
+    document.documentElement.style.setProperty("--act1-scene-background", `url("${resolvedSrc}")`);
+  };
+  document.body.dataset.actBackgroundKey = key;
+  applyBackground(src === defaultSrc ? src : defaultSrc);
+  if (src !== defaultSrc) {
+    const probe = new Image();
+    probe.onload = () => applyBackground(src);
+    probe.onerror = error => {
+      console.warn("[Asset Override] background failed; using default", key, error);
+      applyBackground(defaultSrc);
+    };
+    probe.src = src;
+  }
   return src;
 }
 
@@ -21898,16 +22367,41 @@ const enemySpriteMap = {
   "ผู้ทำลายความทรงจำ": MEMORY_BREAKER_IMAGE_PATH
 };
 
-function resolveEnemySpriteForStage(stage = {}) {
-  if (stage?.id === "act1_phase1_unit3_was_were") {
-    return WAS_WERE_WISP_IMAGE_PATH;
+function getEnemyGameAssetKey(stage = {}) {
+  const enemyName = stage?.enemy || stage?.name || "";
+  const thaiName = stage?.thaiEnemy || "";
+  if (stage?.id === "act1_phase1_unit3_was_were" || enemyName === "Was-Were Wisp" || thaiName === "วิสป์ was-were") {
+    return "was_were_wisp";
   }
-  return stage?.enemySprite ||
+  if (enemyName === "Time Dust" || enemyName === "Time Dust Sprite") {
+    return "time_dust_sprite";
+  }
+  if (enemyName === "Echo Tick") {
+    return "echo_tick";
+  }
+  if (enemyName === "The -ed Forger" || enemyName === "ช่างหลอม -ed" || thaiName === "ช่างหลอม -ed") {
+    return "ed_forger";
+  }
+  if (enemyName === "The Irregular Wraith" || enemyName === "ภูต Irregular" || thaiName === "ภูต Irregular") {
+    return "irregular_wraith";
+  }
+  if (enemyName === "The Memory Breaker" || enemyName === "ผู้ทำลายความทรงจำ" || thaiName === "ผู้ทำลายความทรงจำ") {
+    return "memory_breaker";
+  }
+  return "";
+}
+
+function resolveEnemySpriteForStage(stage = {}) {
+  const defaultSprite = stage?.id === "act1_phase1_unit3_was_were"
+    ? WAS_WERE_WISP_IMAGE_PATH
+    : stage?.enemySprite ||
     stage?.bossImage ||
     enemySpriteMap[stage?.enemy] ||
     enemySpriteMap[stage?.thaiEnemy] ||
     enemySpriteMap[stage?.name] ||
     assetPath("memory-shade.png");
+  const assetKey = getEnemyGameAssetKey(stage);
+  return assetKey ? getGameAssetUrl(assetKey, defaultSprite) : defaultSprite;
 }
 
 const enemyDescriptions = {
@@ -21924,6 +22418,159 @@ const enemyDescriptions = {
   "The Irregular Wraith": "วิญญาณกริยาไร้กฎที่ซ่อนรูป V2 ไว้ในความทรงจำ",
   "The Memory Breaker": "เศษความทรงจำ Regular และ Irregular ที่หลอมรวมจนบิดเบี้ยว"
 };
+
+const VS_BOSS_REGISTRY = Object.freeze([
+  {
+    id: "time_dust_sprite",
+    name: "Time Dust Sprite",
+    thaiName: "ภูตฝุ่นแห่งเวลา",
+    topic: "Past Meaning",
+    topicTh: "ความหมายของอดีต",
+    description: "ฝึกเข้าใจความหมายของเหตุการณ์ที่เกิดขึ้นแล้ว",
+    enemyAssetKey: "time_dust_sprite",
+    fallbackImage: TIME_DUST_IMAGE_PATH,
+    relatedStageIds: ["what-is-past"],
+    recommendedHp: 45,
+    maxPracticeHp: 55
+  },
+  {
+    id: "yesterday_mite",
+    name: "Yesterday Mite",
+    thaiName: "ไรเมื่อวาน",
+    topic: "Past Time Words",
+    topicTh: "คำบอกเวลาอดีต",
+    description: "ฝึกสังเกต yesterday, last และ ago",
+    enemyAssetKey: "",
+    fallbackImage: YESTERDAY_SPIRIT_IMAGE_PATH,
+    relatedStageIds: ["what-is-tense"],
+    recommendedHp: 50,
+    maxPracticeHp: 60
+  },
+  {
+    id: "was_were_wisp",
+    name: "Was-Were Wisp",
+    thaiName: "วิสป์ was-were",
+    topic: "was / were",
+    topicTh: "การใช้ was และ were",
+    description: "ฝึกเลือก was หรือ were ให้ตรงกับประธาน",
+    enemyAssetKey: "was_were_wisp",
+    fallbackImage: WAS_WERE_WISP_IMAGE_PATH,
+    relatedStageIds: ["act1_phase1_unit3_was_were"],
+    recommendedHp: 45,
+    maxPracticeHp: 55
+  },
+  {
+    id: "memory_lantern",
+    name: "Memory Lantern",
+    thaiName: "โคมความทรงจำ",
+    topic: "there was / there were",
+    topicTh: "การใช้ there was และ there were",
+    description: "ฝึกบอกสิ่งที่มีอยู่ในอดีตตามจำนวน",
+    enemyAssetKey: "",
+    fallbackImage: assetPath("memory-shade.png"),
+    relatedStageIds: ["act1_phase1_unit4_there_was_were"],
+    recommendedHp: 55,
+    maxPracticeHp: 65
+  },
+  {
+    id: "lost_pouch_imp",
+    name: "Lost Pouch Imp",
+    thaiName: "อิมป์ถุงของหาย",
+    topic: "had",
+    topicTh: "การใช้ had ในอดีต",
+    description: "ฝึกใช้ had กับประธานทุกชนิดในอดีต",
+    enemyAssetKey: "",
+    fallbackImage: assetPath("memory-shade.png"),
+    relatedStageIds: ["act1_phase1_unit5_had"],
+    recommendedHp: 60,
+    maxPracticeHp: 70
+  },
+  {
+    id: "echo_tick",
+    name: "Echo Tick",
+    thaiName: "ติ๊กสะท้อนอดีต",
+    topic: "Regular Verbs",
+    topicTh: "กฎการเติม -ed และ -d",
+    description: "ฝึกกฎ Regular Verbs ทั้งสี่รูปแบบ",
+    enemyAssetKey: "echo_tick",
+    fallbackImage: ECHO_TRICK_IMAGE_PATH,
+    relatedStageIds: ["regular-rule-1", "regular-rule-2", "regular-rule-3", "regular-rule-4"],
+    recommendedHp: 70,
+    maxPracticeHp: 80
+  },
+  {
+    id: "ed_forger",
+    name: "The -ed Forger",
+    thaiName: "ช่างหลอม -ed ที่ผิดเพี้ยน",
+    topic: "Regular Verbs Review",
+    topicTh: "ทบทวนกฎ Regular Verbs",
+    description: "ประลองกับช่างหลอมด้วยกฎ -ed ทั้งหมด",
+    enemyAssetKey: "ed_forger",
+    fallbackImage: assetPath("enemies/ed-forger.png"),
+    relatedStageIds: ["ed-mini-boss"],
+    recommendedHp: 100,
+    maxPracticeHp: 115
+  },
+  {
+    id: "memory_bat",
+    name: "Memory Bat",
+    thaiName: "ค้างคาวความทรงจำ",
+    topic: "Irregular Verbs",
+    topicTh: "กริยา Irregular รูปอดีต",
+    description: "ฝึกจำและเลือกกริยาช่องที่ 2 แบบไม่เติม -ed",
+    enemyAssetKey: "",
+    fallbackImage: assetPath("memory-shade.png"),
+    relatedStageIds: ["irregular-lesson"],
+    recommendedHp: 75,
+    maxPracticeHp: 90
+  },
+  {
+    id: "irregular_wraith",
+    name: "The Irregular Wraith",
+    thaiName: "วิญญาณกริยาไร้กฎ",
+    topic: "Irregular Verbs Review",
+    topicTh: "ทบทวนกริยา Irregular",
+    description: "ทดสอบความแม่นยำของรูป V2 ที่ไม่เป็นไปตามกฎ",
+    enemyAssetKey: "irregular_wraith",
+    fallbackImage: assetPath("enemies/irregular-wraith.png"),
+    relatedStageIds: ["irregular-mini-boss"],
+    recommendedHp: 110,
+    maxPracticeHp: 125
+  },
+  {
+    id: "memory_breaker",
+    name: "The Memory Breaker",
+    thaiName: "ผู้ทำลายความทรงจำ",
+    topic: "Act 1 Final Review",
+    topicTh: "ทบทวนเนื้อหาอดีตทั้งหมด",
+    description: "ฝึกทบทวน Regular และ Irregular Verbs แบบรวมบท",
+    enemyAssetKey: "memory_breaker",
+    fallbackImage: MEMORY_BREAKER_IMAGE_PATH,
+    relatedStageIds: ["final-boss"],
+    recommendedHp: 130,
+    maxPracticeHp: 150
+  }
+].map(config => Object.freeze({ ...config, relatedStageIds: Object.freeze([...config.relatedStageIds]) })));
+
+const VS_BOSS_REGISTRY_BY_ID = new Map(VS_BOSS_REGISTRY.map(config => [config.id, config]));
+
+function getVsBossConfig(bossId) {
+  return VS_BOSS_REGISTRY_BY_ID.get(String(bossId || "")) || null;
+}
+
+function getVsBossPrimaryStage(config) {
+  const stageId = config?.relatedStageIds?.[0] || "";
+  return PAST_FRAGMENT_ACT.stages.find(stage => stage.id === stageId) || null;
+}
+
+function resolveVsBossImage(config) {
+  if (!config) {
+    return "";
+  }
+  return config.enemyAssetKey
+    ? getGameAssetUrl(config.enemyAssetKey, config.fallbackImage)
+    : config.fallbackImage || "";
+}
 
 const HIT_TOLERANCE = 3;
 
@@ -22371,6 +23018,11 @@ const AUTH_COPY = {
 const TEACHER_DASHBOARD_PASSWORD_SHA256 = "b687b757bd658e9ae5624be7705283c8d3a560d9dc488f8413d3bd91aa183d5e";
 let teacherDashboardStudents = [];
 let teacherDashboardLoadError = "";
+let teacherDashboardAccessGranted = false;
+const studentManagementState = {
+  selectedUid: "",
+  operationBusy: false
+};
 
 function isRemoteAuthConfigured() {
   return Boolean(
@@ -22535,6 +23187,7 @@ function getAuthPanelNotice(panelName) {
 const firebaseApp = initializeApp(REMOTE_AUTH_CONFIG.firebaseConfig);
 const firebaseAuth = getAuth(firebaseApp);
 const firestoreDb = getFirestore(firebaseApp);
+const firebaseStorage = getStorage(firebaseApp);
 const firebaseReady = getAuthMode() === "firebase";
 console.log("[Auth] mode:", AUTH_CONFIG.mode);
 console.log("[Firebase] initialized:", firebaseReady);
@@ -22658,6 +23311,19 @@ const state = {
     returnTo: "mainMenu",
     realProgressSnapshot: null
   },
+  vsBossPractice: {
+    active: false,
+    starting: false,
+    finishing: false,
+    bossId: "",
+    stageId: "",
+    scoresOwnerId: "",
+    scoresLoaded: false,
+    scores: {},
+    playerSnapshot: null,
+    evaluation: null,
+    lastResult: null
+  },
   practiceUnlockStageIds: new Set(),
   pendingBattleReturnContext: null,
   lessonStoryMode: false,
@@ -22669,7 +23335,6 @@ const state = {
   usedGeneralQuestionIds: new Set(),
   lastGeneralQuestionBaseVerb: "",
   pointParry: null,
-  timeDustTransitionComplete: false,
   isReturningToMainMenu: false,
   manualSaveInProgress: false,
   nextDialogueHold: null,
@@ -22924,6 +23589,10 @@ const els = {
   mainMenuCollection: document.getElementById("mainMenuCollection"),
   continueJourneyButton: document.getElementById("continueJourneyButton"),
   lessonMapButton: document.getElementById("lessonMapButton"),
+  vsBossesButton: document.getElementById("vsBossesButton"),
+  vsBossesBackButton: document.getElementById("vsBossesBackButton"),
+  vsBossesGrid: document.getElementById("vsBossesGrid"),
+  vsBossesStatus: document.getElementById("vsBossesStatus"),
   pvpModeButton: document.getElementById("pvpModeButton"),
   assessmentResultButton: document.getElementById("assessmentResultButton"),
   tutorialGuideButton: document.getElementById("tutorialGuideButton"),
@@ -23149,12 +23818,39 @@ const els = {
   advisorMasterVerionImage: document.getElementById("advisorMasterVerionImage"),
   advisorMasterVerionPlaceholder: document.getElementById("advisorMasterVerionPlaceholder"),
   teacherDashboardBackButton: document.getElementById("teacherDashboardBackButton"),
+  teacherDashboardOverviewPanel: document.getElementById("teacherDashboardOverviewPanel"),
   teacherDashboardSummary: document.getElementById("teacherDashboardSummary"),
   teacherClassLevelFilter: document.getElementById("teacherClassLevelFilter"),
   teacherRoomFilter: document.getElementById("teacherRoomFilter"),
   teacherStudentSearchInput: document.getElementById("teacherStudentSearchInput"),
   teacherDashboardTableBody: document.getElementById("teacherDashboardTableBody"),
-  teacherDashboardEmptyState: document.getElementById("teacherDashboardEmptyState")
+  teacherDashboardEmptyState: document.getElementById("teacherDashboardEmptyState"),
+  studentManagementButton: document.getElementById("studentManagementButton"),
+  studentManagementPanel: document.getElementById("studentManagementPanel"),
+  studentManagementCloseButton: document.getElementById("studentManagementCloseButton"),
+  studentManagementSearchInput: document.getElementById("studentManagementSearchInput"),
+  studentManagementClassFilter: document.getElementById("studentManagementClassFilter"),
+  studentManagementRoomFilter: document.getElementById("studentManagementRoomFilter"),
+  studentManagementStatusFilter: document.getElementById("studentManagementStatusFilter"),
+  studentManagementSortSelect: document.getElementById("studentManagementSortSelect"),
+  studentManagementStatus: document.getElementById("studentManagementStatus"),
+  studentManagementTableBody: document.getElementById("studentManagementTableBody"),
+  studentManagementEmptyState: document.getElementById("studentManagementEmptyState"),
+  studentManagementDetailPanel: document.getElementById("studentManagementDetailPanel"),
+  studentManagementDetailCloseButton: document.getElementById("studentManagementDetailCloseButton"),
+  studentManagementDetailContent: document.getElementById("studentManagementDetailContent"),
+  studentManagementAddPointsButton: document.getElementById("studentManagementAddPointsButton"),
+  studentManagementReducePointsButton: document.getElementById("studentManagementReducePointsButton"),
+  studentManagementDeleteButton: document.getElementById("studentManagementDeleteButton"),
+  studentManagementRestoreButton: document.getElementById("studentManagementRestoreButton"),
+  assetManagerButton: document.getElementById("assetManagerButton"),
+  assetManagerPanel: document.getElementById("assetManagerPanel"),
+  assetManagerCloseButton: document.getElementById("assetManagerCloseButton"),
+  assetManagerSearchInput: document.getElementById("assetManagerSearchInput"),
+  assetManagerCategoryFilter: document.getElementById("assetManagerCategoryFilter"),
+  assetManagerStatus: document.getElementById("assetManagerStatus"),
+  assetManagerGrid: document.getElementById("assetManagerGrid"),
+  assetManagerEmptyState: document.getElementById("assetManagerEmptyState")
 };
 
 const tutorialSlides = [
@@ -24387,6 +25083,10 @@ function showDefeatScreen(reason = "HP เหลือ 0") {
   cleanupBattleInputState();
   showOnlyBattlePanel(null);
   updateBattleStats();
+  if (isVsBossPracticeActive()) {
+    void finishVsBossPracticeBattle({ bossDefeated: false });
+    return;
+  }
   saveProgress({
     currentStageId: battle.stage.id,
     currentLessonId: battle.stage.id,
@@ -24447,147 +25147,6 @@ function returnToCurrentLessonFromDefeat() {
   runSceneTransition("กลับไปทบทวนบทเรียนอีกครั้ง...", () => {
     showStageLesson(stageIndex, { lessonStepIndex: 0, dialogueIndex: 0 });
   });
-}
-
-function clearForcedSceneTransitionLock() {
-  state.isTransitioning = false;
-  if (els.sceneTransition) {
-    els.sceneTransition.classList.remove("visible");
-    els.sceneTransition.classList.add("hidden");
-  }
-}
-
-function hideBattleUICompletely() {
-  console.log("[TimeDust] Hiding battle UI completely");
-  setActionButtonsEnabled(false);
-  stopTimer("charge");
-  stopParryCountdown();
-  cleanupPointParryRingUI();
-  state.parryAttack = null;
-  showOnlyBattlePanel(null);
-  document.body.classList.remove("battle-mode", "combat-mode", "modal-open");
-  Object.values(scenes).forEach(scene => {
-    if (scene) {
-      scene.classList.remove("active");
-    }
-  });
-  if (scenes.battle) {
-    scenes.battle.setAttribute("aria-hidden", "true");
-  } else {
-    console.warn("[TimeDust] Battle scene element was not found");
-  }
-}
-
-function showLessonUICompletely() {
-  console.log("[TimeDust] Showing lesson UI completely");
-  if (!scenes.story) {
-    console.warn("[TimeDust] Story/Lesson scene element was not found");
-    return;
-  }
-  scenes.story.removeAttribute("aria-hidden");
-  scenes.story.classList.add("active");
-  if (scenes.battle) {
-    scenes.battle.setAttribute("aria-hidden", "true");
-  }
-  playBgmForScene("story");
-}
-
-function restoreNextButtonForLesson() {
-  console.log("[TimeDust] Restoring lesson buttons");
-  if (els.nextDialogueButton) {
-    els.nextDialogueButton.disabled = false;
-    els.nextDialogueButton.classList.remove("disabled");
-  } else {
-    console.warn("[TimeDust] Next dialogue button was not found");
-  }
-  if (els.battleButton) {
-    setButtonEnabled(els.battleButton, true);
-  } else {
-    console.warn("[TimeDust] Lesson main button was not found");
-  }
-}
-
-function showTimeDustNextLessonFallback(stage) {
-  if (!els.continueBattleButton) {
-    console.warn("[TimeDust] Fallback continue button was not found");
-    return;
-  }
-
-  showBattleContinueButton("ไปบทเรียนถัดไป", () => {
-    console.log("[TimeDust] Fallback button clicked");
-    transitionToRegularEdLessonAfterTimeDust(stage);
-  });
-}
-
-function transitionToRegularEdLessonAfterTimeDust(stage) {
-  if (isReplayingStage(stage)) {
-    console.log("[TimeDust] Replay complete; returning to replay reward summary");
-    state.timeDustTransitionComplete = false;
-    showStageReward(stage);
-    return;
-  }
-
-  if (state.timeDustTransitionComplete && !state.actBattle) {
-    console.log("[TimeDust] Transition already completed");
-    return;
-  }
-
-  console.log("[TimeDust] Calling transitionToRegularEdLessonAfterTimeDust");
-  state.timeDustTransitionComplete = true;
-  clearForcedSceneTransitionLock();
-
-  const nextStageId = "regular-rule-1";
-  const nextIndex = getStageIndexById(nextStageId);
-  const nextStage = getPlayableStages()[nextIndex] || getStageById(nextStageId);
-  if (!nextStage || nextIndex < 0) {
-    console.warn("[TimeDust] Regular -ed lesson stage was not found:", nextStageId);
-    state.timeDustTransitionComplete = false;
-    showTimeDustNextLessonFallback(stage);
-    return;
-  }
-
-  if (state.actBattle) {
-    state.actBattle.victoryHandled = true;
-    state.actBattle.isActive = false;
-    state.actBattle.phase = "ended";
-  }
-
-  unlockStage(nextStageId);
-  if (stage) {
-    markCompletedLesson(stage.id);
-    markBossDefeated(stage);
-  }
-
-  state.enemyHp = 0;
-  state.actBattle = null;
-  state.actStageIndex = nextIndex;
-  state.currentLessonStage = nextStage;
-  state.lessonStepIndex = 0;
-  state.lessonStoryStepIndex = 0;
-
-  const progress = saveProgress({
-    currentActId: DEFAULT_ACT_PROGRESS.currentActId,
-    currentStageId: nextStageId,
-    currentLessonId: nextStageId,
-    currentScreen: "lesson",
-    lastSafeScreen: "lesson",
-    currentDialogueIndex: 0,
-    currentLessonStepIndex: 0
-  });
-  console.log("[TimeDust] Current lesson:", progress?.currentLessonId);
-
-  transitionToActBackground(
-    getAct1BackgroundKeyForStage(nextStage),
-    "ไทม์ดัสต์สลายไปแล้ว... กฎของ Regular Verbs กำลังเปิดออก",
-    () => {
-      hideBattleUICompletely();
-      restoreLessonUIAfterBattle();
-      showLessonUICompletely();
-      showStageLesson(nextIndex, { lessonStepIndex: 0, dialogueIndex: 0 });
-      restoreNextButtonForLesson();
-      console.log("[TimeDust] Lesson UI shown");
-    }
-  );
 }
 
 const ACT_MAX_AP = 5;
@@ -27442,10 +28001,30 @@ async function logoutCurrentUser() {
   clearEnemyTurnTimer();
   stopTimer("charge");
   stopParryCountdown();
+  if (isVsBossPracticeActive()) {
+    cleanupManualBattleExitState();
+  }
   if (isPracticeModeActive()) {
     endPracticeMode({ restoreProgress: true });
   }
+  state.vsBossPractice = {
+    active: false,
+    starting: false,
+    finishing: false,
+    bossId: "",
+    stageId: "",
+    scoresOwnerId: "",
+    scoresLoaded: false,
+    scores: {},
+    playerSnapshot: null,
+    evaluation: null,
+    lastResult: null
+  };
   state.practiceUnlockStageIds.clear();
+  teacherDashboardAccessGranted = false;
+  studentManagementState.selectedUid = "";
+  studentManagementState.operationBusy = false;
+  gameAssetOverrideState.operationBusy = false;
   await authService.logout();
   updateAuthUi();
   setAuthStatus("ออกจากระบบแล้ว สามารถเลือกผู้เล่นใหม่ได้");
@@ -28659,12 +29238,22 @@ function recordCorrectAnswerForGrammaria() {
   if (stats) {
     stats.correctAnswers += 1;
   }
+  if (isVsBossPracticeActive() && state.vsBossPractice.evaluation) {
+    state.vsBossPractice.evaluation.currentCombo += 1;
+    state.vsBossPractice.evaluation.maxCombo = Math.max(
+      state.vsBossPractice.evaluation.maxCombo,
+      state.vsBossPractice.evaluation.currentCombo
+    );
+  }
 }
 
 function recordWrongAnswerForGrammaria() {
   const stats = getCurrentBattleStats();
   if (stats) {
     stats.wrongAnswers += 1;
+  }
+  if (isVsBossPracticeActive() && state.vsBossPractice.evaluation) {
+    state.vsBossPractice.evaluation.currentCombo = 0;
   }
 }
 
@@ -29060,6 +29649,8 @@ function getStageById(stageId) {
   return getPlayableStages().find(stage => stage.id === stageId) || null;
 }
 
+validateAct1StageProgressionOrder();
+
 function normalizeEnemyId(enemy) {
   const raw = typeof enemy === "string"
     ? enemy
@@ -29185,12 +29776,40 @@ function validateProgress(progress) {
   return progress;
 }
 
+function repairAct1ProgressionIfNeeded(progress) {
+  if (!progress || progress.currentStageId !== "regular-rule-1") {
+    return false;
+  }
+
+  const completedStageIds = new Set([
+    ...(Array.isArray(progress.completedStages) ? progress.completedStages : []),
+    ...(Array.isArray(progress.completedLessons) ? progress.completedLessons : [])
+  ]);
+  const completedLearningStageIds = ACT1_STAGE_ORDER.filter(stageId => completedStageIds.has(stageId));
+  const isExactKnownCorruption = completedLearningStageIds.length === 1 &&
+    completedLearningStageIds[0] === "what-is-past" &&
+    !completedStageIds.has("what-is-tense");
+
+  if (!isExactKnownCorruption) {
+    return false;
+  }
+
+  progress.currentStageId = "what-is-tense";
+  progress.currentLessonId = "what-is-tense";
+  addUniqueActValue(progress.unlockedStages, "what-is-tense");
+  console.info("[Act1Progression] Repaired C-01 progress to what-is-tense.");
+  return true;
+}
+
 function loadProgress() {
   const progress = ensureActProgress();
   if (!progress) {
     return null;
   }
   validateProgress(progress);
+  if (repairAct1ProgressionIfNeeded(progress)) {
+    savePlayerData("repair-act1-progression-c01");
+  }
   console.log("[Progress] Loaded:", progress);
   updateLessonGrammariaDisplay();
   return progress;
@@ -30051,7 +30670,7 @@ function buildReachedLessonReviewEntries(progress = loadProgress()) {
 }
 
 function getMasterVerionAssetPath() {
-  return TEACHER_CHARACTER_IMAGE_PATH || "";
+  return getGameAssetUrl("master_verion", TEACHER_CHARACTER_IMAGE_PATH) || "";
 }
 
 function getLinguaAdvisorSource(source = "") {
@@ -30167,8 +30786,15 @@ function renderLinguaAdvisorMasterVerion() {
   image.classList.remove("hidden");
   placeholder.classList.add("hidden");
   image.alt = "มาสเตอร์เวอริออน ที่ปรึกษาแกรมมาเรีย";
+  image.dataset.assetKey = "master_verion";
+  image.dataset.assetFallbackApplied = "false";
   image.dataset.fallbackApplied = "false";
   image.onerror = () => {
+    if (image.dataset.assetFallbackApplied !== "true" && TEACHER_CHARACTER_IMAGE_PATH) {
+      image.dataset.assetFallbackApplied = "true";
+      image.src = TEACHER_CHARACTER_IMAGE_PATH;
+      return;
+    }
     if (image.dataset.fallbackApplied !== "true" && TEACHER_CHARACTER_FALLBACK_IMAGE_PATH) {
       image.dataset.fallbackApplied = "true";
       image.src = TEACHER_CHARACTER_FALLBACK_IMAGE_PATH;
@@ -30891,6 +31517,12 @@ function mapOnlineRoomToPvpState(roomData) {
   const opponentPlayer = roomData.players?.[opponentSide] || createPvpOnlinePlayer(opponentSide, "", `Player ${opponentSide}`);
   const localLane = roomData.lanes?.[side] || createPvpOnlineLane();
   const opponentLane = roomData.lanes?.[opponentSide] || createPvpOnlineLane();
+  pvpState.onlineRoom = roomData;
+  pvpState.connectionStatus = roomData.status === "waiting"
+    ? "waiting"
+    : roomData.status === "finished"
+      ? "finished"
+      : "online";
   pvpState.localSide = side;
   pvpState.opponentSide = opponentSide;
   pvpState.onlineSide = side;
@@ -31671,6 +32303,7 @@ function exitPvpMode() {
 }
 
 function createMockPvpRoom() {
+  pvpState.onlineError = "";
   pvpState.roomCode = `LGX${Math.floor(100 + Math.random() * 900)}`;
   pvpState.connectionStatus = "host-mock";
   pvpState.opponent.name = "คู่ต่อสู้จำลอง";
@@ -31687,6 +32320,7 @@ function joinMockPvpRoom(roomCode) {
     els.pvpRoomStatus.textContent = "กรุณากรอกรหัสห้อง";
     return;
   }
+  pvpState.onlineError = "";
   pvpState.roomCode = cleanCode.slice(0, 8);
   pvpState.connectionStatus = "joined-mock";
   pvpState.opponent.name = "คู่ต่อสู้จำลอง";
@@ -32190,10 +32824,19 @@ function renderMainMenu() {
   if (els.mainMenuLogo && els.mainMenuLogoFallback) {
     els.mainMenuLogo.classList.remove("hidden");
     els.mainMenuLogoFallback.classList.add("hidden");
-    els.mainMenuLogo.addEventListener("error", () => {
+    els.mainMenuLogo.dataset.assetKey = "lingua_logo";
+    els.mainMenuLogo.dataset.assetFallbackApplied = "false";
+    els.mainMenuLogo.onerror = () => {
+      if (els.mainMenuLogo.dataset.assetFallbackApplied !== "true") {
+        els.mainMenuLogo.dataset.assetFallbackApplied = "true";
+        els.mainMenuLogo.src = getGameAssetRegistryItem("lingua_logo")?.defaultPath || "assets/ui/lingua_logo_transparent.png";
+        return;
+      }
+      els.mainMenuLogo.onerror = null;
       els.mainMenuLogo.classList.add("hidden");
       els.mainMenuLogoFallback.classList.remove("hidden");
-    }, { once: true });
+    };
+    els.mainMenuLogo.src = getGameAssetUrl("lingua_logo", "assets/ui/lingua_logo_transparent.png");
   }
   if (els.mainMenuAvatar) {
     applyPlayerCharacterImage(els.mainMenuAvatar, view.characterId);
@@ -32216,6 +32859,7 @@ function renderMainMenu() {
 
   setButtonAction(els.continueJourneyButton, view.canContinue ? "เดินทางต่อ" : "เริ่มการเดินทาง", continueJourneyFromMainMenu, { lock: true });
   setButtonAction(els.lessonMapButton, "แผนที่บทเรียน", openMainMenuLessonMap, { lock: false });
+  setButtonAction(els.vsBossesButton, "VS Bosses", openVsBossesScene, { lock: false });
   setButtonAction(els.pvpModeButton, "PvP Duel", enterPvpMode, { lock: false });
   setButtonAction(els.assessmentResultButton, "ผลการประเมิน", openMainMenuAssessmentResult, { lock: false });
   setButtonAction(els.tutorialGuideButton, "วิธีเล่น", openTutorialGuide, { lock: false });
@@ -32238,6 +32882,7 @@ function showMainMenu() {
   }
   renderMainMenu();
   showScene("mainMenu");
+  void loadVsBossPracticeScores();
 }
 
 function getTeacherStudentProfile(record = {}) {
@@ -32263,23 +32908,51 @@ function getTeacherStudentGrammaria(record = {}) {
   return Number(grammaria.total ?? progressSnapshot.grammaria ?? record.grammaria ?? 0) || 0;
 }
 
-function getTeacherStudentLastActive(record = {}) {
+function getTeacherStudentLastActiveValue(record = {}) {
   const progressSnapshot = record.progress && typeof record.progress === "object" ? record.progress : {};
-  const value = record.lastActiveAt ||
+  return record.lastActiveAt ||
     progressSnapshot.lastActiveAt ||
     record.lastLoginAt ||
     progressSnapshot.updatedAt ||
     record.updatedAt ||
     record.createdAt ||
-    progressSnapshot.createdAt;
+    progressSnapshot.createdAt ||
+    null;
+}
+
+function getTeacherTimestampMillis(value) {
   if (!value) {
-    return "";
+    return 0;
+  }
+  if (typeof value?.toDate === "function") {
+    return value.toDate().getTime();
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+}
+
+function formatTeacherTimestamp(value, fallback = "") {
+  if (!value) {
+    return fallback;
   }
   if (typeof value?.toDate === "function") {
     return value.toDate().toLocaleString("th-TH");
   }
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString("th-TH");
+}
+
+function getTeacherStudentLastActive(record = {}) {
+  return formatTeacherTimestamp(getTeacherStudentLastActiveValue(record));
+}
+
+function getStudentProgressListCount(progress = {}, primaryKey, fallbackKey = "") {
+  const values = Array.isArray(progress?.[primaryKey])
+    ? progress[primaryKey]
+    : fallbackKey && Array.isArray(progress?.[fallbackKey])
+      ? progress[fallbackKey]
+      : [];
+  return new Set(values.filter(Boolean)).size;
 }
 
 function isGuestTeacherRecord(record = {}) {
@@ -32342,6 +33015,12 @@ function normalizeTeacherStudentRecord(record = {}, sourceId = "") {
   const username = record.username || progressSnapshot.username || sourceId;
   const savedGrammaria = Number(record.grammaria);
   const savedBossesDefeated = Number(record.bossesDefeated);
+  const grammariaTotal = Number.isFinite(savedGrammaria)
+    ? Math.max(0, Math.floor(savedGrammaria))
+    : (profileCompleted ? getTeacherStudentGrammaria(record) : 0);
+  const lastActiveValue = getTeacherStudentLastActiveValue(record);
+  const createdAtValue = record.createdAt || progressSnapshot.createdAt || null;
+  const isDeleted = record.isDeleted === true;
 
   return {
     sourceId,
@@ -32359,13 +33038,21 @@ function normalizeTeacherStudentRecord(record = {}, sourceId = "") {
     characterAsset: character?.asset || record.avatarImage || "",
     currentLesson: safeDisplayText(record.currentLessonTitle || labels.lesson, "ยังไม่เริ่ม"),
     progressPercent,
-    grammaria: Number.isFinite(savedGrammaria)
-      ? savedGrammaria
-      : (profileCompleted ? getTeacherStudentGrammaria(record) : 0),
+    grammaria: grammariaTotal,
+    grammariaRank: getGrammariaAttackRank(grammariaTotal).thaiTitle,
     bossesDefeated: Number.isFinite(savedBossesDefeated)
       ? savedBossesDefeated
       : (profileCompleted ? defeatedBosses.length : 0),
-    lastActiveText: getTeacherStudentLastActive(record)
+    completedStagesCount: getStudentProgressListCount(actProgress, "completedStages", "completedLessons"),
+    unlockedStagesCount: getStudentProgressListCount(actProgress, "unlockedStages"),
+    defeatedBossesCount: getStudentProgressListCount(actProgress, "defeatedBosses"),
+    lastActiveText: formatTeacherTimestamp(lastActiveValue),
+    lastActiveSortValue: getTeacherTimestampMillis(lastActiveValue),
+    createdAtText: formatTeacherTimestamp(createdAtValue, "ยังไม่มีข้อมูล"),
+    isDeleted,
+    deleteReason: safeDisplayText(record.deleteReason, "ไม่ระบุ"),
+    deletedAtText: formatTeacherTimestamp(record.deletedAt, "ยังไม่มีข้อมูล"),
+    deletedBy: safeDisplayText(record.deletedBy, "ไม่ระบุ")
   };
 }
 
@@ -32418,6 +33105,7 @@ function getFilteredTeacherDashboardStudents() {
   const room = els.teacherRoomFilter?.value || "all";
   const search = (els.teacherStudentSearchInput?.value || "").trim().toLowerCase();
   return teacherDashboardStudents
+    .filter(student => !student.isDeleted)
     .filter(student => classLevel === "all" || student.profile.classLevel === classLevel)
     .filter(student => room === "all" || String(student.profile.room) === room)
     .filter(student => {
@@ -32445,11 +33133,12 @@ function renderTeacherDashboardSummary(students) {
   if (!els.teacherDashboardSummary) {
     return;
   }
-  const total = students.length;
-  const started = students.filter(student => student.characterCreated || student.profileCompleted || student.progressPercent > 0).length;
-  const incomplete = students.filter(student => !student.characterCreated).length;
-  const averageProgress = total ? Math.round(students.reduce((sum, student) => sum + student.progressPercent, 0) / total) : 0;
-  const averageGrammaria = total ? Math.round(students.reduce((sum, student) => sum + student.grammaria, 0) / total) : 0;
+  const activeStudents = (students || []).filter(student => !student.isDeleted);
+  const total = activeStudents.length;
+  const started = activeStudents.filter(student => student.characterCreated || student.profileCompleted || student.progressPercent > 0).length;
+  const incomplete = activeStudents.filter(student => !student.characterCreated).length;
+  const averageProgress = total ? Math.round(activeStudents.reduce((sum, student) => sum + student.progressPercent, 0) / total) : 0;
+  const averageGrammaria = total ? Math.round(activeStudents.reduce((sum, student) => sum + student.grammaria, 0) / total) : 0;
   const cards = [
     ["นักเรียนที่สมัครแล้ว", total],
     ["เริ่มเล่นแล้ว", started],
@@ -32528,9 +33217,1185 @@ function renderTeacherDashboardTable() {
   });
 }
 
+function setStudentManagementStatus(message = "", type = "") {
+  if (!els.studentManagementStatus) {
+    return;
+  }
+  els.studentManagementStatus.textContent = message;
+  els.studentManagementStatus.classList.remove("is-error", "is-success");
+  if (type) {
+    els.studentManagementStatus.classList.add(`is-${type}`);
+  }
+}
+
+function requireStudentManagementAccess(options = {}) {
+  if (teacherDashboardAccessGranted) {
+    return true;
+  }
+  if (options.showMessage !== false) {
+    openGameModal({
+      title: "ไม่สามารถเปิดเมนูผู้ดูแล",
+      body: "กรุณาเข้าสู่เมนูผู้ดูแลก่อน",
+      actions: [{ label: "รับทราบ", primary: true, onClick: closeGameModal }]
+    });
+  }
+  return false;
+}
+
+function getStudentManagementRecordKey(student = {}) {
+  return student.sourceId || student.uid || "";
+}
+
+function getStudentManagementSelectedStudent() {
+  return teacherDashboardStudents.find(student =>
+    getStudentManagementRecordKey(student) === studentManagementState.selectedUid
+  ) || null;
+}
+
+function getFilteredStudentManagementStudents() {
+  const search = (els.studentManagementSearchInput?.value || "").trim().toLowerCase();
+  const classLevel = els.studentManagementClassFilter?.value || "all";
+  const room = els.studentManagementRoomFilter?.value || "all";
+  const status = els.studentManagementStatusFilter?.value || "active";
+  const sort = els.studentManagementSortSelect?.value || "grammaria-desc";
+  const students = teacherDashboardStudents
+    .filter(student => status === "all" || (status === "deleted" ? student.isDeleted : !student.isDeleted))
+    .filter(student => classLevel === "all" || student.profile.classLevel === classLevel)
+    .filter(student => room === "all" || String(student.profile.room) === room)
+    .filter(student => {
+      if (!search) {
+        return true;
+      }
+      return [
+        student.uid,
+        student.sourceId,
+        student.username,
+        student.displayName,
+        student.characterName,
+        student.profile.fullName,
+        student.profile.classGroup,
+        student.profile.studentNo
+      ].some(value => String(value || "").toLowerCase().includes(search));
+    });
+
+  return students.sort((left, right) => {
+    if (sort === "grammaria-asc") {
+      return left.grammaria - right.grammaria || String(left.profile.fullName).localeCompare(String(right.profile.fullName), "th");
+    }
+    if (sort === "last-active") {
+      return right.lastActiveSortValue - left.lastActiveSortValue || String(left.profile.fullName).localeCompare(String(right.profile.fullName), "th");
+    }
+    if (sort === "name") {
+      return String(left.profile.fullName || left.characterName).localeCompare(String(right.profile.fullName || right.characterName), "th");
+    }
+    return right.grammaria - left.grammaria || String(left.profile.fullName).localeCompare(String(right.profile.fullName), "th");
+  });
+}
+
+function createStudentManagementNameCell(student) {
+  const cell = document.createElement("td");
+  const wrap = document.createElement("div");
+  wrap.className = "student-management-name-cell";
+  const name = document.createElement("strong");
+  name.textContent = safeDisplayText(student.characterName || student.displayName, "ยังไม่มีข้อมูล");
+  const username = document.createElement("small");
+  username.textContent = safeDisplayText(student.username, "ไม่ระบุ");
+  wrap.append(name, username);
+  cell.appendChild(wrap);
+  return cell;
+}
+
+function createStudentManagementStatusBadge(student) {
+  const badge = document.createElement("span");
+  badge.className = `student-status-badge${student.isDeleted ? " is-deleted" : ""}`;
+  badge.textContent = student.isDeleted ? "ถูกลบ/ซ่อน" : "ใช้งานอยู่";
+  return badge;
+}
+
+function clearStudentManagementDetail() {
+  studentManagementState.selectedUid = "";
+  if (els.studentManagementDetailContent) {
+    els.studentManagementDetailContent.textContent = "";
+  }
+  els.studentManagementDetailPanel?.classList.add("hidden");
+  renderStudentManagementTable();
+}
+
+function appendStudentManagementDetailRow(label, value) {
+  if (!els.studentManagementDetailContent) {
+    return;
+  }
+  const row = document.createElement("div");
+  row.className = "student-management-detail-row";
+  const labelNode = document.createElement("span");
+  labelNode.textContent = label;
+  const valueNode = document.createElement("strong");
+  valueNode.textContent = safeDisplayText(value, "ยังไม่มีข้อมูล");
+  row.append(labelNode, valueNode);
+  els.studentManagementDetailContent.appendChild(row);
+}
+
+function renderStudentManagementDetail(student = getStudentManagementSelectedStudent()) {
+  if (!student || !els.studentManagementDetailPanel || !els.studentManagementDetailContent) {
+    els.studentManagementDetailPanel?.classList.add("hidden");
+    return;
+  }
+  els.studentManagementDetailContent.textContent = "";
+  appendStudentManagementDetailRow("UID", student.uid || student.sourceId);
+  appendStudentManagementDetailRow("ชื่อผู้เล่น", student.characterName || student.displayName);
+  appendStudentManagementDetailRow("ชื่อ-สกุล", student.profile.fullName);
+  appendStudentManagementDetailRow("ชั้น / ห้อง / เลขที่", `${student.profile.classLevel || "ไม่ระบุ"} / ${student.profile.room || "ไม่ระบุ"} / ${student.profile.studentNo || "ไม่ระบุ"}`);
+  appendStudentManagementDetailRow("Grammaria ปัจจุบัน", String(student.grammaria));
+  appendStudentManagementDetailRow("ยศพลัง Grammaria", student.grammariaRank);
+  appendStudentManagementDetailRow("บทเรียนปัจจุบัน", student.currentLesson);
+  appendStudentManagementDetailRow("completedStages", String(student.completedStagesCount));
+  appendStudentManagementDetailRow("unlockedStages", String(student.unlockedStagesCount));
+  appendStudentManagementDetailRow("defeatedBosses", String(student.defeatedBossesCount));
+  appendStudentManagementDetailRow("เข้าเล่นล่าสุด", student.lastActiveText || "ยังไม่มีข้อมูล");
+  appendStudentManagementDetailRow("สร้างบัญชีเมื่อ", student.createdAtText);
+  appendStudentManagementDetailRow("สถานะ", student.isDeleted ? "ถูกลบ/ซ่อน" : "ใช้งานอยู่");
+  if (student.isDeleted) {
+    appendStudentManagementDetailRow("เหตุผลที่ซ่อน", student.deleteReason);
+    appendStudentManagementDetailRow("ซ่อนเมื่อ", student.deletedAtText);
+    appendStudentManagementDetailRow("ดำเนินการโดย", student.deletedBy);
+  }
+  [els.studentManagementAddPointsButton, els.studentManagementReducePointsButton, els.studentManagementDeleteButton]
+    .forEach(button => button?.classList.toggle("hidden", student.isDeleted));
+  els.studentManagementRestoreButton?.classList.toggle("hidden", !student.isDeleted);
+  els.studentManagementDetailPanel.classList.remove("hidden");
+}
+
+function selectStudentManagementStudent(uid) {
+  const student = teacherDashboardStudents.find(item => getStudentManagementRecordKey(item) === uid);
+  if (!student) {
+    clearStudentManagementDetail();
+    return;
+  }
+  studentManagementState.selectedUid = getStudentManagementRecordKey(student);
+  renderStudentManagementTable();
+  renderStudentManagementDetail(student);
+}
+
+function renderStudentManagementTable() {
+  if (!els.studentManagementTableBody || !els.studentManagementEmptyState) {
+    return;
+  }
+  const students = getFilteredStudentManagementStudents();
+  els.studentManagementTableBody.textContent = "";
+  els.studentManagementEmptyState.classList.toggle("hidden", students.length > 0);
+  students.forEach((student, index) => {
+    const uid = getStudentManagementRecordKey(student);
+    const row = document.createElement("tr");
+    row.tabIndex = 0;
+    row.classList.toggle("is-selected", uid === studentManagementState.selectedUid);
+    row.addEventListener("click", () => selectStudentManagementStudent(uid));
+    row.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        selectStudentManagementStudent(uid);
+      }
+    });
+    appendTeacherTableCell(row, String(index + 1));
+    row.appendChild(createStudentManagementNameCell(student));
+    appendTeacherTableCell(row, safeDisplayText(student.profile.fullName, "ไม่พบข้อมูล"));
+    appendTeacherTableCell(row, safeDisplayText(student.profile.classLevel, "ไม่ระบุ"));
+    appendTeacherTableCell(row, safeDisplayText(student.profile.room, "ไม่ระบุ"));
+    appendTeacherTableCell(row, safeDisplayText(student.profile.studentNo, "ไม่ระบุ"));
+    appendTeacherTableCell(row, String(student.grammaria));
+    appendTeacherTableCell(row, student.grammariaRank);
+    appendTeacherTableCell(row, student.currentLesson);
+    appendTeacherTableCell(row, `${student.progressPercent}%`);
+    appendTeacherTableCell(row, safeDisplayText(student.lastActiveText, "ยังไม่มีข้อมูล"));
+    const statusCell = document.createElement("td");
+    statusCell.appendChild(createStudentManagementStatusBadge(student));
+    row.appendChild(statusCell);
+    const actionCell = document.createElement("td");
+    const detailButton = document.createElement("button");
+    detailButton.type = "button";
+    detailButton.className = "student-management-view-button";
+    detailButton.textContent = "ดูรายละเอียด";
+    detailButton.addEventListener("click", event => {
+      event.stopPropagation();
+      selectStudentManagementStudent(uid);
+    });
+    actionCell.appendChild(detailButton);
+    row.appendChild(actionCell);
+    els.studentManagementTableBody.appendChild(row);
+  });
+}
+
+function openStudentManagementPanel() {
+  if (!requireStudentManagementAccess()) {
+    return;
+  }
+  els.teacherDashboardOverviewPanel?.classList.add("hidden");
+  els.assetManagerPanel?.classList.add("hidden");
+  els.studentManagementPanel?.classList.remove("hidden");
+  setStudentManagementStatus(
+    teacherDashboardLoadError || `พบข้อมูลผู้เรียน ${teacherDashboardStudents.length} รายการ`,
+    teacherDashboardLoadError ? "error" : ""
+  );
+  renderStudentManagementTable();
+  const selected = getStudentManagementSelectedStudent();
+  if (selected) {
+    renderStudentManagementDetail(selected);
+  }
+}
+
+function closeStudentManagementPanel() {
+  els.studentManagementPanel?.classList.add("hidden");
+  els.teacherDashboardOverviewPanel?.classList.remove("hidden");
+  clearStudentManagementDetail();
+  renderTeacherDashboardSummary(teacherDashboardStudents);
+  renderTeacherDashboardTable();
+}
+
+function leaveTeacherDashboard() {
+  els.studentManagementPanel?.classList.add("hidden");
+  els.assetManagerPanel?.classList.add("hidden");
+  els.teacherDashboardOverviewPanel?.classList.remove("hidden");
+  teacherDashboardAccessGranted = false;
+  showMainMenu();
+}
+
+function getStudentManagementAdminIdentifier() {
+  const currentUser = getCurrentUser();
+  return firebaseAuth?.currentUser?.uid ||
+    currentUser?.uid ||
+    currentUser?.userId ||
+    currentUser?.displayName ||
+    "teacher-dashboard";
+}
+
+function createStudentManagementError(code, message) {
+  const error = new Error(message);
+  error.code = code;
+  return error;
+}
+
+function validateStudentManagementWriteAccess(studentUid) {
+  // Client-side admin gate is for classroom prototype only. Production requires Firestore rules/custom claims.
+  if (!teacherDashboardAccessGranted) {
+    throw createStudentManagementError("student-management/access-denied", "กรุณาเข้าสู่เมนูผู้ดูแลก่อน");
+  }
+  if (!studentUid || typeof studentUid !== "string") {
+    throw createStudentManagementError("student-management/invalid-student", "ไม่พบข้อมูลผู้เรียน");
+  }
+  if (getAuthMode() !== "firebase" || !firestoreDb || !firebaseAuth?.currentUser) {
+    throw createStudentManagementError("student-management/firebase-required", "การจัดการข้อมูลผู้เรียนต้องใช้บัญชีออนไลน์ของผู้ดูแล");
+  }
+}
+
+async function adjustStudentGrammaria(studentUid, delta, reason) {
+  validateStudentManagementWriteAccess(studentUid);
+  const cleanReason = String(reason || "").trim();
+  if (!Number.isInteger(delta) || delta === 0) {
+    throw createStudentManagementError("student-management/invalid-delta", "จำนวนแต้มต้องเป็นตัวเลขจำนวนเต็มมากกว่า 0");
+  }
+  if (!cleanReason) {
+    throw createStudentManagementError("student-management/missing-reason", "กรุณากรอกเหตุผลการปรับแต้ม");
+  }
+  const studentRef = doc(firestoreDb, STUDENT_DASHBOARD_COLLECTION, studentUid);
+  const performedBy = getStudentManagementAdminIdentifier();
+  return runTransaction(firestoreDb, async transaction => {
+    const snapshot = await transaction.get(studentRef);
+    if (!snapshot.exists()) {
+      throw createStudentManagementError("student-management/not-found", "ไม่พบข้อมูลผู้เรียน");
+    }
+    const data = snapshot.data() || {};
+    const rootValue = Number(data.grammaria);
+    const currentGrammaria = Number.isFinite(rootValue)
+      ? Math.max(0, Math.floor(rootValue))
+      : Math.max(0, Math.floor(getTeacherStudentGrammaria(data)));
+    const newGrammaria = currentGrammaria + delta;
+    if (newGrammaria < 0) {
+      throw createStudentManagementError("student-management/below-zero", "แต้มหลังปรับต้องไม่ต่ำกว่า 0");
+    }
+    transaction.update(studentRef, {
+      grammaria: newGrammaria,
+      manualGrammariaAdjustedAt: serverTimestamp(),
+      manualGrammariaAdjustedBy: performedBy,
+      manualGrammariaAdjustReason: cleanReason,
+      manualGrammariaLastDelta: delta
+    });
+    return { before: currentGrammaria, after: newGrammaria, delta };
+  });
+}
+
+async function softDeleteStudent(studentUid, reason) {
+  validateStudentManagementWriteAccess(studentUid);
+  const cleanReason = String(reason || "").trim();
+  if (!cleanReason) {
+    throw createStudentManagementError("student-management/missing-reason", "กรุณากรอกเหตุผลการซ่อนผู้เรียน");
+  }
+  const studentRef = doc(firestoreDb, STUDENT_DASHBOARD_COLLECTION, studentUid);
+  const performedBy = getStudentManagementAdminIdentifier();
+  return runTransaction(firestoreDb, async transaction => {
+    const snapshot = await transaction.get(studentRef);
+    if (!snapshot.exists()) {
+      throw createStudentManagementError("student-management/not-found", "ไม่พบข้อมูลผู้เรียน");
+    }
+    transaction.update(studentRef, {
+      isDeleted: true,
+      deletedAt: serverTimestamp(),
+      deletedBy: performedBy,
+      deleteReason: cleanReason
+    });
+    return { isDeleted: true };
+  });
+}
+
+async function restoreStudent(studentUid, reason) {
+  validateStudentManagementWriteAccess(studentUid);
+  const cleanReason = String(reason || "").trim();
+  if (!cleanReason) {
+    throw createStudentManagementError("student-management/missing-reason", "กรุณากรอกเหตุผลการกู้คืนผู้เรียน");
+  }
+  const studentRef = doc(firestoreDb, STUDENT_DASHBOARD_COLLECTION, studentUid);
+  const performedBy = getStudentManagementAdminIdentifier();
+  return runTransaction(firestoreDb, async transaction => {
+    const snapshot = await transaction.get(studentRef);
+    if (!snapshot.exists()) {
+      throw createStudentManagementError("student-management/not-found", "ไม่พบข้อมูลผู้เรียน");
+    }
+    transaction.update(studentRef, {
+      isDeleted: false,
+      restoredAt: serverTimestamp(),
+      restoredBy: performedBy,
+      restoreReason: cleanReason
+    });
+    return { isDeleted: false };
+  });
+}
+
+function getStudentManagementWriteErrorMessage(error) {
+  if (error?.code === "permission-denied" || error?.code === "firestore/permission-denied") {
+    return "ไม่สามารถปรับข้อมูลผู้เรียนได้ อาจต้องตรวจสอบสิทธิ์ Firestore";
+  }
+  return error?.message || "ไม่สามารถปรับข้อมูลผู้เรียนได้ กรุณาลองใหม่";
+}
+
+async function refreshStudentManagementData() {
+  teacherDashboardStudents = await loadTeacherDashboardRecords();
+  renderTeacherDashboardSummary(teacherDashboardStudents);
+  renderTeacherDashboardTable();
+  renderStudentManagementTable();
+  const visibleStudentKeys = new Set(getFilteredStudentManagementStudents().map(getStudentManagementRecordKey));
+  if (!visibleStudentKeys.has(studentManagementState.selectedUid)) {
+    studentManagementState.selectedUid = "";
+    els.studentManagementDetailPanel?.classList.add("hidden");
+  } else {
+    renderStudentManagementDetail();
+  }
+}
+
+async function performStudentManagementOperation(operation, successMessage) {
+  if (studentManagementState.operationBusy) {
+    return;
+  }
+  studentManagementState.operationBusy = true;
+  if (els.gameModalBody) {
+    els.gameModalBody.textContent = "กำลังบันทึกข้อมูลผู้เรียน...";
+  }
+  try {
+    await operation();
+    await refreshStudentManagementData();
+    setStudentManagementStatus(successMessage, "success");
+    openGameModal({
+      title: "บันทึกสำเร็จ",
+      body: successMessage,
+      actions: [{ label: "ปิด", primary: true, onClick: closeGameModal }]
+    });
+  } catch (error) {
+    console.error("[Student Management] update failed:", error);
+    const message = getStudentManagementWriteErrorMessage(error);
+    setStudentManagementStatus(message, "error");
+    openGameModal({
+      title: "บันทึกข้อมูลไม่สำเร็จ",
+      body: message,
+      actions: [{ label: "ปิด", primary: true, onClick: closeGameModal }]
+    });
+  } finally {
+    studentManagementState.operationBusy = false;
+  }
+}
+
+function resetStudentManagementModalLock() {
+  if (!els.gameModal) {
+    return;
+  }
+  els.gameModal.dataset.modalLocked = "false";
+  els.gameModalActions?.querySelectorAll("button").forEach(button => setButtonEnabled(button, true));
+  setButtonEnabled(els.gameModalClose, true);
+}
+
+function createStudentManagementField(labelText, control) {
+  const label = document.createElement("label");
+  const labelSpan = document.createElement("span");
+  labelSpan.textContent = labelText;
+  label.append(labelSpan, control);
+  return label;
+}
+
+function openStudentPointAdjustmentConfirm(student, delta, reason) {
+  const isAdd = delta > 0;
+  openGameModal({
+    title: "ยืนยันการปรับแต้ม Grammaria",
+    body: `คุณต้องการ${isAdd ? "เพิ่ม" : "ลด"} Grammaria ${isAdd ? "ให้" : "ของ"} ${safeDisplayText(student.characterName || student.profile.fullName, "ผู้เรียน")} จำนวน ${Math.abs(delta)} แต้ม ใช่หรือไม่?`,
+    actions: [
+      { label: "ยกเลิก", onClick: closeGameModal },
+      {
+        label: "ยืนยัน",
+        primary: true,
+        onClick: () => performStudentManagementOperation(
+          () => adjustStudentGrammaria(getStudentManagementRecordKey(student), delta, reason),
+          `${isAdd ? "เพิ่ม" : "ลด"} Grammaria สำเร็จ`
+        )
+      }
+    ]
+  });
+}
+
+function openStudentPointAdjustModal(initialType = "add") {
+  if (!requireStudentManagementAccess()) {
+    return;
+  }
+  const student = getStudentManagementSelectedStudent();
+  if (!student || student.isDeleted) {
+    setStudentManagementStatus("กรุณาเลือกผู้เรียนที่ใช้งานอยู่", "error");
+    return;
+  }
+  const content = document.createElement("div");
+  content.id = "studentPointAdjustModal";
+  content.className = "student-adjust-modal";
+  const summary = document.createElement("p");
+  summary.className = "student-management-modal-summary";
+  summary.textContent = `ผู้เรียน: ${safeDisplayText(student.characterName || student.profile.fullName, "ไม่พบข้อมูล")} · แต้มปัจจุบัน: ${student.grammaria}`;
+  const typeSelect = document.createElement("select");
+  typeSelect.id = "studentPointAdjustType";
+  [["add", "เพิ่มแต้ม"], ["reduce", "ลดแต้ม"]].forEach(([value, label]) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    typeSelect.appendChild(option);
+  });
+  typeSelect.value = initialType;
+  const amountInput = document.createElement("input");
+  amountInput.id = "studentPointAdjustAmount";
+  amountInput.type = "number";
+  amountInput.min = "1";
+  amountInput.step = "1";
+  amountInput.inputMode = "numeric";
+  amountInput.placeholder = "จำนวนแต้ม";
+  const reasonInput = document.createElement("textarea");
+  reasonInput.id = "studentPointAdjustReason";
+  reasonInput.maxLength = 240;
+  reasonInput.placeholder = "ระบุเหตุผลการปรับแต้ม";
+  const preview = document.createElement("p");
+  preview.className = "student-management-preview";
+  const error = document.createElement("p");
+  error.className = "student-management-form-error";
+  const updatePreview = () => {
+    const amount = Number(amountInput.value);
+    const delta = typeSelect.value === "add" ? amount : -amount;
+    const next = Number.isInteger(amount) && amount > 0 ? student.grammaria + delta : student.grammaria;
+    preview.textContent = `แต้มหลังปรับ: ${Math.max(0, next)}`;
+  };
+  typeSelect.addEventListener("change", updatePreview);
+  amountInput.addEventListener("input", updatePreview);
+  content.append(
+    summary,
+    createStudentManagementField("ประเภท", typeSelect),
+    createStudentManagementField("จำนวนแต้ม", amountInput),
+    createStudentManagementField("เหตุผลการปรับ", reasonInput),
+    preview,
+    error
+  );
+  updatePreview();
+  openGameModal({
+    title: "ปรับแต้ม Grammaria",
+    body: "การปรับแต้มจะไม่เปลี่ยนบทเรียน รางวัล หรือสถิติการต่อสู้",
+    content,
+    actions: [
+      { label: "ยกเลิก", onClick: closeGameModal },
+      {
+        label: "ตรวจสอบ",
+        primary: true,
+        onClick: () => {
+          const rawAmount = amountInput.value.trim();
+          const amount = Number(rawAmount);
+          const reason = reasonInput.value.trim();
+          if (!rawAmount) {
+            error.textContent = "กรุณากรอกจำนวนแต้ม";
+            resetStudentManagementModalLock();
+            return;
+          }
+          if (!Number.isInteger(amount) || amount <= 0) {
+            error.textContent = "จำนวนแต้มต้องเป็นตัวเลขจำนวนเต็มมากกว่า 0";
+            resetStudentManagementModalLock();
+            return;
+          }
+          if (!reason) {
+            error.textContent = "กรุณากรอกเหตุผลการปรับแต้ม";
+            resetStudentManagementModalLock();
+            return;
+          }
+          const delta = typeSelect.value === "add" ? amount : -amount;
+          if (student.grammaria + delta < 0) {
+            error.textContent = "แต้มหลังปรับต้องไม่ต่ำกว่า 0";
+            resetStudentManagementModalLock();
+            return;
+          }
+          openStudentPointAdjustmentConfirm(student, delta, reason);
+        }
+      }
+    ]
+  });
+  requestAnimationFrame(() => amountInput.focus());
+}
+
+function openStudentDeleteConfirmModal() {
+  if (!requireStudentManagementAccess()) {
+    return;
+  }
+  const student = getStudentManagementSelectedStudent();
+  if (!student || student.isDeleted) {
+    setStudentManagementStatus("กรุณาเลือกผู้เรียนที่ใช้งานอยู่", "error");
+    return;
+  }
+  const content = document.createElement("div");
+  content.id = "studentDeleteConfirmModal";
+  content.className = "student-delete-modal";
+  const warning = document.createElement("p");
+  warning.className = "student-management-warning";
+  warning.textContent = "การลบนี้จะซ่อนผู้เรียนออกจากรายการและแดชบอร์ด แต่จะไม่ลบบัญชี Auth และไม่ลบข้อมูลถาวร";
+  const reasonInput = document.createElement("textarea");
+  reasonInput.maxLength = 240;
+  reasonInput.placeholder = "ระบุเหตุผลการซ่อนผู้เรียน";
+  const confirmInput = document.createElement("input");
+  confirmInput.type = "text";
+  confirmInput.autocomplete = "off";
+  confirmInput.placeholder = "พิมพ์คำว่า ลบ";
+  const error = document.createElement("p");
+  error.className = "student-management-form-error";
+  content.append(
+    warning,
+    createStudentManagementField("เหตุผล", reasonInput),
+    createStudentManagementField("พิมพ์คำว่า ลบ เพื่อยืนยัน", confirmInput),
+    error
+  );
+  openGameModal({
+    title: "ลบ/ซ่อนผู้เรียน",
+    body: safeDisplayText(student.characterName || student.profile.fullName, "ผู้เรียน"),
+    content,
+    actions: [
+      { label: "ยกเลิก", onClick: closeGameModal },
+      {
+        label: "ยืนยันซ่อนผู้เรียน",
+        primary: true,
+        onClick: () => {
+          const reason = reasonInput.value.trim();
+          if (!reason) {
+            error.textContent = "กรุณากรอกเหตุผลการซ่อนผู้เรียน";
+            resetStudentManagementModalLock();
+            return;
+          }
+          if (confirmInput.value.trim() !== "ลบ") {
+            error.textContent = "กรุณาพิมพ์คำว่า ลบ ให้ถูกต้อง";
+            resetStudentManagementModalLock();
+            return;
+          }
+          performStudentManagementOperation(
+            () => softDeleteStudent(getStudentManagementRecordKey(student), reason),
+            "ซ่อนผู้เรียนออกจากรายการแล้ว"
+          );
+        }
+      }
+    ]
+  });
+  requestAnimationFrame(() => reasonInput.focus());
+}
+
+function openStudentRestoreConfirmModal() {
+  if (!requireStudentManagementAccess()) {
+    return;
+  }
+  const student = getStudentManagementSelectedStudent();
+  if (!student || !student.isDeleted) {
+    setStudentManagementStatus("กรุณาเลือกผู้เรียนที่ถูกลบ/ซ่อน", "error");
+    return;
+  }
+  const content = document.createElement("div");
+  content.id = "studentRestoreConfirmModal";
+  content.className = "student-restore-modal";
+  const summary = document.createElement("p");
+  summary.className = "student-management-modal-summary";
+  summary.textContent = `กู้คืน ${safeDisplayText(student.characterName || student.profile.fullName, "ผู้เรียน")} ให้กลับมาแสดงในรายการใช้งานอยู่`;
+  const reasonInput = document.createElement("textarea");
+  reasonInput.maxLength = 240;
+  reasonInput.placeholder = "ระบุเหตุผลการกู้คืนผู้เรียน";
+  const error = document.createElement("p");
+  error.className = "student-management-form-error";
+  content.append(summary, createStudentManagementField("เหตุผล", reasonInput), error);
+  openGameModal({
+    title: "กู้คืนผู้เรียน",
+    body: "การกู้คืนจะเปลี่ยนเฉพาะสถานะการแสดงในเมนูผู้ดูแล",
+    content,
+    actions: [
+      { label: "ยกเลิก", onClick: closeGameModal },
+      {
+        label: "ยืนยันกู้คืน",
+        primary: true,
+        onClick: () => {
+          const reason = reasonInput.value.trim();
+          if (!reason) {
+            error.textContent = "กรุณากรอกเหตุผลการกู้คืนผู้เรียน";
+            resetStudentManagementModalLock();
+            return;
+          }
+          performStudentManagementOperation(
+            () => restoreStudent(getStudentManagementRecordKey(student), reason),
+            "กู้คืนผู้เรียนแล้ว"
+          );
+        }
+      }
+    ]
+  });
+  requestAnimationFrame(() => reasonInput.focus());
+}
+
+function setAssetManagerStatus(message = "", type = "") {
+  if (!els.assetManagerStatus) {
+    return;
+  }
+  els.assetManagerStatus.textContent = message;
+  els.assetManagerStatus.classList.remove("is-error", "is-success");
+  if (type) {
+    els.assetManagerStatus.classList.add(`is-${type}`);
+  }
+}
+
+function requireAssetManagerAccess(options = {}) {
+  // Client-side admin gate is for classroom prototype only. Production should enforce admin permission with Firestore/Storage rules or custom claims.
+  if (teacherDashboardAccessGranted) {
+    return true;
+  }
+  if (options.showMessage !== false) {
+    openGameModal({
+      title: "ไม่สามารถเปิดเมนูผู้ดูแล",
+      body: "กรุณาเข้าสู่เมนูผู้ดูแลก่อน",
+      actions: [{ label: "รับทราบ", primary: true, onClick: closeGameModal }]
+    });
+  }
+  return false;
+}
+
+function validateAssetManagerWriteAccess(assetKey) {
+  if (!requireAssetManagerAccess({ showMessage: false })) {
+    throw createStudentManagementError("asset-manager/access-denied", "กรุณาเข้าสู่เมนูผู้ดูแลก่อน");
+  }
+  if (!getGameAssetRegistryItem(assetKey)) {
+    throw createStudentManagementError("asset-manager/unknown-asset", "ไม่พบ Asset ที่ต้องการจัดการ");
+  }
+  if (getAuthMode() !== "firebase" || !firestoreDb || !firebaseStorage || !firebaseAuth?.currentUser) {
+    throw createStudentManagementError("asset-manager/firebase-required", "การจัดการ Asset ต้องใช้บัญชีออนไลน์ของผู้ดูแล");
+  }
+}
+
+function getFilteredGameAssetRegistry() {
+  const search = (els.assetManagerSearchInput?.value || "").trim().toLowerCase();
+  const category = els.assetManagerCategoryFilter?.value || "all";
+  return GAME_ASSET_REGISTRY.filter(item => {
+    if (category !== "all" && item.category !== category) {
+      return false;
+    }
+    if (!search) {
+      return true;
+    }
+    return [item.key, item.displayName, item.description, item.defaultPath]
+      .some(value => String(value || "").toLowerCase().includes(search));
+  });
+}
+
+function createAssetManagerPreview(item, src, label, fallbackPath = "", statusBadge = null) {
+  const preview = document.createElement("div");
+  preview.className = "asset-manager-preview";
+  const caption = document.createElement("span");
+  caption.textContent = label;
+  const frame = document.createElement("div");
+  frame.className = "asset-manager-preview-frame";
+  const image = document.createElement("img");
+  image.alt = `${label}: ${item.displayName}`;
+  image.loading = "lazy";
+  image.decoding = "async";
+  image.dataset.assetKey = item.key;
+  image.dataset.assetFallbackApplied = "false";
+  image.onerror = () => {
+    console.warn("[Asset Manager] preview image failed", item.key, image.getAttribute("src") || "");
+    if (statusBadge) {
+      statusBadge.textContent = "ไฟล์มีปัญหา";
+      statusBadge.classList.remove("is-override");
+      statusBadge.classList.add("is-error");
+    }
+    if (fallbackPath && image.dataset.assetFallbackApplied !== "true" && image.getAttribute("src") !== fallbackPath) {
+      image.dataset.assetFallbackApplied = "true";
+      image.src = fallbackPath;
+      return;
+    }
+    frame.classList.add("is-missing");
+    handleAssetImageError(image, "");
+  };
+  if (src) {
+    image.src = src;
+  } else {
+    frame.classList.add("is-missing");
+    image.classList.add("hidden");
+  }
+  frame.appendChild(image);
+  preview.append(caption, frame);
+  return preview;
+}
+
+function openAssetPreviewModal(assetKey) {
+  const item = getGameAssetRegistryItem(assetKey);
+  if (!item) {
+    return;
+  }
+  const content = document.createElement("div");
+  content.className = "asset-upload-modal";
+  const frame = document.createElement("div");
+  frame.className = "asset-upload-preview-frame";
+  const image = document.createElement("img");
+  image.className = "asset-upload-preview";
+  image.alt = `ตัวอย่าง ${item.displayName}`;
+  image.dataset.assetKey = item.key;
+  image.dataset.assetFallbackApplied = "false";
+  image.onerror = () => {
+    console.warn("[Asset Manager] preview image failed", item.key, image.getAttribute("src") || "");
+    if (item.defaultPath && image.dataset.assetFallbackApplied !== "true" && image.getAttribute("src") !== item.defaultPath) {
+      image.dataset.assetFallbackApplied = "true";
+      image.src = item.defaultPath;
+      return;
+    }
+    frame.classList.add("is-missing");
+    handleAssetImageError(image, "");
+  };
+  image.src = getGameAssetUrl(item.key, item.defaultPath);
+  frame.appendChild(image);
+  const path = document.createElement("p");
+  path.className = "asset-manager-path";
+  path.textContent = `ภาพเดิม: ${item.defaultPath}`;
+  content.append(frame, path);
+  openGameModal({
+    title: item.displayName,
+    body: item.description,
+    content,
+    actions: [{ label: "ปิด", primary: true, onClick: closeGameModal }]
+  });
+}
+
+function createAssetManagerCard(item) {
+  const override = gameAssetOverrideState.overrides?.[item.key] || null;
+  const isOverrideActive = Boolean(override?.isActive && override?.activeUrl);
+  const card = document.createElement("article");
+  card.className = "asset-manager-card";
+
+  const header = document.createElement("div");
+  header.className = "asset-manager-card-header";
+  const heading = document.createElement("div");
+  const title = document.createElement("h4");
+  title.textContent = item.displayName;
+  const key = document.createElement("p");
+  key.className = "asset-manager-card-key";
+  key.textContent = item.key;
+  heading.append(title, key);
+  const status = document.createElement("span");
+  status.className = `asset-status-badge${isOverrideActive ? " is-override" : ""}`;
+  status.textContent = isOverrideActive ? "ใช้ภาพที่อัปโหลด" : "ใช้ภาพเดิม";
+  header.append(heading, status);
+
+  const description = document.createElement("p");
+  description.className = "asset-manager-card-description";
+  description.textContent = `${GAME_ASSET_CATEGORY_LABELS[item.category] || item.category} · ${item.description}`;
+
+  const previews = document.createElement("div");
+  previews.className = "asset-manager-previews";
+  previews.append(
+    createAssetManagerPreview(item, getGameAssetUrl(item.key, item.defaultPath), "ภาพที่ใช้อยู่", item.defaultPath, status),
+    createAssetManagerPreview(item, item.defaultPath, "ภาพเดิมของระบบ")
+  );
+
+  const meta = document.createElement("p");
+  meta.className = "asset-manager-card-meta";
+  const updatedAt = formatTeacherTimestamp(override?.updatedAt || override?.resetAt, "ยังไม่เคยแก้ไข");
+  const updatedBy = safeDisplayText(override?.updatedBy || override?.resetBy, "ไม่ระบุ");
+  meta.textContent = isOverrideActive
+    ? `อัปเดต: ${updatedAt} · โดย ${updatedBy}`
+    : `สถานะล่าสุด: ${updatedAt}`;
+
+  const actions = document.createElement("div");
+  actions.className = "asset-manager-card-actions";
+  const uploadButton = document.createElement("button");
+  uploadButton.type = "button";
+  uploadButton.className = "asset-upload-button";
+  uploadButton.textContent = "อัปโหลดภาพใหม่";
+  uploadButton.addEventListener("click", () => openAssetUploadModal(item.key));
+  const resetButton = document.createElement("button");
+  resetButton.type = "button";
+  resetButton.className = "asset-reset-button";
+  resetButton.textContent = "ใช้ภาพเดิม";
+  resetButton.disabled = !isOverrideActive;
+  resetButton.addEventListener("click", () => openAssetResetConfirmModal(item.key));
+  const previewButton = document.createElement("button");
+  previewButton.type = "button";
+  previewButton.textContent = "ดูตัวอย่าง";
+  previewButton.addEventListener("click", () => openAssetPreviewModal(item.key));
+  actions.append(uploadButton, resetButton, previewButton);
+
+  card.append(header, description, previews, meta, actions);
+  return card;
+}
+
+function renderAssetManagerGrid() {
+  if (!els.assetManagerGrid || !els.assetManagerEmptyState) {
+    return;
+  }
+  const items = getFilteredGameAssetRegistry();
+  els.assetManagerGrid.textContent = "";
+  els.assetManagerEmptyState.classList.toggle("hidden", items.length > 0);
+  items.forEach(item => els.assetManagerGrid.appendChild(createAssetManagerCard(item)));
+}
+
+async function openAssetManagerPanel() {
+  if (!requireAssetManagerAccess()) {
+    return;
+  }
+  els.teacherDashboardOverviewPanel?.classList.add("hidden");
+  els.studentManagementPanel?.classList.add("hidden");
+  els.assetManagerPanel?.classList.remove("hidden");
+  setAssetManagerStatus("กำลังตรวจสอบ Asset Override...");
+  renderAssetManagerGrid();
+  await loadGameAssetOverrides();
+  setAssetManagerStatus(
+    gameAssetOverrideState.loadError || `พร้อมจัดการ Asset ${GAME_ASSET_REGISTRY.length} รายการ`,
+    gameAssetOverrideState.loadError ? "error" : ""
+  );
+  renderAssetManagerGrid();
+}
+
+function closeAssetManagerPanel() {
+  els.assetManagerPanel?.classList.add("hidden");
+  els.teacherDashboardOverviewPanel?.classList.remove("hidden");
+  setAssetManagerStatus("");
+}
+
+function sanitizeAssetFileName(name) {
+  const rawName = String(name || "").split(/[\\/]/).pop() || "";
+  const extensionMatch = rawName.toLowerCase().match(/\.(png|jpe?g|webp|gif)$/);
+  const extension = extensionMatch?.[0] || ".png";
+  const baseName = rawName
+    .slice(0, extensionMatch ? -extension.length : undefined)
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^[_-]+|[_-]+$/g, "")
+    .slice(0, 80);
+  return `${baseName || `asset_${Date.now()}`}${extension === ".jpeg" ? ".jpg" : extension}`;
+}
+
+function validateGameAssetFile(file) {
+  if (!file) {
+    return "กรุณาเลือกไฟล์";
+  }
+  const hasAllowedExtension = /\.(png|jpe?g|webp|gif)$/i.test(file.name || "");
+  if (!GAME_ASSET_ALLOWED_TYPES.includes(file.type) || !hasAllowedExtension) {
+    return "รองรับเฉพาะไฟล์ PNG, JPG, WEBP หรือ GIF";
+  }
+  if (!Number.isFinite(file.size) || file.size <= 0) {
+    return "ไม่สามารถอ่านไฟล์นี้ได้";
+  }
+  if (file.size > GAME_ASSET_MAX_FILE_SIZE) {
+    return "ขนาดไฟล์ต้องไม่เกิน 5 MB";
+  }
+  return "";
+}
+
+function getAssetManagerAdminIdentifier() {
+  return getStudentManagementAdminIdentifier();
+}
+
+function getAssetManagerErrorMessage(error) {
+  if (error?.code === "permission-denied" ||
+      error?.code === "firestore/permission-denied" ||
+      error?.code === "storage/unauthorized") {
+    return "ไม่สามารถจัดการ Asset ได้ อาจต้องตรวจสอบสิทธิ์ Firebase Storage/Firestore";
+  }
+  return error?.message || "อัปโหลดไม่สำเร็จ กรุณาลองใหม่";
+}
+
+async function uploadGameAssetOverride(assetKey, file, note = "") {
+  validateAssetManagerWriteAccess(assetKey);
+  const item = getGameAssetRegistryItem(assetKey);
+  const validationMessage = validateGameAssetFile(file);
+  if (validationMessage) {
+    throw createStudentManagementError("asset-manager/invalid-file", validationMessage);
+  }
+  const timestamp = Date.now();
+  const safeFileName = sanitizeAssetFileName(file.name);
+  const storagePath = `game-assets/${item.category}/${item.key}/${timestamp}_${safeFileName}`;
+  const performedBy = getAssetManagerAdminIdentifier();
+  const cleanNote = String(note || "").trim().slice(0, 500);
+  const uploaded = await uploadBytes(storageRef(firebaseStorage, storagePath), file, {
+    contentType: file.type,
+    customMetadata: { assetKey: item.key }
+  });
+  const activeUrl = await getDownloadURL(uploaded.ref);
+  const metadata = {
+    key: item.key,
+    category: item.category,
+    displayName: item.displayName,
+    defaultPath: item.defaultPath,
+    activeUrl,
+    storagePath,
+    fileName: safeFileName,
+    contentType: file.type,
+    fileSize: file.size,
+    isActive: true,
+    updatedAt: serverTimestamp(),
+    updatedBy: performedBy,
+    note: cleanNote
+  };
+  await setDoc(doc(firestoreDb, GAME_ASSET_OVERRIDE_COLLECTION, item.key), metadata, { merge: true });
+  gameAssetOverrideState.overrides[item.key] = {
+    ...(gameAssetOverrideState.overrides[item.key] || {}),
+    ...metadata,
+    updatedAt: new Date()
+  };
+  applyGameAssetOverridesToUi();
+  return gameAssetOverrideState.overrides[item.key];
+}
+
+async function resetGameAssetToDefault(assetKey) {
+  validateAssetManagerWriteAccess(assetKey);
+  const item = getGameAssetRegistryItem(assetKey);
+  const resetBy = getAssetManagerAdminIdentifier();
+  const resetMetadata = {
+    key: item.key,
+    category: item.category,
+    displayName: item.displayName,
+    defaultPath: item.defaultPath,
+    isActive: false,
+    resetAt: serverTimestamp(),
+    resetBy
+  };
+  await setDoc(doc(firestoreDb, GAME_ASSET_OVERRIDE_COLLECTION, item.key), resetMetadata, { merge: true });
+  gameAssetOverrideState.overrides[item.key] = {
+    ...(gameAssetOverrideState.overrides[item.key] || {}),
+    ...resetMetadata,
+    resetAt: new Date()
+  };
+  applyGameAssetOverridesToUi();
+  return gameAssetOverrideState.overrides[item.key];
+}
+
+async function performAssetManagerOperation(operation, successMessage) {
+  if (gameAssetOverrideState.operationBusy) {
+    return;
+  }
+  gameAssetOverrideState.operationBusy = true;
+  if (els.gameModalBody) {
+    els.gameModalBody.textContent = "กำลังบันทึก Asset...";
+  }
+  try {
+    await operation();
+    setAssetManagerStatus(successMessage, "success");
+    renderAssetManagerGrid();
+    openGameModal({
+      title: "บันทึกสำเร็จ",
+      body: successMessage,
+      actions: [{ label: "ปิด", primary: true, onClick: closeGameModal }]
+    });
+  } catch (error) {
+    console.error("[Asset Manager] upload failed:", error);
+    const message = getAssetManagerErrorMessage(error);
+    setAssetManagerStatus(message, "error");
+    openGameModal({
+      title: "จัดการ Asset ไม่สำเร็จ",
+      body: message,
+      actions: [{ label: "ปิด", primary: true, onClick: closeGameModal }]
+    });
+  } finally {
+    gameAssetOverrideState.operationBusy = false;
+  }
+}
+
+function openAssetUploadModal(assetKey) {
+  if (!requireAssetManagerAccess()) {
+    return;
+  }
+  const item = getGameAssetRegistryItem(assetKey);
+  if (!item) {
+    setAssetManagerStatus("ไม่พบ Asset ที่ต้องการจัดการ", "error");
+    return;
+  }
+  let selectedFile = null;
+  let previewObjectUrl = "";
+  const content = document.createElement("div");
+  content.id = "assetUploadModal";
+  content.className = "asset-upload-modal";
+  const summary = document.createElement("div");
+  summary.className = "asset-upload-summary";
+  const name = document.createElement("strong");
+  name.textContent = item.displayName;
+  const path = document.createElement("small");
+  path.textContent = `ภาพเดิม: ${item.defaultPath}`;
+  const size = document.createElement("small");
+  size.textContent = `ขนาดแนะนำ: ${item.recommendedSize || "ใกล้เคียงภาพเดิม"}`;
+  summary.append(name, path, size);
+
+  const fileInput = document.createElement("input");
+  fileInput.id = "assetFileInput";
+  fileInput.type = "file";
+  fileInput.accept = ".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif";
+  const noteInput = document.createElement("textarea");
+  noteInput.id = "assetUploadNote";
+  noteInput.maxLength = 500;
+  noteInput.placeholder = "หมายเหตุ (ไม่บังคับ)";
+  const previewFrame = document.createElement("div");
+  previewFrame.className = "asset-upload-preview-frame";
+  const previewPlaceholder = document.createElement("p");
+  previewPlaceholder.className = "asset-manager-card-description";
+  previewPlaceholder.textContent = "เลือกไฟล์เพื่อดูตัวอย่าง";
+  const preview = document.createElement("img");
+  preview.id = "assetPreviewImage";
+  preview.className = "asset-upload-preview hidden";
+  preview.alt = `ตัวอย่างไฟล์ใหม่สำหรับ ${item.displayName}`;
+  previewFrame.append(previewPlaceholder, preview);
+  const error = document.createElement("p");
+  error.className = "asset-upload-error";
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files?.[0] || null;
+    const validationMessage = validateGameAssetFile(file);
+    error.textContent = validationMessage;
+    selectedFile = file;
+    if (previewObjectUrl) {
+      URL.revokeObjectURL(previewObjectUrl);
+      previewObjectUrl = "";
+    }
+    preview.removeAttribute("src");
+    preview.classList.add("hidden");
+    previewPlaceholder.classList.remove("hidden");
+    previewFrame.classList.remove("is-missing");
+    if (!selectedFile || validationMessage) {
+      return;
+    }
+    try {
+      previewObjectUrl = URL.createObjectURL(selectedFile);
+      preview.onload = () => {
+        if (previewObjectUrl) {
+          URL.revokeObjectURL(previewObjectUrl);
+          previewObjectUrl = "";
+        }
+      };
+      preview.onerror = () => {
+        if (previewObjectUrl) {
+          URL.revokeObjectURL(previewObjectUrl);
+          previewObjectUrl = "";
+        }
+        selectedFile = null;
+        preview.classList.add("hidden");
+        previewFrame.classList.add("is-missing");
+        error.textContent = "ไม่สามารถอ่านไฟล์นี้ได้";
+      };
+      preview.src = previewObjectUrl;
+      preview.classList.remove("hidden");
+      previewPlaceholder.classList.add("hidden");
+    } catch (readError) {
+      console.warn("[Asset Manager] preview failed", readError);
+      selectedFile = null;
+      error.textContent = "ไม่สามารถอ่านไฟล์นี้ได้";
+    }
+  });
+
+  content.append(
+    summary,
+    createStudentManagementField("เลือกไฟล์ PNG, JPG, WEBP หรือ GIF (ไม่เกิน 5 MB)", fileInput),
+    previewFrame,
+    createStudentManagementField("หมายเหตุ", noteInput),
+    error
+  );
+  openGameModal({
+    title: "อัปโหลด Asset ใหม่",
+    body: "ไฟล์ใหม่จะถูกใช้เฉพาะการแสดงผล และภาพเดิมจะยังอยู่เป็น fallback",
+    content,
+    actions: [
+      {
+        label: "ยกเลิก",
+        onClick: () => {
+          if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+          }
+          closeGameModal();
+        }
+      },
+      {
+        label: "บันทึกและใช้ภาพนี้",
+        primary: true,
+        onClick: () => {
+          const validationMessage = validateGameAssetFile(selectedFile);
+          if (validationMessage) {
+            error.textContent = validationMessage;
+            resetStudentManagementModalLock();
+            return;
+          }
+          performAssetManagerOperation(
+            () => uploadGameAssetOverride(item.key, selectedFile, noteInput.value),
+            "อัปโหลดและใช้ภาพใหม่แล้ว"
+          );
+        }
+      }
+    ]
+  });
+}
+
+function openAssetResetConfirmModal(assetKey) {
+  if (!requireAssetManagerAccess()) {
+    return;
+  }
+  const item = getGameAssetRegistryItem(assetKey);
+  const override = gameAssetOverrideState.overrides?.[assetKey];
+  if (!item || !override?.isActive) {
+    setAssetManagerStatus("Asset นี้กำลังใช้ภาพเดิมอยู่แล้ว", "error");
+    return;
+  }
+  openGameModal({
+    title: "กลับไปใช้ภาพเดิม",
+    body: `ต้องการกลับไปใช้ภาพเดิมของระบบสำหรับ ${item.displayName} หรือไม่? ไฟล์ที่อัปโหลดจะยังไม่ถูกลบ`,
+    actions: [
+      { label: "ยกเลิก", onClick: closeGameModal },
+      {
+        label: "ยืนยันใช้ภาพเดิม",
+        primary: true,
+        onClick: () => performAssetManagerOperation(
+          () => resetGameAssetToDefault(item.key),
+          "กลับไปใช้ภาพเดิมแล้ว"
+        )
+      }
+    ]
+  });
+}
+
 async function showTeacherDashboard() {
   closeGameModal();
   showScene("teacherDashboard");
+  els.teacherDashboardOverviewPanel?.classList.remove("hidden");
+  els.studentManagementPanel?.classList.add("hidden");
+  els.assetManagerPanel?.classList.add("hidden");
+  studentManagementState.selectedUid = "";
+  els.studentManagementDetailPanel?.classList.add("hidden");
+  setStudentManagementStatus("");
   renderTeacherDashboardSummary([]);
   if (els.teacherDashboardTableBody) {
     els.teacherDashboardTableBody.innerHTML = "";
@@ -32577,6 +34442,7 @@ function openTeacherDashboardPasswordModal() {
             input.focus();
             return;
           }
+          teacherDashboardAccessGranted = true;
           showTeacherDashboard();
         }
       }
@@ -32761,6 +34627,470 @@ function endPracticeMode({ restoreProgress = true } = {}) {
   };
 }
 
+function isVsBossPracticeActive() {
+  return Boolean(state.vsBossPractice?.active);
+}
+
+function getVsBossPlayerBattleSnapshot() {
+  const progress = playerData?.progress?.pastFragmentAct || {};
+  const completedStages = Array.isArray(progress.completedStages) ? [...progress.completedStages] : [];
+  const unlockedStages = Array.isArray(progress.unlockedStages) ? [...progress.unlockedStages] : [];
+  return Object.freeze({
+    playerName: playerData?.characterName || playerData?.displayName || "ผู้พเนจร",
+    characterId: ensurePlayerCharacterData(playerData || {}) || "male_wanderer",
+    grammaria: Number(playerData?.progress?.grammaria?.total ?? playerData?.grammaria ?? 0) || 0,
+    completedStageCount: completedStages.length,
+    unlockedStageCount: unlockedStages.length,
+    completedStages: Object.freeze(completedStages),
+    unlockedStages: Object.freeze(unlockedStages),
+    capturedAt: Date.now()
+  });
+}
+
+function cloneVsBossQuestion(question) {
+  if (!question || typeof question !== "object") {
+    return null;
+  }
+  return {
+    ...question,
+    options: Array.isArray(question.options) ? [...question.options] : question.options,
+    choices: Array.isArray(question.choices) ? [...question.choices] : question.choices,
+    tiles: Array.isArray(question.tiles) ? [...question.tiles] : question.tiles,
+    acceptedAnswers: Array.isArray(question.acceptedAnswers) ? [...question.acceptedAnswers] : question.acceptedAnswers
+  };
+}
+
+function getVsBossQuestionPool(bossId) {
+  const config = getVsBossConfig(bossId);
+  if (!config) {
+    return [];
+  }
+  return config.relatedStageIds.flatMap(stageId => {
+    const stage = PAST_FRAGMENT_ACT.stages.find(candidate => candidate.id === stageId);
+    if (!stage || !Array.isArray(stage.questions)) {
+      return [];
+    }
+    return filterQuestionsForStage(stage.questions, stage)
+      .map(cloneVsBossQuestion)
+      .filter(Boolean);
+  });
+}
+
+function getVsBossPracticeHp(bossConfig, playerProgress = getVsBossPlayerBattleSnapshot()) {
+  const baseHp = Math.max(1, Number(bossConfig?.recommendedHp) || 60);
+  const maxHp = Math.max(baseHp, Number(bossConfig?.maxPracticeHp) || baseHp);
+  const completedStageCount = Math.max(0, Number(playerProgress?.completedStageCount) || 0);
+  const progressScale = Math.min(0.12, completedStageCount * 0.01);
+  return clamp(Math.round(baseHp * (1 + progressScale)), baseHp, maxHp);
+}
+
+function buildVsBossPracticeStage(stageConfig, bossConfig) {
+  const relatedStages = bossConfig.relatedStageIds
+    .map(stageId => PAST_FRAGMENT_ACT.stages.find(stage => stage.id === stageId))
+    .filter(Boolean);
+  const allowedRuleIds = [...new Set(relatedStages.flatMap(stage => getAllowedRuleIdsForStage(stage)))];
+  return {
+    ...stageConfig,
+    title: `VS Bosses: ${bossConfig.name}`,
+    thaiTitle: bossConfig.topicTh,
+    enemy: bossConfig.name,
+    thaiEnemy: bossConfig.thaiName,
+    enemySprite: bossConfig.fallbackImage,
+    questions: getVsBossQuestionPool(bossConfig.id),
+    allowedRuleIds,
+    isVsBossPractice: true,
+    vsBossId: bossConfig.id
+  };
+}
+
+function calculateVsBossEvaluationScore(summary = {}) {
+  const correctAnswers = Math.max(0, Number(summary.correctAnswers) || 0);
+  const totalQuestions = Math.max(0, Number(summary.totalQuestions) || 0);
+  const accuracyPercent = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+  const playerHpPercent = clamp(Number(summary.playerHpRemaining) || 0, 0, 100);
+  const baseScore = correctAnswers * 10;
+  const accuracyBonus = Math.round(accuracyPercent * 0.4);
+  const victoryBonus = summary.bossDefeated ? 30 : 0;
+  const hpBonus = Math.round(playerHpPercent * 0.2);
+  const comboBonus = Math.max(0, Number(summary.maxCombo) || 0) * 3;
+  return clamp(baseScore + accuracyBonus + victoryBonus + hpBonus + comboBonus, 0, 300);
+}
+
+function getVsBossScoresOwnerId() {
+  const user = getCurrentUser();
+  return String(user?.uid || user?.userId || user?.id || "guest");
+}
+
+function getVsBossLocalStorageKey() {
+  return `lingua:vsBossPracticeScores:${getVsBossScoresOwnerId()}`;
+}
+
+function normalizeVsBossScores(scores) {
+  const normalized = {};
+  if (!scores || typeof scores !== "object") {
+    return normalized;
+  }
+  Object.entries(scores).forEach(([bossId, entry]) => {
+    if (!getVsBossConfig(bossId) || !entry || typeof entry !== "object") {
+      return;
+    }
+    normalized[bossId] = {
+      bestScore: Math.max(0, Number(entry.bestScore) || 0),
+      bestAccuracy: Math.max(0, Number(entry.bestAccuracy) || 0),
+      bestCorrect: Math.max(0, Number(entry.bestCorrect) || 0),
+      bestTotal: Math.max(0, Number(entry.bestTotal) || 0),
+      attempts: Math.max(0, Number(entry.attempts) || 0),
+      bestUpdatedAt: entry.bestUpdatedAt || null,
+      lastScore: Math.max(0, Number(entry.lastScore) || 0)
+    };
+  });
+  return normalized;
+}
+
+async function loadVsBossPracticeScores({ force = false } = {}) {
+  const ownerId = getVsBossScoresOwnerId();
+  if (!force && state.vsBossPractice.scoresLoaded && state.vsBossPractice.scoresOwnerId === ownerId) {
+    return state.vsBossPractice.scores;
+  }
+  try {
+    let scores = {};
+    const user = getCurrentUser();
+    const useFirestore = getAuthMode() === "firebase" && !user?.isGuest && ownerId !== "guest";
+    if (useFirestore) {
+      const snapshot = await getDoc(getPlayerDocRef(ownerId));
+      const data = snapshot.exists() ? snapshot.data() : {};
+      scores = data?.progress?.bossPracticeScores || data?.bossPracticeScores || {};
+    } else {
+      const saved = playerStorage.get(getVsBossLocalStorageKey());
+      scores = saved ? JSON.parse(saved) : {};
+    }
+    state.vsBossPractice.scores = normalizeVsBossScores(scores);
+    state.vsBossPractice.scoresOwnerId = ownerId;
+    state.vsBossPractice.scoresLoaded = true;
+    return state.vsBossPractice.scores;
+  } catch (error) {
+    console.error("[VS Bosses] failed to load scores:", error);
+    state.vsBossPractice.scoresOwnerId = ownerId;
+    state.vsBossPractice.scoresLoaded = true;
+    return state.vsBossPractice.scores;
+  }
+}
+
+function createVsBossScoreEntry(previousEntry, result, attempts) {
+  const previousBest = Math.max(0, Number(previousEntry?.bestScore) || 0);
+  const isNewBest = result.score > previousBest;
+  const accuracy = result.totalQuestions > 0
+    ? Math.round((result.correctAnswers / result.totalQuestions) * 100)
+    : 0;
+  return {
+    bestScore: isNewBest ? result.score : previousBest,
+    bestAccuracy: isNewBest ? accuracy : Math.max(0, Number(previousEntry?.bestAccuracy) || 0),
+    bestCorrect: isNewBest ? result.correctAnswers : Math.max(0, Number(previousEntry?.bestCorrect) || 0),
+    bestTotal: isNewBest ? result.totalQuestions : Math.max(0, Number(previousEntry?.bestTotal) || 0),
+    bestUpdatedAt: isNewBest ? createTimestampIso() : previousEntry?.bestUpdatedAt || null,
+    attempts,
+    lastScore: result.score,
+    lastPlayedAt: createTimestampIso()
+  };
+}
+
+async function saveVsBossPracticeScore(bossId, result) {
+  const ownerId = getVsBossScoresOwnerId();
+  const user = getCurrentUser();
+  const useFirestore = getAuthMode() === "firebase" && !user?.isGuest && ownerId !== "guest";
+  let previousBest = Math.max(0, Number(state.vsBossPractice.scores?.[bossId]?.bestScore) || 0);
+  let nextEntry = null;
+  if (useFirestore) {
+    const playerRef = getPlayerDocRef(ownerId);
+    await runTransaction(firestoreDb, async transaction => {
+      const snapshot = await transaction.get(playerRef);
+      if (!snapshot.exists()) {
+        throw new Error("Player document not found");
+      }
+      const remoteEntry = snapshot.data()?.progress?.bossPracticeScores?.[bossId] || {};
+      previousBest = Math.max(previousBest, Number(remoteEntry.bestScore) || 0);
+      const attempts = Math.max(Number(remoteEntry.attempts) || 0, Number(state.vsBossPractice.scores?.[bossId]?.attempts) || 0) + 1;
+      nextEntry = createVsBossScoreEntry({ ...remoteEntry, bestScore: previousBest }, result, attempts);
+      transaction.update(playerRef, {
+        [`progress.bossPracticeScores.${bossId}`]: nextEntry
+      });
+    });
+  } else {
+    const previousEntry = state.vsBossPractice.scores?.[bossId] || {};
+    const attempts = (Number(previousEntry.attempts) || 0) + 1;
+    nextEntry = createVsBossScoreEntry(previousEntry, result, attempts);
+    const nextScores = {
+      ...state.vsBossPractice.scores,
+      [bossId]: nextEntry
+    };
+    playerStorage.set(getVsBossLocalStorageKey(), JSON.stringify(nextScores));
+  }
+  state.vsBossPractice.scores = {
+    ...state.vsBossPractice.scores,
+    [bossId]: nextEntry
+  };
+  state.vsBossPractice.scoresLoaded = true;
+  state.vsBossPractice.scoresOwnerId = ownerId;
+  return {
+    previousBest,
+    bestScore: nextEntry.bestScore,
+    isNewBest: result.score > previousBest,
+    entry: nextEntry
+  };
+}
+
+function setVsBossesStatus(message = "", isError = false) {
+  if (!els.vsBossesStatus) {
+    return;
+  }
+  els.vsBossesStatus.textContent = message;
+  els.vsBossesStatus.classList.toggle("is-error", isError);
+}
+
+function createVsBossCard(config) {
+  const card = document.createElement("article");
+  card.className = "vs-boss-card";
+  const frame = document.createElement("div");
+  frame.className = "vs-boss-image-frame";
+  const image = document.createElement("img");
+  image.className = "vs-boss-image";
+  image.alt = `${config.name} ${config.thaiName}`;
+  image.loading = "lazy";
+  image.decoding = "async";
+  image.dataset.fallbackApplied = "false";
+  image.onerror = () => {
+    if (config.fallbackImage && image.dataset.fallbackApplied !== "true" && image.getAttribute("src") !== config.fallbackImage) {
+      image.dataset.fallbackApplied = "true";
+      image.src = config.fallbackImage;
+      return;
+    }
+    image.onerror = null;
+    image.remove();
+    frame.classList.add("is-missing");
+  };
+  const src = resolveVsBossImage(config);
+  if (src) {
+    image.src = src;
+    frame.appendChild(image);
+  } else {
+    frame.classList.add("is-missing");
+  }
+  const name = document.createElement("h3");
+  name.textContent = `${config.name} / ${config.thaiName}`;
+  const topic = document.createElement("p");
+  topic.className = "vs-boss-topic";
+  topic.textContent = `หัวข้อ: ${config.topicTh}`;
+  const description = document.createElement("p");
+  description.className = "vs-boss-description";
+  description.textContent = config.description;
+  const score = document.createElement("p");
+  score.className = "vs-boss-best-score";
+  const bestScore = Math.max(0, Number(state.vsBossPractice.scores?.[config.id]?.bestScore) || 0);
+  score.textContent = bestScore > 0
+    ? `คะแนนสูงสุด: ${bestScore} Grammaria`
+    : "คะแนนสูงสุด: ยังไม่มี";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "vs-boss-start-button";
+  button.textContent = "เริ่มฝึกฝน";
+  button.addEventListener("click", () => startVsBossPracticeBattle(config.id));
+  card.append(frame, name, topic, description, score, button);
+  return card;
+}
+
+function renderVsBossesGrid() {
+  if (!els.vsBossesGrid) {
+    return;
+  }
+  els.vsBossesGrid.textContent = "";
+  VS_BOSS_REGISTRY.forEach(config => els.vsBossesGrid.appendChild(createVsBossCard(config)));
+}
+
+async function openVsBossesScene() {
+  closeGameModal();
+  setVsBossesStatus("กำลังโหลดคะแนนสูงสุด...");
+  renderVsBossesGrid();
+  showScene("vsBosses");
+  await loadVsBossPracticeScores();
+  setVsBossesStatus("");
+  renderVsBossesGrid();
+}
+
+function createVsBossEvaluationSummary({ bossDefeated = false } = {}) {
+  const practice = state.vsBossPractice;
+  const battle = state.actBattle;
+  const stats = battle?.grammariaStats || state.currentBattleStats || {};
+  const correctAnswers = Math.max(0, Number(stats.correctAnswers) || 0);
+  const wrongAnswers = Math.max(0, Number(stats.wrongAnswers) || 0);
+  return {
+    bossId: practice.bossId,
+    correctAnswers,
+    wrongAnswers,
+    totalQuestions: correctAnswers + wrongAnswers,
+    maxCombo: Math.max(0, Number(practice.evaluation?.maxCombo) || 0),
+    damageDealt: Math.max(0, Number(stats.playerDamageDealt) || 0),
+    damageTaken: Math.max(0, Number(stats.bossDamageDealt) || 0),
+    turns: Math.max(1, Number(battle?.turnNumber) || 1),
+    bossDefeated: Boolean(bossDefeated),
+    playerHpRemaining: clamp(Number(state.playerHp) || 0, 0, 100),
+    startedAt: practice.evaluation?.startedAt || Date.now(),
+    endedAt: Date.now()
+  };
+}
+
+function buildVsBossResultPanel(config, result, scoreSave, saveWarning = "") {
+  const panel = document.createElement("div");
+  panel.id = "vsBossPracticeResultModal";
+  panel.className = "vs-boss-result-panel";
+  const score = document.createElement("p");
+  score.id = "vsBossPracticeResultScore";
+  score.className = "vs-boss-score-highlight";
+  score.textContent = `Grammaria ประเมินผล: ${result.score}`;
+  const stats = document.createElement("div");
+  stats.className = "vs-boss-result-stats";
+  const rows = [
+    ["Boss", config.name],
+    ["หัวข้อ", config.topicTh],
+    ["Accuracy", `${result.correctAnswers}/${result.totalQuestions} ข้อ`],
+    ["คะแนนสูงสุดเดิม", String(scoreSave.previousBest)],
+    ["คะแนนสูงสุดปัจจุบัน", String(scoreSave.bestScore)]
+  ];
+  rows.forEach(([label, value]) => {
+    const row = document.createElement("p");
+    const labelNode = document.createElement("span");
+    labelNode.textContent = label;
+    const valueNode = document.createElement("strong");
+    valueNode.textContent = value;
+    row.append(labelNode, valueNode);
+    stats.appendChild(row);
+  });
+  const best = document.createElement("p");
+  best.id = "vsBossPracticeBestScore";
+  best.className = "vs-boss-result-record";
+  best.textContent = scoreSave.isNewBest ? "สถิติใหม่!" : "ยังไม่ทำลายสถิติเดิม";
+  const note = document.createElement("p");
+  note.className = "vs-boss-result-note";
+  note.textContent = "คะแนนนี้ใช้เพื่อประเมินผลการฝึกฝนเท่านั้น ไม่ถูกเพิ่มเข้า Grammaria จริง";
+  panel.append(score, stats, best, note);
+  if (saveWarning) {
+    const warning = document.createElement("p");
+    warning.className = "vs-bosses-status is-error";
+    warning.textContent = saveWarning;
+    panel.appendChild(warning);
+  }
+  return panel;
+}
+
+async function finishVsBossPracticeBattle({ bossDefeated = false } = {}) {
+  const practice = state.vsBossPractice;
+  if (!practice.active || practice.finishing) {
+    return;
+  }
+  practice.finishing = true;
+  const config = getVsBossConfig(practice.bossId);
+  const summary = createVsBossEvaluationSummary({ bossDefeated });
+  const result = {
+    ...summary,
+    score: calculateVsBossEvaluationScore(summary)
+  };
+  const localPrevious = Math.max(0, Number(practice.scores?.[practice.bossId]?.bestScore) || 0);
+  let scoreSave = {
+    previousBest: localPrevious,
+    bestScore: Math.max(localPrevious, result.score),
+    isNewBest: result.score > localPrevious
+  };
+  let saveWarning = "";
+  cleanupManualBattleExitState();
+  endPracticeMode({ restoreProgress: true });
+  practice.active = false;
+  practice.starting = false;
+  practice.evaluation = null;
+  try {
+    scoreSave = await saveVsBossPracticeScore(config.id, result);
+  } catch (error) {
+    console.error("[VS Bosses] failed to save best score:", error);
+    practice.scores = {
+      ...practice.scores,
+      [config.id]: createVsBossScoreEntry(practice.scores?.[config.id] || {}, result, (Number(practice.scores?.[config.id]?.attempts) || 0) + 1)
+    };
+    saveWarning = "ไม่สามารถบันทึกคะแนนสูงสุดได้ แต่คะแนนรอบนี้ยังแสดงอยู่";
+  }
+  practice.lastResult = { ...result, ...scoreSave };
+  practice.finishing = false;
+  renderVsBossesGrid();
+  showScene("vsBosses");
+  openGameModal({
+    title: bossDefeated ? "ฝึกฝนกับบอสสำเร็จ" : "การฝึกฝนจบลง",
+    body: bossDefeated
+      ? `${config.name} พ่ายแพ้แล้ว`
+      : "แม้ยังเอาชนะบอสไม่ได้ แต่คะแนนนี้ใช้วัดพัฒนาการของเจ้าได้",
+    content: buildVsBossResultPanel(config, result, scoreSave, saveWarning),
+    lockClose: true,
+    actions: [
+      { label: bossDefeated ? "ฝึกอีกครั้ง" : "ลองอีกครั้ง", primary: true, onClick: () => { closeGameModal(); startVsBossPracticeBattle(config.id); } },
+      { label: "เลือกบอสอื่น", onClick: () => { closeGameModal(); openVsBossesScene(); } },
+      { label: "กลับหน้าหลัก", onClick: () => { closeGameModal(); showMainMenu(); } }
+    ]
+  });
+}
+
+function startVsBossPracticeBattle(bossId) {
+  if (state.isTransitioning || state.vsBossPractice.starting || state.vsBossPractice.active) {
+    return;
+  }
+  const config = getVsBossConfig(bossId);
+  const primaryStage = getVsBossPrimaryStage(config);
+  const stageIndex = primaryStage ? getStageIndexById(primaryStage.id) : -1;
+  const questionPool = getVsBossQuestionPool(bossId);
+  if (!config || !primaryStage || stageIndex < 0 || !questionPool.length) {
+    console.error("[VS Bosses] failed to start practice:", { bossId, primaryStage, questionCount: questionPool.length });
+    openGameModal({
+      title: "ไม่สามารถเริ่มโหมดฝึกฝนกับบอสได้",
+      body: "ไม่พบชุดคำถามของบอสนี้",
+      actions: [{ label: "กลับไปเลือกบอส", primary: true, onClick: closeGameModal }]
+    });
+    return;
+  }
+  state.vsBossPractice.starting = true;
+  state.vsBossPractice.active = true;
+  state.vsBossPractice.finishing = false;
+  state.vsBossPractice.bossId = config.id;
+  state.vsBossPractice.stageId = primaryStage.id;
+  state.vsBossPractice.playerSnapshot = getVsBossPlayerBattleSnapshot();
+  state.vsBossPractice.evaluation = {
+    startedAt: Date.now(),
+    currentCombo: 0,
+    maxCombo: 0
+  };
+  beginPracticeMode(primaryStage, "vs-boss");
+  closeGameModal();
+  runSceneTransition(`กำลังเปิดสนามฝึกกับ ${config.name}...`, () => {
+    try {
+      startActBattle(stageIndex);
+      state.vsBossPractice.starting = false;
+    } catch (error) {
+      console.error("[VS Bosses] failed to start practice:", error);
+      state.vsBossPractice.active = false;
+      state.vsBossPractice.starting = false;
+      endPracticeMode({ restoreProgress: true });
+      showScene("vsBosses");
+      setVsBossesStatus("ไม่สามารถเริ่มโหมดฝึกฝนกับบอสได้", true);
+    }
+  });
+}
+
+function exitVsBossPracticeToSelection() {
+  closeGameModal();
+  cleanupManualBattleExitState();
+  endPracticeMode({ restoreProgress: true });
+  state.vsBossPractice.active = false;
+  state.vsBossPractice.starting = false;
+  state.vsBossPractice.finishing = false;
+  state.vsBossPractice.evaluation = null;
+  renderVsBossesGrid();
+  showScene("vsBosses");
+}
+
 function startPracticeLessonFromMap(stage, stageIndex, source = "lesson-map-code") {
   if (!stage || stageIndex < 0 || state.isTransitioning) {
     return;
@@ -32934,6 +35264,7 @@ function saveProgress(updateObject = {}, options = {}) {
 
   mergeDeep(progress, updateObject);
   validateProgress(progress);
+  repairAct1ProgressionIfNeeded(progress);
   const shouldCaptureCheckpoint = options.captureCheckpoint === true ||
     (options.captureCheckpoint !== false && isManualSaveScene());
   if (shouldCaptureCheckpoint) {
@@ -35417,12 +37748,18 @@ function resolveBattleQuestionPrompt(question) {
 
 function startActBattle(stageIndex) {
   cleanupBossHeavyAttackChain({ clearParryUi: true });
-  const stageConfig = getPlayableStages()[stageIndex];
+  const baseStageConfig = getPlayableStages()[stageIndex];
+  const vsBossConfig = isVsBossPracticeActive() ? getVsBossConfig(state.vsBossPractice.bossId) : null;
+  const stageConfig = vsBossConfig
+    ? buildVsBossPracticeStage(baseStageConfig, vsBossConfig)
+    : baseStageConfig;
   setActBackground(getAct1BackgroundKeyForStage(stageConfig), { warnMissing: true });
   const allowedRuleIds = getAllowedRuleIdsForStage(stageConfig);
   const stage = {
     ...stageConfig,
-    questions: filterQuestionsForStage(stageConfig.questions || [], stageConfig)
+    questions: vsBossConfig
+      ? (stageConfig.questions || []).map(cloneVsBossQuestion).filter(Boolean)
+      : filterQuestionsForStage(stageConfig.questions || [], stageConfig)
   };
   console.log("[Battle Start]", stage.id, "Allowed Rules:", allowedRuleIds);
   console.log("[BattleFlowV2] enabled =", BATTLE_FLOW_V2_CONFIG?.enabled);
@@ -35434,7 +37771,9 @@ function startActBattle(stageIndex) {
   }
   resetVictorySceneMusicForBattle();
   const baseEnemyMaxHp = isFinalBossStage(stage) ? 140 : 100;
-  const enemyMaxHp = getBalancedBossMaxHp(stage, baseEnemyMaxHp);
+  const enemyMaxHp = vsBossConfig
+    ? getVsBossPracticeHp(vsBossConfig, state.vsBossPractice.playerSnapshot)
+    : getBalancedBossMaxHp(stage, baseEnemyMaxHp);
   const returnContext = state.pendingBattleReturnContext ||
     state.actBattle?.returnContext ||
     createBattleReturnContext(stage, {
@@ -35442,7 +37781,6 @@ function startActBattle(stageIndex) {
     }) ||
     createFallbackBattleReturnContext(stage);
   state.pendingBattleReturnContext = null;
-  state.timeDustTransitionComplete = false;
   state.actStageIndex = stageIndex;
   state.actBattle = {
     stage,
@@ -35543,15 +37881,19 @@ function startActBattle(stageIndex) {
   state.grammaria = playerData ? playerData.grammaria || 0 : state.grammaria;
   state.sparkBonus = 0;
   resetBattleActiveEffects();
-  saveProgress({
-    currentStageId: stage.id,
-    currentLessonId: stage.id,
-    currentScreen: "battle",
-    lastSafeScreen: "lesson",
-    currentLessonStepIndex: state.lessonStepIndex || 0,
-    currentDialogueIndex: state.lessonStoryStepIndex || 0
-  });
-  els.battleTitle.textContent = isFinalBossStage(stage) ? "Final Boss: The Memory Breaker" : stage.title;
+  if (!vsBossConfig) {
+    saveProgress({
+      currentStageId: stage.id,
+      currentLessonId: stage.id,
+      currentScreen: "battle",
+      lastSafeScreen: "lesson",
+      currentLessonStepIndex: state.lessonStepIndex || 0,
+      currentDialogueIndex: state.lessonStoryStepIndex || 0
+    });
+  }
+  els.battleTitle.textContent = vsBossConfig
+    ? `VS Bosses: ${vsBossConfig.name}`
+    : isFinalBossStage(stage) ? "Final Boss: The Memory Breaker" : stage.title;
   updateBattleEnemyVisual(stage);
   updateBattleStats();
   resetBattleContinueControls();
@@ -35560,7 +37902,10 @@ function startActBattle(stageIndex) {
   setActionButtonsEnabled(false);
   showScene("battle");
   beginActPlayerTurn("เลือกการกระทำเพื่อเริ่มเทิร์นของผู้พเนจร");
-  if (isPracticeModeActive() && !state.actBattle.practiceNoticeShown) {
+  if (isVsBossPracticeActive() && !state.actBattle.practiceNoticeShown) {
+    state.actBattle.practiceNoticeShown = true;
+    els.battleMessage.textContent = "โหมดฝึกฝนกับบอส: คะแนน Grammaria ที่ได้จะใช้เพื่อประเมินผลเท่านั้น ไม่เพิ่มเข้าคะแนนจริง";
+  } else if (isPracticeModeActive() && !state.actBattle.practiceNoticeShown) {
     state.actBattle.practiceNoticeShown = true;
     els.battleMessage.textContent = "โหมดฝึก: บทนี้จะไม่ให้ Grammaria, Fragment, Badge หรือความคืบหน้า";
   }
@@ -35630,15 +37975,21 @@ function renderBattleItemMenu() {
     imageWrap.className = "battle-item-image-wrap";
     const image = document.createElement("img");
     image.className = "battle-item-icon";
-    image.src = item.image;
     image.alt = item.name;
     image.loading = "lazy";
     image.decoding = "async";
-    image.addEventListener("error", () => {
+    image.dataset.assetKey = item.id;
+    image.dataset.assetFallbackApplied = "false";
+    image.onerror = () => {
+      if (image.dataset.assetFallbackApplied !== "true") {
+        handleAssetImageError(image, item.image);
+        return;
+      }
       card.classList.add("is-image-missing");
       image.remove();
       imageWrap.textContent = "ไอเทม";
-    }, { once: true });
+    };
+    image.src = getGameAssetUrl(item.id, item.image);
     imageWrap.appendChild(image);
 
     const body = document.createElement("div");
@@ -41273,6 +43624,10 @@ function createPracticeResultSnapshot(stage, stats = getCurrentBattleStats()) {
 }
 
 function grantActReward(stage, options = {}) {
+  if (isVsBossPracticeActive()) {
+    console.warn("[VS Bosses] blocked story reward route", stage?.id || "unknown-stage");
+    return createPracticeResultSnapshot(stage);
+  }
   const progress = ensureActProgress();
   if (!progress) {
     return null;
@@ -41319,8 +43674,8 @@ function grantActReward(stage, options = {}) {
     addUniqueActValue(progress.rewards, `Badge: ${stage.reward.badge}`);
   }
 
-  const currentIndex = getStageIndexById(stage.id);
-  const nextStage = getPlayableStages()[currentIndex + 1] || null;
+  const nextStageId = getNextAct1StageId(stage.id);
+  const nextStage = nextStageId ? getStageById(nextStageId) : null;
   const finalBoss = isFinalBossStage(stage);
   if (nextStage) {
     unlockStage(nextStage.id);
@@ -41336,43 +43691,13 @@ function grantActReward(stage, options = {}) {
   return grammariaResult;
 }
 
-function handleTimeDustDefeated(stage) {
-  console.log("[TimeDust] handleTimeDustDefeated called");
-  finalizeBossVictoryWithResult(stage, () => {
-    console.log("[BossResult] Time Dust result shown before transition");
-    transitionToRegularEdLessonAfterTimeDust(stage);
-  });
-  return;
-
-  const nextStageId = "regular-rule-1";
-  const nextIndex = getStageIndexById(nextStageId);
-  console.log("[Battle] Time Dust victory transition starting");
-  unlockStage(nextStageId);
-  markCompletedLesson(stage.id);
-  markBossDefeated(stage);
-  const progress = saveProgress({
-    currentActId: DEFAULT_ACT_PROGRESS.currentActId,
-    currentStageId: nextStageId,
-    currentLessonId: nextStageId,
-    currentScreen: "lesson",
-    lastSafeScreen: "lesson",
-    currentDialogueIndex: 0,
-    currentLessonStepIndex: 0
-  });
-  console.log("[Progress] Next lesson after Time Dust:", progress?.currentLessonId);
-
-  state.actBattle = null;
-  state.currentLessonStage = getPlayableStages()[nextIndex];
-  state.lessonStepIndex = 0;
-  restoreLessonUIAfterBattle();
-  console.log("[UI] Exiting battle and rendering lesson");
-  runSceneTransition("ไทม์ดัสต์สลายไปแล้ว... กฎของ Regular Verbs กำลังเปิดออก", () => {
-    showStageLesson(nextIndex, { lessonStepIndex: 0, dialogueIndex: 0 });
-  });
-}
-
 function finalizeBossVictoryWithResult(stage, onContinue) {
   if (!stage) {
+    return;
+  }
+
+  if (isVsBossPracticeActive()) {
+    void finishVsBossPracticeBattle({ bossDefeated: true });
     return;
   }
 
@@ -41436,20 +43761,17 @@ function handleActEnemyDefeated(source = "damage") {
   els.battleMessage.textContent = `${battle.stage.thaiEnemy || battle.stage.enemy} พ่ายแพ้แล้ว! กำลังเปิดบทเรียนถัดไป...`;
   playVictorySceneMusicOnce();
 
+  if (isVsBossPracticeActive()) {
+    els.battleMessage.textContent = `${battle.stage.thaiEnemy || battle.stage.enemy} พ่ายแพ้แล้ว! กำลังสรุปผลการฝึก...`;
+    void finishVsBossPracticeBattle({ bossDefeated: true });
+    return true;
+  }
+
   console.log("[TimeDust] Victory message shown", {
     enemyId: normalizedEnemyId,
     stageId: battle.stage.id,
     enemyHp: state.enemyHp
   });
-
-  if (normalizedEnemyId === "timeDust") {
-    const defeatedStage = battle.stage;
-    finalizeBossVictoryWithResult(defeatedStage, () => {
-      console.log("[BossResult] Time Dust result shown before transition");
-      transitionToRegularEdLessonAfterTimeDust(defeatedStage);
-    });
-    return true;
-  }
 
   if (isFinalBossStage(battle.stage)) {
     continueFinalBossVictory(battle.stage);
@@ -41479,11 +43801,8 @@ function completeActStage() {
     totalQuestions: stage.questions.length
   };
 
-  if (stage.enemy === "Time Dust") {
-    finalizeBossVictoryWithResult(stage, () => {
-      console.log("[BossResult] Time Dust result shown before transition");
-      transitionToRegularEdLessonAfterTimeDust(stage);
-    });
+  if (isVsBossPracticeActive()) {
+    void finishVsBossPracticeBattle({ bossDefeated: true });
     return;
   }
 
@@ -41545,7 +43864,11 @@ function showStageReward(stage) {
     return;
   }
 
-  const nextIndex = state.actStageIndex + 1;
+  const nextStageId = getNextAct1StageId(stage.id);
+  const nextStage = nextStageId ? getStageById(nextStageId) : null;
+  const transitionStageId = getAct1ContinuousTransitionStageId(stage.id);
+  const transitionStage = transitionStageId ? getStageById(transitionStageId) : null;
+  const transitionIndex = transitionStage ? getStageIndexById(transitionStage.id) : -1;
   const isPractice = isPracticeModeActive();
   const isReplay = isReplayingStage(stage);
   const grammariaEarned = state.lastGrammariaResult?.bossId === (getBossProgressId(stage) || stage.id)
@@ -41588,7 +43911,6 @@ function showStageReward(stage) {
     ? "คุณได้ทบทวนบทเรียนนี้แล้ว ไม่มีรางวัลซ้ำ"
     : `ได้รับ ${stage.reward.fragment} และ Grammaria +${grammariaEarned}`;
   renderActionCards(rewardLines, "lesson-card");
-  const nextStage = getPlayableStages()[nextIndex];
   if (nextStage && !isReplay && !isPractice) {
     console.log("[Progress] Next lesson:", nextStage.id);
     saveProgress({
@@ -41619,15 +43941,15 @@ function showStageReward(stage) {
     ? "ไปยัง Irregular Verbs"
     : shouldTransitionToNextStageFromReward(stage)
       ? "เดินทางสู่ The Ed Forge"
-    : nextStage && nextStage.type === "final-boss"
+    : transitionStage && transitionStage.type === "final-boss"
       ? "ต่อสู้บอสปรากฏตัว"
       : "ด่านถัดไป";
   setBattleButtonAction(rewardButtonLabel, () => {
-    if (nextStage) {
-      transitionToNextStageLesson(stage, nextStage, nextIndex);
+    if (transitionStage) {
+      transitionToNextStageLesson(stage, transitionStage, transitionIndex);
       return;
     }
-    showStageLesson(nextIndex);
+    showStageLesson(transitionIndex);
   });
   showScene("story");
 }
@@ -41667,7 +43989,10 @@ function resetBattle() {
 function updateBattleEnemyVisual(stage = null) {
   const enemyName = stage && stage.enemy ? stage.enemy : "Memory Shade";
   const thaiName = stage && stage.thaiEnemy ? stage.thaiEnemy : enemyName;
-  const sprite = resolveEnemySpriteForStage(stage || { enemy: enemyName, thaiEnemy: thaiName });
+  const enemyAssetSource = stage || { enemy: enemyName, thaiEnemy: thaiName };
+  const enemyAssetKey = getEnemyGameAssetKey(enemyAssetSource);
+  const enemyRegistryItem = getGameAssetRegistryItem(enemyAssetKey);
+  const sprite = resolveEnemySpriteForStage(enemyAssetSource);
   const isTimeDust = enemyName === "Time Dust";
   const isEchoTrick = enemyName === "Echo Tick";
   const isYesterdaySpirit = enemyName === "Yesterday Sprite";
@@ -41703,11 +44028,21 @@ function updateBattleEnemyVisual(stage = null) {
       const warnLabel = isTimeDust ? "TimeDust" : (isEchoTrick ? "EchoTrick" : (isYesterdaySpirit ? "YesterdaySpirit" : "MemoryBreaker"));
       els.battleEnemySprite.onerror = error => {
         console.warn(`[${warnLabel}] transparent GIF failed to load`, error);
+        if (enemyRegistryItem?.defaultPath && els.battleEnemySprite.dataset.assetFallbackApplied !== "true") {
+          els.battleEnemySprite.dataset.assetFallbackApplied = "true";
+          els.battleEnemySprite.src = enemyRegistryItem.defaultPath;
+          return;
+        }
         els.battleEnemySprite.onerror = null;
         els.battleEnemySprite.classList.remove(specialEnemyClass);
         els.battleEnemySprite.src = fallbackSprite;
       };
+    } else if (enemyRegistryItem?.defaultPath) {
+      els.battleEnemySprite.onerror = () => handleAssetImageError(els.battleEnemySprite, enemyRegistryItem.defaultPath);
     }
+    els.battleEnemySprite.dataset.assetKey = enemyAssetKey;
+    els.battleEnemySprite.dataset.assetFallbackApplied = "false";
+    els.battleEnemySprite.classList.remove("hidden");
     els.battleEnemySprite.src = sprite;
     els.battleEnemySprite.alt = enemyName;
   }
@@ -43217,9 +45552,12 @@ function exitBattleToReturnContext() {
 }
 
 function confirmExitBattle() {
+  const isVsBossBattle = isVsBossPracticeActive();
   openGameModal({
     title: "ออกจากการต่อสู้นี้หรือไม่?",
-    body: isPracticeModeActive()
+    body: isVsBossBattle
+      ? "ต้องการออกจากสนามฝึกและกลับไปเลือกบอสหรือไม่? คะแนนรอบนี้จะไม่ถูกบันทึก และความคืบหน้าจริงจะไม่เปลี่ยนแปลง"
+      : isPracticeModeActive()
       ? "ต้องการออกจากการต่อสู้และกลับหน้าหลักหรือไม่? ความคืบหน้าจริงจะไม่เปลี่ยนแปลง"
       : "ต้องการออกจากการต่อสู้และกลับไปหน้าบทเรียนหรือไม่?",
     actions: [
@@ -43232,7 +45570,16 @@ function confirmExitBattle() {
         primary: true,
         onClick: () => {
           closeGameModal();
-          runSceneTransition(isPracticeModeActive() ? "กลับสู่หน้าหลัก..." : "กลับสู่บทเรียน...", () => {
+          const transitionMessage = isVsBossBattle
+            ? "กลับสู่สนามเลือกบอส..."
+            : isPracticeModeActive()
+              ? "กลับสู่หน้าหลัก..."
+              : "กลับสู่บทเรียน...";
+          runSceneTransition(transitionMessage, () => {
+            if (isVsBossBattle) {
+              exitVsBossPracticeToSelection();
+              return;
+            }
             if (isPracticeModeActive()) {
               returnFromPracticeMode();
               return;
@@ -43578,14 +45925,31 @@ document.addEventListener("keydown", event => {
   }
 });
 els.createCharacterButton.addEventListener("click", createCharacterFromForm);
-els.teacherDashboardBackButton?.addEventListener("click", showMainMenu);
+els.teacherDashboardBackButton?.addEventListener("click", leaveTeacherDashboard);
 els.teacherClassLevelFilter?.addEventListener("change", renderTeacherDashboardTable);
 els.teacherRoomFilter?.addEventListener("change", renderTeacherDashboardTable);
 els.teacherStudentSearchInput?.addEventListener("input", renderTeacherDashboardTable);
+els.studentManagementButton?.addEventListener("click", openStudentManagementPanel);
+els.studentManagementCloseButton?.addEventListener("click", closeStudentManagementPanel);
+els.studentManagementSearchInput?.addEventListener("input", renderStudentManagementTable);
+els.studentManagementClassFilter?.addEventListener("change", renderStudentManagementTable);
+els.studentManagementRoomFilter?.addEventListener("change", renderStudentManagementTable);
+els.studentManagementStatusFilter?.addEventListener("change", renderStudentManagementTable);
+els.studentManagementSortSelect?.addEventListener("change", renderStudentManagementTable);
+els.studentManagementDetailCloseButton?.addEventListener("click", clearStudentManagementDetail);
+els.studentManagementAddPointsButton?.addEventListener("click", () => openStudentPointAdjustModal("add"));
+els.studentManagementReducePointsButton?.addEventListener("click", () => openStudentPointAdjustModal("reduce"));
+els.studentManagementDeleteButton?.addEventListener("click", openStudentDeleteConfirmModal);
+els.studentManagementRestoreButton?.addEventListener("click", openStudentRestoreConfirmModal);
+els.assetManagerButton?.addEventListener("click", openAssetManagerPanel);
+els.assetManagerCloseButton?.addEventListener("click", closeAssetManagerPanel);
+els.assetManagerSearchInput?.addEventListener("input", renderAssetManagerGrid);
+els.assetManagerCategoryFilter?.addEventListener("change", renderAssetManagerGrid);
 els.tutorialPreviousButton?.addEventListener("click", previousTutorialSlide);
 els.tutorialNextButton?.addEventListener("click", nextTutorialSlide);
 els.tutorialBackButton?.addEventListener("click", returnToMainMenuFromTutorial);
 els.creatorCreditsBackButton?.addEventListener("click", returnToMainMenuFromCreatorCredits);
+els.vsBossesBackButton?.addEventListener("click", showMainMenu);
 els.pvpBackButton?.addEventListener("click", exitPvpMode);
 els.pvpExitButton?.addEventListener("click", exitPvpMode);
 els.pvpCreateOnlineRoomButton?.addEventListener("click", createOnlinePvpRoom);
@@ -43869,7 +46233,7 @@ initializeAuthUi().catch(error => {
   console.warn("[Auth] Failed to initialize Firebase auth state", error);
   updateAuthUi();
   setAuthStatus(AUTH_COPY.remoteAuthUnavailable);
-});
+}).finally(() => loadGameAssetOverrides());
 setupAnimatedGrammarHallBackground();
 setupMainCharacterGifs();
 setupTeacherCharacterGifs();
