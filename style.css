@@ -2588,8 +2588,8 @@ button {
 }
 
 @media (max-width: 720px) {
-  .verb-memory-practice-scene {
-    padding: 10px 8px max(24px, env(safe-area-inset-bottom));
+  .scene.verb-memory-practice-scene {
+    padding: 72px 8px 24px;
     background-attachment: scroll;
   }
 

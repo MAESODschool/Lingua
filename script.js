@@ -23735,6 +23735,7 @@ const els = {
   tutorialGuideButton: document.getElementById("tutorialGuideButton"),
   linguaAdvisorButton: document.getElementById("linguaAdvisorButton"),
   accountSettingsButton: document.getElementById("accountSettingsButton"),
+  customizeGameButton: document.getElementById("customizeGameButton"),
   teacherDashboardButton: document.getElementById("teacherDashboardButton"),
   creatorCreditsButton: document.getElementById("creatorCreditsButton"),
   mainMenuLogoutButton: document.getElementById("mainMenuLogoutButton"),
@@ -33258,6 +33259,7 @@ function renderMainMenu() {
   setButtonAction(els.tutorialGuideButton, "วิธีเล่น", openTutorialGuide, { lock: false });
   setButtonAction(els.linguaAdvisorButton, "ถามที่ปรึกษา", () => openLinguaAdvisor("main-menu"), { lock: false });
   setButtonAction(els.accountSettingsButton, "ตั้งค่าบัญชี", openAccountSettingsModal, { lock: false });
+  setButtonAction(els.customizeGameButton, "ปรับแต่ง", openGameCustomizationPanel, { lock: false });
   setButtonAction(els.teacherDashboardButton, "Teacher Dashboard", openTeacherDashboardPasswordModal, { lock: false });
   setButtonAction(els.creatorCreditsButton, "เครดิตผู้สร้าง", openCreatorCredits, { lock: false });
   setButtonAction(els.mainMenuLogoutButton, "ออกจากระบบ", logoutCurrentUser, { lock: true });
@@ -34487,6 +34489,35 @@ function closeAssetManagerPanel() {
   setAssetManagerStatus("");
 }
 
+async function openGameCustomizationPanel() {
+  closeGameModal();
+  if (!requireAssetManagerAccess({ showMessage: false })) {
+    openGameModal({
+      title: "ปรับแต่งเกม",
+      body: "กรุณาเข้าสู่เมนูผู้ดูแลก่อน",
+      actions: [
+        { label: "รับทราบ", onClick: closeGameModal },
+        {
+          label: "เข้าสู่เมนูผู้ดูแล",
+          primary: true,
+          onClick: () => openTeacherDashboardPasswordModal({ onGranted: openGameCustomizationPanel })
+        }
+      ]
+    });
+    return;
+  }
+  showScene("teacherDashboard");
+  await openAssetManagerPanel();
+}
+
+function closeGameCustomizationPanel() {
+  closeAssetManagerPanel();
+}
+
+function returnFromCustomizationToMainMenu() {
+  leaveTeacherDashboard();
+}
+
 function sanitizeAssetFileName(name) {
   const rawName = String(name || "").split(/[\\/]/).pop() || "";
   const extensionMatch = rawName.toLowerCase().match(/\.(png|jpe?g|webp|gif)$/);
@@ -34822,7 +34853,8 @@ async function showTeacherDashboard() {
   renderTeacherDashboardTable();
 }
 
-function openTeacherDashboardPasswordModal() {
+function openTeacherDashboardPasswordModal(options = {}) {
+  const onGranted = typeof options?.onGranted === "function" ? options.onGranted : null;
   const content = document.createElement("div");
   content.id = "teacherDashboardPasswordModal";
   content.className = "teacher-password-panel";
@@ -34853,7 +34885,11 @@ function openTeacherDashboardPasswordModal() {
             return;
           }
           teacherDashboardAccessGranted = true;
-          showTeacherDashboard();
+          if (onGranted) {
+            onGranted();
+          } else {
+            showTeacherDashboard();
+          }
         }
       }
     ]
@@ -47280,7 +47316,7 @@ document.addEventListener("keydown", event => {
   }
 });
 els.createCharacterButton.addEventListener("click", createCharacterFromForm);
-els.teacherDashboardBackButton?.addEventListener("click", leaveTeacherDashboard);
+els.teacherDashboardBackButton?.addEventListener("click", returnFromCustomizationToMainMenu);
 els.teacherClassLevelFilter?.addEventListener("change", renderTeacherDashboardTable);
 els.teacherRoomFilter?.addEventListener("change", renderTeacherDashboardTable);
 els.teacherStudentSearchInput?.addEventListener("input", renderTeacherDashboardTable);
@@ -47297,7 +47333,7 @@ els.studentManagementReducePointsButton?.addEventListener("click", () => openStu
 els.studentManagementDeleteButton?.addEventListener("click", openStudentDeleteConfirmModal);
 els.studentManagementRestoreButton?.addEventListener("click", openStudentRestoreConfirmModal);
 els.assetManagerButton?.addEventListener("click", openAssetManagerPanel);
-els.assetManagerCloseButton?.addEventListener("click", closeAssetManagerPanel);
+els.assetManagerCloseButton?.addEventListener("click", closeGameCustomizationPanel);
 els.assetManagerSearchInput?.addEventListener("input", renderAssetManagerGrid);
 els.assetManagerCategoryFilter?.addEventListener("change", renderAssetManagerGrid);
 els.tutorialPreviousButton?.addEventListener("click", previousTutorialSlide);
