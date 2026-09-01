@@ -23443,9 +23443,35 @@ const LINGUA_ADVISOR_SCOPES = Object.freeze({
   }
 });
 
+const LINGUA_ADVISOR_REQUEST_MODES = new Set([
+  "hint",
+  "explain",
+  "summary",
+  "practice",
+  "game-help",
+  "assessment",
+  "story",
+  "free-question"
+]);
+
+function getLinguaAdvisorMetaConfig(name, fallback = "") {
+  return String(document.querySelector(`meta[name="${name}"]`)?.content || fallback).trim();
+}
+
+const configuredLinguaAdvisorMode = getLinguaAdvisorMetaConfig("lingua-advisor-mode", "auto").toLowerCase();
+const LINGUA_ADVISOR_CONFIG = Object.freeze({
+  mode: ["mock", "backend", "auto"].includes(configuredLinguaAdvisorMode)
+    ? configuredLinguaAdvisorMode
+    : "auto",
+  apiUrl: getLinguaAdvisorMetaConfig("lingua-advisor-api-url", ""),
+  timeoutMs: 20000,
+  maxMessageLength: 500
+});
+
 const linguaAdvisorState = {
   isOpen: false,
-  mode: "mock",
+  mode: LINGUA_ADVISOR_CONFIG.mode,
+  connectionStatus: LINGUA_ADVISOR_CONFIG.apiUrl ? "ready" : "local",
   screen: "scope-selection",
   scope: null,
   selectedLesson: null,
@@ -23456,6 +23482,8 @@ const linguaAdvisorState = {
   source: "",
   previousFocus: null,
   nextMessageId: 1,
+  requestId: 0,
+  requestAbortController: null,
   advisorCharacter: {
     id: "master_verion",
     name: "Master Verion",
@@ -30771,8 +30799,7 @@ function getLinguaAdvisorContext() {
   const activeStage = battle?.stage || state.currentLessonStage || getStageById(progress.currentStageId || progress.currentLessonId);
   const question = battle?.currentQuestion || state.currentQuestion || null;
   const pendingAnswer = battle?.pendingPlayerAnswer || null;
-  const legacyAnswerSubmitted = Boolean(question && els.questionPanel?.classList.contains("hidden") && state.selectedCharm);
-  const answerAlreadySubmitted = Boolean(pendingAnswer || legacyAnswerSubmitted);
+  const answerAlreadySubmitted = Boolean(pendingAnswer);
   const correctAnswer = answerAlreadySubmitted && question
     ? safeDisplayText(getBattleCorrectAnswer(question), "")
     : "";
@@ -30780,6 +30807,7 @@ function getLinguaAdvisorContext() {
   return {
     source: getLinguaAdvisorSource(linguaAdvisorState.source),
     scene: getActiveSceneName() || "unknown",
+    stageId: safeDisplayText(activeStage?.id, ""),
     lessonTitle: safeDisplayText(
       linguaAdvisorState.selectedLesson?.title || activeStage?.title,
       "ยังไม่มีข้อมูลบทเรียน"
@@ -30796,12 +30824,10 @@ function getLinguaAdvisorContext() {
     questionType: safeDisplayText(question ? getBattleQuestionType(question) : "", "ยังไม่มีข้อมูลประเภทโจทย์"),
     selectedAnswer: safeDisplayText(pendingAnswer?.selectedAnswer, ""),
     answerAlreadySubmitted,
+    isAnswerCorrect: answerAlreadySubmitted ? Boolean(pendingAnswer?.isCorrect) : null,
     correctAnswerAvailable: Boolean(correctAnswer),
     correctAnswer,
-    playerName: safeDisplayText(
-      playerData?.characterName || playerData?.displayName || playerData?.username,
-      "นักเดินทางแห่งภาษา"
-    )
+    playerGrade: "ม.1"
   };
 }
 
@@ -30903,6 +30929,9 @@ function closeLinguaAdvisor() {
   }
   linguaAdvisorState.isOpen = false;
   linguaAdvisorState.isLoading = false;
+  linguaAdvisorState.requestId += 1;
+  linguaAdvisorState.requestAbortController?.abort();
+  linguaAdvisorState.requestAbortController = null;
   els.linguaAdvisorOverlay?.classList.add("hidden");
   document.body.classList.remove("lingua-advisor-open");
   const previousFocus = linguaAdvisorState.previousFocus;
@@ -30993,7 +31022,7 @@ function renderLinguaAdvisorScopeSelection() {
         <blockquote>${escapeHtml(getLinguaAdvisorWelcomeMessage())}</blockquote>
       </div>
       <div class="advisor-scope-grid">${scopeCards}</div>
-      <p class="advisor-mode-note">ระบบที่ปรึกษายังเป็นโหมดจำลอง ยังไม่ได้เชื่อม AI จริง</p>
+      ${renderLinguaAdvisorStatus()}
     </div>
   `;
   els.linguaAdvisorBody.querySelectorAll("[data-advisor-scope]").forEach(button => {
@@ -31029,6 +31058,7 @@ function renderLinguaAdvisorLessonSelection() {
       </div>
       <div class="advisor-lesson-list">${lessonCards || '<p class="advisor-empty-state">ยังไม่มีข้อมูลบทเรียน</p>'}</div>
       <p class="advisor-locked-note">บทเรียนที่ยังไม่ปลดล็อกต้องผ่านบทเรียนก่อนหน้าในเส้นทางหลักก่อน</p>
+      ${renderLinguaAdvisorStatus()}
     </div>
   `;
   els.linguaAdvisorBody.querySelector("[data-advisor-back-scopes]")?.addEventListener("click", resetLinguaAdvisorScope);
@@ -31044,6 +31074,34 @@ function renderLinguaAdvisorScopeBadge() {
   }
   const label = scope.type === "other_english" ? "ภาษาอังกฤษเพิ่มเติม" : scope.title;
   return `<span class="advisor-scope-badge">ขอบเขต: ${escapeHtml(label)}</span>`;
+}
+
+function getLinguaAdvisorStatusMeta() {
+  if (linguaAdvisorState.connectionStatus === "backend") {
+    return { label: "AI พร้อมใช้งาน", className: "is-backend" };
+  }
+  if (linguaAdvisorState.connectionStatus === "fallback") {
+    return { label: "ใช้คำตอบสำรอง", className: "is-fallback" };
+  }
+  if (linguaAdvisorState.connectionStatus === "error") {
+    return { label: "ตอนนี้ AI ยังไม่พร้อม", className: "is-error" };
+  }
+  if (linguaAdvisorState.connectionStatus === "ready") {
+    return { label: "พร้อมเชื่อมต่อ AI", className: "is-backend" };
+  }
+  if (LINGUA_ADVISOR_CONFIG.mode === "mock") {
+    return { label: "โหมดจำลอง", className: "is-mock" };
+  }
+  return { label: "ใช้โหมดจำลองในเครื่อง", className: "is-local" };
+}
+
+function renderLinguaAdvisorStatus() {
+  const status = getLinguaAdvisorStatusMeta();
+  return `
+    <p class="advisor-status-row">
+      <span class="advisor-status-badge ${status.className}">${escapeHtml(status.label)}</span>
+    </p>
+  `;
 }
 
 function renderLinguaAdvisorContextBox() {
@@ -31079,7 +31137,7 @@ function renderLinguaAdvisorQuickActions() {
   return `
     <div class="advisor-quick-actions" aria-label="คำถามแนะนำ">
       ${scopeConfig.actions.map(([actionType, label]) => `
-        <button type="button" data-advisor-action="${escapeHtml(actionType)}" data-advisor-action-label="${escapeHtml(label)}">${escapeHtml(label)}</button>
+        <button type="button" data-advisor-action="${escapeHtml(actionType)}" data-advisor-action-label="${escapeHtml(label)}" ${linguaAdvisorState.isLoading ? "disabled" : ""}>${escapeHtml(label)}</button>
       `).join("")}
     </div>
   `;
@@ -31095,7 +31153,18 @@ function renderLinguaAdvisorMessages() {
       </div>
     </div>
   `).join("");
-  return `<div id="linguaAdvisorChatBody" class="advisor-chat" aria-live="polite">${messages}</div>`;
+  const loadingMessage = linguaAdvisorState.isLoading
+    ? `
+      <div class="advisor-message advisor-message-assistant advisor-loading-message">
+        <span class="advisor-message-avatar" aria-hidden="true">V</span>
+        <div>
+          <small>มาสเตอร์เวอริออน</small>
+          <p>มาสเตอร์เวอริออนกำลังคิด...</p>
+        </div>
+      </div>
+    `
+    : "";
+  return `<div id="linguaAdvisorChatBody" class="advisor-chat" aria-live="polite">${messages}${loadingMessage}</div>`;
 }
 
 function getLinguaAdvisorInputPlaceholder() {
@@ -31117,10 +31186,10 @@ function renderLinguaAdvisorChat() {
       ${renderLinguaAdvisorQuickActions()}
       ${renderLinguaAdvisorMessages()}
       <div class="advisor-input-row">
-        <input id="linguaAdvisorInput" type="text" maxlength="280" autocomplete="off" placeholder="${escapeHtml(getLinguaAdvisorInputPlaceholder())}">
-        <button id="linguaAdvisorSendButton" type="button">ส่ง</button>
+        <input id="linguaAdvisorInput" type="text" maxlength="${LINGUA_ADVISOR_CONFIG.maxMessageLength}" autocomplete="off" placeholder="${escapeHtml(getLinguaAdvisorInputPlaceholder())}" ${linguaAdvisorState.isLoading ? "disabled" : ""}>
+        <button id="linguaAdvisorSendButton" type="button" ${linguaAdvisorState.isLoading ? "disabled" : ""}>${linguaAdvisorState.isLoading ? "รอ..." : "ส่ง"}</button>
       </div>
-      <p class="advisor-mode-note">ระบบที่ปรึกษายังเป็นโหมดจำลอง ยังไม่ได้เชื่อม AI จริง</p>
+      ${renderLinguaAdvisorStatus()}
     </div>
   `;
 
@@ -31150,6 +31219,7 @@ function renderLinguaAdvisorPanel() {
   if (!linguaAdvisorState.isOpen || !els.linguaAdvisorBody) {
     return;
   }
+  els.linguaAdvisorPanel?.setAttribute("aria-busy", String(linguaAdvisorState.isLoading));
   els.linguaAdvisorPanel.dataset.advisorScreen = linguaAdvisorState.screen;
   if (linguaAdvisorState.screen === "lesson-selection") {
     renderLinguaAdvisorLessonSelection();
@@ -31162,31 +31232,143 @@ function renderLinguaAdvisorPanel() {
   renderLinguaAdvisorScopeSelection();
 }
 
-function buildLinguaAdvisorScopePayload(studentMessage) {
+function getLinguaAdvisorRequestMode(actionType, context = getLinguaAdvisorContext()) {
+  if (context.source === "battle" && !context.answerAlreadySubmitted && context.questionPrompt !== "ยังไม่มีโจทย์ปัจจุบัน") {
+    return "hint";
+  }
+  if (actionType === "lesson_hint") {
+    return "hint";
+  }
+  if (["lesson_explain", "lesson_wrong_answer"].includes(actionType)) {
+    return "explain";
+  }
+  if (actionType === "lesson_summary") {
+    return "summary";
+  }
+  if (["lesson_practice", "english_practice"].includes(actionType)) {
+    return "practice";
+  }
+  if (String(actionType).startsWith("game_")) {
+    return "game-help";
+  }
+  if (String(actionType).startsWith("assessment_")) {
+    return "assessment";
+  }
+  if (String(actionType).startsWith("story_")) {
+    return "story";
+  }
+  return "free-question";
+}
+
+function buildLinguaAdvisorScopePayload(studentMessage, actionType = "free_text") {
   const context = getLinguaAdvisorContext();
-  const scope = linguaAdvisorState.scope ? { ...linguaAdvisorState.scope } : null;
-  return {
-    advisorCharacter: {
-      id: "master_verion",
-      name: "Master Verion",
-      thaiName: "มาสเตอร์เวอริออน",
-      role: "ที่ปรึกษาแกรมมาเรีย"
-    },
-    scope,
-    context,
-    studentMessage: String(studentMessage || "").trim(),
-    rules: {
-      answerOnlyWithinSelectedScope: true,
-      doNotAffectGameState: true,
-      doNotAwardRewards: true,
-      doNotChangeHp: true,
-      doNotChangeAp: true,
-      doNotUnlockLessons: true,
-      doNotModifyProgress: true,
-      doNotWriteFirestore: true,
-      doNotCallExternalApi: true
-    }
+  const mode = getLinguaAdvisorRequestMode(actionType, context);
+  const hasAnswered = Boolean(context.answerAlreadySubmitted);
+  const safeContext = {
+    scene: context.scene,
+    stageId: context.stageId,
+    stageTitle: context.stageTitle,
+    enemyName: context.enemyName,
+    questionPrompt: context.questionPrompt,
+    questionType: context.questionType,
+    selectedAnswer: hasAnswered ? context.selectedAnswer : "",
+    hasAnswered,
+    isAnswerCorrect: hasAnswered ? context.isAnswerCorrect : null,
+    playerGrade: context.playerGrade
   };
+  if (hasAnswered && context.correctAnswerAvailable) {
+    safeContext.correctAnswer = context.correctAnswer;
+  }
+  return {
+    mode,
+    studentMessage: String(studentMessage || "").trim().slice(0, LINGUA_ADVISOR_CONFIG.maxMessageLength),
+    scope: linguaAdvisorState.scope
+      ? {
+          type: linguaAdvisorState.scope.type,
+          lessonId: linguaAdvisorState.scope.lessonId || "",
+          lessonTitle: linguaAdvisorState.scope.lessonTitle || linguaAdvisorState.scope.title || "",
+          topic: linguaAdvisorState.scope.topic || linguaAdvisorState.selectedLesson?.topic || ""
+        }
+      : null,
+    context: safeContext
+  };
+}
+
+function validateLinguaAdvisorPayload(payload) {
+  if (!payload || !LINGUA_ADVISOR_REQUEST_MODES.has(payload.mode)) {
+    throw new Error("โหมดคำถามนี้ยังไม่รองรับ");
+  }
+  if (!payload.scope?.type || !LINGUA_ADVISOR_SCOPES[payload.scope.type]) {
+    throw new Error("กรุณาเลือกหัวข้อก่อนส่งคำถาม");
+  }
+  if (!payload.studentMessage || payload.studentMessage.length > LINGUA_ADVISOR_CONFIG.maxMessageLength) {
+    throw new Error("คำถามยาวเกินกว่าที่ระบบรองรับ");
+  }
+  return true;
+}
+
+async function requestLinguaAdvisorAnswer(payload, actionType = "free_text") {
+  validateLinguaAdvisorPayload(payload);
+  const mockAnswer = () => getMockLinguaAdvisorResponse(actionType, {
+    ...payload.context,
+    lessonTitle: payload.scope?.lessonTitle || "",
+    answerAlreadySubmitted: Boolean(payload.context?.hasAnswered)
+  }, payload.studentMessage);
+  if (LINGUA_ADVISOR_CONFIG.mode === "mock") {
+    return {
+      answer: mockAnswer(),
+      status: "local"
+    };
+  }
+  if (!LINGUA_ADVISOR_CONFIG.apiUrl) {
+    if (LINGUA_ADVISOR_CONFIG.mode === "auto") {
+      return {
+        answer: mockAnswer(),
+        status: "local"
+      };
+    }
+    throw new Error("Lingua Advisor backend is not configured");
+  }
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), LINGUA_ADVISOR_CONFIG.timeoutMs);
+  linguaAdvisorState.requestAbortController = controller;
+  try {
+    const response = await fetch(LINGUA_ADVISOR_CONFIG.apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+      credentials: "omit"
+    });
+    const responseData = await response.json().catch(() => null);
+    if (!response.ok || !responseData?.ok || !String(responseData.answer || "").trim()) {
+      throw new Error(responseData?.error || `Advisor request failed (${response.status})`);
+    }
+    return {
+      answer: String(responseData.answer).trim(),
+      status: "backend"
+    };
+  } catch (error) {
+    if (error?.name === "AbortError" && !linguaAdvisorState.isOpen) {
+      throw error;
+    }
+    console.warn("[Lingua Advisor] backend unavailable; using safe fallback", {
+      message: error instanceof Error ? error.message : "Unknown advisor error"
+    });
+    if (LINGUA_ADVISOR_CONFIG.mode === "auto") {
+      return {
+        answer: mockAnswer(),
+        status: "fallback"
+      };
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+    if (linguaAdvisorState.requestAbortController === controller) {
+      linguaAdvisorState.requestAbortController = null;
+    }
+  }
 }
 
 function getMockLinguaAdvisorResponse(actionType, context = {}, studentMessage = "") {
@@ -31229,21 +31411,45 @@ function getMockLinguaAdvisorResponse(actionType, context = {}, studentMessage =
     : `ตอนนี้มาสเตอร์เวอริออนยังเป็นโหมดจำลอง และจะตอบเฉพาะขอบเขต: ${scopeTitle}`;
 }
 
-function handleLinguaAdvisorQuickAction(actionType, actionLabel = "") {
+async function submitLinguaAdvisorRequest(actionType, studentMessage, displayMessage = studentMessage) {
   if (!linguaAdvisorState.scope || linguaAdvisorState.isLoading) {
+    return;
+  }
+  const cleanMessage = String(studentMessage || "").trim().slice(0, LINGUA_ADVISOR_CONFIG.maxMessageLength);
+  if (!cleanMessage) {
     return;
   }
   linguaAdvisorState.isLoading = true;
   linguaAdvisorState.lastQuickAction = actionType;
   linguaAdvisorState.context = getLinguaAdvisorContext();
-  addLinguaAdvisorMessage("user", actionLabel || "ขอคำแนะนำ");
-  addLinguaAdvisorMessage("assistant", getMockLinguaAdvisorResponse(
-    actionType,
-    linguaAdvisorState.context,
-    actionLabel
-  ));
-  linguaAdvisorState.isLoading = false;
+  const payload = buildLinguaAdvisorScopePayload(cleanMessage, actionType);
+  const requestId = ++linguaAdvisorState.requestId;
+  addLinguaAdvisorMessage("user", displayMessage || cleanMessage);
   renderLinguaAdvisorChat();
+  try {
+    const result = await requestLinguaAdvisorAnswer(payload, actionType);
+    if (!linguaAdvisorState.isOpen || requestId !== linguaAdvisorState.requestId) {
+      return;
+    }
+    linguaAdvisorState.connectionStatus = result.status;
+    addLinguaAdvisorMessage("assistant", result.answer);
+  } catch (error) {
+    if (!linguaAdvisorState.isOpen || requestId !== linguaAdvisorState.requestId || error?.name === "AbortError") {
+      return;
+    }
+    linguaAdvisorState.connectionStatus = "error";
+    addLinguaAdvisorMessage("assistant", "ตอนนี้ที่ปรึกษายังตอบไม่ได้ กรุณาลองใหม่อีกครั้ง");
+  } finally {
+    if (linguaAdvisorState.isOpen && requestId === linguaAdvisorState.requestId) {
+      linguaAdvisorState.isLoading = false;
+      renderLinguaAdvisorChat();
+      document.getElementById("linguaAdvisorInput")?.focus();
+    }
+  }
+}
+
+function handleLinguaAdvisorQuickAction(actionType, actionLabel = "") {
+  return submitLinguaAdvisorRequest(actionType, actionLabel || "ขอคำแนะนำ", actionLabel || "ขอคำแนะนำ");
 }
 
 function handleLinguaAdvisorSendMessage() {
@@ -31251,24 +31457,37 @@ function handleLinguaAdvisorSendMessage() {
     return;
   }
   const input = document.getElementById("linguaAdvisorInput");
-  const studentMessage = String(input?.value || "").trim();
+  const studentMessage = String(input?.value || "").trim().slice(0, LINGUA_ADVISOR_CONFIG.maxMessageLength);
   if (!studentMessage) {
     input?.focus();
     return;
   }
 
-  linguaAdvisorState.isLoading = true;
-  linguaAdvisorState.context = getLinguaAdvisorContext();
-  buildLinguaAdvisorScopePayload(studentMessage);
-  addLinguaAdvisorMessage("user", studentMessage);
-  addLinguaAdvisorMessage("assistant", getMockLinguaAdvisorResponse(
-    "free_text",
-    linguaAdvisorState.context,
-    studentMessage
-  ));
-  linguaAdvisorState.isLoading = false;
-  renderLinguaAdvisorChat();
-  document.getElementById("linguaAdvisorInput")?.focus();
+  input.value = "";
+  return submitLinguaAdvisorRequest("free_text", studentMessage, studentMessage);
+}
+
+function trapLinguaAdvisorFocus(event) {
+  if (event.key !== "Tab" || !linguaAdvisorState.isOpen || !els.linguaAdvisorPanel) {
+    return;
+  }
+  const focusable = [...els.linguaAdvisorPanel.querySelectorAll(
+    'button:not(:disabled), input:not(:disabled), [href], [tabindex]:not([tabindex="-1"])'
+  )].filter(element => !element.classList.contains("hidden"));
+  if (!focusable.length) {
+    event.preventDefault();
+    els.linguaAdvisorPanel.focus();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 
 function calculateMainMenuActProgress(progress) {
@@ -46452,7 +46671,9 @@ document.addEventListener("keydown", event => {
   if (event.key === "Escape" && linguaAdvisorState.isOpen) {
     event.preventDefault();
     closeLinguaAdvisor();
+    return;
   }
+  trapLinguaAdvisorFocus(event);
 });
 els.lessonDictionaryButton.addEventListener("click", () => {
   openGameModal({
