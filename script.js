@@ -35547,12 +35547,28 @@ function exitVsBossPracticeToSelection() {
   showScene("vsBosses");
 }
 
-function normalizeVerbMemoryAnswer(value) {
-  return String(value || "")
+function normalizeVerbMemoryChoiceText(value) {
+  return String(value ?? "")
     .trim()
     .toLowerCase()
     .replace(/\s*\/\s*/g, "/")
     .replace(/\s+/g, " ");
+}
+
+function normalizeVerbMemoryAnswer(value) {
+  return normalizeVerbMemoryChoiceText(value);
+}
+
+function splitVerbMemoryVariants(value) {
+  const combined = normalizeVerbMemoryChoiceText(value);
+  if (!combined) {
+    return [];
+  }
+  const variants = combined
+    .split("/")
+    .map(normalizeVerbMemoryChoiceText)
+    .filter(Boolean);
+  return [...new Set([combined, ...variants])];
 }
 
 function isSafeVerbMemoryOption(value) {
@@ -35585,6 +35601,53 @@ function getVerbMemoryAcceptedAnswers(verb, slot) {
   });
 }
 
+function getVisibleVerbFormsForChallenge(verb, missingSlot) {
+  const visibleForms = new Set();
+  VERB_MEMORY_SLOTS
+    .filter(slot => slot !== missingSlot)
+    .forEach(slot => {
+      splitVerbMemoryVariants(verb?.[slot]).forEach(variant => visibleForms.add(variant));
+    });
+  return [...visibleForms];
+}
+
+function buildVerbMemoryBannedChoiceSet(verb, missingSlot, correctAnswer, acceptedAnswers = []) {
+  const bannedChoices = new Set(["", "undefined", "null", "todo", "wrong option", "distractor", "placeholder", "ตัวเลือกหลอก"]);
+  [
+    ...getVisibleVerbFormsForChallenge(verb, missingSlot),
+    correctAnswer,
+    ...acceptedAnswers
+  ].forEach(value => {
+    splitVerbMemoryVariants(value).forEach(variant => bannedChoices.add(variant));
+  });
+  return bannedChoices;
+}
+
+function isInvalidVerbMemoryChoice(choice, { bannedChoices, usedChoices, usedVariants } = {}) {
+  const normalized = normalizeVerbMemoryChoiceText(choice);
+  const variants = splitVerbMemoryVariants(choice);
+  if (!isSafeVerbMemoryOption(choice) || !normalized || !variants.length) {
+    return true;
+  }
+  if (usedChoices?.has(normalized)) {
+    return true;
+  }
+  return variants.some(variant => bannedChoices?.has(variant) || usedVariants?.has(variant));
+}
+
+function getValidVerbMemoryMissingSlots(verb) {
+  return VERB_MEMORY_SLOTS.filter(missingSlot => {
+    const correctVariants = new Set(
+      getVerbMemoryAcceptedAnswers(verb, missingSlot).flatMap(splitVerbMemoryVariants)
+    );
+    if (!correctVariants.size) {
+      return false;
+    }
+    const visibleVariants = getVisibleVerbFormsForChallenge(verb, missingSlot);
+    return !visibleVariants.some(variant => correctVariants.has(variant));
+  });
+}
+
 function buildVerbMemoryRegularizedForms(v1) {
   const base = String(v1 || "").trim();
   if (!base) {
@@ -35602,44 +35665,66 @@ function buildVerbMemoryRegularizedForms(v1) {
   if (/[^aeiou][aeiou][^aeiouwxy]$/i.test(base)) {
     forms.push(`${base}${base.slice(-1)}ed`);
   }
-  return forms;
+  return [...new Set(forms)];
+}
+
+function buildVerbMemorySpellingConfusions(verb) {
+  const roots = [verb?.v1, verb?.v2, verb?.v3]
+    .flatMap(splitVerbMemoryVariants)
+    .filter(root => root && !root.includes("/"));
+  const forms = [];
+  roots.forEach(root => {
+    forms.push(`${root}ed`, `${root}d`, `${root}en`);
+  });
+  splitVerbMemoryVariants(verb?.v2)
+    .filter(root => !root.includes("/"))
+    .forEach(root => forms.push(`${root}n`));
+  return [...new Set(forms)];
 }
 
 function generateVerbMemoryChoices(verb, missingSlot) {
   const correctAnswer = String(verb?.[missingSlot] || "").trim();
   const acceptedAnswers = getVerbMemoryAcceptedAnswers(verb, missingSlot);
-  const acceptedNormalized = new Set(acceptedAnswers.map(normalizeVerbMemoryAnswer));
+  const bannedChoices = buildVerbMemoryBannedChoiceSet(verb, missingSlot, correctAnswer, acceptedAnswers);
   const distractors = [];
-  const usedNormalized = new Set([normalizeVerbMemoryAnswer(correctAnswer)]);
+  const usedChoices = new Set();
+  const usedVariants = new Set();
   const addDistractor = value => {
     const cleanValue = String(value || "").trim();
-    const normalized = normalizeVerbMemoryAnswer(cleanValue);
-    if (
-      distractors.length >= 2 ||
-      !isSafeVerbMemoryOption(cleanValue) ||
-      !normalized ||
-      usedNormalized.has(normalized) ||
-      acceptedNormalized.has(normalized)
-    ) {
-      return;
+    if (distractors.length >= 2 || isInvalidVerbMemoryChoice(cleanValue, { bannedChoices, usedChoices, usedVariants })) {
+      return false;
     }
-    usedNormalized.add(normalized);
+    usedChoices.add(normalizeVerbMemoryChoiceText(cleanValue));
+    splitVerbMemoryVariants(cleanValue).forEach(variant => usedVariants.add(variant));
     distractors.push(cleanValue);
+    return true;
+  };
+  const addFirstValidDistractor = candidates => {
+    for (const candidate of candidates) {
+      if (addDistractor(candidate)) {
+        return true;
+      }
+    }
+    return false;
   };
 
-  VERB_MEMORY_SLOTS
-    .filter(slot => slot !== missingSlot)
-    .forEach(slot => addDistractor(verb?.[slot]));
+  const regularizedCandidates = buildVerbMemoryRegularizedForms(verb?.v1);
+  const otherVerbCandidates = shuffleVerbMemoryValues(IRREGULAR_VERB_MEMORY_BANK)
+    .filter(otherVerb => otherVerb?.id !== verb?.id)
+    .map(otherVerb => otherVerb?.[missingSlot]);
+  const spellingCandidates = buildVerbMemorySpellingConfusions(verb);
+  const fallbackCandidates = [
+    `${String(verb?.v1 || "").trim()}ed`,
+    `${String(verb?.v1 || "").trim()}d`,
+    `${String(verb?.v1 || "").trim()}en`,
+    `${String(verb?.v1 || "").trim()}ing`
+  ];
 
-  buildVerbMemoryRegularizedForms(verb?.v1).forEach(addDistractor);
+  addFirstValidDistractor(regularizedCandidates);
+  addFirstValidDistractor(otherVerbCandidates);
 
-  shuffleVerbMemoryValues(IRREGULAR_VERB_MEMORY_BANK)
-    .forEach(otherVerb => addDistractor(otherVerb?.[missingSlot]));
-
-  if (distractors.length < 2) {
-    shuffleVerbMemoryValues(IRREGULAR_VERB_MEMORY_BANK)
-      .forEach(otherVerb => VERB_MEMORY_SLOTS.forEach(slot => addDistractor(otherVerb?.[slot])));
-  }
+  [regularizedCandidates, otherVerbCandidates, spellingCandidates, fallbackCandidates]
+    .forEach(candidates => candidates.forEach(addDistractor));
 
   if (!isSafeVerbMemoryOption(correctAnswer) || distractors.length !== 2) {
     return [];
@@ -35660,34 +35745,45 @@ function generateVerbMemoryChallenge() {
   if (!IRREGULAR_VERB_MEMORY_BANK.length) {
     return null;
   }
-  if (verbMemoryPracticeState.usedVerbIds.size >= IRREGULAR_VERB_MEMORY_BANK.length) {
-    verbMemoryPracticeState.usedVerbIds.clear();
-  }
-  let availableVerbs = IRREGULAR_VERB_MEMORY_BANK.filter(verb => !verbMemoryPracticeState.usedVerbIds.has(verb.id));
-  if (!availableVerbs.length) {
-    verbMemoryPracticeState.usedVerbIds.clear();
-    availableVerbs = [...IRREGULAR_VERB_MEMORY_BANK];
-  }
-  const verb = availableVerbs[Math.floor(Math.random() * availableVerbs.length)];
-  const missingSlot = VERB_MEMORY_SLOTS[Math.floor(Math.random() * VERB_MEMORY_SLOTS.length)];
-  const correctAnswer = String(verb?.[missingSlot] || "").trim();
-  const choices = generateVerbMemoryChoices(verb, missingSlot);
-  if (!verb || choices.length !== 3) {
+  const usableVerbs = IRREGULAR_VERB_MEMORY_BANK
+    .map(verb => ({ verb, validMissingSlots: getValidVerbMemoryMissingSlots(verb) }))
+    .filter(entry => entry.validMissingSlots.length);
+  if (!usableVerbs.length) {
     return null;
   }
-  verbMemoryPracticeState.usedVerbIds.add(verb.id);
-  return {
-    verbId: verb.id,
-    no: verb.no,
-    v1: verb.v1,
-    v2: verb.v2,
-    v3: verb.v3,
-    meaningTh: verb.meaningTh,
-    missingSlot,
-    correctAnswer,
-    acceptedAnswers: getVerbMemoryAcceptedAnswers(verb, missingSlot),
-    choices
-  };
+  const usedUsableVerbCount = usableVerbs.filter(entry => verbMemoryPracticeState.usedVerbIds.has(entry.verb.id)).length;
+  if (usedUsableVerbCount >= usableVerbs.length) {
+    verbMemoryPracticeState.usedVerbIds.clear();
+  }
+  let availableVerbs = usableVerbs.filter(entry => !verbMemoryPracticeState.usedVerbIds.has(entry.verb.id));
+  if (!availableVerbs.length) {
+    verbMemoryPracticeState.usedVerbIds.clear();
+    availableVerbs = [...usableVerbs];
+  }
+  for (const entry of shuffleVerbMemoryValues(availableVerbs)) {
+    for (const missingSlot of shuffleVerbMemoryValues(entry.validMissingSlots)) {
+      const verb = entry.verb;
+      const correctAnswer = String(verb?.[missingSlot] || "").trim();
+      const choices = generateVerbMemoryChoices(verb, missingSlot);
+      if (choices.length !== 3) {
+        continue;
+      }
+      verbMemoryPracticeState.usedVerbIds.add(verb.id);
+      return {
+        verbId: verb.id,
+        no: verb.no,
+        v1: verb.v1,
+        v2: verb.v2,
+        v3: verb.v3,
+        meaningTh: verb.meaningTh,
+        missingSlot,
+        correctAnswer,
+        acceptedAnswers: getVerbMemoryAcceptedAnswers(verb, missingSlot),
+        choices
+      };
+    }
+  }
+  return null;
 }
 
 function validateIrregularVerbMemoryBank() {
@@ -35733,25 +35829,10 @@ function validateIrregularVerbMemoryBank() {
           failures.push(`${label}: invalid accepted.${slot}`);
         }
       });
-      const choices = generateVerbMemoryChoices(verb, slot);
       const challenge = {
         correctAnswer: verb?.[slot],
         acceptedAnswers: getVerbMemoryAcceptedAnswers(verb, slot)
       };
-      const normalizedChoices = choices.map(normalizeVerbMemoryAnswer);
-      if (choices.length !== 3) {
-        failures.push(`${label}/${slot}: did not generate 3 choices`);
-      }
-      if (new Set(normalizedChoices).size !== choices.length) {
-        failures.push(`${label}/${slot}: duplicate choices`);
-      }
-      if (choices.some(choice => !isSafeVerbMemoryOption(choice))) {
-        failures.push(`${label}/${slot}: unsafe choice`);
-      }
-      const correctChoiceCount = choices.filter(choice => checkVerbMemoryAnswer(choice, challenge)).length;
-      if (correctChoiceCount !== 1) {
-        failures.push(`${label}/${slot}: correct choice count ${correctChoiceCount}`);
-      }
       if (!checkVerbMemoryAnswer(verb?.[slot], challenge)) {
         failures.push(`${label}/${slot}: checker rejected correct answer`);
       }
@@ -35767,6 +35848,109 @@ function validateIrregularVerbMemoryBank() {
     count: bank.length,
     failures
   };
+}
+
+let verbMemoryChoiceValidationCache = null;
+
+function validateVerbMemoryChoiceGeneration(options = {}) {
+  const runsPerCase = clamp(Math.floor(Number(options.runsPerCase) || 12), 1, 100);
+  if (verbMemoryChoiceValidationCache && !options.force && verbMemoryChoiceValidationCache.runsPerCase === runsPerCase) {
+    return verbMemoryChoiceValidationCache;
+  }
+  const failures = [];
+  const failureKeys = new Set();
+  const skippedDetails = [];
+  let checkedCases = 0;
+  let generatedChoiceSets = 0;
+  const addFailure = (verb, slot, message) => {
+    const failure = `${verb?.id || "unknown"}/${slot}: ${message}`;
+    if (!failureKeys.has(failure)) {
+      failureKeys.add(failure);
+      failures.push(failure);
+    }
+  };
+
+  IRREGULAR_VERB_MEMORY_BANK.forEach(verb => {
+    const validSlots = new Set(getValidVerbMemoryMissingSlots(verb));
+    VERB_MEMORY_SLOTS.forEach(slot => {
+      if (!validSlots.has(slot)) {
+        skippedDetails.push({
+          verbId: verb.id,
+          missingSlot: slot,
+          reason: "revealed-by-identical-visible-form"
+        });
+        return;
+      }
+      checkedCases += 1;
+      const challenge = {
+        correctAnswer: verb?.[slot],
+        acceptedAnswers: getVerbMemoryAcceptedAnswers(verb, slot)
+      };
+      const visibleForms = new Set(getVisibleVerbFormsForChallenge(verb, slot));
+      for (let run = 0; run < runsPerCase; run += 1) {
+        const choices = generateVerbMemoryChoices(verb, slot);
+        generatedChoiceSets += 1;
+        if (choices.length !== 3) {
+          addFailure(verb, slot, `generated ${choices.length} choices`);
+          continue;
+        }
+        const normalizedChoices = choices.map(normalizeVerbMemoryChoiceText);
+        if (new Set(normalizedChoices).size !== choices.length) {
+          addFailure(verb, slot, "duplicate normalized choices");
+        }
+        if (choices.some(choice => !isSafeVerbMemoryOption(choice))) {
+          addFailure(verb, slot, "empty or placeholder choice");
+        }
+        const correctChoiceCount = choices.filter(choice => checkVerbMemoryAnswer(choice, challenge)).length;
+        if (correctChoiceCount !== 1) {
+          addFailure(verb, slot, `correct choice count ${correctChoiceCount}`);
+        }
+        choices.forEach(choice => {
+          if (checkVerbMemoryAnswer(choice, challenge)) {
+            return;
+          }
+          if (splitVerbMemoryVariants(choice).some(variant => visibleForms.has(variant))) {
+            addFailure(verb, slot, `visible form used as distractor: ${choice}`);
+          }
+        });
+        if (!checkVerbMemoryAnswer(verb?.[slot], challenge)) {
+          addFailure(verb, slot, "checker rejected correct answer");
+        }
+        challenge.acceptedAnswers.forEach(answer => {
+          if (!checkVerbMemoryAnswer(answer, challenge)) {
+            addFailure(verb, slot, `checker rejected accepted answer: ${answer}`);
+          }
+        });
+      }
+    });
+  });
+
+  const report = {
+    ok: failures.length === 0,
+    totalEntries: IRREGULAR_VERB_MEMORY_BANK.length,
+    checkedCases,
+    skippedCases: skippedDetails.length,
+    runsPerCase,
+    generatedChoiceSets,
+    failures,
+    warnings: skippedDetails.length
+      ? [`${skippedDetails.length} challenge combinations skipped because a visible form reveals the answer`]
+      : [],
+    skippedDetails
+  };
+  verbMemoryChoiceValidationCache = report;
+  const hostname = String(globalThis.location?.hostname || "");
+  if (options.logSummary !== false && (hostname === "localhost" || hostname === "127.0.0.1" || !hostname)) {
+    console.info("[Verb Memory Practice] choice generation validation:", {
+      ok: report.ok,
+      totalEntries: report.totalEntries,
+      checkedCases: report.checkedCases,
+      skippedCases: report.skippedCases,
+      generatedChoiceSets: report.generatedChoiceSets,
+      failures: report.failures
+    });
+  }
+  return report;
 }
 
 function getVerbMemoryPracticeOwnerId() {
@@ -36173,11 +36357,28 @@ async function openVerbMemoryPracticeScene() {
     verbMemoryPracticeState.bestRecordOwnerId = "";
   }
   resetVerbMemoryPracticeState({ preserveBest: true });
-  verbMemoryPracticeState.validation = validateIrregularVerbMemoryBank();
+  const bankValidation = validateIrregularVerbMemoryBank();
+  const choiceValidation = bankValidation.ok
+    ? validateVerbMemoryChoiceGeneration()
+    : {
+      ok: false,
+      totalEntries: bankValidation.count,
+      checkedCases: 0,
+      skippedCases: 0,
+      failures: ["Choice validation skipped because the verb bank is invalid"],
+      warnings: []
+    };
+  verbMemoryPracticeState.validation = {
+    ok: bankValidation.ok && choiceValidation.ok,
+    count: bankValidation.count,
+    bank: bankValidation,
+    choices: choiceValidation,
+    failures: [...bankValidation.failures, ...choiceValidation.failures]
+  };
   applyVerbMemoryBossImage();
   renderVerbMemoryPracticeScene();
   setVerbMemoryStatus(verbMemoryPracticeState.validation.ok
-    ? `คลังคำกริยาพร้อม ${verbMemoryPracticeState.validation.count} คำ กำลังเริ่มต่อสู้กับ The Memory Breaker`
+    ? `คลังคำกริยาพร้อม ${verbMemoryPracticeState.validation.count} คำ ตรวจแล้ว ${choiceValidation.checkedCases} รูปแบบ ข้าม ${choiceValidation.skippedCases} รูปแบบที่คำตอบถูกเปิดเผย กำลังเริ่มต่อสู้กับ The Memory Breaker`
     : "ตรวจพบปัญหาในคลังคำกริยา จึงยังไม่เปิดการฝึก");
   els.verbMemoryPracticeStartButton.disabled = !verbMemoryPracticeState.validation.ok;
   showScene("verbMemoryPractice");
@@ -47585,6 +47786,7 @@ window.debugButtonAudit = function debugButtonAudit() {
 
 window.validateBattleStageQuestionPools = validateBattleStageQuestionPools;
 window.validateIrregularVerbMemoryBank = validateIrregularVerbMemoryBank;
+window.validateVerbMemoryChoiceGeneration = validateVerbMemoryChoiceGeneration;
 validateBattleStageQuestionPools();
 
 function bindGameAudioUnlockEvents() {
