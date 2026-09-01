@@ -143,6 +143,7 @@
             <button id="continueJourneyButton" class="primary-button main-menu-button" type="button">เดินทางต่อ</button>
             <button id="lessonMapButton" class="secondary-button main-menu-button" type="button">แผนที่บทเรียน</button>
             <button id="vsBossesButton" class="secondary-button main-menu-button" type="button">VS Bosses</button>
+            <button id="verbMemoryPracticeButton" class="secondary-button main-menu-button" type="button">ฝึกฝนกริยา 3 ช่อง</button>
             <button id="pvpModeButton" class="secondary-button main-menu-button" type="button">PvP Duel</button>
             <button id="assessmentResultButton" class="secondary-button main-menu-button" type="button">ผลการประเมิน</button>
             <button id="tutorialGuideButton" class="secondary-button main-menu-button" type="button">วิธีเล่น</button>
@@ -169,6 +170,88 @@
         <p class="vs-bosses-intro">เลือกบอสเพื่อฝึกฝนและวัดผลจากคะแนน Grammaria โดยไม่กระทบความคืบหน้าหลัก</p>
         <p id="vsBossesStatus" class="vs-bosses-status" aria-live="polite"></p>
         <div id="vsBossesGrid" class="vs-bosses-grid" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section id="verbMemoryPracticeScene" class="scene verb-memory-practice-scene">
+      <div class="verb-memory-practice-shell">
+        <header class="verb-memory-practice-header">
+          <button id="verbMemoryPracticeBackButton" class="secondary-button" type="button">กลับหน้าหลัก</button>
+          <div>
+            <p class="eyebrow">VERB MEMORY PRACTICE</p>
+            <h2 id="verbMemoryPracticeTitle">ฝึกฝนกริยา 3 ช่อง</h2>
+            <p id="verbMemoryPracticeSubtitle">เอาชนะ The Memory Breaker ด้วยความจำกริยา 3 ช่อง V1 / V2 / V3</p>
+          </div>
+          <strong id="verbMemoryBestScoreText" class="verb-memory-header-best">คะแนนสูงสุด 0</strong>
+        </header>
+
+        <p class="verb-memory-instruction">บอสจะทำให้กริยาหายไป 1 ช่อง เลือกคำที่หายไปให้ถูกต้อง</p>
+
+        <div class="verb-memory-arena" aria-live="polite">
+          <section class="verb-memory-player-panel" aria-label="พลังชีวิตผู้เล่น">
+            <span>ผู้เล่น</span>
+            <div class="verb-memory-hp-row">
+              <strong id="verbMemoryPlayerHpText">HP 100 / 100</strong>
+              <div class="verb-memory-hp-bar"><i id="verbMemoryPlayerHpBar"></i></div>
+            </div>
+          </section>
+
+          <section id="verbMemoryBossFrame" class="verb-memory-boss-frame" aria-label="บอสฝึกความจำ">
+            <img id="verbMemoryBossSprite" class="verb-memory-boss-sprite" src="assets/bosses/memory_breaker_battle_idle_v3.gif" alt="The Memory Breaker" draggable="false">
+            <span id="verbMemoryBossFallback" class="verb-memory-boss-fallback hidden" aria-label="ไม่พบภาพ The Memory Breaker">MB</span>
+            <h3 id="verbMemoryBossName">The Memory Breaker</h3>
+            <p id="verbMemoryBossThaiName" class="verb-memory-boss-thai-name">ผู้ทำลายความทรงจำ</p>
+            <div class="verb-memory-hp-row">
+              <strong id="verbMemoryBossHpText">HP 120 / 120</strong>
+              <div class="verb-memory-hp-bar verb-memory-boss-hp"><i id="verbMemoryBossHpBar"></i></div>
+            </div>
+          </section>
+        </div>
+
+        <section class="verb-memory-board" aria-label="กริยา 3 ช่อง">
+          <article class="verb-memory-slot">
+            <span>V1</span>
+            <strong id="verbMemorySlotV1">พร้อม</strong>
+          </article>
+          <article class="verb-memory-slot">
+            <span>V2</span>
+            <strong id="verbMemorySlotV2">เริ่ม</strong>
+          </article>
+          <article class="verb-memory-slot">
+            <span>V3</span>
+            <strong id="verbMemorySlotV3">ฝึก</strong>
+          </article>
+        </section>
+
+        <div id="verbMemoryChoices" class="verb-memory-choice-grid" aria-label="ตัวเลือกคำตอบ"></div>
+        <p id="verbMemoryStatusText" class="verb-memory-status" aria-live="polite">กดเริ่มฝึกเพื่อเผชิญหน้ากับบอสความจำ</p>
+
+        <div class="verb-memory-score-row" aria-label="คะแนนฝึกจำ">
+          <span id="verbMemoryScoreText">คะแนนฝึกจำ 0</span>
+          <span id="verbMemoryStreakText">คอมโบ 0</span>
+          <span>คะแนนนี้ไม่เพิ่ม Grammaria จริง</span>
+        </div>
+
+        <div class="verb-memory-start-row">
+          <button id="verbMemoryPracticeStartButton" class="primary-button" type="button">เริ่มฝึก</button>
+        </div>
+
+        <section id="verbMemoryResultPanel" class="verb-memory-result-panel hidden" aria-labelledby="verbMemoryResultTitle">
+          <h3 id="verbMemoryResultTitle">ผลการฝึก</h3>
+          <div class="verb-memory-result-grid">
+            <p>คะแนนฝึกจำ <strong id="verbMemoryResultScore">0</strong></p>
+            <p>ตอบถูก <strong id="verbMemoryResultAccuracy">0 / 0 (0%)</strong></p>
+            <p>คอมโบสูงสุด <strong id="verbMemoryResultBestStreak">0</strong></p>
+            <p>คะแนนสูงสุด <strong id="verbMemoryResultBestScore">0</strong></p>
+          </div>
+          <p id="verbMemoryResultRecord" class="verb-memory-result-record"></p>
+          <p class="verb-memory-result-note">คะแนนนี้ใช้เพื่อฝึกจำกริยา 3 ช่องเท่านั้น ไม่เพิ่มเข้า Grammaria จริง</p>
+          <div class="verb-memory-result-actions">
+            <button id="verbMemoryPracticeRestartButton" class="primary-button" type="button">ฝึกอีกครั้ง</button>
+            <button id="verbMemoryResultRetryButton" class="primary-button hidden" type="button">ฝึกอีกครั้ง</button>
+            <button id="verbMemoryResultMainMenuButton" class="secondary-button" type="button">กลับหน้าหลัก</button>
+          </div>
+        </section>
       </div>
     </section>
 
@@ -1004,6 +1087,7 @@
     <p id="developerCredit" class="developer-credit">Lingua: Digital Game-based Learning Platform | พัฒนาโดย นายนครินทร์ พร้อมสุข ครูโรงเรียนแม่สอด</p>
   </main>
 
-  <script type="module" src="script.js?v=lingua-advisor-backend-20260901"></script>
+  <script src="assets/data/irregular_verb_memory_bank.js?v=verb-memory-bank-20260901"></script>
+  <script type="module" src="script.js?v=verb-memory-practice-20260901"></script>
 </body>
 </html>

@@ -32,6 +32,7 @@ const scenes = {
   login: document.getElementById("loginScene"),
   mainMenu: document.getElementById("mainMenuScene"),
   vsBosses: document.getElementById("vsBossesScene"),
+  verbMemoryPractice: document.getElementById("verbMemoryPracticeScene"),
   pvp: document.getElementById("pvpDuelScene"),
   tutorialGuide: document.getElementById("tutorialGuideScene"),
   creatorCredits: document.getElementById("creatorCreditsScene"),
@@ -42,6 +43,11 @@ const scenes = {
   battle: document.getElementById("battleScene"),
   victory: document.getElementById("victoryScene")
 };
+
+// Irregular verb memory bank source: irregular_verb_memory_bank.js
+const IRREGULAR_VERB_MEMORY_BANK = Array.isArray(globalThis.IRREGULAR_VERB_MEMORY_BANK)
+  ? globalThis.IRREGULAR_VERB_MEMORY_BANK
+  : [];
 
 const mainStoryDialogue = [];
 const DIALOGUE_SPEED = 52;
@@ -23378,6 +23384,50 @@ const state = {
   victoryMusicActive: false
 };
 
+const VERB_MEMORY_CONFIG = Object.freeze({
+  playerMaxHp: 100,
+  bossMaxHp: 120,
+  wrongDamage: 10,
+  nextRoundDelayMs: 1050,
+  bossId: "memory_breaker",
+  bossName: "The Memory Breaker",
+  bossThaiName: "ผู้ทำลายความทรงจำ",
+  bossAssetKey: "memory_breaker",
+  bossFallbackAsset: MEMORY_BREAKER_IMAGE_PATH,
+  bossSafeFallbackAsset: MEMORY_BREAKER_FALLBACK_IMAGE_PATH
+});
+
+const VERB_MEMORY_SLOTS = Object.freeze(["v1", "v2", "v3"]);
+const VERB_MEMORY_SCORE_BY_SLOT = Object.freeze({ v1: 10, v2: 12, v3: 15 });
+const VERB_MEMORY_FORBIDDEN_OPTION_PATTERN = /^(?:undefined|null|todo|wrong option|distractor|placeholder|ตัวเลือกหลอก)$/i;
+
+const verbMemoryPracticeState = {
+  active: false,
+  bossId: VERB_MEMORY_CONFIG.bossId,
+  bossName: VERB_MEMORY_CONFIG.bossName,
+  bossThaiName: VERB_MEMORY_CONFIG.bossThaiName,
+  playerHp: VERB_MEMORY_CONFIG.playerMaxHp,
+  playerMaxHp: VERB_MEMORY_CONFIG.playerMaxHp,
+  bossHp: VERB_MEMORY_CONFIG.bossMaxHp,
+  bossMaxHp: VERB_MEMORY_CONFIG.bossMaxHp,
+  score: 0,
+  correct: 0,
+  wrong: 0,
+  total: 0,
+  streak: 0,
+  bestStreak: 0,
+  currentChallenge: null,
+  usedVerbIds: new Set(),
+  startedAt: null,
+  endedAt: null,
+  isResolving: false,
+  nextRoundTimer: null,
+  bestRecord: null,
+  bestRecordOwnerId: "",
+  validation: null,
+  lastResult: null
+};
+
 const LINGUA_ADVISOR_SCOPES = Object.freeze({
   lesson: {
     type: "lesson",
@@ -23645,9 +23695,41 @@ const els = {
   continueJourneyButton: document.getElementById("continueJourneyButton"),
   lessonMapButton: document.getElementById("lessonMapButton"),
   vsBossesButton: document.getElementById("vsBossesButton"),
+  verbMemoryPracticeButton: document.getElementById("verbMemoryPracticeButton"),
   vsBossesBackButton: document.getElementById("vsBossesBackButton"),
   vsBossesGrid: document.getElementById("vsBossesGrid"),
   vsBossesStatus: document.getElementById("vsBossesStatus"),
+  verbMemoryPracticeBackButton: document.getElementById("verbMemoryPracticeBackButton"),
+  verbMemoryPracticeStartButton: document.getElementById("verbMemoryPracticeStartButton"),
+  verbMemoryPracticeRestartButton: document.getElementById("verbMemoryPracticeRestartButton"),
+  verbMemoryPracticeTitle: document.getElementById("verbMemoryPracticeTitle"),
+  verbMemoryPracticeSubtitle: document.getElementById("verbMemoryPracticeSubtitle"),
+  verbMemoryPlayerHpText: document.getElementById("verbMemoryPlayerHpText"),
+  verbMemoryPlayerHpBar: document.getElementById("verbMemoryPlayerHpBar"),
+  verbMemoryBossHpText: document.getElementById("verbMemoryBossHpText"),
+  verbMemoryBossHpBar: document.getElementById("verbMemoryBossHpBar"),
+  verbMemoryBossFrame: document.getElementById("verbMemoryBossFrame"),
+  verbMemoryBossSprite: document.getElementById("verbMemoryBossSprite"),
+  verbMemoryBossFallback: document.getElementById("verbMemoryBossFallback"),
+  verbMemoryBossName: document.getElementById("verbMemoryBossName"),
+  verbMemoryBossThaiName: document.getElementById("verbMemoryBossThaiName"),
+  verbMemoryStatusText: document.getElementById("verbMemoryStatusText"),
+  verbMemorySlotV1: document.getElementById("verbMemorySlotV1"),
+  verbMemorySlotV2: document.getElementById("verbMemorySlotV2"),
+  verbMemorySlotV3: document.getElementById("verbMemorySlotV3"),
+  verbMemoryChoices: document.getElementById("verbMemoryChoices"),
+  verbMemoryScoreText: document.getElementById("verbMemoryScoreText"),
+  verbMemoryStreakText: document.getElementById("verbMemoryStreakText"),
+  verbMemoryBestScoreText: document.getElementById("verbMemoryBestScoreText"),
+  verbMemoryResultPanel: document.getElementById("verbMemoryResultPanel"),
+  verbMemoryResultTitle: document.getElementById("verbMemoryResultTitle"),
+  verbMemoryResultScore: document.getElementById("verbMemoryResultScore"),
+  verbMemoryResultAccuracy: document.getElementById("verbMemoryResultAccuracy"),
+  verbMemoryResultBestStreak: document.getElementById("verbMemoryResultBestStreak"),
+  verbMemoryResultBestScore: document.getElementById("verbMemoryResultBestScore"),
+  verbMemoryResultRecord: document.getElementById("verbMemoryResultRecord"),
+  verbMemoryResultRetryButton: document.getElementById("verbMemoryResultRetryButton"),
+  verbMemoryResultMainMenuButton: document.getElementById("verbMemoryResultMainMenuButton"),
   pvpModeButton: document.getElementById("pvpModeButton"),
   assessmentResultButton: document.getElementById("assessmentResultButton"),
   tutorialGuideButton: document.getElementById("tutorialGuideButton"),
@@ -24018,7 +24100,7 @@ function updateDeveloperCreditVisibility(sceneName) {
   if (!credit) {
     return;
   }
-  credit.classList.toggle("is-hidden", ["story", "battle", "creatorCredits", "pvp"].includes(sceneName));
+  credit.classList.toggle("is-hidden", ["story", "battle", "creatorCredits", "pvp", "verbMemoryPractice"].includes(sceneName));
 }
 
 function showScene(name) {
@@ -33170,6 +33252,7 @@ function renderMainMenu() {
   setButtonAction(els.continueJourneyButton, view.canContinue ? "เดินทางต่อ" : "เริ่มการเดินทาง", continueJourneyFromMainMenu, { lock: true });
   setButtonAction(els.lessonMapButton, "แผนที่บทเรียน", openMainMenuLessonMap, { lock: false });
   setButtonAction(els.vsBossesButton, "VS Bosses", openVsBossesScene, { lock: false });
+  setButtonAction(els.verbMemoryPracticeButton, "ฝึกฝนกริยา 3 ช่อง", openVerbMemoryPracticeScene, { lock: false });
   setButtonAction(els.pvpModeButton, "PvP Duel", enterPvpMode, { lock: false });
   setButtonAction(els.assessmentResultButton, "ผลการประเมิน", openMainMenuAssessmentResult, { lock: false });
   setButtonAction(els.tutorialGuideButton, "วิธีเล่น", openTutorialGuide, { lock: false });
@@ -35426,6 +35509,656 @@ function exitVsBossPracticeToSelection() {
   state.vsBossPractice.evaluation = null;
   renderVsBossesGrid();
   showScene("vsBosses");
+}
+
+function normalizeVerbMemoryAnswer(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s*\/\s*/g, "/")
+    .replace(/\s+/g, " ");
+}
+
+function isSafeVerbMemoryOption(value) {
+  const cleanValue = String(value || "").trim();
+  return Boolean(cleanValue) && !VERB_MEMORY_FORBIDDEN_OPTION_PATTERN.test(cleanValue);
+}
+
+function shuffleVerbMemoryValues(values) {
+  const shuffled = [...values];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
+}
+
+function getVerbMemoryAcceptedAnswers(verb, slot) {
+  const answers = Array.isArray(verb?.accepted?.[slot]) ? verb.accepted[slot] : [];
+  const combined = [verb?.[slot], ...answers]
+    .map(value => String(value || "").trim())
+    .filter(Boolean);
+  const seen = new Set();
+  return combined.filter(answer => {
+    const normalized = normalizeVerbMemoryAnswer(answer);
+    if (!normalized || seen.has(normalized)) {
+      return false;
+    }
+    seen.add(normalized);
+    return true;
+  });
+}
+
+function buildVerbMemoryRegularizedForms(v1) {
+  const base = String(v1 || "").trim();
+  if (!base) {
+    return [];
+  }
+  const forms = [];
+  if (/[^aeiou]y$/i.test(base)) {
+    forms.push(`${base.slice(0, -1)}ied`);
+  }
+  if (/e$/i.test(base)) {
+    forms.push(`${base}d`);
+  } else {
+    forms.push(`${base}ed`, `${base}d`);
+  }
+  if (/[^aeiou][aeiou][^aeiouwxy]$/i.test(base)) {
+    forms.push(`${base}${base.slice(-1)}ed`);
+  }
+  return forms;
+}
+
+function generateVerbMemoryChoices(verb, missingSlot) {
+  const correctAnswer = String(verb?.[missingSlot] || "").trim();
+  const acceptedAnswers = getVerbMemoryAcceptedAnswers(verb, missingSlot);
+  const acceptedNormalized = new Set(acceptedAnswers.map(normalizeVerbMemoryAnswer));
+  const distractors = [];
+  const usedNormalized = new Set([normalizeVerbMemoryAnswer(correctAnswer)]);
+  const addDistractor = value => {
+    const cleanValue = String(value || "").trim();
+    const normalized = normalizeVerbMemoryAnswer(cleanValue);
+    if (
+      distractors.length >= 2 ||
+      !isSafeVerbMemoryOption(cleanValue) ||
+      !normalized ||
+      usedNormalized.has(normalized) ||
+      acceptedNormalized.has(normalized)
+    ) {
+      return;
+    }
+    usedNormalized.add(normalized);
+    distractors.push(cleanValue);
+  };
+
+  VERB_MEMORY_SLOTS
+    .filter(slot => slot !== missingSlot)
+    .forEach(slot => addDistractor(verb?.[slot]));
+
+  buildVerbMemoryRegularizedForms(verb?.v1).forEach(addDistractor);
+
+  shuffleVerbMemoryValues(IRREGULAR_VERB_MEMORY_BANK)
+    .forEach(otherVerb => addDistractor(otherVerb?.[missingSlot]));
+
+  if (distractors.length < 2) {
+    shuffleVerbMemoryValues(IRREGULAR_VERB_MEMORY_BANK)
+      .forEach(otherVerb => VERB_MEMORY_SLOTS.forEach(slot => addDistractor(otherVerb?.[slot])));
+  }
+
+  if (!isSafeVerbMemoryOption(correctAnswer) || distractors.length !== 2) {
+    return [];
+  }
+  return shuffleVerbMemoryValues([correctAnswer, ...distractors]);
+}
+
+function checkVerbMemoryAnswer(selectedAnswer, challenge) {
+  const selected = normalizeVerbMemoryAnswer(selectedAnswer);
+  if (!selected || !challenge) {
+    return false;
+  }
+  const acceptedAnswers = [challenge.correctAnswer, ...(challenge.acceptedAnswers || [])];
+  return acceptedAnswers.some(answer => normalizeVerbMemoryAnswer(answer) === selected);
+}
+
+function generateVerbMemoryChallenge() {
+  if (!IRREGULAR_VERB_MEMORY_BANK.length) {
+    return null;
+  }
+  if (verbMemoryPracticeState.usedVerbIds.size >= IRREGULAR_VERB_MEMORY_BANK.length) {
+    verbMemoryPracticeState.usedVerbIds.clear();
+  }
+  let availableVerbs = IRREGULAR_VERB_MEMORY_BANK.filter(verb => !verbMemoryPracticeState.usedVerbIds.has(verb.id));
+  if (!availableVerbs.length) {
+    verbMemoryPracticeState.usedVerbIds.clear();
+    availableVerbs = [...IRREGULAR_VERB_MEMORY_BANK];
+  }
+  const verb = availableVerbs[Math.floor(Math.random() * availableVerbs.length)];
+  const missingSlot = VERB_MEMORY_SLOTS[Math.floor(Math.random() * VERB_MEMORY_SLOTS.length)];
+  const correctAnswer = String(verb?.[missingSlot] || "").trim();
+  const choices = generateVerbMemoryChoices(verb, missingSlot);
+  if (!verb || choices.length !== 3) {
+    return null;
+  }
+  verbMemoryPracticeState.usedVerbIds.add(verb.id);
+  return {
+    verbId: verb.id,
+    no: verb.no,
+    v1: verb.v1,
+    v2: verb.v2,
+    v3: verb.v3,
+    meaningTh: verb.meaningTh,
+    missingSlot,
+    correctAnswer,
+    acceptedAnswers: getVerbMemoryAcceptedAnswers(verb, missingSlot),
+    choices
+  };
+}
+
+function validateIrregularVerbMemoryBank() {
+  const failures = [];
+  const bank = IRREGULAR_VERB_MEMORY_BANK;
+  if (!Array.isArray(bank)) {
+    return { ok: false, count: 0, failures: ["IRREGULAR_VERB_MEMORY_BANK is not an array"] };
+  }
+  const ids = new Set();
+  const numbers = new Set();
+  const invalidValuePattern = /undefined|null|todo|placeholder|debug|wrong option|distractor|ตัวเลือกหลอก/i;
+  bank.forEach((verb, index) => {
+    const label = verb?.id || `item-${index + 1}`;
+    ["id", "v1", "v2", "v3", "meaningTh"].forEach(field => {
+      const value = String(verb?.[field] || "").trim();
+      if (!value) {
+        failures.push(`${label}: missing ${field}`);
+      } else if (invalidValuePattern.test(value)) {
+        failures.push(`${label}: invalid ${field}`);
+      }
+    });
+    if (!Number.isFinite(Number(verb?.no))) {
+      failures.push(`${label}: invalid no`);
+    }
+    if (ids.has(verb?.id)) {
+      failures.push(`${label}: duplicate id`);
+    }
+    if (numbers.has(verb?.no)) {
+      failures.push(`${label}: duplicate no`);
+    }
+    ids.add(verb?.id);
+    numbers.add(verb?.no);
+
+    VERB_MEMORY_SLOTS.forEach(slot => {
+      const accepted = verb?.accepted?.[slot];
+      if (!Array.isArray(accepted) || !accepted.length) {
+        failures.push(`${label}: missing accepted.${slot}`);
+        return;
+      }
+      accepted.forEach(answer => {
+        const cleanAnswer = String(answer || "").trim();
+        if (!cleanAnswer || invalidValuePattern.test(cleanAnswer)) {
+          failures.push(`${label}: invalid accepted.${slot}`);
+        }
+      });
+      const choices = generateVerbMemoryChoices(verb, slot);
+      const challenge = {
+        correctAnswer: verb?.[slot],
+        acceptedAnswers: getVerbMemoryAcceptedAnswers(verb, slot)
+      };
+      const normalizedChoices = choices.map(normalizeVerbMemoryAnswer);
+      if (choices.length !== 3) {
+        failures.push(`${label}/${slot}: did not generate 3 choices`);
+      }
+      if (new Set(normalizedChoices).size !== choices.length) {
+        failures.push(`${label}/${slot}: duplicate choices`);
+      }
+      if (choices.some(choice => !isSafeVerbMemoryOption(choice))) {
+        failures.push(`${label}/${slot}: unsafe choice`);
+      }
+      const correctChoiceCount = choices.filter(choice => checkVerbMemoryAnswer(choice, challenge)).length;
+      if (correctChoiceCount !== 1) {
+        failures.push(`${label}/${slot}: correct choice count ${correctChoiceCount}`);
+      }
+      if (!checkVerbMemoryAnswer(verb?.[slot], challenge)) {
+        failures.push(`${label}/${slot}: checker rejected correct answer`);
+      }
+      accepted.forEach(answer => {
+        if (!checkVerbMemoryAnswer(answer, challenge)) {
+          failures.push(`${label}/${slot}: checker rejected accepted answer ${answer}`);
+        }
+      });
+    });
+  });
+  return {
+    ok: failures.length === 0,
+    count: bank.length,
+    failures
+  };
+}
+
+function getVerbMemoryPracticeOwnerId() {
+  const user = getCurrentUser();
+  return String(user?.uid || user?.userId || user?.id || playerData?.userId || "guest");
+}
+
+function getVerbMemoryPracticeLocalStorageKey() {
+  return `lingua:verbMemoryPracticeBest:${getVerbMemoryPracticeOwnerId()}`;
+}
+
+function normalizeVerbMemoryBestRecord(record = {}) {
+  return {
+    bestScore: Math.max(0, Number(record?.bestScore) || 0),
+    bestAccuracy: clamp(Math.max(0, Number(record?.bestAccuracy) || 0), 0, 100),
+    bestStreak: Math.max(0, Number(record?.bestStreak) || 0),
+    bestCorrect: Math.max(0, Number(record?.bestCorrect) || 0),
+    bestTotal: Math.max(0, Number(record?.bestTotal) || 0),
+    attempts: Math.max(0, Number(record?.attempts) || 0),
+    updatedAt: record?.updatedAt || null
+  };
+}
+
+function shouldUseFirestoreForVerbMemoryPractice() {
+  const user = getCurrentUser();
+  const ownerId = getVerbMemoryPracticeOwnerId();
+  return Boolean(
+    getAuthMode() === "firebase" &&
+    !user?.isGuest &&
+    ownerId !== "guest" &&
+    firebaseAuth?.currentUser?.uid === ownerId
+  );
+}
+
+async function loadVerbMemoryPracticeBestScore({ force = false } = {}) {
+  const ownerId = getVerbMemoryPracticeOwnerId();
+  if (!force && verbMemoryPracticeState.bestRecord && verbMemoryPracticeState.bestRecordOwnerId === ownerId) {
+    return verbMemoryPracticeState.bestRecord;
+  }
+  let record = {};
+  try {
+    if (shouldUseFirestoreForVerbMemoryPractice()) {
+      const snapshot = await getDoc(getPlayerDocRef(ownerId));
+      record = snapshot.exists() ? snapshot.data()?.verbMemoryPracticeBest || {} : {};
+    } else {
+      const saved = playerStorage.get(getVerbMemoryPracticeLocalStorageKey());
+      record = saved ? JSON.parse(saved) : {};
+    }
+  } catch (error) {
+    console.warn("[Verb Memory Practice] failed to load best score", error);
+    record = {};
+  }
+  verbMemoryPracticeState.bestRecord = normalizeVerbMemoryBestRecord(record);
+  verbMemoryPracticeState.bestRecordOwnerId = ownerId;
+  return verbMemoryPracticeState.bestRecord;
+}
+
+function createVerbMemoryBestRecord(previousRecord, result) {
+  const previous = normalizeVerbMemoryBestRecord(previousRecord);
+  const accuracy = result.total > 0 ? Math.round((result.correct / result.total) * 100) : 0;
+  const useAccuracyResult = accuracy > previous.bestAccuracy ||
+    (accuracy === previous.bestAccuracy && result.total > previous.bestTotal);
+  return {
+    bestScore: Math.max(previous.bestScore, result.score),
+    bestAccuracy: useAccuracyResult ? accuracy : previous.bestAccuracy,
+    bestStreak: Math.max(previous.bestStreak, result.bestStreak),
+    bestCorrect: useAccuracyResult ? result.correct : previous.bestCorrect,
+    bestTotal: useAccuracyResult ? result.total : previous.bestTotal,
+    attempts: previous.attempts + 1,
+    updatedAt: createTimestampIso()
+  };
+}
+
+async function saveVerbMemoryPracticeBestScore(result) {
+  const ownerId = getVerbMemoryPracticeOwnerId();
+  let previousRecord = normalizeVerbMemoryBestRecord(verbMemoryPracticeState.bestRecord);
+  let nextRecord = createVerbMemoryBestRecord(previousRecord, result);
+  if (shouldUseFirestoreForVerbMemoryPractice()) {
+    const playerRef = getPlayerDocRef(ownerId);
+    await runTransaction(firestoreDb, async transaction => {
+      const snapshot = await transaction.get(playerRef);
+      if (!snapshot.exists()) {
+        throw new Error("Player document not found");
+      }
+      previousRecord = normalizeVerbMemoryBestRecord(snapshot.data()?.verbMemoryPracticeBest || previousRecord);
+      nextRecord = createVerbMemoryBestRecord(previousRecord, result);
+      transaction.update(playerRef, {
+        verbMemoryPracticeBest: {
+          ...nextRecord,
+          updatedAt: serverTimestamp()
+        }
+      });
+    });
+  } else {
+    playerStorage.set(getVerbMemoryPracticeLocalStorageKey(), JSON.stringify(nextRecord));
+  }
+  verbMemoryPracticeState.bestRecord = nextRecord;
+  verbMemoryPracticeState.bestRecordOwnerId = ownerId;
+  return {
+    record: nextRecord,
+    previousBest: previousRecord.bestScore,
+    isNewBest: result.score > previousRecord.bestScore
+  };
+}
+
+function clearVerbMemoryNextRoundTimer() {
+  if (verbMemoryPracticeState.nextRoundTimer) {
+    clearTimeout(verbMemoryPracticeState.nextRoundTimer);
+    verbMemoryPracticeState.nextRoundTimer = null;
+  }
+}
+
+function resetVerbMemoryPracticeState({ preserveBest = true } = {}) {
+  clearVerbMemoryNextRoundTimer();
+  const bestRecord = preserveBest ? verbMemoryPracticeState.bestRecord : null;
+  const bestRecordOwnerId = preserveBest ? verbMemoryPracticeState.bestRecordOwnerId : "";
+  const validation = verbMemoryPracticeState.validation;
+  Object.assign(verbMemoryPracticeState, {
+    active: false,
+    bossId: VERB_MEMORY_CONFIG.bossId,
+    bossName: VERB_MEMORY_CONFIG.bossName,
+    bossThaiName: VERB_MEMORY_CONFIG.bossThaiName,
+    playerHp: VERB_MEMORY_CONFIG.playerMaxHp,
+    playerMaxHp: VERB_MEMORY_CONFIG.playerMaxHp,
+    bossHp: VERB_MEMORY_CONFIG.bossMaxHp,
+    bossMaxHp: VERB_MEMORY_CONFIG.bossMaxHp,
+    score: 0,
+    correct: 0,
+    wrong: 0,
+    total: 0,
+    streak: 0,
+    bestStreak: 0,
+    currentChallenge: null,
+    usedVerbIds: new Set(),
+    startedAt: null,
+    endedAt: null,
+    isResolving: false,
+    nextRoundTimer: null,
+    bestRecord,
+    bestRecordOwnerId,
+    validation,
+    lastResult: null
+  });
+}
+
+function setVerbMemoryStatus(message) {
+  if (els.verbMemoryStatusText) {
+    els.verbMemoryStatusText.textContent = message;
+  }
+}
+
+function renderVerbMemoryHpAndScore() {
+  const playerPercent = clamp((verbMemoryPracticeState.playerHp / verbMemoryPracticeState.playerMaxHp) * 100, 0, 100);
+  const bossPercent = clamp((verbMemoryPracticeState.bossHp / verbMemoryPracticeState.bossMaxHp) * 100, 0, 100);
+  els.verbMemoryPlayerHpText.textContent = `HP ${verbMemoryPracticeState.playerHp} / ${verbMemoryPracticeState.playerMaxHp}`;
+  els.verbMemoryBossHpText.textContent = `HP ${verbMemoryPracticeState.bossHp} / ${verbMemoryPracticeState.bossMaxHp}`;
+  els.verbMemoryPlayerHpBar.style.width = `${playerPercent}%`;
+  els.verbMemoryBossHpBar.style.width = `${bossPercent}%`;
+  els.verbMemoryScoreText.textContent = `คะแนนฝึกจำ ${verbMemoryPracticeState.score}`;
+  els.verbMemoryStreakText.textContent = `คอมโบ ${verbMemoryPracticeState.streak}`;
+  els.verbMemoryBestScoreText.textContent = `คะแนนสูงสุด ${Math.max(0, Number(verbMemoryPracticeState.bestRecord?.bestScore) || 0)}`;
+}
+
+function setVerbMemorySlot(slot, value, isMissing) {
+  const element = els[`verbMemorySlot${slot.toUpperCase()}`];
+  if (!element) {
+    return;
+  }
+  element.textContent = value;
+  element.closest(".verb-memory-slot")?.classList.toggle("verb-memory-slot-missing", isMissing);
+}
+
+function renderVerbMemoryChallenge() {
+  const challenge = verbMemoryPracticeState.currentChallenge;
+  if (!challenge) {
+    setVerbMemorySlot("v1", "พร้อม", false);
+    setVerbMemorySlot("v2", "เริ่ม", false);
+    setVerbMemorySlot("v3", "ฝึก", false);
+    els.verbMemoryChoices.textContent = "";
+    return;
+  }
+  VERB_MEMORY_SLOTS.forEach(slot => {
+    const isMissing = slot === challenge.missingSlot;
+    setVerbMemorySlot(slot, isMissing ? "???" : challenge[slot], isMissing);
+  });
+  els.verbMemoryChoices.textContent = "";
+  challenge.choices.forEach(choice => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "verb-memory-choice-button";
+    button.textContent = choice;
+    button.disabled = verbMemoryPracticeState.isResolving;
+    button.addEventListener("click", () => handleVerbMemoryChoice(choice));
+    els.verbMemoryChoices.appendChild(button);
+  });
+}
+
+function renderVerbMemoryPracticeScene() {
+  renderVerbMemoryHpAndScore();
+  renderVerbMemoryChallenge();
+  els.verbMemoryBossName.textContent = verbMemoryPracticeState.bossName;
+  els.verbMemoryBossThaiName.textContent = verbMemoryPracticeState.bossThaiName;
+  els.verbMemoryPracticeStartButton.classList.toggle("hidden", verbMemoryPracticeState.active || Boolean(verbMemoryPracticeState.lastResult));
+  els.verbMemoryResultPanel.classList.toggle("hidden", !verbMemoryPracticeState.lastResult);
+}
+
+function applyVerbMemoryBossImage() {
+  const image = els.verbMemoryBossSprite;
+  const placeholder = els.verbMemoryBossFallback;
+  if (!image) {
+    placeholder?.classList.remove("hidden");
+    return "";
+  }
+  const primaryPath = getGameAssetUrl(VERB_MEMORY_CONFIG.bossAssetKey, VERB_MEMORY_CONFIG.bossFallbackAsset);
+  const safeFallbackPath = VERB_MEMORY_CONFIG.bossSafeFallbackAsset;
+  let safeFallbackApplied = false;
+  image.dataset.assetKey = VERB_MEMORY_CONFIG.bossAssetKey;
+  image.alt = verbMemoryPracticeState.bossName;
+  image.classList.remove("hidden");
+  placeholder?.classList.add("hidden");
+  image.onerror = () => {
+    if (!safeFallbackApplied && safeFallbackPath && image.getAttribute("src") !== safeFallbackPath) {
+      safeFallbackApplied = true;
+      image.src = safeFallbackPath;
+      return;
+    }
+    image.onerror = null;
+    image.removeAttribute("src");
+    image.classList.add("hidden");
+    placeholder?.classList.remove("hidden");
+  };
+  if (primaryPath) {
+    image.src = primaryPath;
+  } else if (safeFallbackPath) {
+    safeFallbackApplied = true;
+    image.src = safeFallbackPath;
+  } else {
+    image.onerror();
+  }
+  return image.getAttribute("src") || "";
+}
+
+function animateVerbMemoryHit(element, className) {
+  if (!element) {
+    return;
+  }
+  element.classList.remove(className);
+  void element.offsetWidth;
+  element.classList.add(className);
+  setTimeout(() => element.classList.remove(className), 380);
+}
+
+function queueNextVerbMemoryChallenge() {
+  if (!verbMemoryPracticeState.active) {
+    return;
+  }
+  const challenge = generateVerbMemoryChallenge();
+  if (!challenge) {
+    setVerbMemoryStatus("ไม่สามารถสร้างโจทย์จากคลังคำกริยาได้");
+    void finishVerbMemoryPracticeGame("content-error");
+    return;
+  }
+  verbMemoryPracticeState.currentChallenge = challenge;
+  verbMemoryPracticeState.isResolving = false;
+  renderVerbMemoryChallenge();
+  setVerbMemoryStatus(`คำที่ ${challenge.no}: เลือก ${challenge.missingSlot.toUpperCase()} ที่หายไป`);
+}
+
+function resolveVerbMemoryCorrect(challenge) {
+  verbMemoryPracticeState.correct += 1;
+  verbMemoryPracticeState.streak += 1;
+  verbMemoryPracticeState.bestStreak = Math.max(verbMemoryPracticeState.bestStreak, verbMemoryPracticeState.streak);
+  const damage = verbMemoryPracticeState.streak >= 5 ? 25 : verbMemoryPracticeState.streak >= 3 ? 20 : 15;
+  const streakBonus = verbMemoryPracticeState.streak >= 5 ? 10 : verbMemoryPracticeState.streak >= 3 ? 5 : 0;
+  const points = (VERB_MEMORY_SCORE_BY_SLOT[challenge.missingSlot] || 0) + streakBonus;
+  verbMemoryPracticeState.bossHp = clamp(verbMemoryPracticeState.bossHp - damage, 0, verbMemoryPracticeState.bossMaxHp);
+  verbMemoryPracticeState.score += points;
+  animateVerbMemoryHit(els.verbMemoryBossFrame, "is-hit");
+  return `ถูกต้อง! ${challenge.v1} - ${challenge.v2} - ${challenge.v3} แปลว่า “${challenge.meaningTh}”`;
+}
+
+function resolveVerbMemoryWrong(challenge) {
+  verbMemoryPracticeState.wrong += 1;
+  verbMemoryPracticeState.streak = 0;
+  verbMemoryPracticeState.playerHp = clamp(
+    verbMemoryPracticeState.playerHp - VERB_MEMORY_CONFIG.wrongDamage,
+    0,
+    verbMemoryPracticeState.playerMaxHp
+  );
+  animateVerbMemoryHit(els.verbMemoryPlayerHpText?.closest(".verb-memory-player-panel"), "is-hit");
+  return `ยังไม่ถูก คำตอบที่ถูกคือ ${challenge.correctAnswer} ชุดกริยาคือ ${challenge.v1} - ${challenge.v2} - ${challenge.v3} แปลว่า “${challenge.meaningTh}”`;
+}
+
+function handleVerbMemoryChoice(selectedAnswer) {
+  const challenge = verbMemoryPracticeState.currentChallenge;
+  if (!verbMemoryPracticeState.active || verbMemoryPracticeState.isResolving || !challenge) {
+    return;
+  }
+  verbMemoryPracticeState.isResolving = true;
+  verbMemoryPracticeState.total += 1;
+  const isCorrect = checkVerbMemoryAnswer(selectedAnswer, challenge);
+  const feedback = isCorrect
+    ? resolveVerbMemoryCorrect(challenge)
+    : resolveVerbMemoryWrong(challenge);
+  els.verbMemoryChoices.querySelectorAll("button").forEach(button => {
+    button.disabled = true;
+    const isSelected = normalizeVerbMemoryAnswer(button.textContent) === normalizeVerbMemoryAnswer(selectedAnswer);
+    const isCorrectChoice = checkVerbMemoryAnswer(button.textContent, challenge);
+    button.classList.toggle("is-correct", isCorrectChoice);
+    button.classList.toggle("is-wrong", isSelected && !isCorrectChoice);
+  });
+  renderVerbMemoryHpAndScore();
+  setVerbMemoryStatus(feedback);
+  const gameEnded = verbMemoryPracticeState.bossHp <= 0 || verbMemoryPracticeState.playerHp <= 0;
+  clearVerbMemoryNextRoundTimer();
+  verbMemoryPracticeState.nextRoundTimer = setTimeout(() => {
+    verbMemoryPracticeState.nextRoundTimer = null;
+    if (gameEnded) {
+      void finishVerbMemoryPracticeGame(verbMemoryPracticeState.bossHp <= 0 ? "boss-defeated" : "player-defeated");
+      return;
+    }
+    queueNextVerbMemoryChallenge();
+  }, VERB_MEMORY_CONFIG.nextRoundDelayMs);
+}
+
+function renderVerbMemoryResult(result, { isNewBest = false, saveWarning = "" } = {}) {
+  const bestScore = Math.max(result.score, Number(verbMemoryPracticeState.bestRecord?.bestScore) || 0);
+  els.verbMemoryResultTitle.textContent = result.reason === "boss-defeated"
+    ? "เจ้าชนะ The Memory Breaker!"
+    : result.reason === "player-defeated"
+      ? "The Memory Breaker ทำลายความทรงจำของเจ้าแล้ว"
+      : "การฝึกฝนจบลง";
+  els.verbMemoryResultScore.textContent = String(result.score);
+  els.verbMemoryResultAccuracy.textContent = `${result.correct} / ${result.total} (${result.accuracy}%)`;
+  els.verbMemoryResultBestStreak.textContent = String(result.bestStreak);
+  els.verbMemoryResultBestScore.textContent = String(bestScore);
+  els.verbMemoryResultRecord.textContent = [isNewBest ? "สถิติใหม่!" : "", saveWarning].filter(Boolean).join(" ");
+  els.verbMemoryResultPanel.classList.remove("hidden");
+  els.verbMemoryPracticeStartButton.classList.add("hidden");
+  renderVerbMemoryHpAndScore();
+}
+
+async function finishVerbMemoryPracticeGame(reason) {
+  if (!verbMemoryPracticeState.active) {
+    return;
+  }
+  clearVerbMemoryNextRoundTimer();
+  verbMemoryPracticeState.active = false;
+  verbMemoryPracticeState.isResolving = true;
+  verbMemoryPracticeState.endedAt = Date.now();
+  const accuracy = verbMemoryPracticeState.total > 0
+    ? Math.round((verbMemoryPracticeState.correct / verbMemoryPracticeState.total) * 100)
+    : 0;
+  const result = {
+    reason,
+    score: verbMemoryPracticeState.score,
+    correct: verbMemoryPracticeState.correct,
+    wrong: verbMemoryPracticeState.wrong,
+    total: verbMemoryPracticeState.total,
+    accuracy,
+    bestStreak: verbMemoryPracticeState.bestStreak,
+    startedAt: verbMemoryPracticeState.startedAt,
+    endedAt: verbMemoryPracticeState.endedAt
+  };
+  const previousBest = Math.max(0, Number(verbMemoryPracticeState.bestRecord?.bestScore) || 0);
+  const provisionalRecord = createVerbMemoryBestRecord(verbMemoryPracticeState.bestRecord, result);
+  verbMemoryPracticeState.lastResult = result;
+  renderVerbMemoryResult(result, { isNewBest: result.score > previousBest });
+  try {
+    const saved = await saveVerbMemoryPracticeBestScore(result);
+    renderVerbMemoryResult(result, { isNewBest: saved.isNewBest });
+  } catch (error) {
+    console.error("[Verb Memory Practice] failed to save best score", error);
+    verbMemoryPracticeState.bestRecord = provisionalRecord;
+    renderVerbMemoryResult(result, {
+      isNewBest: result.score > previousBest,
+      saveWarning: "บันทึกคะแนนสูงสุดไม่ได้ แต่ผลรอบนี้ยังแสดงอยู่"
+    });
+  }
+}
+
+function startVerbMemoryPracticeGame() {
+  if (verbMemoryPracticeState.active) {
+    return;
+  }
+  if (!verbMemoryPracticeState.validation?.ok) {
+    setVerbMemoryStatus("คลังคำกริยายังไม่พร้อม จึงไม่สามารถเริ่มการฝึกได้");
+    return;
+  }
+  resetVerbMemoryPracticeState({ preserveBest: true });
+  verbMemoryPracticeState.active = true;
+  verbMemoryPracticeState.startedAt = Date.now();
+  els.verbMemoryResultPanel.classList.add("hidden");
+  els.verbMemoryPracticeStartButton.classList.add("hidden");
+  renderVerbMemoryHpAndScore();
+  queueNextVerbMemoryChallenge();
+}
+
+async function openVerbMemoryPracticeScene() {
+  closeGameModal();
+  const ownerId = getVerbMemoryPracticeOwnerId();
+  if (verbMemoryPracticeState.bestRecordOwnerId !== ownerId) {
+    verbMemoryPracticeState.bestRecord = null;
+    verbMemoryPracticeState.bestRecordOwnerId = "";
+  }
+  resetVerbMemoryPracticeState({ preserveBest: true });
+  verbMemoryPracticeState.validation = validateIrregularVerbMemoryBank();
+  applyVerbMemoryBossImage();
+  renderVerbMemoryPracticeScene();
+  setVerbMemoryStatus(verbMemoryPracticeState.validation.ok
+    ? `คลังคำกริยาพร้อม ${verbMemoryPracticeState.validation.count} คำ กำลังเริ่มต่อสู้กับ The Memory Breaker`
+    : "ตรวจพบปัญหาในคลังคำกริยา จึงยังไม่เปิดการฝึก");
+  els.verbMemoryPracticeStartButton.disabled = !verbMemoryPracticeState.validation.ok;
+  showScene("verbMemoryPractice");
+  if (verbMemoryPracticeState.validation.ok) {
+    startVerbMemoryPracticeGame();
+  }
+  await loadVerbMemoryPracticeBestScore();
+  renderVerbMemoryHpAndScore();
+}
+
+function returnFromVerbMemoryPracticeToMainMenu() {
+  clearVerbMemoryNextRoundTimer();
+  verbMemoryPracticeState.active = false;
+  verbMemoryPracticeState.isResolving = false;
+  verbMemoryPracticeState.currentChallenge = null;
+  renderMainMenu();
+  showScene("mainMenu");
 }
 
 function startPracticeLessonFromMap(stage, stageIndex, source = "lesson-map-code") {
@@ -46572,6 +47305,11 @@ els.tutorialNextButton?.addEventListener("click", nextTutorialSlide);
 els.tutorialBackButton?.addEventListener("click", returnToMainMenuFromTutorial);
 els.creatorCreditsBackButton?.addEventListener("click", returnToMainMenuFromCreatorCredits);
 els.vsBossesBackButton?.addEventListener("click", showMainMenu);
+els.verbMemoryPracticeBackButton?.addEventListener("click", returnFromVerbMemoryPracticeToMainMenu);
+els.verbMemoryPracticeStartButton?.addEventListener("click", startVerbMemoryPracticeGame);
+els.verbMemoryPracticeRestartButton?.addEventListener("click", startVerbMemoryPracticeGame);
+els.verbMemoryResultRetryButton?.addEventListener("click", startVerbMemoryPracticeGame);
+els.verbMemoryResultMainMenuButton?.addEventListener("click", returnFromVerbMemoryPracticeToMainMenu);
 els.pvpBackButton?.addEventListener("click", exitPvpMode);
 els.pvpExitButton?.addEventListener("click", exitPvpMode);
 els.pvpCreateOnlineRoomButton?.addEventListener("click", createOnlinePvpRoom);
@@ -46810,6 +47548,7 @@ window.debugButtonAudit = function debugButtonAudit() {
 };
 
 window.validateBattleStageQuestionPools = validateBattleStageQuestionPools;
+window.validateIrregularVerbMemoryBank = validateIrregularVerbMemoryBank;
 validateBattleStageQuestionPools();
 
 function bindGameAudioUnlockEvents() {
