@@ -22437,8 +22437,8 @@ const VS_BOSS_REGISTRY = Object.freeze([
     enemyAssetKey: "time_dust_sprite",
     fallbackImage: TIME_DUST_IMAGE_PATH,
     relatedStageIds: ["what-is-past"],
-    recommendedHp: 45,
-    maxPracticeHp: 55
+    difficulty: "early",
+    practiceHp: 90
   },
   {
     id: "yesterday_mite",
@@ -22450,8 +22450,8 @@ const VS_BOSS_REGISTRY = Object.freeze([
     enemyAssetKey: "",
     fallbackImage: YESTERDAY_SPIRIT_IMAGE_PATH,
     relatedStageIds: ["what-is-tense"],
-    recommendedHp: 50,
-    maxPracticeHp: 60
+    difficulty: "early",
+    practiceHp: 100
   },
   {
     id: "was_were_wisp",
@@ -22463,8 +22463,8 @@ const VS_BOSS_REGISTRY = Object.freeze([
     enemyAssetKey: "was_were_wisp",
     fallbackImage: WAS_WERE_WISP_IMAGE_PATH,
     relatedStageIds: ["act1_phase1_unit3_was_were"],
-    recommendedHp: 45,
-    maxPracticeHp: 55
+    difficulty: "basic",
+    practiceHp: 120
   },
   {
     id: "memory_lantern",
@@ -22476,8 +22476,8 @@ const VS_BOSS_REGISTRY = Object.freeze([
     enemyAssetKey: "",
     fallbackImage: assetPath("memory-shade.png"),
     relatedStageIds: ["act1_phase1_unit4_there_was_were"],
-    recommendedHp: 55,
-    maxPracticeHp: 65
+    difficulty: "basic",
+    practiceHp: 130
   },
   {
     id: "lost_pouch_imp",
@@ -22489,8 +22489,8 @@ const VS_BOSS_REGISTRY = Object.freeze([
     enemyAssetKey: "",
     fallbackImage: assetPath("memory-shade.png"),
     relatedStageIds: ["act1_phase1_unit5_had"],
-    recommendedHp: 60,
-    maxPracticeHp: 70
+    difficulty: "basic",
+    practiceHp: 140
   },
   {
     id: "echo_tick",
@@ -22502,8 +22502,8 @@ const VS_BOSS_REGISTRY = Object.freeze([
     enemyAssetKey: "echo_tick",
     fallbackImage: ECHO_TRICK_IMAGE_PATH,
     relatedStageIds: ["regular-rule-1", "regular-rule-2", "regular-rule-3", "regular-rule-4"],
-    recommendedHp: 70,
-    maxPracticeHp: 80
+    difficulty: "regular",
+    practiceHp: 180
   },
   {
     id: "ed_forger",
@@ -22515,8 +22515,8 @@ const VS_BOSS_REGISTRY = Object.freeze([
     enemyAssetKey: "ed_forger",
     fallbackImage: assetPath("enemies/ed-forger.png"),
     relatedStageIds: ["ed-mini-boss"],
-    recommendedHp: 100,
-    maxPracticeHp: 115
+    difficulty: "mini",
+    practiceHp: 230
   },
   {
     id: "memory_bat",
@@ -22528,8 +22528,8 @@ const VS_BOSS_REGISTRY = Object.freeze([
     enemyAssetKey: "",
     fallbackImage: assetPath("memory-shade.png"),
     relatedStageIds: ["irregular-lesson"],
-    recommendedHp: 75,
-    maxPracticeHp: 90
+    difficulty: "irregular",
+    practiceHp: 190
   },
   {
     id: "irregular_wraith",
@@ -22541,8 +22541,8 @@ const VS_BOSS_REGISTRY = Object.freeze([
     enemyAssetKey: "irregular_wraith",
     fallbackImage: assetPath("enemies/irregular-wraith.png"),
     relatedStageIds: ["irregular-mini-boss"],
-    recommendedHp: 110,
-    maxPracticeHp: 125
+    difficulty: "mini",
+    practiceHp: 250
   },
   {
     id: "memory_breaker",
@@ -22554,8 +22554,8 @@ const VS_BOSS_REGISTRY = Object.freeze([
     enemyAssetKey: "memory_breaker",
     fallbackImage: MEMORY_BREAKER_IMAGE_PATH,
     relatedStageIds: ["final-boss"],
-    recommendedHp: 130,
-    maxPracticeHp: 150
+    difficulty: "final",
+    practiceHp: 320
   }
 ].map(config => Object.freeze({ ...config, relatedStageIds: Object.freeze([...config.relatedStageIds]) })));
 
@@ -23386,7 +23386,10 @@ const state = {
 
 const VERB_MEMORY_CONFIG = Object.freeze({
   playerMaxHp: 100,
-  bossMaxHp: 120,
+  bossMaxHp: 360,
+  correctDamageBase: 15,
+  correctDamageStreak3: 20,
+  correctDamageStreak5: 25,
   wrongDamage: 10,
   nextRoundDelayMs: 1050,
   bossId: "memory_breaker",
@@ -23548,7 +23551,8 @@ const BGM_PATHS = {
   hall: "assets/bgm/verions-grammar-hall.mp3",
   battle: "assets/bgm/lingua-spell-battle.mp3",
   victoryScene: "assets/bgm/victory-scene.mp3",
-  edForge: "assets/bgm/ed_forge_bgm.mp3"
+  edForge: "assets/bgm/ed_forge_bgm.mp3",
+  linguaBreaker: "assets/audio/lingua-breaker.mp3"
 };
 
 const BGM_LOOP = {
@@ -23556,13 +23560,15 @@ const BGM_LOOP = {
   hall: true,
   battle: true,
   victoryScene: false,
-  edForge: true
+  edForge: true,
+  linguaBreaker: true
 };
 
 const DEFAULT_BGM_VOLUME = 0.45;
 const BGM_FADE_MS = 650;
 const BGM_VOLUME = {
-  edForge: 0.32
+  edForge: 0.32,
+  linguaBreaker: 0.4
 };
 
 const ED_FORGE_BGM_STAGE_IDS = new Set([
@@ -23588,6 +23594,10 @@ Object.entries(bgmTracks).forEach(([key, track]) => {
   track.preload = "auto";
   track.volume = getBgmVolume(key);
   track.addEventListener("error", error => {
+    if (key === "linguaBreaker") {
+      console.warn("[Audio] Lingua Breaker BGM could not be loaded");
+      return;
+    }
     console.warn(`[BGM] ${key} track failed to load`, {
       src: BGM_PATHS[key],
       error
@@ -24145,6 +24155,9 @@ function bgmKeyForScene(sceneName) {
   if (sceneName === "login" || sceneName === "mainMenu" || sceneName === "createCharacter") {
     return "login";
   }
+  if (shouldUseLinguaBreakerBgm(sceneName)) {
+    return "linguaBreaker";
+  }
   if (shouldUseEdForgeBgm(sceneName)) {
     return "edForge";
   }
@@ -24152,6 +24165,13 @@ function bgmKeyForScene(sceneName) {
     return "battle";
   }
   return "hall";
+}
+
+function shouldUseLinguaBreakerBgm(sceneName) {
+  if (["pvp", "vsBosses", "verbMemoryPractice"].includes(sceneName)) {
+    return true;
+  }
+  return sceneName === "battle" && Boolean(state.vsBossPractice?.active);
 }
 
 function getBgmContextStages(sceneName) {
@@ -32678,7 +32698,7 @@ function enterPvpMode() {
   Object.values(scenes).forEach(scene => scene?.classList.remove("active"));
   scenes.pvp.classList.add("active");
   updateDeveloperCreditVisibility("pvp");
-  playBgmForScene("mainMenu");
+  playBgmForScene("pvp");
   renderPvpScene();
 }
 
@@ -35122,12 +35142,21 @@ function getVsBossQuestionPool(bossId) {
   });
 }
 
-function getVsBossPracticeHp(bossConfig, playerProgress = getVsBossPlayerBattleSnapshot()) {
-  const baseHp = Math.max(1, Number(bossConfig?.recommendedHp) || 60);
-  const maxHp = Math.max(baseHp, Number(bossConfig?.maxPracticeHp) || baseHp);
-  const completedStageCount = Math.max(0, Number(playerProgress?.completedStageCount) || 0);
-  const progressScale = Math.min(0.12, completedStageCount * 0.01);
-  return clamp(Math.round(baseHp * (1 + progressScale)), baseHp, maxHp);
+const VS_BOSS_PRACTICE_HP_FALLBACKS = Object.freeze({
+  early: 90,
+  basic: 130,
+  regular: 170,
+  irregular: 190,
+  mini: 230,
+  final: 320
+});
+
+function getVsBossPracticeHp(bossConfig) {
+  const configuredHp = [bossConfig?.practiceHp, bossConfig?.recommendedHp, bossConfig?.vsBossHp]
+    .map(value => Number(value))
+    .find(value => Number.isFinite(value) && value > 0);
+  const fallbackHp = VS_BOSS_PRACTICE_HP_FALLBACKS[bossConfig?.difficulty] || 120;
+  return clamp(Math.round(configuredHp || fallbackHp), 80, 360);
 }
 
 function buildVsBossPracticeStage(stageConfig, bossConfig) {
@@ -36223,7 +36252,11 @@ function resolveVerbMemoryCorrect(challenge) {
   verbMemoryPracticeState.correct += 1;
   verbMemoryPracticeState.streak += 1;
   verbMemoryPracticeState.bestStreak = Math.max(verbMemoryPracticeState.bestStreak, verbMemoryPracticeState.streak);
-  const damage = verbMemoryPracticeState.streak >= 5 ? 25 : verbMemoryPracticeState.streak >= 3 ? 20 : 15;
+  const damage = verbMemoryPracticeState.streak >= 5
+    ? VERB_MEMORY_CONFIG.correctDamageStreak5
+    : verbMemoryPracticeState.streak >= 3
+      ? VERB_MEMORY_CONFIG.correctDamageStreak3
+      : VERB_MEMORY_CONFIG.correctDamageBase;
   const streakBonus = verbMemoryPracticeState.streak >= 5 ? 10 : verbMemoryPracticeState.streak >= 3 ? 5 : 0;
   const points = (VERB_MEMORY_SCORE_BY_SLOT[challenge.missingSlot] || 0) + streakBonus;
   verbMemoryPracticeState.bossHp = clamp(verbMemoryPracticeState.bossHp - damage, 0, verbMemoryPracticeState.bossMaxHp);
@@ -39381,7 +39414,7 @@ function startActBattle(stageIndex) {
   resetVictorySceneMusicForBattle();
   const baseEnemyMaxHp = isFinalBossStage(stage) ? 140 : 100;
   const enemyMaxHp = vsBossConfig
-    ? getVsBossPracticeHp(vsBossConfig, state.vsBossPractice.playerSnapshot)
+    ? getVsBossPracticeHp(vsBossConfig)
     : getBalancedBossMaxHp(stage, baseEnemyMaxHp);
   const returnContext = state.pendingBattleReturnContext ||
     state.actBattle?.returnContext ||
