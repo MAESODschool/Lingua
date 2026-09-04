@@ -932,6 +932,113 @@ button {
   text-align: right;
 }
 
+.vs-boss-overall-rank-card {
+  grid-column: 1 / -1;
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  margin-top: 2px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 219, 134, 0.22);
+}
+
+.vs-boss-rank-heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vs-boss-rank-heading > span {
+  color: #9edcff;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.vs-boss-rank-badge {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  color: #d8deea;
+  background: rgba(19, 25, 48, 0.86);
+  box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.08);
+  font-size: 1.42rem;
+  line-height: 1;
+}
+
+.vs-boss-rank-S {
+  color: #ffe18a;
+  background: rgba(89, 54, 12, 0.88);
+  box-shadow: inset 0 0 12px rgba(255, 225, 138, 0.18), 0 0 14px rgba(255, 205, 92, 0.32);
+}
+
+.vs-boss-rank-A {
+  color: #8fe8ff;
+  background: rgba(15, 64, 88, 0.88);
+}
+
+.vs-boss-rank-B {
+  color: #9ce5b3;
+  background: rgba(22, 72, 54, 0.88);
+}
+
+.vs-boss-rank-C {
+  color: #d3b7ff;
+  background: rgba(61, 38, 92, 0.88);
+}
+
+.vs-boss-rank-D {
+  color: #d8deea;
+  background: rgba(35, 39, 57, 0.88);
+}
+
+.vs-boss-rank-progress {
+  height: 7px;
+  overflow: hidden;
+  border: 1px solid rgba(158, 220, 255, 0.24);
+  border-radius: 4px;
+  background: rgba(4, 8, 25, 0.72);
+}
+
+.vs-boss-rank-progress i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #65c8ef, #f0ce75);
+  transition: width 240ms ease;
+}
+
+.vs-boss-overall-rank-card p,
+.vs-boss-overall-rank-card small {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.vs-boss-overall-rank-card p {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #d9e7ff;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.vs-boss-overall-rank-card p strong {
+  color: #fff0ba;
+  text-align: right;
+}
+
+.vs-boss-overall-rank-card small {
+  color: #b8c9e8;
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
 .current-progress-card,
 .grammaria-collection-card,
 .main-menu-actions {
@@ -3087,6 +3194,15 @@ button {
     text-align: left;
   }
 
+  .vs-boss-overall-rank-card p {
+    display: grid;
+    gap: 2px;
+  }
+
+  .vs-boss-overall-rank-card p strong {
+    text-align: left;
+  }
+
   .student-management-toolbar,
   .student-management-actions {
     grid-template-columns: 1fr;
@@ -3798,6 +3914,53 @@ h3 {
   color: white;
   background: linear-gradient(180deg, rgba(52, 126, 255, 0.95), rgba(33, 66, 168, 0.95));
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+#storyScene #lessonStoryVisual.cvc-teaching-visual {
+  position: relative;
+  inset: auto;
+  z-index: 4;
+  width: min(430px, calc(100% - 24px));
+  max-height: 190px;
+  margin: 12px auto 0;
+  transform: none;
+  overflow: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+}
+
+#storyScene .cvc-teaching-visual h3 {
+  font-size: 15px;
+  border-radius: 6px;
+}
+
+#storyScene .cvc-teaching-visual .lesson-visual-card {
+  min-width: 0;
+  color: #fff6d9;
+  background: #211a40;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+#storyScene .story-illustration:has(.cvc-teaching-visual) .vn-dialogue:has(.dialogue-choices:not(.hidden)) {
+  max-height: 320px;
+}
+
+#storyScene .story-illustration:has(.cvc-teaching-visual) .vn-dialogue .dialogue-main-content .dialogue-choices {
+  max-height: 220px;
+}
+
+#storyScene .story-illustration:has(.cvc-teaching-visual) .dialogue-speaker-portrait-slot {
+  align-self: start;
+  height: 126px;
+}
+
+@media (max-width: 420px) {
+  #storyScene .story-illustration:has(.cvc-teaching-visual) .dialogue-speaker-portrait-slot {
+    height: 98px;
+  }
 }
 
 .story-actions {

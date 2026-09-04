@@ -21595,6 +21595,7 @@ function getCharmDebugSummary(charm) {
 }
 
 function getSelectedBattleCharm() {
+  if (!areCharmsAllowedInCurrentBattle()) return null;
   const battle = state.actBattle;
   return battle?.selectedCharmId ? getBattleFlowV2Charm(battle.selectedCharmId) : null;
 }
@@ -22560,9 +22561,117 @@ const VS_BOSS_REGISTRY = Object.freeze([
 ].map(config => Object.freeze({ ...config, relatedStageIds: Object.freeze([...config.relatedStageIds]) })));
 
 const VS_BOSS_REGISTRY_BY_ID = new Map(VS_BOSS_REGISTRY.map(config => [config.id, config]));
+const VS_BOSS_OVERALL_RANKS = Object.freeze(["S", "A", "B", "C", "D"]);
+const VS_BOSS_OVERALL_RANK_TITLES = Object.freeze({
+  S: "ปรมาจารย์พิชิตบอส",
+  A: "ยอดนักสู้ภาษา",
+  B: "นักผจญภัยชำนาญ",
+  C: "ผู้ฝึกฝนต่อเนื่อง",
+  D: "เริ่มต้นการฝึก"
+});
 
 function getVsBossConfig(bossId) {
   return VS_BOSS_REGISTRY_BY_ID.get(String(bossId || "")) || null;
+}
+
+function getVsBossRegistryList() {
+  return [...VS_BOSS_REGISTRY];
+}
+
+function getVsBossBestAttemptForBoss(bossId, records = {}) {
+  const record = records && typeof records === "object" ? records[bossId] : null;
+  if (!record || typeof record !== "object") {
+    return null;
+  }
+  if (record.bestAttempt && typeof record.bestAttempt === "object") {
+    return record.bestAttempt;
+  }
+
+  const hasLegacyAttempt = Number(record.attempts) > 0 ||
+    Number(record.totalAttempts) > 0 ||
+    Boolean(record.bestUpdatedAt || record.lastPlayedAt) ||
+    Number(record.bestScore) > 0 ||
+    Number(record.bestTotal) > 0;
+  if (!hasLegacyAttempt) {
+    return null;
+  }
+  const bestAttempt = {
+    score: Math.max(0, Number(record.bestScore) || 0),
+    completedAt: record.bestUpdatedAt || record.lastPlayedAt || null
+  };
+  if (record.bestAccuracy !== undefined && record.bestAccuracy !== null && record.bestAccuracy !== "") {
+    bestAttempt.accuracy = clamp(Number(record.bestAccuracy) || 0, 0, 100);
+  }
+  if (record.bestCorrect !== undefined && record.bestCorrect !== null && record.bestCorrect !== "") {
+    bestAttempt.correct = Math.max(0, Number(record.bestCorrect) || 0);
+  }
+  if (record.bestTotal !== undefined && record.bestTotal !== null && record.bestTotal !== "") {
+    bestAttempt.total = Math.max(0, Number(record.bestTotal) || 0);
+  }
+  return bestAttempt;
+}
+
+function getVsBossBossScorePercent(bossConfig, record) {
+  const bestAttempt = record?.bestAttempt && typeof record.bestAttempt === "object"
+    ? record.bestAttempt
+    : getVsBossBestAttemptForBoss(bossConfig?.id, { [bossConfig?.id]: record });
+  if (!bestAttempt) {
+    return 0;
+  }
+  const hasNumericValue = value => value !== null && value !== "" && Number.isFinite(Number(value));
+  let scorePercent = 0;
+  if (hasNumericValue(bestAttempt.scorePercent)) {
+    scorePercent = Number(bestAttempt.scorePercent);
+  } else if (hasNumericValue(bossConfig?.maxScore) && Number(bossConfig.maxScore) > 0 && hasNumericValue(bestAttempt.score)) {
+    scorePercent = (Number(bestAttempt.score) / Number(bossConfig.maxScore)) * 100;
+  } else if (hasNumericValue(bestAttempt.accuracy)) {
+    scorePercent = Number(bestAttempt.accuracy);
+  } else if (hasNumericValue(bestAttempt.correct) && hasNumericValue(bestAttempt.total) && Number(bestAttempt.total) > 0) {
+    scorePercent = (Number(bestAttempt.correct) / Number(bestAttempt.total)) * 100;
+  }
+  return Math.round(clamp(scorePercent, 0, 100) * 10) / 10;
+}
+
+function getVsBossOverallRank(scorePercent) {
+  const score = clamp(Number(scorePercent) || 0, 0, 100);
+  if (score >= 90) return "S";
+  if (score >= 75) return "A";
+  if (score >= 60) return "B";
+  if (score >= 40) return "C";
+  return "D";
+}
+
+function calculateVsBossOverallRank(records = {}) {
+  const registry = getVsBossRegistryList();
+  const bossScores = registry.map(bossConfig => {
+    const record = records && typeof records === "object" ? records[bossConfig.id] : null;
+    const bestAttempt = getVsBossBestAttemptForBoss(bossConfig.id, records);
+    const scorePercent = bestAttempt ? getVsBossBossScorePercent(bossConfig, record) : 0;
+    return {
+      bossId: bossConfig.id,
+      bossName: bossConfig.name,
+      topicTitle: bossConfig.topicTh || bossConfig.topic,
+      bestScore: bestAttempt ? Math.max(0, Number(bestAttempt.score) || 0) : 0,
+      scorePercent,
+      played: Boolean(bestAttempt),
+      rankContribution: registry.length > 0
+        ? Math.round((scorePercent / registry.length) * 10) / 10
+        : 0
+    };
+  });
+  const totalBosses = registry.length;
+  const completedBosses = bossScores.filter(entry => entry.played).length;
+  const totalScorePercent = bossScores.reduce((sum, entry) => sum + entry.scorePercent, 0);
+  const overallScorePercent = totalBosses > 0 ? Math.round(totalScorePercent / totalBosses) : 0;
+  const rank = getVsBossOverallRank(overallScorePercent);
+  return {
+    totalBosses,
+    completedBosses,
+    overallScorePercent,
+    rank,
+    rankTitle: VS_BOSS_OVERALL_RANK_TITLES[rank],
+    bossScores
+  };
 }
 
 function getVsBossPrimaryStage(config) {
@@ -23421,6 +23530,11 @@ const verbMemoryPracticeState = {
   bestStreak: 0,
   currentChallenge: null,
   usedVerbIds: new Set(),
+  missingSlotCounts: {
+    v1: 0,
+    v2: 0,
+    v3: 0
+  },
   startedAt: null,
   endedAt: null,
   isResolving: false,
@@ -23695,6 +23809,13 @@ const els = {
   mainMenuStudentInfo: document.getElementById("mainMenuStudentInfo"),
   mainMenuCurrentAct: document.getElementById("mainMenuCurrentAct"),
   mainMenuGrammaria: document.getElementById("mainMenuGrammaria"),
+  mainMenuVsBossRank: document.getElementById("mainMenuVsBossRank"),
+  mainMenuVsBossRankBadge: document.getElementById("mainMenuVsBossRankBadge"),
+  mainMenuVsBossRankProgress: document.getElementById("mainMenuVsBossRankProgress"),
+  mainMenuVsBossScorePercent: document.getElementById("mainMenuVsBossScorePercent"),
+  mainMenuVsBossCompleted: document.getElementById("mainMenuVsBossCompleted"),
+  mainMenuVsBossRankTitle: document.getElementById("mainMenuVsBossRankTitle"),
+  mainMenuVsBossRankHint: document.getElementById("mainMenuVsBossRankHint"),
   mainMenuCurrentLesson: document.getElementById("mainMenuCurrentLesson"),
   mainMenuCurrentArea: document.getElementById("mainMenuCurrentArea"),
   mainMenuNextGoal: document.getElementById("mainMenuNextGoal"),
@@ -26912,7 +27033,7 @@ function getGrammariaRankProgressText(grammaria) {
 }
 
 function getActivePveCharmDamageModifier(charm = getSelectedBattleCharm()) {
-  if (!charm) {
+  if (!charm || !areCharmsAllowedInCurrentBattle()) {
     return { multiplier: 1, flatBonus: 0, label: "", isDamageCharm: false };
   }
   const normalized = normalizeCharmEffect(charm);
@@ -27059,7 +27180,12 @@ function applyStatusDamageToTarget(target, rawDamage, source = "", context = {})
     damageResult.damageBeforeMitigation = damageBeforeMitigation;
     damageResult.damageBeforeRankMinimum = damageResult.finalDamage;
     if (damageResult.finalDamage > 0 && !damageResult.absorbedByHitShield) {
-      damageResult.finalDamage = Math.max(damageResult.finalDamage, rankScaling.rank.minFinalDamage);
+      // The charm is already in rawDamage. Scale only the floor, never the hit again.
+      const charmMultiplier = areCharmsAllowedInCurrentBattle()
+        ? Math.max(1, Number(context.charmDamageMultiplier) || 1)
+        : 1;
+      const minimumDamage = Math.ceil(rankScaling.rank.minFinalDamage * charmMultiplier);
+      damageResult.finalDamage = Math.max(damageResult.finalDamage, minimumDamage);
     }
     damageResult.rankMinimumAdded = Math.max(0, damageResult.finalDamage - damageResult.damageBeforeRankMinimum);
 
@@ -33232,6 +33358,33 @@ function pvpMockOpponentAttack() {
   renderPvpScene();
 }
 
+function renderMainMenuVsBossOverallRank(records = null) {
+  if (!els.mainMenuVsBossRank) {
+    return null;
+  }
+  const ownerId = getVsBossScoresOwnerId();
+  const activeRecords = records || (
+    state.vsBossPractice.scoresOwnerId === ownerId
+      ? state.vsBossPractice.scores
+      : {}
+  );
+  const summary = calculateVsBossOverallRank(activeRecords);
+  const rankClasses = VS_BOSS_OVERALL_RANKS.map(rank => `vs-boss-rank-${rank}`);
+  els.mainMenuVsBossRankBadge.classList.remove(...rankClasses);
+  els.mainMenuVsBossRankBadge.classList.add(`vs-boss-rank-${summary.rank}`);
+  els.mainMenuVsBossRankBadge.textContent = summary.rank;
+  els.mainMenuVsBossRankProgress.style.width = `${summary.overallScorePercent}%`;
+  els.mainMenuVsBossScorePercent.textContent = `${summary.overallScorePercent}%`;
+  els.mainMenuVsBossCompleted.textContent = `${summary.completedBosses}/${summary.totalBosses} บอส`;
+  els.mainMenuVsBossRankTitle.textContent = summary.rankTitle;
+  els.mainMenuVsBossRankHint.classList.toggle("hidden", summary.completedBosses > 0);
+  els.mainMenuVsBossRank.setAttribute(
+    "aria-label",
+    `แรงค์บอสรวม ${summary.rank} คะแนนรวม ${summary.overallScorePercent} เปอร์เซ็นต์ ทำแล้ว ${summary.completedBosses} จาก ${summary.totalBosses} บอส`
+  );
+  return summary;
+}
+
 function renderMainMenu() {
   const view = buildMainMenuViewModel();
   if (els.mainMenuLogo && els.mainMenuLogoFallback) {
@@ -33269,6 +33422,7 @@ function renderMainMenu() {
   els.mainMenuProgressFill.style.width = `${view.progressPercent}%`;
   els.mainMenuBossesDefeated.textContent = `${view.bossesDefeated} / ${view.totalBosses}`;
   renderMainMenuCollection(view.collection);
+  renderMainMenuVsBossOverallRank();
 
   setButtonAction(els.continueJourneyButton, view.canContinue ? "เดินทางต่อ" : "เริ่มการเดินทาง", continueJourneyFromMainMenu, { lock: true });
   setButtonAction(els.lessonMapButton, "แผนที่บทเรียน", openMainMenuLessonMap, { lock: false });
@@ -33297,7 +33451,9 @@ function showMainMenu() {
   }
   renderMainMenu();
   showScene("mainMenu");
-  void loadVsBossPracticeScores();
+  void loadVsBossPracticeScores().then(() => {
+    renderMainMenuVsBossOverallRank();
+  });
 }
 
 function getTeacherStudentProfile(record = {}) {
@@ -35209,17 +35365,42 @@ function normalizeVsBossScores(scores) {
     if (!getVsBossConfig(bossId) || !entry || typeof entry !== "object") {
       return;
     }
+    const bestAttempt = entry.bestAttempt && typeof entry.bestAttempt === "object"
+      ? { ...entry.bestAttempt }
+      : null;
+    const bestCorrect = Math.max(0, Number(bestAttempt?.correct ?? entry.bestCorrect) || 0);
+    const bestTotal = Math.max(0, Number(bestAttempt?.total ?? entry.bestTotal) || 0);
+    const suppliedAccuracy = bestAttempt?.accuracy ?? entry.bestAccuracy;
+    const bestAccuracy = suppliedAccuracy !== undefined && suppliedAccuracy !== null && suppliedAccuracy !== ""
+      ? clamp(Number(suppliedAccuracy) || 0, 0, 100)
+      : bestTotal > 0
+        ? Math.round((bestCorrect / bestTotal) * 100)
+        : 0;
     normalized[bossId] = {
-      bestScore: Math.max(0, Number(entry.bestScore) || 0),
-      bestAccuracy: Math.max(0, Number(entry.bestAccuracy) || 0),
-      bestCorrect: Math.max(0, Number(entry.bestCorrect) || 0),
-      bestTotal: Math.max(0, Number(entry.bestTotal) || 0),
-      attempts: Math.max(0, Number(entry.attempts) || 0),
-      bestUpdatedAt: entry.bestUpdatedAt || null,
-      lastScore: Math.max(0, Number(entry.lastScore) || 0)
+      bestScore: Math.max(0, Number(bestAttempt?.score ?? entry.bestScore) || 0),
+      bestAccuracy,
+      bestCorrect,
+      bestTotal,
+      attempts: Math.max(0, Number(entry.totalAttempts ?? entry.attempts) || 0),
+      bestUpdatedAt: bestAttempt?.completedAt || entry.bestUpdatedAt || null,
+      lastScore: Math.max(0, Number(entry.lastScore) || 0),
+      lastPlayedAt: entry.lastPlayedAt || null,
+      bestAttempt
     };
   });
   return normalized;
+}
+
+function mergeVsBossScoreSources(...sources) {
+  const merged = {};
+  sources.forEach(source => {
+    Object.entries(normalizeVsBossScores(source)).forEach(([bossId, entry]) => {
+      const previous = merged[bossId];
+      const best = !previous || entry.bestScore >= previous.bestScore ? entry : previous;
+      merged[bossId] = { ...best, attempts: Math.max(previous?.attempts || 0, entry.attempts) };
+    });
+  });
+  return merged;
 }
 
 async function loadVsBossPracticeScores({ force = false } = {}) {
@@ -35234,17 +35415,21 @@ async function loadVsBossPracticeScores({ force = false } = {}) {
     if (useFirestore) {
       const snapshot = await getDoc(getPlayerDocRef(ownerId));
       const data = snapshot.exists() ? snapshot.data() : {};
-      scores = data?.progress?.bossPracticeScores || data?.bossPracticeScores || {};
+      scores = mergeVsBossScoreSources(data?.bossPracticeScores, data?.progress?.bossPracticeScores,
+        data?.progress?.vsBossAssessmentRecords, data?.vsBossAssessmentRecords);
     } else {
       const saved = playerStorage.get(getVsBossLocalStorageKey());
-      scores = saved ? JSON.parse(saved) : {};
+      scores = mergeVsBossScoreSources(saved ? JSON.parse(saved) : {},
+        playerData?.progress?.vsBossAssessmentRecords, playerData?.vsBossAssessmentRecords);
     }
+    if (ownerId !== getVsBossScoresOwnerId()) return {};
     state.vsBossPractice.scores = normalizeVsBossScores(scores);
     state.vsBossPractice.scoresOwnerId = ownerId;
     state.vsBossPractice.scoresLoaded = true;
     return state.vsBossPractice.scores;
   } catch (error) {
     console.error("[VS Bosses] failed to load scores:", error);
+    if (ownerId !== getVsBossScoresOwnerId()) return {};
     state.vsBossPractice.scoresOwnerId = ownerId;
     state.vsBossPractice.scoresLoaded = true;
     return state.vsBossPractice.scores;
@@ -35258,6 +35443,7 @@ function createVsBossScoreEntry(previousEntry, result, attempts) {
     ? Math.round((result.correctAnswers / result.totalQuestions) * 100)
     : 0;
   return {
+    ...(!isNewBest && previousEntry?.bestAttempt ? { bestAttempt: { ...previousEntry.bestAttempt } } : {}),
     bestScore: isNewBest ? result.score : previousBest,
     bestAccuracy: isNewBest ? accuracy : Math.max(0, Number(previousEntry?.bestAccuracy) || 0),
     bestCorrect: isNewBest ? result.correctAnswers : Math.max(0, Number(previousEntry?.bestCorrect) || 0),
@@ -35283,9 +35469,13 @@ async function saveVsBossPracticeScore(bossId, result) {
         throw new Error("Player document not found");
       }
       const remoteEntry = snapshot.data()?.progress?.bossPracticeScores?.[bossId] || {};
-      previousBest = Math.max(previousBest, Number(remoteEntry.bestScore) || 0);
+      const cachedEntry = state.vsBossPractice.scores?.[bossId] || {};
+      const remoteBest = Math.max(0, Number(remoteEntry.bestScore) || 0);
+      const cachedBest = Math.max(0, Number(cachedEntry.bestScore) || 0);
+      const previousEntry = cachedBest >= remoteBest ? cachedEntry : remoteEntry;
+      previousBest = Math.max(previousBest, remoteBest, cachedBest);
       const attempts = Math.max(Number(remoteEntry.attempts) || 0, Number(state.vsBossPractice.scores?.[bossId]?.attempts) || 0) + 1;
-      nextEntry = createVsBossScoreEntry({ ...remoteEntry, bestScore: previousBest }, result, attempts);
+      nextEntry = createVsBossScoreEntry({ ...previousEntry, bestScore: previousBest }, result, attempts);
       transaction.update(playerRef, {
         [`progress.bossPracticeScores.${bossId}`]: nextEntry
       });
@@ -35492,6 +35682,7 @@ async function finishVsBossPracticeBattle({ bossDefeated = false } = {}) {
   }
   practice.lastResult = { ...result, ...scoreSave };
   practice.finishing = false;
+  renderMainMenuVsBossOverallRank(practice.scores);
   renderVsBossesGrid();
   showScene("vsBosses");
   openGameModal({
@@ -35677,6 +35868,44 @@ function getValidVerbMemoryMissingSlots(verb) {
   });
 }
 
+function getVerbMemoryMissingSlotCounts() {
+  const counts = verbMemoryPracticeState.missingSlotCounts;
+  if (!counts || typeof counts !== "object") {
+    verbMemoryPracticeState.missingSlotCounts = { v1: 0, v2: 0, v3: 0 };
+  }
+  VERB_MEMORY_SLOTS.forEach(slot => {
+    verbMemoryPracticeState.missingSlotCounts[slot] = Math.max(
+      0,
+      Number(verbMemoryPracticeState.missingSlotCounts[slot]) || 0
+    );
+  });
+  return verbMemoryPracticeState.missingSlotCounts;
+}
+
+function chooseVerbMemoryMissingSlot(verb, allowedSlots = null) {
+  const validSlots = getValidVerbMemoryMissingSlots(verb);
+  const allowedSet = Array.isArray(allowedSlots) ? new Set(allowedSlots) : null;
+  const availableSlots = allowedSet
+    ? validSlots.filter(slot => allowedSet.has(slot))
+    : validSlots;
+  if (!availableSlots.length) {
+    return null;
+  }
+
+  const counts = getVerbMemoryMissingSlotCounts();
+  const lowestCount = Math.min(...availableSlots.map(slot => counts[slot]));
+  const leastUsedSlots = availableSlots.filter(slot => counts[slot] === lowestCount);
+  return shuffleVerbMemoryValues(leastUsedSlots)[0] || null;
+}
+
+function recordVerbMemoryMissingSlot(missingSlot) {
+  if (!VERB_MEMORY_SLOTS.includes(missingSlot)) {
+    return;
+  }
+  const counts = getVerbMemoryMissingSlotCounts();
+  counts[missingSlot] += 1;
+}
+
 function buildVerbMemoryRegularizedForms(v1) {
   const base = String(v1 || "").trim();
   if (!base) {
@@ -35780,17 +36009,12 @@ function generateVerbMemoryChallenge() {
   if (!usableVerbs.length) {
     return null;
   }
-  const usedUsableVerbCount = usableVerbs.filter(entry => verbMemoryPracticeState.usedVerbIds.has(entry.verb.id)).length;
-  if (usedUsableVerbCount >= usableVerbs.length) {
-    verbMemoryPracticeState.usedVerbIds.clear();
-  }
-  let availableVerbs = usableVerbs.filter(entry => !verbMemoryPracticeState.usedVerbIds.has(entry.verb.id));
-  if (!availableVerbs.length) {
-    verbMemoryPracticeState.usedVerbIds.clear();
-    availableVerbs = [...usableVerbs];
-  }
-  for (const entry of shuffleVerbMemoryValues(availableVerbs)) {
-    for (const missingSlot of shuffleVerbMemoryValues(entry.validMissingSlots)) {
+  const buildChallenge = (entries, allowedSlots) => {
+    for (const entry of shuffleVerbMemoryValues(entries)) {
+      const missingSlot = chooseVerbMemoryMissingSlot(entry.verb, allowedSlots);
+      if (!missingSlot) {
+        continue;
+      }
       const verb = entry.verb;
       const correctAnswer = String(verb?.[missingSlot] || "").trim();
       const choices = generateVerbMemoryChoices(verb, missingSlot);
@@ -35798,6 +36022,7 @@ function generateVerbMemoryChallenge() {
         continue;
       }
       verbMemoryPracticeState.usedVerbIds.add(verb.id);
+      recordVerbMemoryMissingSlot(missingSlot);
       return {
         verbId: verb.id,
         no: verb.no,
@@ -35811,8 +36036,81 @@ function generateVerbMemoryChallenge() {
         choices
       };
     }
+    return null;
+  };
+
+  const counts = getVerbMemoryMissingSlotCounts();
+  const lowestCount = Math.min(...VERB_MEMORY_SLOTS.map(slot => counts[slot]));
+  const preferredSlots = VERB_MEMORY_SLOTS.filter(slot => counts[slot] === lowestCount);
+  let availableVerbs = usableVerbs.filter(entry => !verbMemoryPracticeState.usedVerbIds.has(entry.verb.id));
+  let challenge = buildChallenge(availableVerbs, preferredSlots);
+  if (challenge) {
+    return challenge;
+  }
+
+  verbMemoryPracticeState.usedVerbIds.clear();
+  availableVerbs = [...usableVerbs];
+  challenge = buildChallenge(availableVerbs, preferredSlots);
+  if (challenge) {
+    return challenge;
+  }
+
+  const fallbackSlots = [...VERB_MEMORY_SLOTS].sort((a, b) => counts[a] - counts[b]);
+  challenge = buildChallenge(availableVerbs, fallbackSlots);
+  if (challenge) {
+    return challenge;
   }
   return null;
+}
+
+function validateVerbMemoryMissingSlotDistribution(options = {}) {
+  const totalRequested = clamp(Math.floor(Number(options.total) || 100), 100, 1000);
+  const originalUsedVerbIds = verbMemoryPracticeState.usedVerbIds;
+  const originalMissingSlotCounts = verbMemoryPracticeState.missingSlotCounts;
+  const missingSlotCounts = { v1: 0, v2: 0, v3: 0 };
+  const failures = [];
+  let totalGenerated = 0;
+
+  verbMemoryPracticeState.usedVerbIds = new Set();
+  verbMemoryPracticeState.missingSlotCounts = { v1: 0, v2: 0, v3: 0 };
+  try {
+    for (let index = 0; index < totalRequested; index += 1) {
+      const challenge = generateVerbMemoryChallenge();
+      if (!challenge) {
+        failures.push(`challenge ${index + 1}: generation failed`);
+        continue;
+      }
+      totalGenerated += 1;
+      if (!VERB_MEMORY_SLOTS.includes(challenge.missingSlot)) {
+        failures.push(`challenge ${index + 1}: invalid missing slot ${challenge.missingSlot}`);
+        continue;
+      }
+      missingSlotCounts[challenge.missingSlot] += 1;
+    }
+  } finally {
+    verbMemoryPracticeState.usedVerbIds = originalUsedVerbIds;
+    verbMemoryPracticeState.missingSlotCounts = originalMissingSlotCounts;
+  }
+
+  VERB_MEMORY_SLOTS.forEach(slot => {
+    if (missingSlotCounts[slot] === 0) {
+      failures.push(`${slot} did not appear`);
+    }
+  });
+  if (totalGenerated === totalRequested) {
+    const counts = Object.values(missingSlotCounts);
+    const spread = Math.max(...counts) - Math.min(...counts);
+    if (spread > Math.ceil(totalGenerated * 0.2)) {
+      failures.push(`missing slot distribution is imbalanced: spread ${spread}`);
+    }
+  }
+
+  return {
+    ok: failures.length === 0,
+    totalGenerated,
+    missingSlotCounts,
+    failures
+  };
 }
 
 function validateIrregularVerbMemoryBank() {
@@ -36114,6 +36412,11 @@ function resetVerbMemoryPracticeState({ preserveBest = true } = {}) {
     bestStreak: 0,
     currentChallenge: null,
     usedVerbIds: new Set(),
+    missingSlotCounts: {
+      v1: 0,
+      v2: 0,
+      v3: 0
+    },
     startedAt: null,
     endedAt: null,
     isResolving: false,
@@ -36401,13 +36704,30 @@ async function openVerbMemoryPracticeScene() {
       failures: ["Choice validation skipped because the verb bank is invalid"],
       warnings: []
     };
+  const missingSlotValidation = bankValidation.ok && choiceValidation.ok
+    ? validateVerbMemoryMissingSlotDistribution({ total: 100 })
+    : {
+      ok: false,
+      totalGenerated: 0,
+      missingSlotCounts: { v1: 0, v2: 0, v3: 0 },
+      failures: ["Missing slot validation skipped because earlier validation failed"]
+    };
   verbMemoryPracticeState.validation = {
-    ok: bankValidation.ok && choiceValidation.ok,
+    ok: bankValidation.ok && choiceValidation.ok && missingSlotValidation.ok,
     count: bankValidation.count,
     bank: bankValidation,
     choices: choiceValidation,
-    failures: [...bankValidation.failures, ...choiceValidation.failures]
+    missingSlots: missingSlotValidation,
+    failures: [
+      ...bankValidation.failures,
+      ...choiceValidation.failures,
+      ...missingSlotValidation.failures
+    ]
   };
+  console.info(
+    "[Verb Memory Practice] missing slot distribution",
+    JSON.stringify(missingSlotValidation)
+  );
   applyVerbMemoryBossImage();
   renderVerbMemoryPracticeScene();
   setVerbMemoryStatus(verbMemoryPracticeState.validation.ok
@@ -38175,6 +38495,9 @@ function buildLessonSegmentDialogue(stage) {
   if (!segment) {
     return null;
   }
+  if (stage.id === "regular-rule-4") {
+    return buildCvcLessonTeachingFlow(stage);
+  }
 
   const steps = [];
   appendLessonSegmentLines(steps, segment.teacherExplanation, "teacherExplanation");
@@ -38189,6 +38512,109 @@ function buildLessonSegmentDialogue(stage) {
     steps.push(createBattleIntroStep(stage));
   }
   return steps;
+}
+
+function buildCvcLessonTeachingFlow(stage) {
+  const steps = [];
+  const teach = (lines, title = "", cards = []) => {
+    lines.forEach(text => steps.push(createSegmentNode(text, "teacherExplanation", "มาสเตอร์เวรีออน", {
+      visual: title ? { title, cards } : null
+    })));
+  };
+  const practice = (prompt, choices, answer, explanation) => {
+    const node = guidedPracticeNode(prompt, choices, answer, {
+      correct: `ถูกต้อง! ${explanation}`,
+      wrong: `ยังไม่ถูก ${explanation}`
+    });
+    node.cvcTeachingCheck = true;
+    steps.push(node);
+    // Keep bookmark indices stable when a check is answered again or the lesson is resumed.
+    steps.push(createSegmentNode(explanation, "guidedPractice", "มาสเตอร์เวรีออน", { cvcTeachingFeedback: true }));
+  };
+
+  teach([
+    "เจ้ามาถึงบ่อเวลาที่ Rewind Slime ซ่อนตัวอยู่แล้ว",
+    "มันชอบทำตัวสะกดท้ายคำหายไป",
+    "เราจะคืนตัวอักษรด้วยกฎ CVC",
+    "C ย่อจาก Consonant แปลว่า พยัญชนะ",
+    "V ย่อจาก Vowel แปลว่า สระ",
+    "CVC คือ Consonant + Vowel + Consonant",
+    "ภาษาไทยคือ พยัญชนะ + สระ + พยัญชนะ",
+    "วันนี้เราฝึกกริยาพยางค์เดียวที่มีสระเสียงสั้น"
+  ], "รหัส CVC", ["C = Consonant = พยัญชนะ", "V = Vowel = สระ", "C-V-C = พยัญชนะ-สระ-พยัญชนะ"]);
+  teach([
+    "ดูคำว่า stop แปลว่า หยุด",
+    "มองตัวอักษรสามตัวท้าย คือ t-o-p",
+    "t เป็นพยัญชนะ จึงเป็น C",
+    "o เป็นสระ จึงเป็น V",
+    "p เป็นพยัญชนะ จึงเป็น C",
+    "stop จึงลงท้ายแบบ C-V-C ไม่ต้องลบ s ออก"
+  ], "ท้ายคำ stop", ["s + <b>t-o-p</b>", "t = C", "o = V", "p = C"]);
+  practice("ตัวอักษรสามตัวท้ายของ stop เป็นรูปแบบใด?", ["C-V-C", "V-C-C", "C-C-V", "V-V-C"], "C-V-C", "t-o-p คือ พยัญชนะ-สระ-พยัญชนะ");
+  teach([
+    "เมื่อเปลี่ยนคำแบบนี้เป็นอดีต ให้เพิ่มพยัญชนะตัวสุดท้าย",
+    "เพิ่มอีก 1 ตัวก่อน แล้วค่อยเติม -ed",
+    "นี่คือกฎสะกดที่ช่วยคงเสียงสระสั้นของคำเดิม",
+    "stop ลงท้าย p จึงเพิ่ม p อีกตัว",
+    "stop + p + ed = stopped",
+    "ถ้าเขียน stoped แปลว่าลืมเพิ่ม p"
+  ], "เพิ่มตัวท้าย แล้วเติม -ed", ["stop → stopp → stopped", "stoped: ลืมเพิ่ม p"]);
+  practice("รูปอดีตของ stop คือข้อใด?", ["stopped", "stoped", "stoppeed", "stopd"], "stopped", "stop เพิ่ม p ก่อนเติม -ed เป็น stopped");
+  teach([
+    "ลองดู plan แปลว่า วางแผน",
+    "ตัวอักษรสามตัวท้ายคือ l-a-n",
+    "l เป็น C, a เป็น V และ n เป็น C",
+    "เพิ่ม n ก่อนเติม -ed จึงเป็น planned"
+  ], "ท้ายคำ plan", ["p + <b>l-a-n</b> = ลงท้าย C-V-C", "plan + n + ed → planned"]);
+  practice("ทำไม plan จึงเป็น planned?", ["ลงท้าย C-V-C จึงเพิ่ม n ก่อน -ed", "ทุกคำต้องเติม n", "ลงท้าย e จึงเติม -d", "เป็น Irregular Verb"], "ลงท้าย C-V-C จึงเพิ่ม n ก่อน -ed", "ท้ายคำ l-a-n เป็น C-V-C จึงเพิ่ม n");
+  teach(["คำเหล่านี้ใช้กฎเดียวกัน", "ดูตัวท้ายของคำเดิม แล้วเพิ่มตัวนั้นอีกหนึ่งตัว"], "คำสั้นที่เพิ่มตัวท้าย", ["drop → dropped", "grab → grabbed", "clap → clapped", "hop → hopped", "jog → jogged", "hug → hugged"]);
+  practice("รูปอดีตของ drop คือข้อใด?", ["dropped", "droped", "dropeed", "dropd"], "dropped", "drop ลงท้าย r-o-p จึงเพิ่ม p แล้วเติม -ed");
+  teach([
+    "ระวัง! ไม่ใช่กริยาสั้นทุกคำจะเพิ่มตัวท้าย",
+    "rain และ wait มีตัวสระ ai สองตัวติดกัน",
+    "จึงเติม -ed ได้เลย ไม่เพิ่ม n หรือ t"
+  ], "สระสองตัว: ไม่เพิ่มตัวท้าย", ["rain → rained ไม่ใช่ rainned", "wait → waited ไม่ใช่ waitted"]);
+  practice("คำใดไม่ต้องเพิ่มพยัญชนะท้ายก่อนเติม -ed?", ["stop", "plan", "rain", "drop"], "rain", "rain มี ai จึงเติม -ed เป็น rained");
+  teach([
+    "เราไม่เพิ่มตัวท้าย w, x หรือ y ตามกฎนี้",
+    "play มีสระก่อน y จึงเป็น played",
+    "like ลงท้าย e จึงเติมแค่ -d เป็น liked",
+    "fix ลงท้าย x จึงเป็น fixed ไม่ใช่ fixxed"
+  ], "คำสั้นที่ใช้กฎอื่น", ["play → played", "like → liked", "fix → fixed", "snow → snowed"]);
+  practice("คู่ใดถูกต้อง?", ["play → played", "play → playyed", "like → likeed", "fix → fixxed"], "play → played", "play เติม -ed ได้เลย ส่วน like เป็น liked และ fix เป็น fixed");
+  teach([
+    "Rewind Slime อาจส่งรูปอดีตที่ขาดตัวสะกดมา",
+    "ถ้าโจทย์ให้ stop, plan หรือ drop ให้ตรวจตัวท้าย",
+    "อย่าลืมเพิ่มตัวท้ายก่อน -ed"
+  ], "ซ่อมรูปอดีตของคำที่กำหนด", ["stop: stoped → stopped", "plan: planed → planned", "drop: droped → dropped", "grab: grabed → grabbed"]);
+  practice("คำใดลงท้าย C-V-C และต้องเพิ่มตัวท้าย?", ["stop", "play", "rain", "like"], "stop", "ท้าย stop คือ t-o-p ซึ่งเป็น C-V-C");
+  practice("รูปอดีตของ grab คือข้อใด?", ["grabbed", "grabed", "grabd", "grabbied"], "grabbed", "grab เพิ่ม b แล้วเติม -ed เป็น grabbed");
+  practice("สูตรจำกฎของคำ CVC ที่เราฝึกคืออะไร?", ["C-V-C → เพิ่มตัวท้าย → เติม -ed", "C-V-C → ลบตัวท้าย → เติม -ed", "ทุกคำเติม -ed ได้เลย", "ทุกคำเปลี่ยน y เป็น ied"], "C-V-C → เพิ่มตัวท้าย → เติม -ed", "จำว่า ซี-วี-ซี เพิ่มตัวท้าย เติม -ed");
+  teach([
+    "CVC คือ พยัญชนะ + สระ + พยัญชนะ",
+    "คำพยางค์เดียว สระเสียงสั้น ลงท้าย C-V-C แบบที่ฝึก",
+    "ให้เพิ่มพยัญชนะตัวสุดท้าย แล้วเติม -ed",
+    "ยกเว้นตัวท้าย w, x และ y ที่ไม่เพิ่มซ้ำ",
+    "C-V-C, double last, add -ed"
+  ], "สรุปกฎเพิ่มตัวท้าย", ["stop → stopped", "plan → planned", "drop → dropped", "grab → grabbed"]);
+  teach(["ดูคำให้ครบก่อนใช้กฎ", "rain, play, like และ fix ไม่เพิ่มตัวท้าย", "ตอนนี้เจ้าพร้อมคืนตัวอักษรให้ Rewind Slime แล้ว"], "อย่าเพิ่มตัวท้ายทุกคำ", ["rain → rained", "play → played", "like → liked", "fix → fixed"]);
+  steps.push({ ...createBattleIntroStep(stage), nextButtonText: "เริ่มต่อสู้กับ Rewind Slime" });
+  return steps;
+}
+
+function validateCvcLessonTeachingFlow() {
+  const steps = buildCvcLessonTeachingFlow({ id: "regular-rule-4", enemy: "Rewind Slime" });
+  const checks = steps.filter(step => step.cvcTeachingCheck);
+  const text = JSON.stringify(steps);
+  const failures = [];
+  ["Consonant + Vowel + Consonant", "Consonant = พยัญชนะ", "Vowel = สระ", "เพิ่มพยัญชนะตัวสุดท้าย", "stop → stopped", "plan → planned", "drop → dropped", "rain → rained", "play → played"].forEach(required => {
+    if (!text.includes(required)) failures.push(`Missing teaching: ${required}`);
+  });
+  if (checks.length < 6) failures.push("Not enough guided questions");
+  if (checks.some(step => step.lessonChoices.filter(choice => choice.correct).length !== 1 || step.lessonChoices.some(choice => !choice.response))) failures.push("Invalid guided feedback/answer");
+  if (steps.some(step => step.reward || step.grammaria || step.onComplete)) failures.push("Unexpected teaching side effect");
+  if (steps.at(-1)?.type !== "battle-intro" || steps.slice(0, -1).some(step => step.type === "battle-intro")) failures.push("Battle must be last");
+  return { ok: failures.length === 0, teachingStepCount: steps.length - 1, guidedPracticeCount: checks.length, failures, warnings: [] };
 }
 
 function buildPostBossDialogue(stage) {
@@ -38354,6 +38780,7 @@ function renderLessonStoryStep(options = {}) {
       currentLessonStepIndex: 0
     });
   }
+  els.lessonStoryVisual.classList.toggle("cvc-teaching-visual", state.currentLessonStage?.id === "regular-rule-4");
   renderLessonStoryVisual(step.visual);
   hideDialogueChoices();
   state.activeDialogue = [step];
@@ -38365,7 +38792,7 @@ function renderLessonStoryStep(options = {}) {
   const finalButtonText = state.currentLessonStage?.questions?.length
     ? (state.currentLessonStage.type && state.currentLessonStage.type.includes("boss") ? "เริ่มต่อสู้" : "เริ่มฝึก")
     : "ไปต่อ";
-  els.nextDialogueButton.textContent = state.lessonStoryStepIndex >= state.lessonStorySteps.length - 1 ? finalButtonText : "ถัดไป";
+  els.nextDialogueButton.textContent = state.lessonStoryStepIndex >= state.lessonStorySteps.length - 1 ? (step.nextButtonText || finalButtonText) : "ถัดไป";
   updatePreviousDialogueButton();
   startTypewriter(resolveDialogueText(step));
 }
@@ -38473,6 +38900,15 @@ function chooseLessonStoryChoice(choice) {
   if (choice.optionalMasterContinue || choice.optionalMasterQuestionId) {
     hideDialogueChoices();
     handleOptionalMasterQuestionChoice(choice);
+    return;
+  }
+
+  if (state.lessonStorySteps[state.lessonStoryStepIndex]?.cvcTeachingCheck) {
+    if (!state.awaitingDialogueChoice) return;
+    hideDialogueChoices();
+    state.lessonStorySteps[state.lessonStoryStepIndex + 1].text = choice.response;
+    state.lessonStoryStepIndex += 1;
+    renderLessonStoryStep();
     return;
   }
 
@@ -40976,7 +41412,15 @@ function applyCorrectAnswerPostAttackCharmEffects(charm, context = {}) {
   }
 }
 
+function areCharmsAllowedInCurrentBattle() {
+  const context = state.actBattle || {};
+  return !isVsBossPracticeActive() && !context.assessmentOnly && context.charmsEnabled !== false;
+}
+
+const NO_BATTLE_CHARM = Object.freeze({ id: "", name: "ไม่มีชาม (โหมดประเมิน)" });
+
 function getBattleFlowV2Charm(charmId) {
+  if (!areCharmsAllowedInCurrentBattle()) return NO_BATTLE_CHARM;
   return actAttackCharms.find(charm => charm.id === charmId) ||
     PLAYER_CHARMS_V2.find(charm => charm.id === charmId && charm.enabled);
 }
@@ -41162,6 +41606,11 @@ function renderBattleCharmSelectionPanel() {
   if (!battle) {
     return;
   }
+  if (!areCharmsAllowedInCurrentBattle()) {
+    battle.selectedCharmId = "";
+    renderBattleChargePanel();
+    return;
+  }
 
   const skill = getBattleFlowV2Skill(battle.selectedSkillId);
   if (!skill) {
@@ -41219,7 +41668,7 @@ function renderBattleCharmSelectionPanel() {
 
 function selectBattleCharm(charmId) {
   const battle = state.actBattle;
-  if (!battle || battle.playerActionPhase !== "charmSelect") {
+  if (!battle || !areCharmsAllowedInCurrentBattle() || battle.playerActionPhase !== "charmSelect") {
     return;
   }
 
@@ -41280,13 +41729,14 @@ function renderBattleChargePanel() {
       </div>
       <p class="battle-flow-v2-hint">ชาม: ${charm.thaiName || charm.name}</p>
       <div class="battle-flow-v2-actions">
-        <button type="button" class="secondary-button" id="battleFlowV2BackToCharm">กลับไปเลือกชาม</button>
+        <button type="button" class="secondary-button" id="battleFlowV2BackToCharm">${areCharmsAllowedInCurrentBattle() ? "กลับไปเลือกชาม" : "กลับไปเลือกสกิล"}</button>
       </div>
     </div>
   `;
   controls.querySelector("#battleFlowV2BackToCharm")?.addEventListener("click", () => {
     cleanupGrammariaCharge();
-    renderBattleCharmSelectionPanel();
+    if (areCharmsAllowedInCurrentBattle()) renderBattleCharmSelectionPanel();
+    else renderBattleSkillSelectionPanel();
   });
 
   showOnlyBattlePanel(els.chargePanel);
@@ -41345,6 +41795,7 @@ function getBattleFlowV2BaseDamage(answerResult) {
 
 function calculateBattleFlowV2Damage({ baseDamage, answerResult, skill, charm, chargePercent }) {
   const isCorrect = Boolean(answerResult?.isCorrect);
+  charm = isCorrect && areCharmsAllowedInCurrentBattle() ? charm : null;
   let workingDamage = Number(baseDamage || 0);
   if (!Number.isFinite(workingDamage) || workingDamage <= 0) {
     workingDamage = 1;
@@ -41359,21 +41810,25 @@ function calculateBattleFlowV2Damage({ baseDamage, answerResult, skill, charm, c
   }
 
   let bowlBonus = { totalDamage: Math.round(workingDamage), grammariaBonus: 0, isCrit: false, stunChance: 0, bonusLines: [] };
+  let charmDamageMultiplier = 1;
   if (charm?.effectType) {
     const bonusLines = [`ชาม ${charm.name || charm.thaiName}`];
-    const charmDamage = calculateCharmDamage(charm, Math.max(1, Math.round(workingDamage)), bonusLines);
+    const charmDamage = calculateCharmDamage(charm, Math.max(1, workingDamage), bonusLines);
     bowlBonus = {
       ...charmDamage,
       bonusLines
     };
     workingDamage = charmDamage.totalDamage;
+    charmDamageMultiplier = charmDamage.charmDamageMultiplier;
   }
 
   if (charm?.damageBonusPercent) {
     workingDamage *= 1 + Number(charm.damageBonusPercent || 0) / 100;
+    charmDamageMultiplier *= 1 + Number(charm.damageBonusPercent || 0) / 100;
   }
   if (isCorrect && charm?.correctAnswerDamageBonusPercent) {
     workingDamage *= 1 + Number(charm.correctAnswerDamageBonusPercent || 0) / 100;
+    charmDamageMultiplier *= 1 + Number(charm.correctAnswerDamageBonusPercent || 0) / 100;
   }
 
   const effectiveChargePercent = Math.min(
@@ -41388,7 +41843,8 @@ function calculateBattleFlowV2Damage({ baseDamage, answerResult, skill, charm, c
   workingDamage *= 1 + effectiveChargePercent / 100;
 
   return {
-    finalDamage: Math.max(1, Math.round(workingDamage)),
+    finalDamage: isCorrect ? Math.max(1, Math.round(workingDamage)) : 0,
+    charmDamageMultiplier,
     isCorrect,
     skillId: skill?.id || "",
     charmId: charm?.id || "",
@@ -41433,6 +41889,9 @@ function showBattleFlowV2AttackFeedback({ skill, charm, damageResult }) {
     `ชาม: ${charm.thaiName || charm.name}`,
     `สร้างความเสียหาย ${damageResult.finalDamage} หน่วย`
   ];
+  if (damageResult.charmDamageMultiplier > 1 && damageResult.finalDamage > 0) {
+    lines.push(`ชามเพิ่มพลังทำงาน! x${Number(damageResult.charmDamageMultiplier.toFixed(2))}`);
+  }
   if (!damageResult.isCorrect) {
     lines.push("คำตอบยังไม่มั่นคง พลังโจมตีจึงลดลง");
   }
@@ -41447,7 +41906,7 @@ function applyCharmPostAttackEffect(charm, context = {}) {
   const battle = context.battle || state.actBattle;
   const lines = context.lines || [];
   const result = { extraTurn: false };
-  if (!battle || !charm) {
+  if (!battle || !charm || !areCharmsAllowedInCurrentBattle()) {
     return result;
   }
   ensureBattleApEconomyState(battle);
@@ -41752,6 +42211,8 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
   if (!battle || battle.skillFlowLocked || battle.isResolvingTurn) {
     return;
   }
+  if (battle.pendingPlayerAnswer && !battle.pendingPlayerAnswer.isCorrect) return;
+  if (!areCharmsAllowedInCurrentBattle()) charm = NO_BATTLE_CHARM;
 
   battle.skillFlowLocked = true;
   battle.isResolvingTurn = true;
@@ -41811,6 +42272,7 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
     pvePlayerAttack: true,
     isSuccessfulAttack: damageResult.isCorrect,
     charm,
+    charmDamageMultiplier: damageResult.charmDamageMultiplier,
     feedbackLines: damageResult.bonusLines
   });
   damageResult.rawFinalDamage = rawPlayerDamage;
@@ -41843,11 +42305,11 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
     state.grammaria += grammariaGain;
   }
   clearFocusBuffAfterAttack(battle);
+  showBattleFlowV2AttackFeedback({ skill, charm, damageResult });
   resetBattleFlowV2Selection({ phase: "bossTurn", cleanupCharge: true });
   updateBattleStats();
   syncBattleStateToPlayerData();
   showOnlyBattlePanel(null);
-  showBattleFlowV2AttackFeedback({ skill, charm, damageResult });
   if (grammariaGain > 0) {
     els.battleMessage.textContent += `\nได้รับ Grammaria +${grammariaGain}`;
   }
@@ -42888,6 +43350,7 @@ function tryStunBoss(baseChance, lines) {
 }
 
 function applyCharmSetupEffect(charm, lines) {
+  if (!charm || !areCharmsAllowedInCurrentBattle()) return {};
   const effects = state.battleActiveEffects || {};
   const battle = state.actBattle;
   const charmState = ensureBattleCharmEffectState(battle);
@@ -43083,6 +43546,9 @@ function applyCharmSetupEffect(charm, lines) {
 }
 
 function calculateCharmDamage(charm, baseDamage, lines) {
+  if (!charm || !areCharmsAllowedInCurrentBattle()) {
+    return { totalDamage: baseDamage, charmDamageMultiplier: 1, grammariaBonus: 0, isCrit: false, stunChance: 0, bypassBossShield: false };
+  }
   const battle = state.actBattle;
   const effects = state.battleActiveEffects || {};
   const setup = applyCharmSetupEffect(charm, lines);
@@ -43094,16 +43560,16 @@ function calculateCharmDamage(charm, baseDamage, lines) {
   let forceCritical = Boolean(effects.forceCriticalNextAttack);
 
   if (setup.damageMultiplier) {
-    damage = Math.round(damage * setup.damageMultiplier);
+    damage *= setup.damageMultiplier;
   }
 
   switch (charm.effectType) {
     case "damageMultiplier":
-      damage = Math.round(damage * (charm.value || 1));
+      damage *= charm.value || 1;
       break;
     case "pastDamageBonus":
       if (isPastQuestionContext()) {
-        damage = Math.round(damage * (charm.value || 1));
+        damage *= charm.value || 1;
         addBattleMessageLine(lines, "Past/V2 bonus ทำงาน");
       }
       break;
@@ -43112,13 +43578,13 @@ function calculateCharmDamage(charm, baseDamage, lines) {
       break;
     case "firstTurnDamageBonus":
       if ((battle?.turnNumber || 1) === 1) {
-        damage = Math.round(damage * (charm.value || 1));
+        damage *= charm.value || 1;
         addBattleMessageLine(lines, "Opening bonus ทำงาน");
       }
       break;
     case "memoryEnemyBonus":
       if (isMemoryEnemy(battle?.stage)) {
-        damage = Math.round(damage * (charm.value || 1));
+        damage *= charm.value || 1;
         addBattleMessageLine(lines, "Memory enemy bonus ทำงาน");
       }
       break;
@@ -43126,12 +43592,12 @@ function calculateCharmDamage(charm, baseDamage, lines) {
       if (getBattleStatus("boss")?.defenseShieldPercent > 0 || getBattleStatus("boss")?.hitShieldStacks > 0) {
         effects.pierceBossShieldNextAttack = 1;
         addBattleMessageLine(lines, "Shield Pierce ทำงาน");
-        damage = Math.round(damage * (charm.value || 1.2));
+        damage *= charm.value || 1.2;
       }
       break;
     case "stackingCorrectDamage":
       effects.stackingDamageBonus = clamp((effects.stackingDamageBonus || 0) + (charm.value || 0.05), 0, (charm.value || 0.05) * (charm.maxStacks || 5));
-      damage = Math.round(damage * (1 + effects.stackingDamageBonus));
+      damage *= 1 + effects.stackingDamageBonus;
       addBattleMessageLine(lines, `วงเวทสะสมพลัง +${Math.round(effects.stackingDamageBonus * 100)}%`);
       break;
     case "comboCorrectEcho":
@@ -43141,7 +43607,7 @@ function calculateCharmDamage(charm, baseDamage, lines) {
       }
       break;
     case "bossQuestionBreak":
-      damage = Math.round(damage * 1.15);
+      damage *= 1.15;
       effects.pierceBossShieldNextAttack = 1;
       addBattleMessageLine(lines, "Grammar Break เพิ่มดาเมจและเจาะ Guard บอส");
       break;
@@ -43165,35 +43631,37 @@ function calculateCharmDamage(charm, baseDamage, lines) {
       break;
     case "damageOnStunned":
       if (battle?.bossStunned || isTargetStunned("boss")) {
-        damage = Math.round(damage * (charm.value || 1.5));
+        damage *= charm.value || 1.5;
         addBattleMessageLine(lines, "Stun Breaker ทำงาน");
       }
       break;
     case "correctStreakDamage":
       if ((battle?.correctStreak || 0) >= 3) {
-        damage = Math.round(damage * (charm.value || 1.75));
+        damage *= charm.value || 1.75;
         addBattleMessageLine(lines, "ตอบถูก 3 ครั้งติดกัน: ดาเมจเพิ่ม");
       }
       break;
     case "rouletteDamage": {
       const values = charm.values || [0.7, 1.8];
       const multiplier = sample(values, 1)[0];
-      damage = Math.round(damage * multiplier);
+      damage *= multiplier;
       addBattleMessageLine(lines, `Grammar Roulette x${multiplier}`);
       break;
     }
     case "damageAndReward":
-      damage = Math.round(damage * (charm.damageMultiplier || 2));
+      damage *= charm.damageMultiplier || 2;
       extraGrammaria += charm.bonusGrammaria || 15;
       break;
     case "v2Judgement":
-      damage = Math.round(damage * (charm.damageMultiplier || 1.85));
+      damage *= charm.damageMultiplier || 1.85;
       effects.bossWeak = Math.max(effects.bossWeak || 0, charm.applyWeak || 0.3);
       effects.bossWeakTurns = Math.max(effects.bossWeakTurns || 0, charm.duration || 1);
       break;
     default:
       break;
   }
+
+  const charmDamageMultiplier = baseDamage > 0 ? (damage / baseDamage) * (1 + echoRatio) : 1;
 
   if (effects.markDamageBonus) {
     damage = Math.round(damage * (1 + effects.markDamageBonus));
@@ -43238,7 +43706,7 @@ function calculateCharmDamage(charm, baseDamage, lines) {
 
   const bypassBossShield = Boolean(effects.pierceBossShieldNextAttack);
   effects.pierceBossShieldNextAttack = 0;
-  return { totalDamage, grammariaBonus: extraGrammaria, isCrit, stunChance, bypassBossShield };
+  return { totalDamage, charmDamageMultiplier, grammariaBonus: extraGrammaria, isCrit, stunChance, bypassBossShield };
 }
 
 function chooseActCharmV2(charm) {
@@ -43399,6 +43867,7 @@ function resolveActCharmAttack(charm, chargePercent = 0) {
     pvePlayerAttack: true,
     isSuccessfulAttack: true,
     charm,
+    charmDamageMultiplier: damageResult.charmDamageMultiplier,
     feedbackLines: bonusLines
   });
   appendDamageModifierLines(bonusLines, "boss", bossDamageResult);
@@ -47818,8 +48287,12 @@ window.debugButtonAudit = function debugButtonAudit() {
 };
 
 window.validateBattleStageQuestionPools = validateBattleStageQuestionPools;
+window.getVsBossOverallRank = getVsBossOverallRank;
+window.calculateVsBossOverallRank = calculateVsBossOverallRank;
+window.validateCvcLessonTeachingFlow = validateCvcLessonTeachingFlow;
 window.validateIrregularVerbMemoryBank = validateIrregularVerbMemoryBank;
 window.validateVerbMemoryChoiceGeneration = validateVerbMemoryChoiceGeneration;
+window.validateVerbMemoryMissingSlotDistribution = validateVerbMemoryMissingSlotDistribution;
 validateBattleStageQuestionPools();
 
 function bindGameAudioUnlockEvents() {

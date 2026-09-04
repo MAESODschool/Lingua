@@ -6,7 +6,7 @@
   <meta name="lingua-advisor-mode" content="auto">
   <meta name="lingua-advisor-api-url" content="">
   <title>Lingua - RPG แห่งแกรมมาเรีย</title>
-  <link rel="stylesheet" href="style.css?v=verb-memory-boss-size-20260901">
+  <link rel="stylesheet" href="style.css?v=rank-cvc-charm-20260904c">
 </head>
 <body>
   <div class="game-utility-controls" aria-label="ตัวเลือกเกม">
@@ -102,6 +102,19 @@
                 <span>Grammaria</span>
                 <strong id="mainMenuGrammaria">0</strong>
               </div>
+            </div>
+            <div id="mainMenuVsBossRank" class="vs-boss-overall-rank-card" aria-live="polite">
+              <div class="vs-boss-rank-heading">
+                <span>VS Boss Rank / แรงค์บอสรวม</span>
+                <strong id="mainMenuVsBossRankBadge" class="vs-boss-rank-badge vs-boss-rank-D">D</strong>
+              </div>
+              <div class="vs-boss-rank-progress" aria-hidden="true">
+                <i id="mainMenuVsBossRankProgress"></i>
+              </div>
+              <p>คะแนนรวมจากบอสทั้งหมด: <strong id="mainMenuVsBossScorePercent">0%</strong></p>
+              <p>ทำแบบประเมินแล้ว: <strong id="mainMenuVsBossCompleted">0/0 บอส</strong></p>
+              <p>ระดับ: <strong id="mainMenuVsBossRankTitle">เริ่มต้นการฝึก</strong></p>
+              <small id="mainMenuVsBossRankHint">เริ่มต่อสู้กับบอสใน VS Bosses เพื่อสะสมผลประเมิน</small>
             </div>
           </section>
 
@@ -1089,6 +1102,6 @@
   </main>
 
   <script src="assets/data/irregular_verb_memory_bank.js?v=verb-memory-bank-20260901"></script>
-  <script type="module" src="script.js?v=lingua-breaker-bgm-20260901"></script>
+  <script type="module" src="script.js?v=rank-cvc-charm-20260904b"></script>
 </body>
 </html>
