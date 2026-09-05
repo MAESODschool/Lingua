@@ -34,7 +34,7 @@ const context = vm.createContext({
 const registry = declaration('VS_BOSS_REGISTRY', 'const');
 for (const name of new Set(registry.match(/\b[A-Z_]+_PATH\b/g))) context[name] = name;
 vm.runInContext(registry, context);
-for (const name of ['VS_BOSS_OVERALL_RANK_TITLES', 'PVE_GRAMMARIA_ATTACK_RANKS', 'BATTLE_FLOW_V2_CONFIG', 'CHARM_EFFECT_HANDLERS', 'STATUS_BALANCE_CONFIG']) {
+for (const name of ['VS_BOSS_OVERALL_RANK_TITLES', 'PVE_GRAMMARIA_ATTACK_RANKS', 'BATTLE_FLOW_V2_CONFIG', 'CHARM_EFFECT_HANDLERS', 'STATUS_BALANCE_CONFIG', 'STORY_NORMAL_ATTACK']) {
   vm.runInContext(declaration(name, 'const'), context);
 }
 vm.runInContext(declaration('makeCharm'), context);
@@ -57,11 +57,11 @@ vm.runInContext(declaration('getVsBossConfig'), context);
 
 function run(code) { return vm.runInContext(code, context); }
 const ids = run('VS_BOSS_REGISTRY.map(b => b.id)');
-assert.equal(ids.length, 10);
+assert.equal(ids.length, 11);
 assert.equal(run('calculateVsBossOverallRank({}).overallScorePercent'), 0);
 assert.equal(run('calculateVsBossOverallRank({}).rank'), 'D');
 context.one = { [ids[0]]: { bestAttempt: { scorePercent: 100 } } };
-assert.equal(run('calculateVsBossOverallRank(one).overallScorePercent'), 10);
+assert.equal(run('calculateVsBossOverallRank(one).overallScorePercent'), 9);
 for (const [score, rank] of [[0,'D'], [39,'D'], [40,'C'], [59,'C'], [60,'B'], [74,'B'], [75,'A'], [89,'A'], [90,'S'], [100,'S']]) {
   context.records = Object.fromEntries(ids.map(id => [id, { bestAttempt: { scorePercent: score }, latestAttempt: { scorePercent: 0 } }]));
   assert.equal(run('calculateVsBossOverallRank(records).rank'), rank);
@@ -101,6 +101,22 @@ for (const question of bank) {
   assert.ok(question.answer && question.explanation, question.id);
   if (question.options?.length) assert.ok(question.options.includes(question.answer), question.id);
 }
+context.PAST_FRAGMENT_ACT = {stages:[{id:'regular-rule-4',questions:bank}]};
+context.filterQuestionsForStage = questions => questions;
+vm.runInContext(declaration('REWIND_SLIME_REQUIRED_CVC_VERBS','const'),context);
+vm.runInContext(declaration('cloneVsBossQuestion'),context);
+vm.runInContext(declaration('getVsBossQuestionPool'),context);
+vm.runInContext(declaration('normalizeBattleAnswer'),context);
+vm.runInContext(declaration('normalizeActFreeAnswer'),context);
+vm.runInContext(declaration('validateRewindSlimeVsBossAndCvcBank'),context);
+const rewindValidation = run('validateRewindSlimeVsBossAndCvcBank()');
+assert.equal(rewindValidation.ok,true,JSON.stringify(rewindValidation));
+assert.deepEqual([...rewindValidation.rewindSlime.relatedStageIds],['regular-rule-4']);
+assert.equal(rewindValidation.rewindSlime.questionCount,100);
+assert.equal(rewindValidation.targetVerbs.found,20);
+assert.deepEqual([...rewindValidation.targetVerbs.missing],[]);
+assert.ok(ids.indexOf('rewind_slime') < ids.indexOf('ed_forger'));
+assert.ok(!run('getVsBossConfig("echo_tick").relatedStageIds.includes("regular-rule-4")'));
 
 function hit(charmId, { base = 1, rank = 0, vs = false, finalBoss = false, shield = false, charge = 0, correct = true } = {}) {
   state.grammaria = rank;
@@ -148,7 +164,12 @@ function validateStoryCharmDamagePipeline() {
   }
   return {ok: true, damageWithoutCharm: without.damage, damageWithCharm: withCharm.damage, charmMultiplier: withCharm.multiplier, failures: []};
 }
-console.log(JSON.stringify({ rank: 'passed, 10 registered bosses', cvc, charm: validateStoryCharmDamagePipeline() }, null, 2));
+console.log(JSON.stringify({
+  rank: `passed, ${ids.length} registered bosses`,
+  rewindSlime: rewindValidation,
+  cvc,
+  charm: validateStoryCharmDamagePipeline()
+}, null, 2));
 
 async function testAttackResolution() {
   let animationFinish;
@@ -191,5 +212,132 @@ async function testAttackResolution() {
   assert.equal(apSpent, 1);
   assert.equal(state.enemyHp, 992);
   console.log('Actual attack resolver: persistence, double-click, exact HP, feedback and wrong-answer guard passed.');
+
+  // Reproduce a fresh direct attack with no AP and every skill on cooldown.
+  const element = () => ({
+    children: [], classList: {add() {}, remove() {}, toggle() {}, contains: () => false},
+    appendChild(child) { this.children.push(child); }, querySelectorAll: () => [],
+    append(...children) { this.children.push(...children); },
+    addEventListener(name, fn) { this[name] = fn; }, click() { this.click?.(); },
+    setAttribute() {}, focus() {}
+  });
+  context.document = {createElement: element};
+  Object.assign(context.els, {answerOptions:element(), actionMenu:element(), attackButton:element(), itemButton:element(), focusButton:element()});
+  let continueAction;
+  let victories = 0;
+  let skillPanels = 0;
+  Object.assign(context, {
+    getActBattle: () => state.actBattle, getActAP: () => state.actBattle.playerAp,
+    setButtonEnabled: (button, enabled) => {button.disabled = !enabled;},
+    hasAvailableBattleQuestion: () => true,
+    showActBattleQuestion: () => {state.actBattle.answerResolving = false;},
+    escapeHtml: s => s, getActQuestionPrimaryAnswer: q => q.answer,
+    isActQuestionAnswerCorrect: (q, answer) => answer === q.answer,
+    markQuestionResult() {}, getBattleQuestionRepeatHistory: () => ({}),
+    showBattleCorrectAnswerFeedback() {}, setBattleTurnOwner() {}, recordCorrectAnswerForGrammaria() {},
+    consumeBattleEffectValue: () => 0, useBattleEffect: () => false,
+    recordWrongAnswerForGrammaria() {}, playAttackSfx() {}, resolvePlayerDefeat: () => false,
+    applyLowHpComebackCharmEffect() {},
+    hasUsableBattleSkill: () => state.actBattle.playerAp > 0,
+    showBattleContinueButton: (label, callback) => {continueAction = callback;},
+    getBattlePlayerAp: () => state.actBattle.playerAp,
+    spendBattlePlayerAp: cost => {
+      if (cost > state.actBattle.playerAp) return false;
+      state.actBattle.playerAp -= cost;
+      return true;
+    },
+    renderBattleSkillSelectionPanel: () => {skillPanels++;},
+    handleActEnemyDefeated: () => {victories++;},
+    NO_BATTLE_CHARM: {id:'', name:'disabled'}, BATTLE_CORRECT_SUCCESS_MESSAGE: 'Correct'
+  });
+  for (const name of ['isStoryNormalAttackAvailable','startActAttackAction','updateActActionMenuState','buildBattleFlowV2AnswerState','continueBattleCorrectAnswerFeedback','chooseActAnswer','handleBattleFlowV2AnswerResolved']) vm.runInContext(declaration(name), context);
+  for (const stageId of ['what-is-past','act1_phase1_unit3_was_were','regular-rule-1','irregular-lesson','irregular-mini-boss','final-boss']) {
+    for (const type of ['multiple-choice','typing','word-arrangement']) {
+      hit(null, {finalBoss:stageId === 'final-boss'});
+      Object.assign(state.actBattle, {
+        stage:{id:stageId, type:'boss'}, playerAp:0, correctAnswers:0, damagePerCorrect:1,
+        skillCooldowns:{coreSpark:9,syntaxBlade:9,grammariaSurge:9},
+        currentQuestion:{id:type, type, answer:'was'},
+        pendingActionType:'focus', pendingPlayerAnswer:{isCorrect:false}, pendingPlayerAttack:{baseDamage:999}
+      });
+      state.enemyHp = 6;
+      context.els.answerOptions.children = [];
+      run('updateActActionMenuState(); startActAttackAction();');
+      assert.equal(context.els.attackButton.disabled, false);
+      assert.equal(state.actBattle.pendingActionType, 'attack');
+      assert.equal(state.actBattle.pendingPlayerAttack, null);
+      run('chooseActAnswer("was")');
+      assert.equal(state.actBattle.pendingPlayerAnswer.isCorrect, true);
+      assert.equal(state.actBattle.playerActionPhase, 'correctAnswerFeedback');
+      assert.equal(context.els.answerOptions.children[0].children.length, 0); // No skill required.
+      const firstNormal = continueAction();
+      assert.equal(continueAction(), false); // Rapid second confirmation is ignored.
+      animationFinish();
+      await firstNormal;
+      assert.equal(state.enemyHp, 0, `${stageId}/${type}`);
+      assert.equal(state.actBattle.playerAp, 0);
+      assert.match(context.els.battleMessage.textContent, /สร้างความเสียหาย 6/);
+      assert.equal(state.actBattle.skillCooldowns.coreSpark, 9);
+    }
+  }
+  assert.equal(victories, 18);
+  assert.equal(skillPanels, 0);
+  // Wrong answers and optional skills retain their original routes.
+  hit(null);
+  state.enemyHp = 1000;
+  Object.assign(state.actBattle,{playerAp:0,currentQuestion:{answer:'was'},correctAnswers:0,damagePerCorrect:1});
+  run('startActAttackAction(); chooseActAnswer("were")');
+  assert.equal(state.enemyHp, 1000);
+  assert.equal(state.actBattle.playerActionPhase, 'enemyTurn');
+  state.actBattle.playerAp = 2;
+  run('startActAttackAction(); chooseActAnswer("was")');
+  const optionalSkill = context.els.answerOptions.children.at(-1).children[0];
+  assert.ok(optionalSkill);
+  optionalSkill.click();
+  assert.equal(skillPanels, 1);
+  assert.equal(state.actBattle.pendingActionType, 'skill');
+  assert.equal(state.actBattle.pendingPlayerAnswer.isCorrect, true);
+
+  // Exercise the production controls for all three supported answer adapters.
+  for (const name of [
+    'normalizeActFreeAnswer','getBattleAcceptedAnswers','getActQuestionAcceptedAnswers','getBattleQuestionType','getActBattleQuestionType','getBattleCorrectAnswer',
+    'normalizeBattleAnswer','isInvalidBattleOption','normalizeBattleOptions','renderActTypingQuestion','renderActWordArrangementQuestion',
+    'renderActBattleQuestionControls'
+  ]) vm.runInContext(declaration(name), context);
+  context.scenes = {battle:element()};
+  context.els.questionPanel = element();
+  let submitted = '';
+  context.captureAnswer = answer => {submitted = answer;};
+  context.els.answerOptions = element();
+  context.mcQuestion = {id:'mc',type:'multiple-choice',answer:'was'};
+  run('renderActBattleQuestionControls(mcQuestion,["were","was"],captureAnswer)');
+  context.els.answerOptions.children.find(button => button.textContent === 'was').click();
+  assert.equal(submitted,'was');
+  context.els.answerOptions = element();
+  context.typingQuestion = {id:'typing',type:'typing',answer:'was'};
+  run('renderActBattleQuestionControls(typingQuestion,[],captureAnswer)');
+  const typingPanel = context.els.answerOptions.children[0];
+  typingPanel.children[0].value = 'was';
+  typingPanel.children[0].input();
+  typingPanel.children[1].click();
+  assert.equal(submitted,'was');
+  context.els.answerOptions = element();
+  context.arrangeQuestion = {id:'arrange',type:'word-arrangement',answer:'They were happy',tiles:['They','were','happy']};
+  run('renderActBattleQuestionControls(arrangeQuestion,[],captureAnswer)');
+  const arrangePanel = context.els.answerOptions.children[0];
+  arrangePanel.children[1].children.forEach(button => button.click());
+  arrangePanel.children[2].children[1].click();
+  assert.equal(submitted,'They were happy');
+
+  state.vsBossPractice.active = true;
+  state.actBattle.playerAp = 0;
+  run('updateActActionMenuState()');
+  assert.equal(context.els.attackButton.disabled, true); // VS rules remain unchanged.
+  state.actBattle.playerAp = 2;
+  run('startActAttackAction(); chooseActAnswer("was")');
+  continueAction();
+  assert.equal(skillPanels, 2);
+  assert.equal(state.enemyHp, 1000);
+  console.log('Direct Attack: zero AP, stale Focus state, cooldowns, 6 stages, MC/typing/arrangement controls, victory handoff, wrong answers, optional skills and VS isolation passed.');
 }
 testAttackResolution().catch(error => { console.error(error); process.exitCode = 1; });

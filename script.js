@@ -5887,45 +5887,45 @@ const regularRuleFourQuestions = [
   {
     "id": "cvc-double-031",
     "type": "multiple-choice",
-    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า prefer",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า rob",
     "options": [
-      "prefered",
-      "preferd",
-      "preferred",
-      "preferied"
+      "robbed",
+      "robed",
+      "robd",
+      "robied"
     ],
-    "answer": "preferred",
-    "explanation": "prefer เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น preferred",
+    "answer": "robbed",
+    "explanation": "rob เป็นคำกริยาสั้นรูปแบบ C-V-C จึงเพิ่ม b ก่อนเติม -ed เป็น robbed",
     "lessonId": "regular-rule-4",
     "ruleId": "cvc_double"
   },
   {
     "id": "cvc-double-032",
     "type": "multiple-choice",
-    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า refer",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า pin",
     "options": [
-      "referred",
-      "refered",
-      "referied",
-      "referd"
+      "pined",
+      "pind",
+      "pinned",
+      "pinied"
     ],
-    "answer": "referred",
-    "explanation": "refer เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น referred",
+    "answer": "pinned",
+    "explanation": "pin เป็นคำกริยาสั้นรูปแบบ C-V-C จึงเพิ่ม n ก่อนเติม -ed เป็น pinned",
     "lessonId": "regular-rule-4",
     "ruleId": "cvc_double"
   },
   {
     "id": "cvc-double-033",
     "type": "multiple-choice",
-    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า occur",
+    "prompt": "เลือก V2 ที่ถูกต้องของคำว่า hop",
     "options": [
-      "occured",
-      "occuried",
-      "occurd",
-      "occurred"
+      "hoped",
+      "hopd",
+      "hopied",
+      "hopped"
     ],
-    "answer": "occurred",
-    "explanation": "occur เพิ่มพยัญชนะท้ายก่อนเติม -ed จึงเป็น occurred",
+    "answer": "hopped",
+    "explanation": "hop เป็นคำกริยาสั้นรูปแบบ C-V-C จึงเพิ่ม p ก่อนเติม -ed เป็น hopped",
     "lessonId": "regular-rule-4",
     "ruleId": "cvc_double"
   },
@@ -22499,10 +22499,24 @@ const VS_BOSS_REGISTRY = Object.freeze([
     thaiName: "ติ๊กสะท้อนอดีต",
     topic: "Regular Verbs",
     topicTh: "กฎการเติม -ed และ -d",
-    description: "ฝึกกฎ Regular Verbs ทั้งสี่รูปแบบ",
+    description: "ฝึกกฎ Regular Verbs ช่วงต้น ได้แก่ เติม -ed, เติม -d และ y → ied",
     enemyAssetKey: "echo_tick",
     fallbackImage: ECHO_TRICK_IMAGE_PATH,
-    relatedStageIds: ["regular-rule-1", "regular-rule-2", "regular-rule-3", "regular-rule-4"],
+    relatedStageIds: ["regular-rule-1", "regular-rule-2", "regular-rule-3"],
+    difficulty: "regular",
+    practiceHp: 180
+  },
+  {
+    id: "rewind_slime",
+    name: "Rewind Slime",
+    thaiName: "สไลม์ย้อนเวลา",
+    topic: "Regular Verb Rule 4: CVC / Double Consonant",
+    topicTh: "กฎ CVC: เพิ่มพยัญชนะท้ายก่อนเติม -ed",
+    cardTopic: "Regular Verb Rule 4: CVC / Double Consonant / กฎ CVC: เพิ่มพยัญชนะท้ายก่อนเติม -ed",
+    description: "ฝึกสังเกตคำกริยาสั้นรูปแบบ C-V-C เช่น stop, plan, drop แล้วเพิ่มพยัญชนะท้ายก่อนเติม -ed",
+    enemyAssetKey: "rewind_slime",
+    fallbackImage: assetPath("enemies/rewind-slime.png"),
+    relatedStageIds: ["regular-rule-4"],
     difficulty: "regular",
     practiceHp: 180
   },
@@ -25839,7 +25853,7 @@ function updateActActionMenuState() {
 
   const ap = getActAP();
   const canChoose = !battle.actionChoiceLocked && !isActBattleEnded(battle);
-  setButtonEnabled(els.attackButton, canChoose && ap >= 1 && !battle.attackQuestionsExhausted);
+  setButtonEnabled(els.attackButton, canChoose && (isStoryNormalAttackAvailable() || ap >= 1) && !battle.attackQuestionsExhausted);
   setButtonEnabled(els.itemButton, canChoose);
   setButtonEnabled(els.focusButton, canChoose);
   els.focusButton.classList.toggle("is-focus-hint", ap <= 0);
@@ -35298,6 +35312,108 @@ function getVsBossQuestionPool(bossId) {
   });
 }
 
+const REWIND_SLIME_REQUIRED_CVC_VERBS = Object.freeze([
+  ["stop", "stopped"], ["plan", "planned"], ["drop", "dropped"], ["chat", "chatted"],
+  ["rob", "robbed"], ["nod", "nodded"], ["clap", "clapped"], ["shop", "shopped"],
+  ["slip", "slipped"], ["trim", "trimmed"], ["grab", "grabbed"], ["hug", "hugged"],
+  ["hop", "hopped"], ["tap", "tapped"], ["beg", "begged"], ["rub", "rubbed"],
+  ["drag", "dragged"], ["fit", "fitted"], ["jog", "jogged"], ["pin", "pinned"]
+].map(pair => Object.freeze(pair)));
+
+function validateRewindSlimeVsBossAndCvcBank() {
+  const failures = [];
+  const warnings = [];
+  const rewindSlime = getVsBossConfig("rewind_slime");
+  const echoTick = getVsBossConfig("echo_tick");
+  const forgerIndex = VS_BOSS_REGISTRY.findIndex(config => config.id === "ed_forger");
+  const rewindIndex = VS_BOSS_REGISTRY.findIndex(config => config.id === "rewind_slime");
+  const cvcStage = PAST_FRAGMENT_ACT.stages.find(stage => stage.id === "regular-rule-4");
+  const pool = getVsBossQuestionPool("rewind_slime");
+  const missingTargetVerbs = [];
+
+  if (!rewindSlime) failures.push("VS_BOSS_REGISTRY does not contain rewind_slime");
+  if (JSON.stringify(rewindSlime?.relatedStageIds || []) !== JSON.stringify(["regular-rule-4"])) {
+    failures.push("Rewind Slime must map only to regular-rule-4");
+  }
+  if (echoTick?.relatedStageIds?.includes("regular-rule-4")) {
+    failures.push("Echo Tick still contains regular-rule-4");
+  }
+  if (rewindIndex < 0 || forgerIndex < 0 || rewindIndex >= forgerIndex) {
+    failures.push("Rewind Slime must appear before The -ed Forger");
+  }
+  if (cvcStage?.questions !== regularRuleFourQuestions) {
+    failures.push("regular-rule-4 does not use regularRuleFourQuestions");
+  }
+  if (regularRuleFourQuestions.length !== 100 || pool.length !== 100) {
+    failures.push(`CVC question count must remain 100 (bank=${regularRuleFourQuestions.length}, pool=${pool.length})`);
+  }
+
+  const ids = new Set();
+  const prompts = new Set();
+  const forbiddenText = /ตัวเลือกหลอก|placeholder|todo|undefined|null|wrong option|dummy|test option/i;
+  regularRuleFourQuestions.forEach((question, index) => {
+    const label = question.id || `index-${index}`;
+    if (!question.id || ids.has(question.id)) failures.push(`duplicate or missing question id: ${label}`);
+    ids.add(question.id);
+    const prompt = String(question.prompt || "").trim();
+    const promptKey = prompt.toLowerCase();
+    if (!prompt || prompts.has(promptKey)) failures.push(`duplicate or missing prompt: ${label}`);
+    prompts.add(promptKey);
+    if (!String(question.answer || "").trim()) failures.push(`missing answer: ${label}`);
+    if (!String(question.explanation || "").trim()) failures.push(`missing explanation: ${label}`);
+    if (question.lessonId !== "regular-rule-4" || question.ruleId !== "cvc_double") {
+      failures.push(`unrelated lesson/rule mapping: ${label}`);
+    }
+    if (forbiddenText.test(JSON.stringify(question))) failures.push(`placeholder text: ${label}`);
+    if (Array.isArray(question.options)) {
+      const normalizedOptions = question.options.map(option => normalizeBattleAnswer(option));
+      if (new Set(normalizedOptions).size !== normalizedOptions.length) failures.push(`duplicate options: ${label}`);
+      if (!normalizedOptions.includes(normalizeBattleAnswer(question.answer))) failures.push(`answer missing from options: ${label}`);
+    }
+    if (question.type === "typing") {
+      const accepted = [question.answer, ...(question.acceptedAnswers || [])].map(answer => normalizeBattleAnswer(answer));
+      if (!accepted.includes(normalizeBattleAnswer(question.answer))) failures.push(`typing answer is not accepted: ${label}`);
+    }
+    if (question.type === "word-arrangement") {
+      const tileWords = (question.tiles || question.words || []).map(word => normalizeActFreeAnswer(word));
+      const answerParts = tileWords.every(word => word.length === 1)
+        ? [...normalizeActFreeAnswer(question.answer, { ignoreFinalPeriod: true }).replace(/\s+/g, "")]
+        : normalizeActFreeAnswer(question.answer, { ignoreFinalPeriod: true }).split(/\s+/).filter(Boolean);
+      if (!answerParts.length || answerParts.length !== tileWords.length ||
+          answerParts.slice().sort().join("|") !== tileWords.slice().sort().join("|")) {
+        failures.push(`invalid arrangement sequence: ${label}`);
+      }
+    }
+  });
+
+  REWIND_SLIME_REQUIRED_CVC_VERBS.forEach(([base, past]) => {
+    const basePattern = new RegExp(`\\b${base}\\b`, "i");
+    const pastPattern = new RegExp(`\\b${past}\\b`, "i");
+    const found = regularRuleFourQuestions.some(question => {
+      const content = JSON.stringify(question);
+      return basePattern.test(content) && pastPattern.test(content);
+    });
+    if (!found) missingTargetVerbs.push(`${base} -> ${past}`);
+  });
+  if (missingTargetVerbs.length) failures.push(`missing target verbs: ${missingTargetVerbs.join(", ")}`);
+
+  return {
+    ok: failures.length === 0,
+    failures,
+    warnings,
+    rewindSlime: {
+      found: Boolean(rewindSlime),
+      relatedStageIds: [...(rewindSlime?.relatedStageIds || [])],
+      questionCount: pool.length
+    },
+    targetVerbs: {
+      totalRequired: REWIND_SLIME_REQUIRED_CVC_VERBS.length,
+      found: REWIND_SLIME_REQUIRED_CVC_VERBS.length - missingTargetVerbs.length,
+      missing: missingTargetVerbs
+    }
+  };
+}
+
 const VS_BOSS_PRACTICE_HP_FALLBACKS = Object.freeze({
   early: 90,
   basic: 130,
@@ -35544,7 +35660,7 @@ function createVsBossCard(config) {
   name.textContent = `${config.name} / ${config.thaiName}`;
   const topic = document.createElement("p");
   topic.className = "vs-boss-topic";
-  topic.textContent = `หัวข้อ: ${config.topicTh}`;
+  topic.textContent = `หัวข้อ: ${config.cardTopic || config.topicTh}`;
   const description = document.createElement("p");
   description.className = "vs-boss-description";
   description.textContent = config.description;
@@ -39990,6 +40106,17 @@ function startActBattle(stageIndex) {
   return true;
 }
 
+function isStoryNormalAttackAvailable() {
+  return Boolean(state.actBattle) && !isVsBossPracticeActive() && !state.actBattle.assessmentOnly;
+}
+
+const STORY_NORMAL_ATTACK = Object.freeze({
+  id: "normalAttack",
+  thaiName: "โจมตีปกติ",
+  apCost: 0,
+  damageMultiplier: 1
+});
+
 function startActAttackAction() {
   const battle = state.actBattle;
   if (!battle) {
@@ -40001,9 +40128,12 @@ function startActAttackAction() {
     return;
   }
 
-  if (BATTLE_FLOW_V2_CONFIG.enabled) {
+  battle.pendingActionType = "attack";
+  battle.currentFocusQuestion = null;
+  if (BATTLE_FLOW_V2_CONFIG.enabled || isStoryNormalAttackAvailable()) {
     battle.playerActionPhase = "question";
     battle.pendingPlayerAnswer = null;
+    battle.pendingPlayerAttack = null;
     battle.selectedSkillId = "";
     battle.selectedCharmId = "";
     battle.selectedChargePercent = 0;
@@ -40207,6 +40337,8 @@ function startActFocusAction() {
   if (!battle) {
     return;
   }
+
+  battle.pendingActionType = "focus";
 
   const rawFocusQuestion = getFocusQuestion(battle.stage);
   if (!rawFocusQuestion) {
@@ -40839,7 +40971,7 @@ function buildBattleFlowV2AnswerState(question, selectedAnswer, isCorrect) {
   };
 }
 
-function continueBattleCorrectAnswerFeedback(question, selectedAnswer) {
+function continueBattleCorrectAnswerFeedback(question, selectedAnswer, { useSkill = false } = {}) {
   const battle = state.actBattle;
   if (!battle || battle.playerActionPhase !== "correctAnswerFeedback") {
     return false;
@@ -40850,6 +40982,16 @@ function continueBattleCorrectAnswerFeedback(question, selectedAnswer) {
 
   battle.correctAnswerFeedbackAdvanced = true;
   els.continueBattleButton.classList.add("hidden");
+
+  if (isStoryNormalAttackAvailable() && !useSkill) {
+    // Normal attacks use the same HP/turn resolver, without AP, skill, charm or charge prerequisites.
+    battle.pendingActionType = "attack";
+    return resolveBattleFlowV2PlayerAttack({
+      skill: STORY_NORMAL_ATTACK,
+      charm: { id: "", name: "ไม่มีชาม" },
+      chargePercent: 0
+    });
+  }
 
   if (BATTLE_FLOW_V2_CONFIG?.enabled) {
     handleBattleFlowV2AnswerResolved(question, selectedAnswer, true);
@@ -40939,6 +41081,27 @@ function chooseActAnswer(option, selectedButton = null) {
   updateBattleStats();
   syncBattleStateToPlayerData();
   if (!isCorrect && resolvePlayerDefeat("HP เหลือ 0")) {
+    return;
+  }
+
+  if (isCorrect && isStoryNormalAttackAvailable()) {
+    battle.playerActionPhase = "correctAnswerFeedback";
+    battle.correctAnswerFeedbackAdvanced = false;
+    els.battleMessage.textContent = "ถูกต้อง! พร้อมโจมตีปกติ";
+    showBattleContinueButton("โจมตีปกติ", () => continueBattleCorrectAnswerFeedback(question, option));
+    if (BATTLE_FLOW_V2_CONFIG?.enabled && hasUsableBattleSkill(battle)) {
+      const skillButton = document.createElement("button");
+      skillButton.type = "button";
+      skillButton.className = "secondary-button";
+      skillButton.textContent = "เลือกสกิล / ชาม";
+      skillButton.addEventListener("click", () => {
+        if (battle !== state.actBattle || battle.playerActionPhase !== "correctAnswerFeedback" || battle.correctAnswerFeedbackAdvanced) return;
+        skillButton.disabled = true;
+        battle.pendingActionType = "skill";
+        continueBattleCorrectAnswerFeedback(question, option, { useSkill: true });
+      });
+      feedback.appendChild(skillButton);
+    }
     return;
   }
 
@@ -41886,7 +42049,7 @@ function showBattleFlowV2AttackFeedback({ skill, charm, damageResult }) {
   };
   const lines = [
     skillLines[skill.id] || `${skill.thaiName} พุ่งเข้าใส่ศัตรู!`,
-    `ชาม: ${charm.thaiName || charm.name}`,
+    ...(skill.id === STORY_NORMAL_ATTACK.id ? [] : [`ชาม: ${charm.thaiName || charm.name}`]),
     `สร้างความเสียหาย ${damageResult.finalDamage} หน่วย`
   ];
   if (damageResult.charmDamageMultiplier > 1 && damageResult.finalDamage > 0) {
@@ -42191,6 +42354,7 @@ function resetBattleFlowV2Selection({ phase = "bossTurn", cleanupCharge = true }
   }
 
   battle.pendingPlayerAnswer = null;
+  battle.pendingActionType = "";
   battle.pendingPlayerAttack = null;
   battle.selectedSkillId = "";
   battle.selectedCharmId = "";
@@ -42238,7 +42402,7 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
   }
   const emptyCoreCharmLines = [];
   applyEmptyCoreCupAfterSkillSpend(charm, skill, emptyCoreCharmLines);
-  const cooldownCharmLines = applySkillCooldownAfterUse(skill.id, battle);
+  const cooldownCharmLines = skill.id === STORY_NORMAL_ATTACK.id ? [] : applySkillCooldownAfterUse(skill.id, battle);
 
   const baseDamage = getBattleFlowV2BaseDamage(answerResult);
   const damageResult = calculateBattleFlowV2Damage({
@@ -42252,7 +42416,7 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
 
   applyBattleFlowV2SkillEffects({ skill, charm, answerResult, damageResult });
   triggerMotion(els.battlePlayer, "player-attack-motion");
-  await playBattleSkillEffect(skill.id);
+  await playBattleSkillEffect(skill.id === STORY_NORMAL_ATTACK.id ? "coreSpark" : skill.id);
   if (!state.actBattle || state.actBattle !== battle || isActBattleEnded(battle)) {
     cleanupBattleSkillEffects();
     battle.skillFlowLocked = false;
@@ -48290,6 +48454,7 @@ window.validateBattleStageQuestionPools = validateBattleStageQuestionPools;
 window.getVsBossOverallRank = getVsBossOverallRank;
 window.calculateVsBossOverallRank = calculateVsBossOverallRank;
 window.validateCvcLessonTeachingFlow = validateCvcLessonTeachingFlow;
+window.validateRewindSlimeVsBossAndCvcBank = validateRewindSlimeVsBossAndCvcBank;
 window.validateIrregularVerbMemoryBank = validateIrregularVerbMemoryBank;
 window.validateVerbMemoryChoiceGeneration = validateVerbMemoryChoiceGeneration;
 window.validateVerbMemoryMissingSlotDistribution = validateVerbMemoryMissingSlotDistribution;
