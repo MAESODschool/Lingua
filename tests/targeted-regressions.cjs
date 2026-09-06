@@ -34,7 +34,7 @@ const context = vm.createContext({
 const registry = declaration('VS_BOSS_REGISTRY', 'const');
 for (const name of new Set(registry.match(/\b[A-Z_]+_PATH\b/g))) context[name] = name;
 vm.runInContext(registry, context);
-for (const name of ['VS_BOSS_OVERALL_RANK_TITLES', 'VS_BOSS_HISTORY_LIMIT', 'PVE_GRAMMARIA_ATTACK_RANKS', 'BATTLE_FLOW_V2_CONFIG', 'CHARM_EFFECT_HANDLERS', 'STATUS_BALANCE_CONFIG', 'STORY_NORMAL_ATTACK']) {
+for (const name of ['VS_BOSS_OVERALL_RANK_TITLES', 'VS_BOSS_HISTORY_LIMIT', 'PVE_GRAMMARIA_ATTACK_RANKS', 'BATTLE_FLOW_V2_CONFIG', 'CHARM_EFFECT_HANDLERS', 'STATUS_BALANCE_CONFIG', 'STORY_NORMAL_ATTACK', 'PLAYER_SKILLS_V2']) {
   vm.runInContext(declaration(name, 'const'), context);
 }
 vm.runInContext(declaration('makeCharm'), context);
@@ -54,7 +54,7 @@ for (const name of [
   'getGrammariaCharmSynergyMultiplier', 'getPlayerAccumulatedGrammaria', 'getGrammariaAttackRank', 'calculateFinalPvePlayerDamage',
   'ensureBattleCharmEffectState', 'resetBattleActiveEffects', 'createBattleStatusBucket', 'resetBattleStatuses', 'ensureBattleStatuses', 'getBattleStatus',
   'isTrueBossStage', 'applyIncomingDamageModifiers', 'applyStatusDamageToTarget', 'applyCharmSetupEffect', 'rollCritical',
-  'calculateCharmDamage', 'calculateBattleFlowV2Damage'
+  'calculateCharmDamage', 'calculateBattleDamageBreakdown', 'calculateBattleFlowV2Damage', 'validateBattleSkillDamageDifferences'
 ]) vm.runInContext(declaration(name), context);
 vm.runInContext('const VS_BOSS_REGISTRY_BY_ID = new Map(VS_BOSS_REGISTRY.map(b => [b.id, b]));', context);
 vm.runInContext(declaration('getVsBossConfig'), context);
@@ -65,6 +65,14 @@ const ids = run('VS_BOSS_REGISTRY.map(b => b.id)');
 assert.equal(ids.length, 11);
 assert.equal(run('calculateVsBossOverallRank({}).overallScorePercent'), 0);
 assert.equal(run('calculateVsBossOverallRank({}).rank'), 'D');
+const skillDamageValidation = run('validateBattleSkillDamageDifferences()');
+assert.equal(skillDamageValidation.ok, true, JSON.stringify(skillDamageValidation));
+assert.deepEqual(
+  {...skillDamageValidation.sample},
+  {normal:20, coreSpark:24, syntaxBlade:31, grammariaSurge:42}
+);
+assert.equal(skillDamageValidation.vsBosses.charmMultiplier, 1);
+assert.ok(skillDamageValidation.story.withCharm > skillDamageValidation.story.withoutCharm);
 context.one = { [ids[0]]: { bestAttempt: { scorePercent: 100 } } };
 assert.equal(run('calculateVsBossOverallRank(one).overallScorePercent'), 9);
 for (const [score, rank] of [[0,'D'], [39,'D'], [40,'C'], [59,'C'], [60,'B'], [74,'B'], [75,'A'], [89,'A'], [90,'S'], [100,'S']]) {
@@ -193,7 +201,7 @@ assert.deepEqual([...rewindValidation.targetVerbs.missing],[]);
 assert.ok(ids.indexOf('rewind_slime') < ids.indexOf('ed_forger'));
 assert.ok(!run('getVsBossConfig("echo_tick").relatedStageIds.includes("regular-rule-4")'));
 
-function hit(charmId, { base = 1, rank = 0, vs = false, finalBoss = false, shield = false, charge = 0, correct = true } = {}) {
+function hit(charmId, { base = 1, rank = 0, vs = false, finalBoss = false, shield = false, charge = 0, correct = true, skillId = "" } = {}) {
   state.grammaria = rank;
   state.vsBossPractice.active = vs;
   state.enemyHp = state.enemyMaxHp = 1000;
@@ -201,13 +209,16 @@ function hit(charmId, { base = 1, rank = 0, vs = false, finalBoss = false, shiel
   run('resetBattleActiveEffects(); resetBattleStatuses();');
   if (shield) state.actBattle.statuses.boss.hitShieldStacks = 1;
   context.charmId = charmId;
-  context.base = base; context.charge = charge; context.correct = correct;
+  context.base = base; context.charge = charge; context.correct = correct; context.skillId = skillId;
   const result = run(`(() => {
     const charm = actAttackCharms.find(c => c.id === charmId) || null;
-    const calculated = calculateBattleFlowV2Damage({ baseDamage: base, answerResult: {isCorrect: correct}, skill: {damageMultiplier: 1}, charm, chargePercent: charge });
+    const skill = PLAYER_SKILLS_V2.find(candidate => candidate.id === skillId) || {id: "normalAttack", damageMultiplier: 1};
+    const calculated = calculateBattleFlowV2Damage({ baseDamage: base, answerResult: {isCorrect: correct}, skill, charm, chargePercent: charge });
     const applied = applyStatusDamageToTarget('boss', calculated.finalDamage, 'test', {
       pvePlayerAttack: true, isSuccessfulAttack: correct, charm,
-      charmDamageMultiplier: calculated.charmDamageMultiplier, bypassShield: calculated.bypassBossShield
+      skillDamageMultiplier: calculated.skillMultiplier, skillBonusMultiplier: calculated.skillBonusMultiplier,
+      charmDamageMultiplier: calculated.charmDamageMultiplier, chargeDamageMultiplier: calculated.chargeMultiplier,
+      bypassShield: calculated.bypassBossShield
     });
     return {damage: applied.finalDamage, multiplier: calculated.charmDamageMultiplier, hp: state.enemyHp};
   })()`);
@@ -238,6 +249,18 @@ function validateStoryCharmDamagePipeline() {
     assert.equal(vs.damage, hit(null, {vs: true, rank}).damage);
   }
   return {ok: true, damageWithoutCharm: without.damage, damageWithCharm: withCharm.damage, charmMultiplier: withCharm.multiplier, failures: []};
+}
+for (const vs of [false, true]) {
+  const appliedSkillDamage = [
+    hit(null, {base:1, vs}).damage,
+    hit(null, {base:1, vs, skillId:'coreSpark'}).damage,
+    hit(null, {base:1, vs, skillId:'syntaxBlade'}).damage,
+    hit(null, {base:1, vs, skillId:'grammariaSurge'}).damage
+  ];
+  assert.ok(
+    appliedSkillDamage.every((damage, index) => index === 0 || damage > appliedSkillDamage[index - 1]),
+    `${vs ? 'VS Bosses' : 'Story'} applied damage order: ${appliedSkillDamage.join(' < ')}`
+  );
 }
 console.log(JSON.stringify({
   rank: `passed, ${ids.length} registered bosses`,
@@ -273,7 +296,7 @@ async function testAttackResolution() {
     selectedCharmId: 'b_attack_rune', selectedSkillId: 'coreSpark',
     pendingPlayerAnswer: {isCorrect:true}, pendingPlayerAttack: {baseDamage:1, grammariaGain:0}
   });
-  context.attack = {skill:{id:'coreSpark',thaiName:'Spark',apCost:1,damageMultiplier:1}, charm:run('actAttackCharms.find(c=>c.id==="b_attack_rune")'),chargePercent:0};
+  context.attack = {skill:run('PLAYER_SKILLS_V2.find(skill=>skill.id==="coreSpark")'), charm:run('actAttackCharms.find(c=>c.id==="b_attack_rune")'),chargePercent:0};
   const first = run('resolveBattleFlowV2PlayerAttack(attack)');
   const duplicate = run('resolveBattleFlowV2PlayerAttack(attack)');
   assert.equal(state.actBattle.selectedCharmId, 'b_attack_rune');
@@ -281,14 +304,14 @@ async function testAttackResolution() {
   animationFinish();
   await Promise.all([first, duplicate]);
   assert.equal(apSpent, 1);
-  assert.equal(state.enemyHp, 992);
-  assert.equal(displayedDamage, 8);
+  assert.equal(state.enemyHp, 991);
+  assert.equal(displayedDamage, 9);
   assert.equal(state.actBattle.selectedCharmId, '');
   assert.match(context.els.battleMessage.textContent, /ชามเพิ่มพลังทำงาน! x1.25/);
   state.actBattle.pendingPlayerAnswer = {isCorrect:false};
   await run('resolveBattleFlowV2PlayerAttack(attack)');
   assert.equal(apSpent, 1);
-  assert.equal(state.enemyHp, 992);
+  assert.equal(state.enemyHp, 991);
   console.log('Actual attack resolver: persistence, double-click, exact HP, feedback and wrong-answer guard passed.');
 
   // Reproduce a fresh direct attack with no AP and every skill on cooldown.

@@ -393,9 +393,9 @@ const PLAYER_SKILLS_V2 = [
     thaiName: "ประกายแกนไวยากรณ์",
     apCost: 1,
     cooldownTurns: 1,
-    damageMultiplier: 1,
-    description: "ปล่อยประกายพลังเล็ก ๆ จากเศษ Grammar Core ใช้โจมตีพื้นฐาน",
-    effectText: "โจมตีพื้นฐาน ใช้ AP น้อย เหมาะสำหรับเก็บจังหวะ",
+    damageMultiplier: 1.2,
+    description: "ปล่อยประกายพลังเล็ก ๆ จากเศษ Grammar Core แรงกว่าโจมตีปกติเล็กน้อย",
+    effectText: "ดาเมจ x1.20 ใช้ AP น้อย เหมาะสำหรับเก็บจังหวะ",
     correctAnswerBonusPercent: 0,
     chargeEfficiencyBonusPercent: 0,
     applyBossWeakenPercent: 0,
@@ -407,9 +407,9 @@ const PLAYER_SKILLS_V2 = [
     thaiName: "คมวากยสัมพันธ์",
     apCost: 2,
     cooldownTurns: 2,
-    damageMultiplier: 1.35,
+    damageMultiplier: 1.55,
     description: "หลอมโครงสร้างภาษาให้กลายเป็นคมดาบเวทจาก Grammar Core",
-    effectText: "ถ้าตอบถูก ดาเมจเพิ่มอีก 10%",
+    effectText: "ดาเมจ x1.55 และถ้าตอบถูก ดาเมจเพิ่มอีก 10%",
     correctAnswerBonusPercent: 10,
     chargeEfficiencyBonusPercent: 0,
     applyBossWeakenPercent: 0,
@@ -421,9 +421,9 @@ const PLAYER_SKILLS_V2 = [
     thaiName: "คลื่นแกรมมาเรีย",
     apCost: 3,
     cooldownTurns: 3,
-    damageMultiplier: 1.7,
+    damageMultiplier: 2.1,
     description: "ปลดคลื่นพลังเข้มข้นจากเศษ Grammar Core โจมตีอย่างรุนแรง",
-    effectText: "ถ้าตอบถูก ดาเมจเพิ่ม 12% เพิ่มประสิทธิภาพการชาร์จ และทำให้บอสอ่อนแรงเล็กน้อย",
+    effectText: "ดาเมจ x2.10 ถ้าตอบถูกเพิ่มอีก 12% พร้อมเพิ่มประสิทธิภาพการชาร์จและทำให้บอสอ่อนแรงเล็กน้อย",
     correctAnswerBonusPercent: 12,
     chargeEfficiencyBonusPercent: 10,
     applyBossWeakenPercent: 10,
@@ -27350,11 +27350,23 @@ function applyStatusDamageToTarget(target, rawDamage, source = "", context = {})
     damageResult.damageBeforeMitigation = damageBeforeMitigation;
     damageResult.damageBeforeRankMinimum = damageResult.finalDamage;
     if (damageResult.finalDamage > 0 && !damageResult.absorbedByHitShield) {
-      // The charm is already in rawDamage. Scale only the floor, never the hit again.
+      // These multipliers are already in rawDamage. Scale only the floor so it cannot
+      // flatten distinct skill strengths, and never multiply the actual hit twice.
+      const skillMultiplier = Math.max(1, Number(context.skillDamageMultiplier) || 1);
+      const skillBonusMultiplier = Math.max(1, Number(context.skillBonusMultiplier) || 1);
       const charmMultiplier = areCharmsAllowedInCurrentBattle()
         ? Math.max(1, Number(context.charmDamageMultiplier) || 1)
         : 1;
-      const minimumDamage = Math.ceil(rankScaling.rank.minFinalDamage * charmMultiplier);
+      const chargeMultiplier = Math.max(1, Number(context.chargeDamageMultiplier) || 1);
+      const attackBoostMultiplier = Math.max(1, Number(context.attackBoostMultiplier) || 1);
+      const minimumDamage = Math.ceil(
+        rankScaling.rank.minFinalDamage
+          * skillMultiplier
+          * skillBonusMultiplier
+          * charmMultiplier
+          * chargeMultiplier
+          * attackBoostMultiplier
+      );
       damageResult.finalDamage = Math.max(damageResult.finalDamage, minimumDamage);
     }
     damageResult.rankMinimumAdded = Math.max(0, damageResult.finalDamage - damageResult.damageBeforeRankMinimum);
@@ -43088,22 +43100,59 @@ function getBattleFlowV2BaseDamage(answerResult) {
   return answerResult?.isCorrect ? 16 : 8;
 }
 
+function calculateBattleDamageBreakdown({ baseDamage = 0, selectedSkill = null, answerMultiplier = 1, skillBonusMultiplier = 1, charmMultiplier = 1, chargeMultiplier = 1, modeMultiplier = 1, charmsAllowed = true } = {}) {
+  const safeMultiplier = value => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) && numeric > 0 ? numeric : 1;
+  };
+  const safeBaseDamage = Math.max(0, Number(baseDamage) || 0);
+  const isNormalAttack = !selectedSkill || selectedSkill.id === STORY_NORMAL_ATTACK.id;
+  const skillMultiplier = isNormalAttack ? 1 : safeMultiplier(selectedSkill.damageMultiplier);
+  const effectiveCharmMultiplier = charmsAllowed ? safeMultiplier(charmMultiplier) : 1;
+  const normalizedAnswerMultiplier = safeMultiplier(answerMultiplier);
+  const normalizedSkillBonusMultiplier = safeMultiplier(skillBonusMultiplier);
+  const normalizedChargeMultiplier = safeMultiplier(chargeMultiplier);
+  const normalizedModeMultiplier = safeMultiplier(modeMultiplier);
+  const unroundedDamage = safeBaseDamage
+    * normalizedAnswerMultiplier
+    * skillMultiplier
+    * normalizedSkillBonusMultiplier
+    * effectiveCharmMultiplier
+    * normalizedChargeMultiplier
+    * normalizedModeMultiplier;
+
+  return {
+    baseDamage: safeBaseDamage,
+    selectedSkillId: isNormalAttack ? "" : selectedSkill.id,
+    selectedSkillName: isNormalAttack ? "" : (selectedSkill.name || selectedSkill.thaiName || selectedSkill.id),
+    answerMultiplier: normalizedAnswerMultiplier,
+    skillMultiplier,
+    skillBonusMultiplier: normalizedSkillBonusMultiplier,
+    charmMultiplier: effectiveCharmMultiplier,
+    chargeMultiplier: normalizedChargeMultiplier,
+    modeMultiplier: normalizedModeMultiplier,
+    unroundedDamage,
+    finalDamage: safeBaseDamage > 0 ? Math.max(1, Math.round(unroundedDamage)) : 0
+  };
+}
+
 function calculateBattleFlowV2Damage({ baseDamage, answerResult, skill, charm, chargePercent }) {
   const isCorrect = Boolean(answerResult?.isCorrect);
   const charmsAllowed = !isVsBossesBattleContext() && areCharmsAllowedInCurrentBattle();
   charm = isCorrect && charmsAllowed ? charm : null;
-  let workingDamage = Number(baseDamage || 0);
-  if (!Number.isFinite(workingDamage) || workingDamage <= 0) {
-    workingDamage = 1;
-  }
-
-  if (!isCorrect) {
-    workingDamage *= BATTLE_FLOW_V2_CONFIG.wrongAnswerDamageMultiplier;
-  }
-  workingDamage *= Number(skill?.damageMultiplier || 1);
-  if (isCorrect && skill?.correctAnswerBonusPercent) {
-    workingDamage *= 1 + Number(skill.correctAnswerBonusPercent || 0) / 100;
-  }
+  const answerMultiplier = isCorrect ? 1 : BATTLE_FLOW_V2_CONFIG.wrongAnswerDamageMultiplier;
+  const skillBonusMultiplier = isCorrect && skill?.correctAnswerBonusPercent
+    ? 1 + Number(skill.correctAnswerBonusPercent || 0) / 100
+    : 1;
+  const initialBreakdown = calculateBattleDamageBreakdown({
+    baseDamage,
+    selectedSkill: skill,
+    answerMultiplier,
+    skillBonusMultiplier,
+    charmsAllowed: false
+  });
+  let workingDamage = initialBreakdown.unroundedDamage || 1;
+  const damageBeforeCharm = workingDamage;
 
   let bowlBonus = { totalDamage: Math.round(workingDamage), grammariaBonus: 0, isCrit: false, stunChance: 0, bonusLines: [] };
   let charmDamageMultiplier = 1;
@@ -43136,21 +43185,93 @@ function calculateBattleFlowV2Damage({ baseDamage, answerResult, skill, charm, c
         Number(charm?.chargeBonusPercent || 0)
     )
   );
-  workingDamage *= 1 + effectiveChargePercent / 100;
+  const chargeMultiplier = 1 + effectiveChargePercent / 100;
+  workingDamage *= chargeMultiplier;
+  const finalDamageBeforeMitigation = isCorrect ? Math.max(1, Math.round(workingDamage)) : 0;
 
   return {
-    finalDamage: isCorrect ? Math.max(1, Math.round(workingDamage)) : 0,
+    ...initialBreakdown,
+    finalDamage: finalDamageBeforeMitigation,
+    finalDamageBeforeMitigation,
+    damageBeforeCharm,
     charmDamageMultiplier: charmsAllowed ? charmDamageMultiplier : 1,
+    chargeMultiplier,
     isCorrect,
     skillId: skill?.id || "",
+    skillName: skill?.name || skill?.thaiName || skill?.id || "",
     charmId: charm?.id || "",
     chargePercent: effectiveChargePercent,
-    answerMultiplier: isCorrect ? 1 : BATTLE_FLOW_V2_CONFIG.wrongAnswerDamageMultiplier,
     grammariaBonus: bowlBonus.grammariaBonus || 0,
     isCrit: Boolean(bowlBonus.isCrit),
     stunChance: bowlBonus.stunChance || 0,
     bypassBossShield: Boolean(bowlBonus.bypassBossShield),
     bonusLines: bowlBonus.bonusLines || []
+  };
+}
+
+function validateBattleSkillDamageDifferences() {
+  const failures = [];
+  const warnings = [];
+  const baseDamage = 20;
+  const skills = Object.fromEntries(PLAYER_SKILLS_V2.map(skill => [skill.id, skill]));
+  const calculate = selectedSkill => calculateBattleDamageBreakdown({ baseDamage, selectedSkill }).finalDamage;
+  const sample = {
+    normal: calculate(null),
+    coreSpark: calculate(skills.coreSpark),
+    syntaxBlade: calculate(skills.syntaxBlade),
+    grammariaSurge: calculate(skills.grammariaSurge)
+  };
+
+  if (!(sample.normal < sample.coreSpark
+    && sample.coreSpark < sample.syntaxBlade
+    && sample.syntaxBlade < sample.grammariaSurge)) {
+    failures.push("Damage order must be Normal < Core Spark < Syntax Blade < Grammaria Surge");
+  }
+
+  const vsBossesSample = calculateBattleDamageBreakdown({
+    baseDamage,
+    selectedSkill: skills.syntaxBlade,
+    charmMultiplier: 1.75,
+    charmsAllowed: false
+  });
+  if (vsBossesSample.skillMultiplier <= 1) {
+    failures.push("VS Bosses must preserve the selected skill multiplier");
+  }
+  if (vsBossesSample.charmMultiplier !== 1) {
+    failures.push("VS Bosses charm multiplier must be 1");
+  }
+
+  const storyWithoutCharm = calculateBattleDamageBreakdown({ baseDamage, selectedSkill: skills.syntaxBlade });
+  const storyWithCharm = calculateBattleDamageBreakdown({
+    baseDamage,
+    selectedSkill: skills.syntaxBlade,
+    charmMultiplier: 1.25,
+    charmsAllowed: true
+  });
+  if (storyWithCharm.finalDamage <= storyWithoutCharm.finalDamage) {
+    failures.push("Story Mode damage charm must increase skill damage when allowed");
+  }
+
+  PLAYER_SKILLS_V2.forEach(skill => {
+    if (!Number.isFinite(Number(skill.damageMultiplier)) || Number(skill.damageMultiplier) <= 1) {
+      warnings.push(`${skill.id} does not exceed normal attack damage`);
+    }
+  });
+
+  return {
+    ok: failures.length === 0,
+    failures,
+    warnings,
+    sample,
+    vsBosses: {
+      skillMultiplier: vsBossesSample.skillMultiplier,
+      charmMultiplier: vsBossesSample.charmMultiplier,
+      finalDamage: vsBossesSample.finalDamage
+    },
+    story: {
+      withoutCharm: storyWithoutCharm.finalDamage,
+      withCharm: storyWithCharm.finalDamage
+    }
   };
 }
 
@@ -43181,12 +43302,32 @@ function showBattleFlowV2AttackFeedback({ skill, charm, damageResult }) {
     grammariaSurge: "เศษแกนแกรมมาเรียปลดคลื่นพลัง — คลื่นแกรมมาเรียซัดเข้าใส่ศัตรูอย่างรุนแรง!"
   };
   const isNormalAttack = skill.id === STORY_NORMAL_ATTACK.id;
+  const formatMultiplier = value => Number(value || 1).toFixed(2);
+  const charmsAllowed = areCharmsAllowedInCurrentBattle();
+  const selectedCharmWasUsed = charmsAllowed && Boolean(charm?.id);
+  const breakdownParts = [
+    `ดาเมจพื้นฐาน ${Math.round(Number(damageResult.baseDamage) || 0)}`,
+    `สกิล x${formatMultiplier(damageResult.skillMultiplier)}`
+  ];
+  if (damageResult.skillBonusMultiplier > 1) {
+    breakdownParts.push(`โบนัสตอบถูก x${formatMultiplier(damageResult.skillBonusMultiplier)}`);
+  }
+  if (selectedCharmWasUsed) {
+    breakdownParts.push(`ชาม x${formatMultiplier(damageResult.charmDamageMultiplier)}`);
+  }
+  if (damageResult.chargeMultiplier > 1) {
+    breakdownParts.push(`ชาร์จ x${formatMultiplier(damageResult.chargeMultiplier)}`);
+  }
+  if (damageResult.attackBoostMultiplier > 1) {
+    breakdownParts.push(`ยาเพิ่มพลัง x${formatMultiplier(damageResult.attackBoostMultiplier)}`);
+  }
   const lines = isNormalAttack
     ? [`โจมตีปกติสำเร็จ! สร้างความเสียหาย ${damageResult.finalDamage} ดาเมจ`]
     : [
       skillLines[skill.id] || `${skill.thaiName} พุ่งเข้าใส่ศัตรู!`,
-      ...(areCharmsAllowedInCurrentBattle() && charm?.id ? [`ชาม: ${charm.thaiName || charm.name}`] : []),
-      `สร้างความเสียหาย ${damageResult.finalDamage} หน่วย`
+      `ใช้ ${skill.name || skill.thaiName}!${selectedCharmWasUsed ? ` + ${charm.thaiName || charm.name}` : ""}`,
+      breakdownParts.join(" × "),
+      `ดาเมจสุดท้าย ${damageResult.finalDamage} หน่วย`
     ];
   if (damageResult.charmDamageMultiplier > 1 && damageResult.finalDamage > 0) {
     lines.push(`ชามเพิ่มพลังทำงาน! x${Number(damageResult.charmDamageMultiplier.toFixed(2))}`);
@@ -43576,7 +43717,11 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
     pvePlayerAttack: true,
     isSuccessfulAttack: damageResult.isCorrect,
     charm,
+    skillDamageMultiplier: damageResult.skillMultiplier,
+    skillBonusMultiplier: damageResult.skillBonusMultiplier,
     charmDamageMultiplier: damageResult.charmDamageMultiplier,
+    chargeDamageMultiplier: damageResult.chargeMultiplier,
+    attackBoostMultiplier: damageResult.attackBoostMultiplier,
     feedbackLines: damageResult.bonusLines
   });
   damageResult.rawFinalDamage = rawPlayerDamage;
@@ -49610,8 +49755,10 @@ if (window.location.protocol === "file:" || /^(localhost|127\.0\.0\.1)$/.test(wi
   window.validateEditableBackgroundAssets = validateEditableBackgroundAssets;
   window.validateVsBossScoreHistorySystem = validateVsBossScoreHistorySystem;
   window.validateVsBossCardQualityLevels = validateVsBossCardQualityLevels;
+  window.validateBattleSkillDamageDifferences = validateBattleSkillDamageDifferences;
   console.info("[VS Boss Score History]", JSON.stringify(validateVsBossScoreHistorySystem()));
   console.info("[VS Boss Card Quality]", JSON.stringify(validateVsBossCardQualityLevels()));
+  console.info("[Battle Skill Damage]", JSON.stringify(validateBattleSkillDamageDifferences()));
   const runEditableBackgroundValidation = () => {
     validateEditableBackgroundAssets().then(result => {
       console.info("[Editable Background Assets]", JSON.stringify(result));
