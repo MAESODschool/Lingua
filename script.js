@@ -21860,10 +21860,24 @@ const GAME_ASSET_REGISTRY = Object.freeze([
   {
     key: "login_background",
     category: "backgrounds",
-    displayName: "พื้นหลังหน้า Login",
+    displayName: "ภาพพื้นหลังหน้า Login",
     description: "ภาพพื้นหลังหลักของหน้าเข้าสู่ระบบ",
     defaultPath: "assets/ui/login_hero_aug5_2026.png",
-    recommendedSize: "แนวตั้ง ความละเอียดสูง"
+    target: "css-variable",
+    cssVariable: "--login-scene-background-image",
+    recommendedSize: "ภาพแนวตั้งความละเอียดสูงสำหรับหน้า Login",
+    accept: ".png,.jpg,.jpeg,.webp,.gif"
+  },
+  {
+    key: "main_menu_background",
+    category: "backgrounds",
+    displayName: "ภาพพื้นหลังหน้าเมนูหลัก",
+    description: "ภาพพื้นหลังของ Player Main Menu และ Dashboard",
+    defaultPath: GRAMMAR_HALL_ANIMATED_BACKGROUND_PATH,
+    target: "css-variable",
+    cssVariable: "--main-menu-scene-background-image",
+    recommendedSize: "ภาพแนวตั้งหรือแนวนอนความละเอียดสูงสำหรับเมนูหลัก",
+    accept: ".png,.jpg,.jpeg,.webp,.gif"
   },
   {
     key: "act1_time_dust_background",
@@ -22047,31 +22061,161 @@ async function loadGameAssetOverrides() {
   return gameAssetOverrideState.overrides;
 }
 
-function applyLoginBackgroundOverride() {
-  const loginScene = scenes.login;
-  const item = getGameAssetRegistryItem("login_background");
-  if (!loginScene || !item) {
-    return;
+const cssVariableAssetRequests = new Map();
+
+function toCssImageUrl(path) {
+  const cleanPath = String(path || "").trim();
+  return cleanPath ? `url(${JSON.stringify(cleanPath)})` : "";
+}
+
+function applyCssVariableAsset(item) {
+  const cssVariable = String(item?.cssVariable || "").trim();
+  if (item?.target !== "css-variable" || !/^--[a-z0-9-]+$/i.test(cssVariable)) {
+    return false;
   }
-  const resolved = getGameAssetUrl(item.key, item.defaultPath);
-  loginScene.dataset.assetBackgroundRequest = resolved;
-  if (!resolved || resolved === item.defaultPath) {
-    loginScene.style.removeProperty("background-image");
-    return;
+  const rootStyle = document.documentElement.style;
+  const override = gameAssetOverrideState.overrides?.[item.key];
+  const activeUrl = override?.isActive === true && typeof override.activeUrl === "string"
+    ? override.activeUrl.trim()
+    : "";
+  cssVariableAssetRequests.set(item.key, activeUrl);
+  if (!activeUrl) {
+    rootStyle.removeProperty(cssVariable);
+    return true;
   }
   const probe = new Image();
   probe.onload = () => {
-    if (loginScene.dataset.assetBackgroundRequest === resolved) {
-      loginScene.style.backgroundImage = `url(${JSON.stringify(resolved)})`;
+    if (cssVariableAssetRequests.get(item.key) === activeUrl) {
+      rootStyle.setProperty(cssVariable, toCssImageUrl(activeUrl));
     }
   };
   probe.onerror = error => {
-    console.warn("[Asset Override] login background failed; using default", error);
-    if (loginScene.dataset.assetBackgroundRequest === resolved) {
-      loginScene.style.removeProperty("background-image");
+    console.warn(`[Asset Override] ${item.key} failed; using default`, error);
+    if (cssVariableAssetRequests.get(item.key) === activeUrl) {
+      rootStyle.removeProperty(cssVariable);
     }
   };
-  probe.src = resolved;
+  probe.src = activeUrl;
+  return true;
+}
+
+function applyEditableBackgroundAssetOverrides() {
+  GAME_ASSET_REGISTRY
+    .filter(item => item.target === "css-variable")
+    .forEach(applyCssVariableAsset);
+}
+
+function stylesheetRuleUsesCssVariable(selector, cssVariable) {
+  const visitRules = rules => Array.from(rules || []).some(rule => {
+    if (rule.cssRules && visitRules(rule.cssRules)) {
+      return true;
+    }
+    return rule.selectorText?.split(",").some(part => part.trim() === selector) &&
+      rule.cssText.includes(`var(${cssVariable})`);
+  });
+  return Array.from(document.styleSheets).some(sheet => {
+    try {
+      return visitRules(sheet.cssRules);
+    } catch (error) {
+      return false;
+    }
+  });
+}
+
+async function validateEditableBackgroundAssets() {
+  const failures = [];
+  const warnings = [];
+  const loginBackground = getGameAssetRegistryItem("login_background");
+  const mainMenuBackground = getGameAssetRegistryItem("main_menu_background");
+  const checks = [
+    [loginBackground, "ไม่พบ login_background ใน Asset Registry"],
+    [mainMenuBackground, "ไม่พบ main_menu_background ใน Asset Registry"],
+    [loginBackground?.cssVariable === "--login-scene-background-image", "login_background ผูก CSS variable ไม่ถูกต้อง"],
+    [mainMenuBackground?.cssVariable === "--main-menu-scene-background-image", "main_menu_background ผูก CSS variable ไม่ถูกต้อง"],
+    [getComputedStyle(document.documentElement).getPropertyValue("--login-scene-background-image").trim(), "ไม่พบค่าเริ่มต้นของพื้นหลัง Login"],
+    [getComputedStyle(document.documentElement).getPropertyValue("--main-menu-scene-background-image").trim(), "ไม่พบค่าเริ่มต้นของพื้นหลังเมนูหลัก"],
+    [stylesheetRuleUsesCssVariable("#loginScene", "--login-scene-background-image"), "#loginScene ไม่ได้ใช้ CSS variable ที่กำหนด"],
+    [stylesheetRuleUsesCssVariable(".main-menu-scene", "--main-menu-scene-background-image"), ".main-menu-scene ไม่ได้ใช้ CSS variable ที่กำหนด"],
+    [Boolean(scenes.login), "ไม่พบฉาก Login"],
+    [Boolean(scenes.mainMenu), "ไม่พบฉาก Main Menu"],
+    [loginBackground && createAssetManagerCard(loginBackground).classList.contains("asset-manager-card"), "Asset Manager สร้างการ์ดพื้นหลัง Login ไม่สำเร็จ"],
+    [mainMenuBackground && createAssetManagerCard(mainMenuBackground).classList.contains("asset-manager-card"), "Asset Manager สร้างการ์ดพื้นหลังเมนูหลักไม่สำเร็จ"]
+  ];
+  checks.forEach(([passed, message]) => {
+    if (!passed) {
+      failures.push(message);
+    }
+  });
+
+  const validatorKey = "__editable_background_validator__";
+  const validatorVariable = "--editable-background-validator";
+  const validatorItem = {
+    key: validatorKey,
+    target: "css-variable",
+    cssVariable: validatorVariable
+  };
+  const rootStyle = document.documentElement.style;
+  const previousValue = rootStyle.getPropertyValue(validatorVariable);
+  const previousOverride = gameAssetOverrideState.overrides[validatorKey];
+  try {
+    gameAssetOverrideState.overrides[validatorKey] = {
+      isActive: true,
+      activeUrl: loginBackground?.defaultPath || "assets/ui/login_hero_aug5_2026.png"
+    };
+    applyCssVariableAsset(validatorItem);
+    await new Promise(resolve => {
+      const startedAt = Date.now();
+      const checkApplied = () => {
+        if (rootStyle.getPropertyValue(validatorVariable) || Date.now() - startedAt > 1500) {
+          resolve();
+          return;
+        }
+        setTimeout(checkApplied, 25);
+      };
+      checkApplied();
+    });
+    if (!rootStyle.getPropertyValue(validatorVariable)) {
+      failures.push("ไม่สามารถ apply ภาพ override ไปยัง CSS variable ได้");
+    }
+    gameAssetOverrideState.overrides[validatorKey] = { isActive: false };
+    applyCssVariableAsset(validatorItem);
+    if (rootStyle.getPropertyValue(validatorVariable)) {
+      failures.push("การ reset CSS variable ยังไม่คืนค่า fallback");
+    }
+  } catch (error) {
+    failures.push(`ตัวตรวจสอบ apply/reset ทำงานไม่สำเร็จ: ${error?.message || "unknown error"}`);
+  } finally {
+    cssVariableAssetRequests.delete(validatorKey);
+    if (previousValue) {
+      rootStyle.setProperty(validatorVariable, previousValue);
+    } else {
+      rootStyle.removeProperty(validatorVariable);
+    }
+    if (previousOverride) {
+      gameAssetOverrideState.overrides[validatorKey] = previousOverride;
+    } else {
+      delete gameAssetOverrideState.overrides[validatorKey];
+    }
+  }
+
+  const serialized = JSON.stringify({
+    loginBackground,
+    mainMenuBackground,
+    loginSceneBackground: getComputedStyle(scenes.login || document.documentElement).backgroundImage,
+    mainMenuBackgroundStyle: getComputedStyle(scenes.mainMenu || document.documentElement).backgroundImage
+  });
+  if (/undefined|null|NaN/.test(serialized)) {
+    warnings.push("พบค่าที่ควรตรวจสอบเพิ่มเติมในข้อมูลพื้นหลัง");
+  }
+  return {
+    ok: failures.length === 0,
+    failures,
+    warnings,
+    assets: {
+      loginBackground: Boolean(loginBackground),
+      mainMenuBackground: Boolean(mainMenuBackground)
+    }
+  };
 }
 
 function applyMainMenuLogoOverride() {
@@ -22097,7 +22241,7 @@ function applyMainMenuLogoOverride() {
 }
 
 function applyGameAssetOverridesToUi() {
-  applyLoginBackgroundOverride();
+  applyEditableBackgroundAssetOverrides();
   applyMainMenuLogoOverride();
   refreshPlayerCharacterSprites();
   setupTeacherCharacterGifs();
@@ -24036,6 +24180,12 @@ const els = {
   questionPanel: document.getElementById("questionPanel"),
   questionText: document.getElementById("questionText"),
   answerOptions: document.getElementById("answerOptions"),
+  postCorrectActionPanel: document.getElementById("postCorrectActionPanel"),
+  postCorrectActionText: document.getElementById("postCorrectActionText"),
+  normalAttackChoiceButton: document.getElementById("normalAttackChoiceButton"),
+  skillCharmChoiceButton: document.getElementById("skillCharmChoiceButton"),
+  battleSkillPanel: document.getElementById("battleSkillPanel"),
+  battleSkillOptions: document.getElementById("battleSkillOptions"),
   charmPanel: document.getElementById("charmPanel"),
   charmOptions: document.getElementById("charmOptions"),
   chargePanel: document.getElementById("chargePanel"),
@@ -25006,6 +25156,8 @@ function showOnlyBattlePanel(panelToShow) {
     els.actionMenu,
     els.itemPanel,
     els.questionPanel,
+    els.postCorrectActionPanel,
+    els.battleSkillPanel,
     els.charmPanel,
     els.chargePanel,
     els.parryPanel,
@@ -25218,7 +25370,10 @@ function disableBattleInputsForDefeat() {
   setActionButtonsEnabled(false);
   [
     els.answerOptions,
+    els.battleSkillOptions,
     els.charmOptions,
+    els.normalAttackChoiceButton,
+    els.skillCharmChoiceButton,
     els.continueBattleButton,
     els.stopChargeButton,
     els.parryButton,
@@ -25241,6 +25396,7 @@ function cleanupBattleInputState() {
   cleanupBossHeavyAttackChain({ clearParryUi: false });
   clearButtonAction(els.continueBattleButton, { disable: true });
   clearButtonAction(els.bossIntentReadyButton, { disable: true });
+  clearPostCorrectActionState(state.actBattle);
   setActionButtonsEnabled(false);
   state.parryAttack = null;
   state.shield = 0;
@@ -25853,7 +26009,7 @@ function updateActActionMenuState() {
 
   const ap = getActAP();
   const canChoose = !battle.actionChoiceLocked && !isActBattleEnded(battle);
-  setButtonEnabled(els.attackButton, canChoose && (isStoryNormalAttackAvailable() || ap >= 1) && !battle.attackQuestionsExhausted);
+  setButtonEnabled(els.attackButton, canChoose && (isPostCorrectNormalAttackAvailable(battle) || ap >= 1) && !battle.attackQuestionsExhausted);
   setButtonEnabled(els.itemButton, canChoose);
   setButtonEnabled(els.focusButton, canChoose);
   els.focusButton.classList.toggle("is-focus-hint", ap <= 0);
@@ -30655,10 +30811,11 @@ function renderRestoredBattleCheckpoint(resumeMode) {
           grammariaGain: 10
         };
       }
-      battle.playerActionPhase = "skillSelect";
-      battle.correctAnswerFeedbackAdvanced = true;
-      renderBattleSkillSelectionPanel();
-      return true;
+      return showPostCorrectActionChoice(
+        battle.currentQuestion,
+        battle.pendingPlayerAnswer?.selectedAnswer,
+        { preservePending: true }
+      );
     case "charm-select":
       renderBattleCharmSelectionPanel();
       return true;
@@ -34888,7 +35045,7 @@ function openAssetUploadModal(assetKey) {
   const fileInput = document.createElement("input");
   fileInput.id = "assetFileInput";
   fileInput.type = "file";
-  fileInput.accept = ".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif";
+  fileInput.accept = `${item.accept || ".png,.jpg,.jpeg,.webp,.gif"},image/png,image/jpeg,image/webp,image/gif`;
   const noteInput = document.createElement("textarea");
   noteInput.id = "assetUploadNote";
   noteInput.maxLength = 500;
@@ -35265,6 +35422,15 @@ function endPracticeMode({ restoreProgress = true } = {}) {
 
 function isVsBossPracticeActive() {
   return Boolean(state.vsBossPractice?.active);
+}
+
+function isVsBossesBattleContext(battle = state.actBattle) {
+  return Boolean(
+    isVsBossPracticeActive() ||
+    battle?.mode === "vsBosses" ||
+    battle?.battleMode === "vs-bosses" ||
+    battle?.isVsBosses === true
+  );
 }
 
 function getVsBossPlayerBattleSnapshot() {
@@ -40000,6 +40166,7 @@ function startActBattle(stageIndex) {
     pendingPlayerAttack: null,
     playerActionPhase: "question",
     pendingPlayerAnswer: null,
+    pendingPostCorrectAction: null,
     correctAnswerFeedbackAdvanced: false,
     actionChoiceLocked: false,
     selectedSkillId: "",
@@ -40075,6 +40242,7 @@ function startActBattle(stageIndex) {
   state.grammaria = playerData ? playerData.grammaria || 0 : state.grammaria;
   state.sparkBonus = 0;
   resetBattleActiveEffects();
+  clearVsBossCharmState(state.actBattle);
   if (!vsBossConfig) {
     saveProgress({
       currentStageId: stage.id,
@@ -40106,8 +40274,8 @@ function startActBattle(stageIndex) {
   return true;
 }
 
-function isStoryNormalAttackAvailable() {
-  return Boolean(state.actBattle) && !isVsBossPracticeActive() && !state.actBattle.assessmentOnly;
+function isPostCorrectNormalAttackAvailable(battle = state.actBattle) {
+  return Boolean(battle);
 }
 
 const STORY_NORMAL_ATTACK = Object.freeze({
@@ -40130,10 +40298,11 @@ function startActAttackAction() {
 
   battle.pendingActionType = "attack";
   battle.currentFocusQuestion = null;
-  if (BATTLE_FLOW_V2_CONFIG.enabled || isStoryNormalAttackAvailable()) {
+  if (BATTLE_FLOW_V2_CONFIG.enabled || isPostCorrectNormalAttackAvailable(battle)) {
     battle.playerActionPhase = "question";
     battle.pendingPlayerAnswer = null;
     battle.pendingPlayerAttack = null;
+    battle.pendingPostCorrectAction = null;
     battle.selectedSkillId = "";
     battle.selectedCharmId = "";
     battle.selectedChargePercent = 0;
@@ -40241,6 +40410,7 @@ function useActItem() {
   battle.advanceQuestionOnContinue = false;
   battle.pendingPlayerAttack = null;
   battle.pendingPlayerAnswer = null;
+  clearPostCorrectActionState(battle);
   battle.selectedSkillId = "";
   battle.selectedCharmId = "";
   battle.selectedChargePercent = 0;
@@ -40263,6 +40433,7 @@ function completeActItemTurn(message) {
   battle.skillFlowLocked = false;
   battle.pendingPlayerAttack = null;
   battle.pendingPlayerAnswer = null;
+  clearPostCorrectActionState(battle);
   battle.selectedSkillId = "";
   battle.selectedCharmId = "";
   battle.selectedChargePercent = 0;
@@ -40971,35 +41142,143 @@ function buildBattleFlowV2AnswerState(question, selectedAnswer, isCorrect) {
   };
 }
 
-function continueBattleCorrectAnswerFeedback(question, selectedAnswer, { useSkill = false } = {}) {
+function clearPostCorrectActionState(battle = state.actBattle, { hidePanel = true } = {}) {
+  if (battle) {
+    battle.pendingPostCorrectAction = null;
+  }
+  if (hidePanel) {
+    els.postCorrectActionPanel?.classList.add("hidden");
+  }
+  setButtonEnabled(els.normalAttackChoiceButton, false);
+  setButtonEnabled(els.skillCharmChoiceButton, false);
+}
+
+function clearVsBossCharmState(battle = state.actBattle) {
+  if (!battle || !isVsBossesBattleContext(battle)) {
+    return;
+  }
+  battle.selectedCharmId = "";
+  battle.selectedCharm = null;
+  battle.currentCharm = null;
+  battle.activeCharm = null;
+  battle.pendingCharm = null;
+  battle.charmMultiplier = 1;
+  battle.charmEffectState = {};
+  battle.charmBattleFlags = {};
+  battle.recentCharmIds = [];
+  state.selectedCharm = null;
+  els.charmPanel?.classList.add("hidden");
+  if (els.charmOptions) {
+    els.charmOptions.innerHTML = "";
+  }
+}
+
+function showPostCorrectActionChoice(question, selectedAnswer, { preservePending = false } = {}) {
   const battle = state.actBattle;
-  if (!battle || battle.playerActionPhase !== "correctAnswerFeedback") {
-    return false;
-  }
-  if (battle.correctAnswerFeedbackAdvanced) {
+  if (!battle || !battle.pendingPlayerAnswer?.isCorrect || !isPostCorrectNormalAttackAvailable(battle)) {
     return false;
   }
 
-  battle.correctAnswerFeedbackAdvanced = true;
-  els.continueBattleButton.classList.add("hidden");
-
-  if (isStoryNormalAttackAvailable() && !useSkill) {
-    // Normal attacks use the same HP/turn resolver, without AP, skill, charm or charge prerequisites.
-    battle.pendingActionType = "attack";
-    return resolveBattleFlowV2PlayerAttack({
-      skill: STORY_NORMAL_ATTACK,
-      charm: { id: "", name: "ไม่มีชาม" },
-      chargePercent: 0
-    });
-  }
-
-  if (BATTLE_FLOW_V2_CONFIG?.enabled) {
-    handleBattleFlowV2AnswerResolved(question, selectedAnswer, true);
+  const existingPending = battle.pendingPostCorrectAction;
+  if (!preservePending || !existingPending || existingPending.consumed) {
+    battle.pendingPostCorrectAction = {
+      questionId: question?.id || battle.pendingPlayerAnswer.questionId || "",
+      questionType: getActBattleQuestionType(question || battle.currentQuestion),
+      selectedAnswer: selectedAnswer ?? battle.pendingPlayerAnswer.selectedAnswer,
+      answeredAt: battle.pendingPlayerAnswer.answeredAt || Date.now(),
+      consumed: false
+    };
   } else {
-    battle.pendingBossAction = chooseActBossAction(battle);
-    showActCharmChoices();
+    battle.pendingPostCorrectAction.consumed = false;
   }
+
+  const isVsBosses = isVsBossesBattleContext(battle);
+  battle.playerActionPhase = "correctAnswerFeedback";
+  battle.correctAnswerFeedbackAdvanced = false;
+  battle.selectedSkillId = "";
+  battle.selectedCharmId = "";
+  battle.selectedChargePercent = 0;
+  battle.pendingAttackData = null;
+  battle.skillFlowLocked = false;
+  if (isVsBosses) {
+    clearVsBossCharmState(battle);
+  }
+
+  resetBattleContinueControls();
+  els.continueBattleButton?.classList.add("hidden");
+  if (els.postCorrectActionText) {
+    els.postCorrectActionText.textContent = isVsBosses
+      ? "จะโจมตีทันที หรือใช้สกิลเพื่อเพิ่มพลัง?"
+      : "จะโจมตีทันที หรือใช้สกิลและชามเพื่อเพิ่มพลัง?";
+  }
+  if (els.normalAttackChoiceButton) {
+    els.normalAttackChoiceButton.textContent = "โจมตีปกติ";
+  }
+  if (els.skillCharmChoiceButton) {
+    els.skillCharmChoiceButton.textContent = isVsBosses ? "เลือกสกิล" : "เลือกสกิลและชาม";
+    els.skillCharmChoiceButton.title = hasUsableBattleSkill(battle) ? "" : getUnavailableSkillGuidanceMessage(battle);
+  }
+  setButtonEnabled(els.normalAttackChoiceButton, true);
+  setButtonEnabled(els.skillCharmChoiceButton, hasUsableBattleSkill(battle));
+  els.battleMessage.textContent = "ตอบถูก! เลือกรูปแบบการโจมตี";
+  showOnlyBattlePanel(els.postCorrectActionPanel);
   return true;
+}
+
+function consumePostCorrectAction(actionType) {
+  const battle = state.actBattle;
+  const pending = battle?.pendingPostCorrectAction;
+  if (!battle || battle.playerActionPhase !== "correctAnswerFeedback" || !pending || pending.consumed) {
+    return false;
+  }
+
+  pending.consumed = true;
+  battle.correctAnswerFeedbackAdvanced = true;
+  battle.pendingActionType = actionType;
+  setButtonEnabled(els.normalAttackChoiceButton, false);
+  setButtonEnabled(els.skillCharmChoiceButton, false);
+  els.postCorrectActionPanel?.classList.add("hidden");
+  return true;
+}
+
+function choosePostCorrectNormalAttack() {
+  const battle = state.actBattle;
+  if (!consumePostCorrectAction("attack")) {
+    return false;
+  }
+  battle.selectedSkillId = "";
+  battle.selectedCharmId = "";
+  battle.selectedChargePercent = 0;
+  battle.pendingAttackData = null;
+  if (isVsBossesBattleContext(battle)) {
+    clearVsBossCharmState(battle);
+  }
+  return resolveBattleFlowV2PlayerAttack({
+    skill: STORY_NORMAL_ATTACK,
+    charm: NO_BATTLE_CHARM,
+    chargePercent: 0
+  });
+}
+
+function choosePostCorrectSkillPath() {
+  const battle = state.actBattle;
+  if (!battle || !hasUsableBattleSkill(battle) || !consumePostCorrectAction("skill")) {
+    return false;
+  }
+  if (isVsBossesBattleContext(battle)) {
+    clearVsBossCharmState(battle);
+  }
+  const question = battle.currentQuestion;
+  const selectedAnswer = battle.pendingPlayerAnswer?.selectedAnswer;
+  handleBattleFlowV2AnswerResolved(question, selectedAnswer, true);
+  return true;
+}
+
+function continueBattleCorrectAnswerFeedback(question, selectedAnswer, { useSkill = false } = {}) {
+  if (!state.actBattle || state.actBattle.playerActionPhase !== "correctAnswerFeedback") {
+    return false;
+  }
+  return useSkill ? choosePostCorrectSkillPath() : choosePostCorrectNormalAttack();
 }
 
 function chooseActAnswer(option, selectedButton = null) {
@@ -41084,35 +41363,11 @@ function chooseActAnswer(option, selectedButton = null) {
     return;
   }
 
-  if (isCorrect && isStoryNormalAttackAvailable()) {
-    battle.playerActionPhase = "correctAnswerFeedback";
-    battle.correctAnswerFeedbackAdvanced = false;
-    els.battleMessage.textContent = "ถูกต้อง! พร้อมโจมตีปกติ";
-    showBattleContinueButton("โจมตีปกติ", () => continueBattleCorrectAnswerFeedback(question, option));
-    if (BATTLE_FLOW_V2_CONFIG?.enabled && hasUsableBattleSkill(battle)) {
-      const skillButton = document.createElement("button");
-      skillButton.type = "button";
-      skillButton.className = "secondary-button";
-      skillButton.textContent = "เลือกสกิล / ชาม";
-      skillButton.addEventListener("click", () => {
-        if (battle !== state.actBattle || battle.playerActionPhase !== "correctAnswerFeedback" || battle.correctAnswerFeedbackAdvanced) return;
-        skillButton.disabled = true;
-        battle.pendingActionType = "skill";
-        continueBattleCorrectAnswerFeedback(question, option, { useSkill: true });
-      });
-      feedback.appendChild(skillButton);
-    }
+  if (isCorrect && showPostCorrectActionChoice(question, option)) {
     return;
   }
 
   if (BATTLE_FLOW_V2_CONFIG?.enabled) {
-    if (isCorrect) {
-      battle.playerActionPhase = "correctAnswerFeedback";
-      battle.correctAnswerFeedbackAdvanced = false;
-      els.battleMessage.textContent = BATTLE_CORRECT_SUCCESS_MESSAGE;
-      showBattleContinueButton("ไปต่อ", () => continueBattleCorrectAnswerFeedback(question, option));
-      return;
-    }
     handleBattleFlowV2AnswerResolved(question, option, isCorrect);
     return;
   }
@@ -41215,6 +41470,7 @@ function returnToMainBattleActionsFromSkillMenu(message = "") {
   battle.selectedChargePercent = 0;
   battle.pendingPlayerAnswer = null;
   battle.pendingPlayerAttack = null;
+  clearPostCorrectActionState(battle);
   battle.pendingAttackData = null;
   resetBattleContinueControls();
   els.continueBattleButton.classList.add("hidden");
@@ -41577,7 +41833,7 @@ function applyCorrectAnswerPostAttackCharmEffects(charm, context = {}) {
 
 function areCharmsAllowedInCurrentBattle() {
   const context = state.actBattle || {};
-  return !isVsBossPracticeActive() && !context.assessmentOnly && context.charmsEnabled !== false;
+  return !isVsBossesBattleContext(context) && !context.assessmentOnly && context.charmsEnabled !== false;
 }
 
 const NO_BATTLE_CHARM = Object.freeze({ id: "", name: "ไม่มีชาม (โหมดประเมิน)" });
@@ -41657,10 +41913,13 @@ function handleBattleFlowV2AnswerResolved(question, selectedAnswer, isCorrect) {
 
 function renderBattleSkillSelectionPanel() {
   const battle = state.actBattle;
-  if (!battle) {
+  if (!battle || !els.battleSkillPanel || !els.battleSkillOptions) {
     return;
   }
 
+  if (isVsBossesBattleContext(battle)) {
+    clearVsBossCharmState(battle);
+  }
   battle.playerActionPhase = "skillSelect";
   cleanupGrammariaCharge();
   const currentAp = getBattlePlayerAp();
@@ -41669,9 +41928,9 @@ function renderBattleSkillSelectionPanel() {
     return;
   }
   els.battleMessage.textContent = "แตะสกิลที่ต้องการใช้";
-  els.charmPanel.querySelector("h3").textContent = "เลือกสกิลโจมตี";
-  els.charmOptions.innerHTML = "";
-  els.charmOptions.classList.add("battle-flow-v2-options");
+  els.battleSkillPanel.querySelector("h3").textContent = "เลือกสกิลโจมตี";
+  els.battleSkillOptions.innerHTML = "";
+  els.battleSkillOptions.classList.add("battle-flow-v2-options");
   els.continueBattleButton.classList.add("hidden");
 
   const panel = document.createElement("div");
@@ -41724,8 +41983,8 @@ function renderBattleSkillSelectionPanel() {
   });
   panel.appendChild(backButton);
 
-  els.charmOptions.appendChild(panel);
-  showOnlyBattlePanel(els.charmPanel);
+  els.battleSkillOptions.appendChild(panel);
+  showOnlyBattlePanel(els.battleSkillPanel);
   battleFlowV2Log("skill panel rendered", {
     currentAp,
     skillCount: PLAYER_SKILLS_V2.length,
@@ -41866,14 +42125,18 @@ function renderBattleChargePanel() {
   }
 
   const skill = getBattleFlowV2Skill(battle.selectedSkillId);
-  const charm = getBattleFlowV2Charm(battle.selectedCharmId);
+  const charmsAllowed = areCharmsAllowedInCurrentBattle();
+  const charm = charmsAllowed ? getBattleFlowV2Charm(battle.selectedCharmId) : NO_BATTLE_CHARM;
   if (!skill) {
     renderBattleSkillSelectionPanel();
     return;
   }
-  if (!charm) {
+  if (charmsAllowed && !charm) {
     renderBattleCharmSelectionPanel();
     return;
+  }
+  if (!charmsAllowed) {
+    clearVsBossCharmState(battle);
   }
 
   battle.playerActionPhase = "charge";
@@ -41890,15 +42153,15 @@ function renderBattleChargePanel() {
         <span>ชาร์จพลังโจมตี</span>
         <strong>${skill.thaiName}</strong>
       </div>
-      <p class="battle-flow-v2-hint">ชาม: ${charm.thaiName || charm.name}</p>
+      ${charmsAllowed ? `<p class="battle-flow-v2-hint">ชาม: ${charm.thaiName || charm.name}</p>` : ""}
       <div class="battle-flow-v2-actions">
-        <button type="button" class="secondary-button" id="battleFlowV2BackToCharm">${areCharmsAllowedInCurrentBattle() ? "กลับไปเลือกชาม" : "กลับไปเลือกสกิล"}</button>
+        <button type="button" class="secondary-button" id="battleFlowV2BackToCharm">${charmsAllowed ? "กลับไปเลือกชาม" : "กลับไปเลือกสกิล"}</button>
       </div>
     </div>
   `;
   controls.querySelector("#battleFlowV2BackToCharm")?.addEventListener("click", () => {
     cleanupGrammariaCharge();
-    if (areCharmsAllowedInCurrentBattle()) renderBattleCharmSelectionPanel();
+    if (charmsAllowed) renderBattleCharmSelectionPanel();
     else renderBattleSkillSelectionPanel();
   });
 
@@ -41924,13 +42187,14 @@ function confirmBattleFlowV2Attack() {
   }
 
   const skill = getBattleFlowV2Skill(battle.selectedSkillId);
-  const charm = getBattleFlowV2Charm(battle.selectedCharmId);
+  const charmsAllowed = areCharmsAllowedInCurrentBattle();
+  const charm = charmsAllowed ? getBattleFlowV2Charm(battle.selectedCharmId) : NO_BATTLE_CHARM;
   if (!skill) {
     els.battleMessage.textContent = "ยังไม่ได้เลือกสกิล";
     renderBattleSkillSelectionPanel();
     return;
   }
-  if (!charm) {
+  if (charmsAllowed && !charm) {
     els.battleMessage.textContent = "ยังไม่ได้เลือกชาม";
     renderBattleCharmSelectionPanel();
     return;
@@ -41958,7 +42222,8 @@ function getBattleFlowV2BaseDamage(answerResult) {
 
 function calculateBattleFlowV2Damage({ baseDamage, answerResult, skill, charm, chargePercent }) {
   const isCorrect = Boolean(answerResult?.isCorrect);
-  charm = isCorrect && areCharmsAllowedInCurrentBattle() ? charm : null;
+  const charmsAllowed = !isVsBossesBattleContext() && areCharmsAllowedInCurrentBattle();
+  charm = isCorrect && charmsAllowed ? charm : null;
   let workingDamage = Number(baseDamage || 0);
   if (!Number.isFinite(workingDamage) || workingDamage <= 0) {
     workingDamage = 1;
@@ -42007,7 +42272,7 @@ function calculateBattleFlowV2Damage({ baseDamage, answerResult, skill, charm, c
 
   return {
     finalDamage: isCorrect ? Math.max(1, Math.round(workingDamage)) : 0,
-    charmDamageMultiplier,
+    charmDamageMultiplier: charmsAllowed ? charmDamageMultiplier : 1,
     isCorrect,
     skillId: skill?.id || "",
     charmId: charm?.id || "",
@@ -42047,11 +42312,14 @@ function showBattleFlowV2AttackFeedback({ skill, charm, damageResult }) {
     syntaxBlade: "โครงสร้างภาษาเรียงตัวเป็นคมดาบ — คมวากยสัมพันธ์ฟาดผ่านศัตรู!",
     grammariaSurge: "เศษแกนแกรมมาเรียปลดคลื่นพลัง — คลื่นแกรมมาเรียซัดเข้าใส่ศัตรูอย่างรุนแรง!"
   };
-  const lines = [
-    skillLines[skill.id] || `${skill.thaiName} พุ่งเข้าใส่ศัตรู!`,
-    ...(skill.id === STORY_NORMAL_ATTACK.id ? [] : [`ชาม: ${charm.thaiName || charm.name}`]),
-    `สร้างความเสียหาย ${damageResult.finalDamage} หน่วย`
-  ];
+  const isNormalAttack = skill.id === STORY_NORMAL_ATTACK.id;
+  const lines = isNormalAttack
+    ? [`โจมตีปกติสำเร็จ! สร้างความเสียหาย ${damageResult.finalDamage} ดาเมจ`]
+    : [
+      skillLines[skill.id] || `${skill.thaiName} พุ่งเข้าใส่ศัตรู!`,
+      ...(areCharmsAllowedInCurrentBattle() && charm?.id ? [`ชาม: ${charm.thaiName || charm.name}`] : []),
+      `สร้างความเสียหาย ${damageResult.finalDamage} หน่วย`
+    ];
   if (damageResult.charmDamageMultiplier > 1 && damageResult.finalDamage > 0) {
     lines.push(`ชามเพิ่มพลังทำงาน! x${Number(damageResult.charmDamageMultiplier.toFixed(2))}`);
   }
@@ -42354,6 +42622,7 @@ function resetBattleFlowV2Selection({ phase = "bossTurn", cleanupCharge = true }
   }
 
   battle.pendingPlayerAnswer = null;
+  clearPostCorrectActionState(battle);
   battle.pendingActionType = "";
   battle.pendingPlayerAttack = null;
   battle.selectedSkillId = "";
@@ -42376,7 +42645,10 @@ async function resolveBattleFlowV2PlayerAttack({ skill, charm, chargePercent }) 
     return;
   }
   if (battle.pendingPlayerAnswer && !battle.pendingPlayerAnswer.isCorrect) return;
-  if (!areCharmsAllowedInCurrentBattle()) charm = NO_BATTLE_CHARM;
+  if (!areCharmsAllowedInCurrentBattle()) {
+    clearVsBossCharmState(battle);
+    charm = NO_BATTLE_CHARM;
+  }
 
   battle.skillFlowLocked = true;
   battle.isResolvingTurn = true;
@@ -46021,6 +46293,7 @@ function handleActEnemyDefeated(source = "damage") {
   console.log("[Battle] Enemy defeated:", normalizedEnemyId);
 
   setActionButtonsEnabled(false);
+  clearPostCorrectActionState(battle);
   stopTimer("charge");
   stopParryCountdown();
   cleanupBossHeavyAttackChain({ clearParryUi: true });
@@ -46235,6 +46508,7 @@ function resetBattle() {
   stopTimer("charge");
   stopParryCountdown();
   cleanupBossHeavyAttackChain({ clearParryUi: true });
+  clearPostCorrectActionState(state.actBattle);
 
   state.playerHp = 100;
   state.enemyHp = 80;
@@ -48343,6 +48617,8 @@ els.attackButton.addEventListener("click", () => {
   }
   startAttack();
 });
+els.normalAttackChoiceButton?.addEventListener("click", choosePostCorrectNormalAttack);
+els.skillCharmChoiceButton?.addEventListener("click", choosePostCorrectSkillPath);
 els.itemButton.addEventListener("click", () => {
   if (state.actBattle) {
     chooseActPlayerActionOnce(useActItem);
@@ -48405,6 +48681,8 @@ window.debugButtonAudit = function debugButtonAudit() {
     bossIntent: els.bossIntentPanel,
     actionMenu: els.actionMenu,
     question: els.questionPanel,
+    postCorrectAction: els.postCorrectActionPanel,
+    skill: els.battleSkillPanel,
     charm: els.charmPanel,
     charge: els.chargePanel,
     parry: els.parryPanel,
@@ -48418,6 +48696,8 @@ window.debugButtonAudit = function debugButtonAudit() {
     attack: els.attackButton,
     item: els.itemButton,
     focus: els.focusButton,
+    normalAttackChoice: els.normalAttackChoiceButton,
+    skillCharmChoice: els.skillCharmChoiceButton,
     continueBattle: els.continueBattleButton,
     bossIntentReady: els.bossIntentReadyButton,
     battle: els.battleButton,
@@ -48458,6 +48738,19 @@ window.validateRewindSlimeVsBossAndCvcBank = validateRewindSlimeVsBossAndCvcBank
 window.validateIrregularVerbMemoryBank = validateIrregularVerbMemoryBank;
 window.validateVerbMemoryChoiceGeneration = validateVerbMemoryChoiceGeneration;
 window.validateVerbMemoryMissingSlotDistribution = validateVerbMemoryMissingSlotDistribution;
+if (window.location.protocol === "file:" || /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
+  window.validateEditableBackgroundAssets = validateEditableBackgroundAssets;
+  const runEditableBackgroundValidation = () => {
+    validateEditableBackgroundAssets().then(result => {
+      console.info("[Editable Background Assets]", JSON.stringify(result));
+    });
+  };
+  if (document.readyState === "complete") {
+    queueMicrotask(runEditableBackgroundValidation);
+  } else {
+    window.addEventListener("load", runEditableBackgroundValidation, { once: true });
+  }
+}
 validateBattleStageQuestionPools();
 
 function bindGameAudioUnlockEvents() {

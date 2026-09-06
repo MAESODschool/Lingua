@@ -21,6 +21,8 @@
   --parchment-ink: #3a2417;
   --glow-blue: #55d7ff;
   --glow-violet: #8c62ff;
+  --login-scene-background-image: url("assets/ui/login_hero_aug5_2026.png");
+  --main-menu-scene-background-image: url("assets/backgrounds/grammar-hall-animated.gif");
   --act1-scene-background: url("assets/backgrounds/grammar-hall-animated.gif");
   --lingua-frame-bg:
     radial-gradient(circle at 50% 0%, rgba(98, 191, 234, 0.12), transparent 36%),
@@ -616,7 +618,7 @@ button {
   padding: 0;
   align-content: end;
   overflow: hidden;
-  background: url("assets/ui/login_hero_aug5_2026.png") center center / cover no-repeat;
+  background: var(--login-scene-background-image) center center / cover no-repeat;
 }
 
 #loginScene .sky-orbit {
@@ -766,7 +768,7 @@ button {
   background:
     radial-gradient(circle at 50% 0%, rgba(84, 190, 255, 0.2), transparent 34%),
     linear-gradient(145deg, rgba(9, 14, 42, 0.96), rgba(28, 17, 61, 0.94) 58%, rgba(13, 12, 36, 0.98)),
-    url("assets/backgrounds/grammar-hall-animated.gif") center / cover no-repeat;
+    var(--main-menu-scene-background-image) center / cover no-repeat;
 }
 
 .main-menu-scene::before {
@@ -6166,6 +6168,35 @@ h3 {
   min-height: 0;
 }
 
+.post-correct-action-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(255, 219, 134, 0.45);
+  border-radius: 8px;
+  background: rgba(12, 17, 45, 0.92);
+  text-align: center;
+}
+
+.post-correct-action-panel h3,
+.post-correct-action-panel p {
+  margin: 0;
+}
+
+.post-correct-action-panel h3 {
+  color: #ffe39a;
+}
+
+.post-correct-action-panel p {
+  color: #dceeff;
+}
+
+.post-correct-action-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .battle-flow-v2-header {
   display: flex;
   align-items: center;
@@ -6462,6 +6493,10 @@ h3 {
 }
 
 @media (max-width: 640px) {
+  .post-correct-action-buttons {
+    grid-template-columns: 1fr;
+  }
+
   #battleScene .battle-panel {
     max-height: min(46dvh, 360px);
     overflow: hidden;

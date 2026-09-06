@@ -6,7 +6,7 @@
   <meta name="lingua-advisor-mode" content="auto">
   <meta name="lingua-advisor-api-url" content="">
   <title>Lingua - RPG แห่งแกรมมาเรีย</title>
-  <link rel="stylesheet" href="style.css?v=rank-cvc-charm-20260904c">
+  <link rel="stylesheet" href="style.css?v=battle-post-correct-20260905">
 </head>
 <body>
   <div class="game-utility-controls" aria-label="ตัวเลือกเกม">
@@ -988,6 +988,20 @@
           <div id="answerOptions" class="answer-options"></div>
         </div>
 
+        <div id="postCorrectActionPanel" class="post-correct-action-panel hidden">
+          <h3>ตอบถูก! เลือกรูปแบบการโจมตี</h3>
+          <p id="postCorrectActionText">จะโจมตีทันที หรือใช้สกิลและชามเพื่อเพิ่มพลัง?</p>
+          <div class="post-correct-action-buttons">
+            <button id="normalAttackChoiceButton" class="primary-button" type="button">โจมตีปกติ</button>
+            <button id="skillCharmChoiceButton" class="secondary-button" type="button">เลือกสกิลและชาม</button>
+          </div>
+        </div>
+
+        <div id="battleSkillPanel" class="charm-panel battle-skill-selection-panel hidden">
+          <h3>เลือกสกิลโจมตี</h3>
+          <div id="battleSkillOptions" class="charm-options"></div>
+        </div>
+
         <div id="charmPanel" class="charm-panel hidden">
           <h3>เลือกเครื่องรางเวท 1 ชิ้น</h3>
           <div id="charmOptions" class="charm-options"></div>
@@ -1102,6 +1116,6 @@
   </main>
 
   <script src="assets/data/irregular_verb_memory_bank.js?v=verb-memory-bank-20260901"></script>
-  <script type="module" src="script.js?v=rewind-slime-vs-boss-20260905b"></script>
+  <script type="module" src="script.js?v=battle-post-correct-20260905"></script>
 </body>
 </html>

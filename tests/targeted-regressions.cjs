@@ -45,7 +45,7 @@ for (const name of [
   'getVsBossOverallRank', 'calculateVsBossOverallRank', 'normalizeVsBossScores', 'mergeVsBossScoreSources', 'createVsBossScoreEntry',
   'createDialogueNode', 'createSegmentNode', 'createLessonQuizChoiceOrder', 'guidedPracticeNode', 'createBattleIntroStep',
   'buildCvcLessonTeachingFlow', 'validateCvcLessonTeachingFlow',
-  'isVsBossPracticeActive', 'areCharmsAllowedInCurrentBattle', 'normalizeCharmEffect', 'getActivePveCharmDamageModifier',
+  'isVsBossPracticeActive', 'isVsBossesBattleContext', 'areCharmsAllowedInCurrentBattle', 'normalizeCharmEffect', 'getActivePveCharmDamageModifier',
   'getGrammariaCharmSynergyMultiplier', 'getPlayerAccumulatedGrammaria', 'getGrammariaAttackRank', 'calculateFinalPvePlayerDamage',
   'ensureBattleCharmEffectState', 'resetBattleActiveEffects', 'createBattleStatusBucket', 'resetBattleStatuses', 'ensureBattleStatuses', 'getBattleStatus',
   'isTrueBossStage', 'applyIncomingDamageModifiers', 'applyStatusDamageToTarget', 'applyCharmSetupEffect', 'rollCritical',
@@ -177,6 +177,9 @@ async function testAttackResolution() {
   let displayedDamage = null;
   context.els = { battleMessage: {}, continueBattleButton: { classList: { add() {} } } };
   for (const name of ['applyEmptyCoreCupAfterSkillSpend', 'triggerMotion', 'appendDamageModifierLines', 'addStunGauge', 'tryStunBoss', 'recordGrammariaChargeUse', 'recordChargeBonusDamage', 'triggerEnemyHitFeedback', 'clearFocusBuffAfterAttack', 'cleanupGrammariaCharge', 'syncBattleStateToPlayerData', 'showOnlyBattlePanel', 'battleFlowV2Log', 'completePlayerSkillCooldownTurn', 'startActBossWarning']) context[name] = () => {};
+  context.clearPostCorrectActionState = battle => {
+    if (battle) battle.pendingPostCorrectAction = null;
+  };
   Object.assign(context, {
     spendBattlePlayerAp: cost => { apSpent += cost; return true; },
     applySkillCooldownAfterUse: () => [],
@@ -222,8 +225,11 @@ async function testAttackResolution() {
     setAttribute() {}, focus() {}
   });
   context.document = {createElement: element};
-  Object.assign(context.els, {answerOptions:element(), actionMenu:element(), attackButton:element(), itemButton:element(), focusButton:element()});
-  let continueAction;
+  Object.assign(context.els, {
+    answerOptions:element(), actionMenu:element(), attackButton:element(), itemButton:element(), focusButton:element(),
+    postCorrectActionPanel:element(), postCorrectActionText:element(), normalAttackChoiceButton:element(), skillCharmChoiceButton:element(),
+    battleSkillPanel:element(), battleSkillOptions:element(), charmPanel:element(), charmOptions:element()
+  });
   let victories = 0;
   let skillPanels = 0;
   Object.assign(context, {
@@ -239,7 +245,9 @@ async function testAttackResolution() {
     recordWrongAnswerForGrammaria() {}, playAttackSfx() {}, resolvePlayerDefeat: () => false,
     applyLowHpComebackCharmEffect() {},
     hasUsableBattleSkill: () => state.actBattle.playerAp > 0,
-    showBattleContinueButton: (label, callback) => {continueAction = callback;},
+    resetBattleContinueControls() {},
+    getActBattleQuestionType: question => question?.type || 'multiple-choice',
+    getUnavailableSkillGuidanceMessage: () => 'skill unavailable',
     getBattlePlayerAp: () => state.actBattle.playerAp,
     spendBattlePlayerAp: cost => {
       if (cost > state.actBattle.playerAp) return false;
@@ -250,7 +258,11 @@ async function testAttackResolution() {
     handleActEnemyDefeated: () => {victories++;},
     NO_BATTLE_CHARM: {id:'', name:'disabled'}, BATTLE_CORRECT_SUCCESS_MESSAGE: 'Correct'
   });
-  for (const name of ['isStoryNormalAttackAvailable','startActAttackAction','updateActActionMenuState','buildBattleFlowV2AnswerState','continueBattleCorrectAnswerFeedback','chooseActAnswer','handleBattleFlowV2AnswerResolved']) vm.runInContext(declaration(name), context);
+  for (const name of [
+    'isPostCorrectNormalAttackAvailable','startActAttackAction','updateActActionMenuState','buildBattleFlowV2AnswerState',
+    'clearPostCorrectActionState','clearVsBossCharmState','showPostCorrectActionChoice','consumePostCorrectAction',
+    'choosePostCorrectNormalAttack','choosePostCorrectSkillPath','continueBattleCorrectAnswerFeedback','chooseActAnswer','handleBattleFlowV2AnswerResolved'
+  ]) vm.runInContext(declaration(name), context);
   for (const stageId of ['what-is-past','act1_phase1_unit3_was_were','regular-rule-1','irregular-lesson','irregular-mini-boss','final-boss']) {
     for (const type of ['multiple-choice','typing','word-arrangement']) {
       hit(null, {finalBoss:stageId === 'final-boss'});
@@ -269,13 +281,16 @@ async function testAttackResolution() {
       run('chooseActAnswer("was")');
       assert.equal(state.actBattle.pendingPlayerAnswer.isCorrect, true);
       assert.equal(state.actBattle.playerActionPhase, 'correctAnswerFeedback');
-      assert.equal(context.els.answerOptions.children[0].children.length, 0); // No skill required.
-      const firstNormal = continueAction();
-      assert.equal(continueAction(), false); // Rapid second confirmation is ignored.
+      assert.equal(context.els.normalAttackChoiceButton.textContent, 'โจมตีปกติ');
+      assert.equal(context.els.skillCharmChoiceButton.textContent, 'เลือกสกิลและชาม');
+      assert.equal(context.els.skillCharmChoiceButton.disabled, true);
+      const firstNormal = run('choosePostCorrectNormalAttack()');
+      assert.equal(run('choosePostCorrectNormalAttack()'), false); // Rapid second confirmation is ignored.
       animationFinish();
       await firstNormal;
       assert.equal(state.enemyHp, 0, `${stageId}/${type}`);
       assert.equal(state.actBattle.playerAp, 0);
+      assert.equal(state.actBattle.pendingPostCorrectAction, null);
       assert.match(context.els.battleMessage.textContent, /สร้างความเสียหาย 6/);
       assert.equal(state.actBattle.skillCooldowns.coreSpark, 9);
     }
@@ -289,11 +304,11 @@ async function testAttackResolution() {
   run('startActAttackAction(); chooseActAnswer("were")');
   assert.equal(state.enemyHp, 1000);
   assert.equal(state.actBattle.playerActionPhase, 'enemyTurn');
+  assert.equal(state.actBattle.pendingPostCorrectAction, null);
   state.actBattle.playerAp = 2;
   run('startActAttackAction(); chooseActAnswer("was")');
-  const optionalSkill = context.els.answerOptions.children.at(-1).children[0];
-  assert.ok(optionalSkill);
-  optionalSkill.click();
+  assert.equal(context.els.skillCharmChoiceButton.disabled, false);
+  run('choosePostCorrectSkillPath()');
   assert.equal(skillPanels, 1);
   assert.equal(state.actBattle.pendingActionType, 'skill');
   assert.equal(state.actBattle.pendingPlayerAnswer.isCorrect, true);
@@ -332,10 +347,13 @@ async function testAttackResolution() {
   state.vsBossPractice.active = true;
   state.actBattle.playerAp = 0;
   run('updateActActionMenuState()');
-  assert.equal(context.els.attackButton.disabled, true); // VS rules remain unchanged.
+  assert.equal(context.els.attackButton.disabled, false); // Normal attack remains available without AP.
   state.actBattle.playerAp = 2;
   run('startActAttackAction(); chooseActAnswer("was")');
-  continueAction();
+  assert.equal(context.els.skillCharmChoiceButton.textContent, 'เลือกสกิล');
+  assert.equal(state.actBattle.selectedCharmId, '');
+  assert.equal(context.els.charmOptions.children.length, 0);
+  run('choosePostCorrectSkillPath()');
   assert.equal(skillPanels, 2);
   assert.equal(state.enemyHp, 1000);
   console.log('Direct Attack: zero AP, stale Focus state, cooldowns, 6 stages, MC/typing/arrangement controls, victory handoff, wrong answers, optional skills and VS isolation passed.');
