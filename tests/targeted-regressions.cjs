@@ -34,7 +34,7 @@ const context = vm.createContext({
 const registry = declaration('VS_BOSS_REGISTRY', 'const');
 for (const name of new Set(registry.match(/\b[A-Z_]+_PATH\b/g))) context[name] = name;
 vm.runInContext(registry, context);
-for (const name of ['VS_BOSS_OVERALL_RANK_TITLES', 'PVE_GRAMMARIA_ATTACK_RANKS', 'BATTLE_FLOW_V2_CONFIG', 'CHARM_EFFECT_HANDLERS', 'STATUS_BALANCE_CONFIG', 'STORY_NORMAL_ATTACK']) {
+for (const name of ['VS_BOSS_OVERALL_RANK_TITLES', 'VS_BOSS_HISTORY_LIMIT', 'PVE_GRAMMARIA_ATTACK_RANKS', 'BATTLE_FLOW_V2_CONFIG', 'CHARM_EFFECT_HANDLERS', 'STATUS_BALANCE_CONFIG', 'STORY_NORMAL_ATTACK']) {
   vm.runInContext(declaration(name, 'const'), context);
 }
 vm.runInContext(declaration('makeCharm'), context);
@@ -42,7 +42,11 @@ vm.runInContext(declaration('actAttackCharms', 'const'), context);
 // Functions are loaded from production source; only I/O and nondeterminism are stubbed.
 for (const name of [
   'makeCharm', 'getVsBossRegistryList', 'getVsBossBestAttemptForBoss', 'getVsBossBossScorePercent',
-  'getVsBossOverallRank', 'calculateVsBossOverallRank', 'normalizeVsBossScores', 'mergeVsBossScoreSources', 'createVsBossScoreEntry',
+  'getVsBossOverallRank', 'calculateVsBossOverallRank',
+  'getVsBossQualityLevel', 'formatVsBossAttemptDateTime', 'getVsBossAttemptKnowledgePercent', 'getVsBossAttemptIso', 'getVsBossAttemptId',
+  'normalizeVsBossAttempt', 'calculateVsBossAttemptTrend', 'isBetterVsBossAttempt', 'getVsBossRecord', 'getLegacyVsBossScore',
+  'normalizeVsBossRecord', 'migrateLegacyBossPracticeScoreIfNeeded', 'ensureVsBossRecord', 'createVsBossAttemptRecord',
+  'saveVsBossAttemptHistory', 'mergeVsBossScoreEntries', 'normalizeVsBossScores', 'mergeVsBossScoreSources', 'createVsBossScoreEntry',
   'createDialogueNode', 'createSegmentNode', 'createLessonQuizChoiceOrder', 'guidedPracticeNode', 'createBattleIntroStep',
   'buildCvcLessonTeachingFlow', 'validateCvcLessonTeachingFlow',
   'isVsBossPracticeActive', 'isVsBossesBattleContext', 'areCharmsAllowedInCurrentBattle', 'normalizeCharmEffect', 'getActivePveCharmDamageModifier',
@@ -82,6 +86,65 @@ context.newer = { [ids[0]]: { bestScore: 250, bestAccuracy: 96, attempts: 2 } };
 assert.equal(run('mergeVsBossScoreSources(newer, older)')[ids[0]].bestScore, 250);
 assert.equal(run('calculateVsBossOverallRank(null).rank'), 'D');
 assert.equal(run('calculateVsBossOverallRank({[VS_BOSS_REGISTRY[0].id]: {attempts: 1, bestScore: 0}}).completedBosses'), 1);
+
+for (const [percent, quality] of [[95,'ดีเยี่ยม'], [90,'ดีเยี่ยม'], [85,'ดี'], [80,'ดี'], [70,'พอใช้'], [60,'พอใช้'], [55,'ปรับปรุง']]) {
+  context.percent = percent;
+  assert.equal(run('getVsBossQualityLevel(percent)'), quality);
+}
+assert.equal(run('formatVsBossAttemptDateTime("not-a-date")'), 'ไม่ทราบวันที่');
+context.historyPlayer = {vsBossAssessmentRecords:{},bossPracticeScores:{}};
+function saveHistory(bossId, correct, minute, score = correct * 20) {
+  context.historyBoss = run(`getVsBossConfig("${bossId}")`);
+  context.historyResult = {
+    correctAnswers:correct, wrongAnswers:10-correct, totalQuestions:10, score, maxGameScore:300,
+    bossDefeated:correct >= 5, startedAt:`2026-09-06T02:${String(minute).padStart(2,'0')}:00.000Z`,
+    endedAt:`2026-09-06T02:${String(minute).padStart(2,'0')}:30.000Z`
+  };
+  return run('saveVsBossAttemptHistory(historyPlayer, historyBoss, historyResult)');
+}
+const firstHistory = saveHistory('rewind_slime', 6, 1);
+const higherHistory = saveHistory('rewind_slime', 8, 2);
+const lowerHistory = saveHistory('rewind_slime', 7, 3);
+const sameHistory = saveHistory('rewind_slime', 7, 4);
+assert.equal(firstHistory.attempt.trendFromPrevious, 'first-attempt');
+assert.equal(higherHistory.attempt.trendFromPrevious, 'up');
+assert.equal(higherHistory.attempt.improvementFromPrevious, 20);
+assert.equal(lowerHistory.attempt.trendFromPrevious, 'down');
+assert.equal(sameHistory.attempt.trendFromPrevious, 'same');
+assert.equal(sameHistory.record.firstAttempt.attemptId, firstHistory.attempt.attemptId);
+assert.equal(sameHistory.record.latestAttempt.attemptId, sameHistory.attempt.attemptId);
+assert.equal(sameHistory.record.bestAttempt.attemptId, higherHistory.attempt.attemptId);
+const duplicateHistory = saveHistory('rewind_slime', 7, 4);
+assert.equal(duplicateHistory.wasDuplicate, true);
+assert.equal(duplicateHistory.record.attempts, 4);
+saveHistory('echo_tick', 9, 5);
+assert.equal(context.historyPlayer.vsBossAssessmentRecords.echo_tick.history.length, 1);
+assert.ok(context.historyPlayer.vsBossAssessmentRecords.rewind_slime.history.every(attempt => attempt.bossId === 'rewind_slime'));
+assert.ok(context.historyPlayer.vsBossAssessmentRecords.echo_tick.history.every(attempt => attempt.bossId === 'echo_tick'));
+context.persistedHistory = JSON.parse(JSON.stringify(context.historyPlayer.vsBossAssessmentRecords));
+const reloadedHistory = run('normalizeVsBossScores(persistedHistory)');
+assert.equal(reloadedHistory.rewind_slime.history.length, 4);
+assert.equal(reloadedHistory.echo_tick.history.length, 1);
+assert.equal(reloadedHistory.rewind_slime.latestAttempt.attemptId, sameHistory.attempt.attemptId);
+context.legacyPlayer = {progress:{bossPracticeScores:{echo_tick:{bestScore:145,bestAccuracy:75,attempts:3,lastPlayedAt:'2026-09-01T00:00:00Z'}}}};
+const migratedLegacy = run('migrateLegacyBossPracticeScoreIfNeeded(legacyPlayer,"echo_tick")');
+assert.equal(migratedLegacy.history.length, 0);
+assert.equal(migratedLegacy.attempts, 3);
+assert.equal(migratedLegacy.hasLegacySummary, true);
+context.limitPlayer = {vsBossAssessmentRecords:{}};
+context.historyBoss = run('getVsBossConfig("echo_tick")');
+for (let index = 0; index < 55; index++) {
+  context.historyResult = {
+    correctAnswers:index === 0 ? 10 : 5, wrongAnswers:index === 0 ? 0 : 5, totalQuestions:10,
+    score:index, bossDefeated:true, endedAt:new Date(Date.UTC(2026,8,7,0,index,0)).toISOString()
+  };
+  run('saveVsBossAttemptHistory(limitPlayer,historyBoss,historyResult)');
+}
+const limitedHistory = context.limitPlayer.vsBossAssessmentRecords.echo_tick;
+assert.equal(limitedHistory.history.length, 50);
+assert.equal(limitedHistory.attempts, 55);
+assert.equal(limitedHistory.firstAttempt.attemptNumber, 1);
+assert.equal(limitedHistory.bestAttempt.knowledgeScorePercent, 100);
 
 const cvc = run('validateCvcLessonTeachingFlow()');
 assert.equal(cvc.ok, true, JSON.stringify(cvc));

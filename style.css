@@ -2243,12 +2243,148 @@ button {
   font-weight: 800;
 }
 
-.vs-boss-start-button {
+.vs-boss-card-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.vs-boss-start-button,
+.vs-boss-history-button {
   width: 100%;
   min-height: 46px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.vs-boss-start-button {
   border-color: rgba(255, 215, 112, 0.72);
   color: #fff9e6;
   background: linear-gradient(180deg, #315f96, #253265);
+}
+
+.vs-boss-history-button {
+  border-color: rgba(133, 218, 255, 0.64);
+  color: #e9f8ff;
+  background: linear-gradient(180deg, #4e2e81, #281b58);
+}
+
+.game-modal:has(.vs-boss-history-panel) {
+  position: fixed;
+}
+
+.game-modal:has(.vs-boss-history-panel) .game-modal-card {
+  width: min(96%, 1120px);
+  max-height: min(90dvh, 820px);
+}
+
+.vs-boss-history-panel {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  color: #f8f2df;
+}
+
+.vs-boss-history-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.vs-boss-history-summary > div {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  min-height: 76px;
+  padding: 9px;
+  border: 1px solid rgba(226, 188, 102, 0.38);
+  border-radius: 6px;
+  background: rgba(20, 26, 65, 0.76);
+  text-align: center;
+}
+
+.vs-boss-history-summary span {
+  color: #b9cce1;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.vs-boss-history-summary strong {
+  overflow-wrap: anywhere;
+  color: #fff0ba;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.vs-boss-history-table-wrap {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid rgba(121, 213, 255, 0.28);
+  border-radius: 6px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.vs-boss-history-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.vs-boss-history-table th,
+.vs-boss-history-table td {
+  padding: 10px 9px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.vs-boss-history-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  color: #ffe295;
+  background: #191844;
+}
+
+.vs-boss-history-table tbody tr:nth-child(even) {
+  background: rgba(99, 157, 208, 0.07);
+}
+
+.vs-boss-trend-up,
+.vs-boss-quality-excellent,
+.vs-boss-quality-good {
+  color: #85efb6 !important;
+}
+
+.vs-boss-trend-down,
+.vs-boss-quality-needs-improvement {
+  color: #ffaaa7 !important;
+}
+
+.vs-boss-trend-same,
+.vs-boss-quality-fair {
+  color: #ffd77d !important;
+}
+
+.vs-boss-history-empty {
+  padding: 24px 16px;
+  border: 1px dashed rgba(133, 218, 255, 0.48);
+  border-radius: 6px;
+  background: rgba(20, 26, 65, 0.54);
+  text-align: center;
+}
+
+.vs-boss-history-empty strong {
+  color: #fff0ba;
+}
+
+.vs-boss-history-empty p {
+  margin: 7px 0 0;
+  color: #c9d5e3;
 }
 
 .vs-boss-result-panel {
@@ -2308,6 +2444,10 @@ button {
   .vs-bosses-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .vs-boss-history-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 620px) {
@@ -2341,6 +2481,29 @@ button {
     align-items: flex-start;
     flex-direction: column;
     gap: 2px;
+  }
+
+  .game-modal:has(.vs-boss-history-panel) {
+    padding: 8px;
+  }
+
+  .game-modal:has(.vs-boss-history-panel) .game-modal-card {
+    width: 100%;
+    max-height: 94dvh;
+  }
+
+  .vs-boss-history-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vs-boss-history-summary > div {
+    min-height: 58px;
+  }
+}
+
+@media (max-width: 390px) {
+  .vs-boss-card-actions {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

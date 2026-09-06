@@ -28577,6 +28577,7 @@ function createDefaultPlayerData(user) {
     rewardClaims: {
       grammaria: {}
     },
+    vsBossAssessmentRecords: {},
     coins: 0,
     hp: 100,
     maxHp: 100,
@@ -35638,37 +35639,389 @@ function getVsBossLocalStorageKey() {
   return `lingua:vsBossPracticeScores:${getVsBossScoresOwnerId()}`;
 }
 
+const VS_BOSS_HISTORY_LIMIT = 50;
+
+function getVsBossQualityLevel(percent) {
+  const value = clamp(Number(percent) || 0, 0, 100);
+  if (value >= 90) return "ดีเยี่ยม";
+  if (value >= 80) return "ดี";
+  if (value >= 60) return "พอใช้";
+  return "ปรับปรุง";
+}
+
+function getVsBossQualityClass(qualityLevel) {
+  return {
+    "ดีเยี่ยม": "vs-boss-quality-excellent",
+    "ดี": "vs-boss-quality-good",
+    "พอใช้": "vs-boss-quality-fair",
+    "ปรับปรุง": "vs-boss-quality-needs-improvement"
+  }[qualityLevel] || "";
+}
+
+function formatVsBossAttemptDateTime(isoString) {
+  if (!isoString) return "ไม่ทราบวันที่";
+  const date = new Date(isoString);
+  if (!Number.isFinite(date.getTime())) return "ไม่ทราบวันที่";
+  try {
+    return new Intl.DateTimeFormat("th-TH", {
+      dateStyle: "medium",
+      timeStyle: "short"
+    }).format(date);
+  } catch (error) {
+    return date.toLocaleString("th-TH");
+  }
+}
+
+function getVsBossAttemptKnowledgePercent(attempt = {}) {
+  const directPercent = [
+    attempt.knowledgeScorePercent,
+    attempt.accuracyPercent,
+    attempt.scorePercent,
+    attempt.accuracy
+  ].find(value => value !== null && value !== "" && Number.isFinite(Number(value)));
+  if (directPercent !== undefined) {
+    return Math.round(clamp(Number(directPercent), 0, 100) * 10) / 10;
+  }
+  const correct = Math.max(0, Number(attempt.correctAnswers ?? attempt.correct) || 0);
+  const total = Math.max(0, Number(attempt.totalQuestions ?? attempt.total) || 0);
+  return total > 0 ? Math.round(clamp((correct / total) * 100, 0, 100) * 10) / 10 : 0;
+}
+
+function getVsBossAttemptIso(value, fallback = null) {
+  if (value === null || value === undefined || value === "") return fallback;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : fallback;
+}
+
+function getVsBossAttemptId(bossId, completedAt) {
+  return `${bossId}_${completedAt.replace(/[:.]/g, "-")}`;
+}
+
+function normalizeVsBossAttempt(attempt, bossConfig, fallbackAttemptNumber = 0) {
+  if (!attempt || typeof attempt !== "object" || !bossConfig) return null;
+  const bossId = String(attempt.bossId || bossConfig.id);
+  if (bossId !== bossConfig.id) return null;
+  const completedAt = getVsBossAttemptIso(attempt.completedAt || attempt.playedAt || attempt.endedAt);
+  const startedAt = getVsBossAttemptIso(attempt.startedAt);
+  const correctAnswers = Math.max(0, Number(attempt.correctAnswers ?? attempt.correct) || 0);
+  const totalQuestions = Math.max(correctAnswers, Number(attempt.totalQuestions ?? attempt.total) || 0);
+  const knowledgeScorePercent = getVsBossAttemptKnowledgePercent({ ...attempt, correctAnswers, totalQuestions });
+  const gameScore = Math.max(0, Number(attempt.gameScore ?? attempt.score) || 0);
+  const maxGameScore = Math.max(1, Number(attempt.maxGameScore) || 300);
+  const trendFromPrevious = ["first-attempt", "up", "down", "same"].includes(attempt.trendFromPrevious)
+    ? attempt.trendFromPrevious
+    : "first-attempt";
+  const trendFromFirst = ["first-attempt", "up", "down", "same"].includes(attempt.trendFromFirst)
+    ? attempt.trendFromFirst
+    : "first-attempt";
+  return {
+    ...attempt,
+    attemptId: String(attempt.attemptId || getVsBossAttemptId(bossId, completedAt || `legacy-${fallbackAttemptNumber || 1}`)),
+    bossId,
+    bossName: attempt.bossName || bossConfig.name,
+    thaiName: attempt.thaiName || bossConfig.thaiName,
+    attemptNumber: Math.max(1, Number(attempt.attemptNumber) || fallbackAttemptNumber || 1),
+    assessmentType: ["pre-test", "post-test", "practice"].includes(attempt.assessmentType)
+      ? attempt.assessmentType
+      : "practice",
+    startedAt,
+    completedAt,
+    playedAt: getVsBossAttemptIso(attempt.playedAt, completedAt),
+    localPlayedAtText: attempt.localPlayedAtText || formatVsBossAttemptDateTime(completedAt),
+    durationSeconds: Math.max(0, Math.round(Number(attempt.durationSeconds) || 0)),
+    resultStatus: ["victory", "defeat", "abandoned"].includes(attempt.resultStatus)
+      ? attempt.resultStatus
+      : "defeat",
+    gameScore,
+    maxGameScore,
+    score: gameScore,
+    scorePercent: knowledgeScorePercent,
+    correctAnswers,
+    wrongAnswers: Math.max(0, Number(attempt.wrongAnswers) || Math.max(0, totalQuestions - correctAnswers)),
+    totalQuestions,
+    correct: correctAnswers,
+    total: totalQuestions,
+    knowledgeScorePercent,
+    accuracyPercent: knowledgeScorePercent,
+    accuracy: knowledgeScorePercent,
+    hpRemaining: Math.max(0, Number(attempt.hpRemaining ?? attempt.playerHpRemaining) || 0),
+    hpRemainingPercent: clamp(Number(attempt.hpRemainingPercent) || 0, 0, 100),
+    maxCombo: Math.max(0, Number(attempt.maxCombo) || 0),
+    qualityLevel: getVsBossQualityLevel(knowledgeScorePercent),
+    previousKnowledgeScorePercent: attempt.previousKnowledgeScorePercent === null
+      ? null
+      : Number.isFinite(Number(attempt.previousKnowledgeScorePercent))
+        ? Number(attempt.previousKnowledgeScorePercent)
+        : null,
+    improvementFromPrevious: attempt.improvementFromPrevious === null
+      ? null
+      : Number.isFinite(Number(attempt.improvementFromPrevious))
+        ? Number(attempt.improvementFromPrevious)
+        : null,
+    trendFromPrevious,
+    improvementFromFirst: Number.isFinite(Number(attempt.improvementFromFirst))
+      ? Number(attempt.improvementFromFirst)
+      : 0,
+    trendFromFirst,
+    notes: String(attempt.notes || ""),
+    questionResults: Array.isArray(attempt.questionResults) ? attempt.questionResults.slice() : []
+  };
+}
+
+function calculateVsBossAttemptTrend(history = [], currentAttempt = {}) {
+  const bossId = String(currentAttempt.bossId || "");
+  const sameBossHistory = (Array.isArray(history) ? history : [])
+    .filter(attempt => attempt && String(attempt.bossId || "") === bossId);
+  const currentPercent = getVsBossAttemptKnowledgePercent(currentAttempt);
+  if (!sameBossHistory.length) {
+    return {
+      previousKnowledgeScorePercent: null,
+      improvementFromPrevious: null,
+      trendFromPrevious: "first-attempt",
+      improvementFromFirst: 0,
+      trendFromFirst: "first-attempt"
+    };
+  }
+  const previousPercent = getVsBossAttemptKnowledgePercent(sameBossHistory.at(-1));
+  const firstPercent = getVsBossAttemptKnowledgePercent(sameBossHistory[0]);
+  const previousDifference = Math.round((currentPercent - previousPercent) * 10) / 10;
+  const firstDifference = Math.round((currentPercent - firstPercent) * 10) / 10;
+  const toTrend = difference => difference > 0 ? "up" : difference < 0 ? "down" : "same";
+  return {
+    previousKnowledgeScorePercent: previousPercent,
+    improvementFromPrevious: previousDifference,
+    trendFromPrevious: toTrend(previousDifference),
+    improvementFromFirst: firstDifference,
+    trendFromFirst: toTrend(firstDifference)
+  };
+}
+
+function isBetterVsBossAttempt(candidate, currentBest) {
+  if (!currentBest) return Boolean(candidate);
+  if (!candidate) return false;
+  const candidateKnowledge = getVsBossAttemptKnowledgePercent(candidate);
+  const bestKnowledge = getVsBossAttemptKnowledgePercent(currentBest);
+  if (candidateKnowledge !== bestKnowledge) return candidateKnowledge > bestKnowledge;
+  const candidateGameScore = Math.max(0, Number(candidate.gameScore ?? candidate.score) || 0);
+  const bestGameScore = Math.max(0, Number(currentBest.gameScore ?? currentBest.score) || 0);
+  if (candidateGameScore !== bestGameScore) return candidateGameScore > bestGameScore;
+  const candidateTime = new Date(candidate.completedAt || candidate.playedAt || 0).getTime() || 0;
+  const bestTime = new Date(currentBest.completedAt || currentBest.playedAt || 0).getTime() || 0;
+  return candidateTime >= bestTime;
+}
+
+function getVsBossRecord(player, bossId) {
+  if (!player || typeof player !== "object") return null;
+  return player.vsBossAssessmentRecords?.[bossId]
+    || player.progress?.vsBossAssessmentRecords?.[bossId]
+    || null;
+}
+
+function getLegacyVsBossScore(player, bossId) {
+  if (!player || typeof player !== "object") return null;
+  return player.bossPracticeScores?.[bossId]
+    || player.progress?.bossPracticeScores?.[bossId]
+    || null;
+}
+
+function normalizeVsBossRecord(entry, bossConfig) {
+  const source = entry && typeof entry === "object" ? entry : {};
+  const history = [];
+  const seenAttemptIds = new Set();
+  (Array.isArray(source.history) ? source.history : []).forEach((attempt, index) => {
+    const normalizedAttempt = normalizeVsBossAttempt(attempt, bossConfig, index + 1);
+    if (!normalizedAttempt || seenAttemptIds.has(normalizedAttempt.attemptId)) return;
+    seenAttemptIds.add(normalizedAttempt.attemptId);
+    history.push(normalizedAttempt);
+  });
+  history.sort((a, b) => {
+    const aTime = new Date(a.completedAt || a.playedAt || 0).getTime() || 0;
+    const bTime = new Date(b.completedAt || b.playedAt || 0).getTime() || 0;
+    return aTime - bTime || a.attemptNumber - b.attemptNumber;
+  });
+  const firstAttempt = normalizeVsBossAttempt(source.firstAttempt, bossConfig, 1) || history[0] || null;
+  const latestAttempt = normalizeVsBossAttempt(source.latestAttempt, bossConfig, history.at(-1)?.attemptNumber || 1)
+    || history.at(-1)
+    || null;
+  let bestAttempt = normalizeVsBossAttempt(source.bestAttempt, bossConfig, 1);
+  [...history, firstAttempt, latestAttempt].filter(Boolean).forEach(attempt => {
+    if (isBetterVsBossAttempt(attempt, bestAttempt)) bestAttempt = attempt;
+  });
+  const legacyAttempts = Math.max(0, Number(source.totalAttempts ?? source.attempts) || 0);
+  const bestCorrect = Math.max(0, Number(source.bestCorrect ?? bestAttempt?.correctAnswers) || 0);
+  const bestTotal = Math.max(0, Number(source.bestTotal ?? bestAttempt?.totalQuestions) || 0);
+  const bestAccuracy = source.bestAccuracy !== undefined && source.bestAccuracy !== null && source.bestAccuracy !== ""
+    ? clamp(Number(source.bestAccuracy) || 0, 0, 100)
+    : bestTotal > 0
+      ? Math.round((bestCorrect / bestTotal) * 100)
+      : getVsBossAttemptKnowledgePercent(bestAttempt || {});
+  const hasLegacySummary = Boolean(source.hasLegacySummary || (
+    history.length === 0 && (
+      legacyAttempts > 0 || Number(source.bestScore) > 0 || source.lastPlayedAt || source.bestUpdatedAt
+    )
+  ));
+  return {
+    ...source,
+    bossId: bossConfig.id,
+    bossName: source.bossName || bossConfig.name,
+    thaiName: source.thaiName || bossConfig.thaiName,
+    topic: source.topic || bossConfig.cardTopic || bossConfig.topic,
+    bestScore: Math.max(0, Number(source.bestScore ?? bestAttempt?.gameScore) || 0),
+    bestAccuracy,
+    bestCorrect,
+    bestTotal,
+    attempts: Math.max(legacyAttempts, ...history.map(attempt => attempt.attemptNumber), history.length),
+    bestUpdatedAt: source.bestUpdatedAt || bestAttempt?.completedAt || null,
+    lastScore: Math.max(0, Number(source.lastScore ?? latestAttempt?.gameScore) || 0),
+    lastPlayedAt: source.lastPlayedAt || latestAttempt?.completedAt || null,
+    firstAttempt,
+    latestAttempt,
+    bestAttempt,
+    history: history.slice(-VS_BOSS_HISTORY_LIMIT),
+    hasLegacySummary
+  };
+}
+
+function migrateLegacyBossPracticeScoreIfNeeded(player, bossId) {
+  const bossConfig = getVsBossConfig(bossId);
+  if (!bossConfig) return null;
+  const existing = getVsBossRecord(player, bossId);
+  if (existing) return normalizeVsBossRecord(existing, bossConfig);
+  const legacy = getLegacyVsBossScore(player, bossId);
+  if (!legacy || typeof legacy !== "object") return null;
+  return normalizeVsBossRecord({ ...legacy, hasLegacySummary: true, history: [] }, bossConfig);
+}
+
+function ensureVsBossRecord(player, bossConfig) {
+  if (!player || typeof player !== "object" || !bossConfig) return null;
+  if (!player.vsBossAssessmentRecords || typeof player.vsBossAssessmentRecords !== "object") {
+    player.vsBossAssessmentRecords = {};
+  }
+  const existing = getVsBossRecord(player, bossConfig.id)
+    || migrateLegacyBossPracticeScoreIfNeeded(player, bossConfig.id)
+    || {};
+  const record = normalizeVsBossRecord(existing, bossConfig);
+  player.vsBossAssessmentRecords[bossConfig.id] = record;
+  return record;
+}
+
+function createVsBossAttemptRecord(bossConfig, battleResult = {}, options = {}) {
+  const completedAt = getVsBossAttemptIso(battleResult.completedAt || battleResult.endedAt, createTimestampIso());
+  const startedAt = getVsBossAttemptIso(battleResult.startedAt);
+  const correctAnswers = Math.max(0, Number(battleResult.correctAnswers) || 0);
+  const totalQuestions = Math.max(correctAnswers, Number(battleResult.totalQuestions) || 0);
+  const knowledgeScorePercent = totalQuestions > 0
+    ? Math.round(clamp((correctAnswers / totalQuestions) * 100, 0, 100) * 10) / 10
+    : 0;
+  const hpRemaining = Math.max(0, Number(battleResult.hpRemaining ?? battleResult.playerHpRemaining) || 0);
+  const playerMaxHp = Math.max(1, Number(battleResult.playerMaxHp) || 100);
+  const durationSeconds = startedAt
+    ? Math.max(0, Math.round((new Date(completedAt).getTime() - new Date(startedAt).getTime()) / 1000))
+    : 0;
+  return normalizeVsBossAttempt({
+    attemptId: getVsBossAttemptId(bossConfig.id, completedAt),
+    bossId: bossConfig.id,
+    bossName: bossConfig.name,
+    thaiName: bossConfig.thaiName,
+    attemptNumber: Math.max(1, Number(options.attemptNumber) || 1),
+    assessmentType: battleResult.assessmentType || "practice",
+    startedAt,
+    completedAt,
+    playedAt: completedAt,
+    localPlayedAtText: formatVsBossAttemptDateTime(completedAt),
+    durationSeconds,
+    resultStatus: battleResult.bossDefeated ? "victory" : "defeat",
+    gameScore: Math.max(0, Number(battleResult.score ?? battleResult.gameScore) || 0),
+    maxGameScore: Math.max(1, Number(battleResult.maxGameScore) || 300),
+    correctAnswers,
+    wrongAnswers: Math.max(0, Number(battleResult.wrongAnswers) || Math.max(0, totalQuestions - correctAnswers)),
+    totalQuestions,
+    knowledgeScorePercent,
+    accuracyPercent: knowledgeScorePercent,
+    hpRemaining,
+    hpRemainingPercent: Math.round(clamp((hpRemaining / playerMaxHp) * 100, 0, 100) * 10) / 10,
+    maxCombo: Math.max(0, Number(battleResult.maxCombo) || 0),
+    qualityLevel: getVsBossQualityLevel(knowledgeScorePercent),
+    notes: "",
+    questionResults: Array.isArray(battleResult.questionResults) ? battleResult.questionResults.slice() : []
+  }, bossConfig, options.attemptNumber || 1);
+}
+
+function saveVsBossAttemptHistory(player, bossConfig, battleResult = {}) {
+  const currentRecord = ensureVsBossRecord(player, bossConfig);
+  if (!currentRecord) return { record: null, attempt: null, wasDuplicate: false };
+  const nextAttemptNumber = Math.max(0, Number(currentRecord.attempts) || 0) + 1;
+  let attempt = createVsBossAttemptRecord(bossConfig, battleResult, { attemptNumber: nextAttemptNumber });
+  const duplicate = currentRecord.history.find(item => item.attemptId === attempt.attemptId);
+  if (duplicate) {
+    return { record: currentRecord, attempt: duplicate, wasDuplicate: true };
+  }
+  const trend = calculateVsBossAttemptTrend(currentRecord.history, attempt);
+  attempt = normalizeVsBossAttempt({ ...attempt, ...trend }, bossConfig, nextAttemptNumber);
+  const history = [...currentRecord.history, attempt].slice(-VS_BOSS_HISTORY_LIMIT);
+  const firstAttempt = currentRecord.firstAttempt || attempt;
+  const bestAttempt = isBetterVsBossAttempt(attempt, currentRecord.bestAttempt)
+    ? attempt
+    : currentRecord.bestAttempt || attempt;
+  const record = normalizeVsBossRecord({
+    ...currentRecord,
+    bossId: bossConfig.id,
+    bossName: bossConfig.name,
+    thaiName: bossConfig.thaiName,
+    topic: bossConfig.cardTopic || bossConfig.topic,
+    attempts: nextAttemptNumber,
+    firstAttempt,
+    latestAttempt: attempt,
+    bestAttempt,
+    history,
+    hasLegacySummary: currentRecord.hasLegacySummary
+  }, bossConfig);
+  player.vsBossAssessmentRecords[bossConfig.id] = record;
+  return { record, attempt, wasDuplicate: false };
+}
+
+function mergeVsBossScoreEntries(previousEntry, incomingEntry, bossConfig) {
+  const previous = normalizeVsBossRecord(previousEntry, bossConfig);
+  const incoming = normalizeVsBossRecord(incomingEntry, bossConfig);
+  const historyById = new Map();
+  [...previous.history, ...incoming.history].forEach(attempt => historyById.set(attempt.attemptId, attempt));
+  const history = [...historyById.values()].sort((a, b) => {
+    const aTime = new Date(a.completedAt || a.playedAt || 0).getTime() || 0;
+    const bTime = new Date(b.completedAt || b.playedAt || 0).getTime() || 0;
+    return aTime - bTime || a.attemptNumber - b.attemptNumber;
+  }).slice(-VS_BOSS_HISTORY_LIMIT);
+  const bestLegacy = incoming.bestScore >= previous.bestScore ? incoming : previous;
+  let bestAttempt = previous.bestAttempt;
+  [incoming.bestAttempt, ...history].filter(Boolean).forEach(attempt => {
+    if (isBetterVsBossAttempt(attempt, bestAttempt)) bestAttempt = attempt;
+  });
+  const firstCandidates = [previous.firstAttempt, incoming.firstAttempt, history[0]].filter(Boolean);
+  const latestCandidates = [previous.latestAttempt, incoming.latestAttempt, history.at(-1)].filter(Boolean);
+  const byTime = (a, b) => (new Date(a.completedAt || a.playedAt || 0).getTime() || 0)
+    - (new Date(b.completedAt || b.playedAt || 0).getTime() || 0);
+  return normalizeVsBossRecord({
+    ...bestLegacy,
+    bossId: bossConfig.id,
+    attempts: Math.max(previous.attempts, incoming.attempts),
+    firstAttempt: firstCandidates.sort(byTime)[0] || null,
+    latestAttempt: latestCandidates.sort(byTime).at(-1) || null,
+    bestAttempt,
+    history,
+    hasLegacySummary: previous.hasLegacySummary || incoming.hasLegacySummary
+  }, bossConfig);
+}
+
 function normalizeVsBossScores(scores) {
   const normalized = {};
   if (!scores || typeof scores !== "object") {
     return normalized;
   }
   Object.entries(scores).forEach(([bossId, entry]) => {
-    if (!getVsBossConfig(bossId) || !entry || typeof entry !== "object") {
+    const bossConfig = getVsBossConfig(bossId);
+    if (!bossConfig || !entry || typeof entry !== "object") {
       return;
     }
-    const bestAttempt = entry.bestAttempt && typeof entry.bestAttempt === "object"
-      ? { ...entry.bestAttempt }
-      : null;
-    const bestCorrect = Math.max(0, Number(bestAttempt?.correct ?? entry.bestCorrect) || 0);
-    const bestTotal = Math.max(0, Number(bestAttempt?.total ?? entry.bestTotal) || 0);
-    const suppliedAccuracy = bestAttempt?.accuracy ?? entry.bestAccuracy;
-    const bestAccuracy = suppliedAccuracy !== undefined && suppliedAccuracy !== null && suppliedAccuracy !== ""
-      ? clamp(Number(suppliedAccuracy) || 0, 0, 100)
-      : bestTotal > 0
-        ? Math.round((bestCorrect / bestTotal) * 100)
-        : 0;
-    normalized[bossId] = {
-      bestScore: Math.max(0, Number(bestAttempt?.score ?? entry.bestScore) || 0),
-      bestAccuracy,
-      bestCorrect,
-      bestTotal,
-      attempts: Math.max(0, Number(entry.totalAttempts ?? entry.attempts) || 0),
-      bestUpdatedAt: bestAttempt?.completedAt || entry.bestUpdatedAt || null,
-      lastScore: Math.max(0, Number(entry.lastScore) || 0),
-      lastPlayedAt: entry.lastPlayedAt || null,
-      bestAttempt
-    };
+    normalized[bossId] = normalizeVsBossRecord(entry, bossConfig);
   });
   return normalized;
 }
@@ -35678,8 +36031,9 @@ function mergeVsBossScoreSources(...sources) {
   sources.forEach(source => {
     Object.entries(normalizeVsBossScores(source)).forEach(([bossId, entry]) => {
       const previous = merged[bossId];
-      const best = !previous || entry.bestScore >= previous.bestScore ? entry : previous;
-      merged[bossId] = { ...best, attempts: Math.max(previous?.attempts || 0, entry.attempts) };
+      merged[bossId] = previous
+        ? mergeVsBossScoreEntries(previous, entry, getVsBossConfig(bossId))
+        : entry;
     });
   });
   return merged;
@@ -35737,12 +36091,28 @@ function createVsBossScoreEntry(previousEntry, result, attempts) {
   };
 }
 
+function combineVsBossScoreAndHistory(previousEntry, result, historyRecord) {
+  const legacyEntry = createVsBossScoreEntry(previousEntry, result, historyRecord.attempts);
+  return {
+    ...historyRecord,
+    ...legacyEntry,
+    firstAttempt: historyRecord.firstAttempt,
+    latestAttempt: historyRecord.latestAttempt,
+    bestAttempt: historyRecord.bestAttempt,
+    history: historyRecord.history,
+    hasLegacySummary: historyRecord.hasLegacySummary
+  };
+}
+
 async function saveVsBossPracticeScore(bossId, result) {
   const ownerId = getVsBossScoresOwnerId();
   const user = getCurrentUser();
   const useFirestore = getAuthMode() === "firebase" && !user?.isGuest && ownerId !== "guest";
+  const bossConfig = getVsBossConfig(bossId);
+  if (!bossConfig) throw new Error(`Unknown VS Bosses bossId: ${bossId}`);
   let previousBest = Math.max(0, Number(state.vsBossPractice.scores?.[bossId]?.bestScore) || 0);
   let nextEntry = null;
+  let savedAttempt = null;
   if (useFirestore) {
     const playerRef = getPlayerDocRef(ownerId);
     await runTransaction(firestoreDb, async transaction => {
@@ -35750,27 +36120,61 @@ async function saveVsBossPracticeScore(bossId, result) {
       if (!snapshot.exists()) {
         throw new Error("Player document not found");
       }
-      const remoteEntry = snapshot.data()?.progress?.bossPracticeScores?.[bossId] || {};
+      const remoteData = snapshot.data() || {};
+      const remoteEntry = remoteData?.progress?.bossPracticeScores?.[bossId] || {};
+      const remoteHistoryEntry = remoteData?.progress?.vsBossAssessmentRecords?.[bossId] || {};
       const cachedEntry = state.vsBossPractice.scores?.[bossId] || {};
-      const remoteBest = Math.max(0, Number(remoteEntry.bestScore) || 0);
+      const previousEntry = mergeVsBossScoreSources(
+        { [bossId]: remoteEntry },
+        { [bossId]: remoteHistoryEntry },
+        { [bossId]: cachedEntry }
+      )[bossId] || {};
+      const remoteBest = Math.max(0, Number(previousEntry.bestScore) || 0);
       const cachedBest = Math.max(0, Number(cachedEntry.bestScore) || 0);
-      const previousEntry = cachedBest >= remoteBest ? cachedEntry : remoteEntry;
       previousBest = Math.max(previousBest, remoteBest, cachedBest);
-      const attempts = Math.max(Number(remoteEntry.attempts) || 0, Number(state.vsBossPractice.scores?.[bossId]?.attempts) || 0) + 1;
-      nextEntry = createVsBossScoreEntry({ ...previousEntry, bestScore: previousBest }, result, attempts);
+      const workingPlayer = {
+        vsBossAssessmentRecords: { [bossId]: previousEntry },
+        bossPracticeScores: { [bossId]: remoteEntry }
+      };
+      const historySave = saveVsBossAttemptHistory(workingPlayer, bossConfig, result);
+      savedAttempt = historySave.attempt;
+      nextEntry = combineVsBossScoreAndHistory(
+        { ...previousEntry, bestScore: previousBest },
+        result,
+        historySave.record
+      );
       transaction.update(playerRef, {
-        [`progress.bossPracticeScores.${bossId}`]: nextEntry
+        [`progress.bossPracticeScores.${bossId}`]: nextEntry,
+        [`progress.vsBossAssessmentRecords.${bossId}`]: nextEntry
       });
     });
   } else {
     const previousEntry = state.vsBossPractice.scores?.[bossId] || {};
-    const attempts = (Number(previousEntry.attempts) || 0) + 1;
-    nextEntry = createVsBossScoreEntry(previousEntry, result, attempts);
+    const workingPlayer = playerData && typeof playerData === "object"
+      ? playerData
+      : { vsBossAssessmentRecords: {} };
+    if (!getVsBossRecord(workingPlayer, bossId)) {
+      workingPlayer.vsBossAssessmentRecords = {
+        ...(workingPlayer.vsBossAssessmentRecords || {}),
+        [bossId]: previousEntry
+      };
+    }
+    const historySave = saveVsBossAttemptHistory(workingPlayer, bossConfig, result);
+    savedAttempt = historySave.attempt;
+    nextEntry = combineVsBossScoreAndHistory(previousEntry, result, historySave.record);
+    workingPlayer.vsBossAssessmentRecords[bossId] = nextEntry;
     const nextScores = {
       ...state.vsBossPractice.scores,
       [bossId]: nextEntry
     };
     playerStorage.set(getVsBossLocalStorageKey(), JSON.stringify(nextScores));
+    if (playerData) await savePlayerData("vs-boss-history");
+  }
+  if (playerData && typeof playerData === "object") {
+    if (!playerData.vsBossAssessmentRecords || typeof playerData.vsBossAssessmentRecords !== "object") {
+      playerData.vsBossAssessmentRecords = {};
+    }
+    playerData.vsBossAssessmentRecords[bossId] = nextEntry;
   }
   state.vsBossPractice.scores = {
     ...state.vsBossPractice.scores,
@@ -35782,7 +36186,8 @@ async function saveVsBossPracticeScore(bossId, result) {
     previousBest,
     bestScore: nextEntry.bestScore,
     isNewBest: result.score > previousBest,
-    entry: nextEntry
+    entry: nextEntry,
+    attempt: savedAttempt
   };
 }
 
@@ -35792,6 +36197,166 @@ function setVsBossesStatus(message = "", isError = false) {
   }
   els.vsBossesStatus.textContent = message;
   els.vsBossesStatus.classList.toggle("is-error", isError);
+}
+
+function formatVsBossPercent(value) {
+  const percent = Math.round(clamp(Number(value) || 0, 0, 100) * 10) / 10;
+  return `${Number.isInteger(percent) ? percent : percent.toFixed(1)}%`;
+}
+
+function formatVsBossTrend(trend, difference) {
+  if (trend === "first-attempt") return "ครั้งแรกของบอสนี้";
+  const value = Math.round((Number(difference) || 0) * 10) / 10;
+  const displayValue = Number.isInteger(Math.abs(value)) ? Math.abs(value) : Math.abs(value).toFixed(1);
+  if (trend === "up") return `สูงขึ้น +${displayValue}%`;
+  if (trend === "down") return `ลดลง -${displayValue}%`;
+  return "เท่าเดิม 0%";
+}
+
+function getVsBossTrendClass(trend) {
+  if (trend === "up") return "vs-boss-trend-up";
+  if (trend === "down") return "vs-boss-trend-down";
+  return "vs-boss-trend-same";
+}
+
+function renderVsBossHistoryButton(bossConfig) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "vs-boss-history-button";
+  button.dataset.bossId = bossConfig.id;
+  button.textContent = "ประวัติคะแนน";
+  button.addEventListener("click", event => {
+    event.preventDefault();
+    event.stopPropagation();
+    openVsBossHistoryModal(bossConfig.id);
+  });
+  return button;
+}
+
+function appendVsBossHistorySummaryItem(container, label, value, className = "") {
+  const item = document.createElement("div");
+  const labelNode = document.createElement("span");
+  labelNode.textContent = label;
+  const valueNode = document.createElement("strong");
+  valueNode.textContent = value;
+  if (className) valueNode.classList.add(className);
+  item.append(labelNode, valueNode);
+  container.appendChild(item);
+}
+
+function getVsBossAssessmentTypeLabel(type) {
+  return {
+    "pre-test": "Pre-test",
+    "post-test": "Post-test",
+    "practice": "Practice"
+  }[type] || "Practice";
+}
+
+function getVsBossResultStatusLabel(status) {
+  return { victory: "ชนะ", defeat: "แพ้", abandoned: "ออกกลางคัน" }[status] || "แพ้";
+}
+
+function renderVsBossHistoryModal(bossConfig, record) {
+  const normalizedRecord = normalizeVsBossRecord(record || {}, bossConfig);
+  const panel = document.createElement("section");
+  panel.className = "vs-boss-history-panel";
+  panel.dataset.bossId = bossConfig.id;
+
+  const summary = document.createElement("div");
+  summary.className = "vs-boss-history-summary";
+  const latest = normalizedRecord.latestAttempt;
+  const best = normalizedRecord.bestAttempt;
+  appendVsBossHistorySummaryItem(summary, "จำนวนครั้งที่เล่น", `${normalizedRecord.attempts} ครั้ง`);
+  appendVsBossHistorySummaryItem(summary, "คะแนนความรู้ล่าสุด", latest ? formatVsBossPercent(getVsBossAttemptKnowledgePercent(latest)) : "ยังไม่มี");
+  appendVsBossHistorySummaryItem(summary, "คะแนนความรู้สูงสุด", best ? formatVsBossPercent(getVsBossAttemptKnowledgePercent(best)) : "ยังไม่มี");
+  appendVsBossHistorySummaryItem(
+    summary,
+    "เทียบกับครั้งก่อน",
+    latest ? formatVsBossTrend(latest.trendFromPrevious, latest.improvementFromPrevious) : "ยังไม่มี",
+    latest ? getVsBossTrendClass(latest.trendFromPrevious) : ""
+  );
+  appendVsBossHistorySummaryItem(
+    summary,
+    "เทียบกับครั้งแรก",
+    latest ? formatVsBossTrend(latest.trendFromFirst, latest.improvementFromFirst) : "ยังไม่มี",
+    latest ? getVsBossTrendClass(latest.trendFromFirst) : ""
+  );
+  panel.appendChild(summary);
+
+  if (!normalizedRecord.history.length) {
+    const empty = document.createElement("div");
+    empty.className = "vs-boss-history-empty";
+    const title = document.createElement("strong");
+    title.textContent = normalizedRecord.hasLegacySummary
+      ? "มีคะแนนเดิม แต่ยังไม่มีประวัติรายครั้ง"
+      : "ยังไม่มีประวัติคะแนนของบอสตัวนี้";
+    const detail = document.createElement("p");
+    detail.textContent = normalizedRecord.hasLegacySummary
+      ? "ระบบจะเริ่มบันทึกประวัติแบบละเอียดตั้งแต่การเล่นครั้งถัดไป"
+      : "เริ่มต่อสู้กับบอสตัวนี้เพื่อบันทึกผลครั้งแรก";
+    empty.append(title, detail);
+    panel.appendChild(empty);
+    return panel;
+  }
+
+  const tableWrap = document.createElement("div");
+  tableWrap.className = "vs-boss-history-table-wrap";
+  const table = document.createElement("table");
+  table.className = "vs-boss-history-table";
+  const head = document.createElement("thead");
+  const headRow = document.createElement("tr");
+  ["ครั้งที่", "วันที่/เวลา", "ประเภท", "ผลการต่อสู้", "คะแนนความรู้", "คะแนนเกม", "ถูก/ทั้งหมด", "ระดับคุณภาพ", "พัฒนาการ"]
+    .forEach(label => {
+      const cell = document.createElement("th");
+      cell.scope = "col";
+      cell.textContent = label;
+      headRow.appendChild(cell);
+    });
+  head.appendChild(headRow);
+  const body = document.createElement("tbody");
+  [...normalizedRecord.history].reverse().forEach(attempt => {
+    const row = document.createElement("tr");
+    const values = [
+      String(attempt.attemptNumber),
+      formatVsBossAttemptDateTime(attempt.completedAt || attempt.playedAt),
+      getVsBossAssessmentTypeLabel(attempt.assessmentType),
+      getVsBossResultStatusLabel(attempt.resultStatus),
+      formatVsBossPercent(attempt.knowledgeScorePercent),
+      `${attempt.gameScore}/${attempt.maxGameScore}`,
+      `${attempt.correctAnswers}/${attempt.totalQuestions}`,
+      attempt.qualityLevel,
+      formatVsBossTrend(attempt.trendFromPrevious, attempt.improvementFromPrevious)
+    ];
+    values.forEach((value, index) => {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      if (index === 7) cell.classList.add(getVsBossQualityClass(attempt.qualityLevel));
+      if (index === 8) cell.classList.add(getVsBossTrendClass(attempt.trendFromPrevious));
+      row.appendChild(cell);
+    });
+    body.appendChild(row);
+  });
+  table.append(head, body);
+  tableWrap.appendChild(table);
+  panel.appendChild(tableWrap);
+  return panel;
+}
+
+function openVsBossHistoryModal(bossId) {
+  const bossConfig = getVsBossConfig(bossId);
+  if (!bossConfig) return false;
+  const storedRecord = state.vsBossPractice.scores?.[bossId]
+    || migrateLegacyBossPracticeScoreIfNeeded(playerData, bossId)
+    || {};
+  openGameModal({
+    title: `ประวัติคะแนน: ${bossConfig.name}`,
+    body: bossConfig.cardTopic || bossConfig.topic,
+    content: renderVsBossHistoryModal(bossConfig, storedRecord),
+    actions: [
+      { label: "ปิด", primary: true, onClick: () => closeGameModal() }
+    ]
+  });
+  return true;
 }
 
 function createVsBossCard(config) {
@@ -35836,12 +36401,15 @@ function createVsBossCard(config) {
   score.textContent = bestScore > 0
     ? `คะแนนสูงสุด: ${bestScore} Grammaria`
     : "คะแนนสูงสุด: ยังไม่มี";
+  const actions = document.createElement("div");
+  actions.className = "vs-boss-card-actions";
   const button = document.createElement("button");
   button.type = "button";
   button.className = "vs-boss-start-button";
   button.textContent = "เริ่มฝึกฝน";
   button.addEventListener("click", () => startVsBossPracticeBattle(config.id));
-  card.append(frame, name, topic, description, score, button);
+  actions.append(button, renderVsBossHistoryButton(config));
+  card.append(frame, name, topic, description, score, actions);
   return card;
 }
 
@@ -35895,10 +36463,15 @@ function buildVsBossResultPanel(config, result, scoreSave, saveWarning = "") {
   score.textContent = `Grammaria ประเมินผล: ${result.score}`;
   const stats = document.createElement("div");
   stats.className = "vs-boss-result-stats";
+  const attempt = scoreSave.attempt || createVsBossAttemptRecord(config, result);
   const rows = [
     ["Boss", config.name],
     ["หัวข้อ", config.topicTh],
     ["Accuracy", `${result.correctAnswers}/${result.totalQuestions} ข้อ`],
+    ["คะแนนความรู้", formatVsBossPercent(attempt.knowledgeScorePercent)],
+    ["คะแนนเกม", `${attempt.gameScore}/${attempt.maxGameScore}`],
+    ["ระดับคุณภาพ", attempt.qualityLevel],
+    ["พัฒนาการจากครั้งก่อน", formatVsBossTrend(attempt.trendFromPrevious, attempt.improvementFromPrevious)],
     ["คะแนนสูงสุดเดิม", String(scoreSave.previousBest)],
     ["คะแนนสูงสุดปัจจุบัน", String(scoreSave.bestScore)]
   ];
@@ -35938,7 +36511,9 @@ async function finishVsBossPracticeBattle({ bossDefeated = false } = {}) {
   const summary = createVsBossEvaluationSummary({ bossDefeated });
   const result = {
     ...summary,
-    score: calculateVsBossEvaluationScore(summary)
+    score: calculateVsBossEvaluationScore(summary),
+    maxGameScore: 300,
+    assessmentType: practice.evaluation?.assessmentType || "practice"
   };
   const localPrevious = Math.max(0, Number(practice.scores?.[practice.bossId]?.bestScore) || 0);
   let scoreSave = {
@@ -35956,9 +36531,25 @@ async function finishVsBossPracticeBattle({ bossDefeated = false } = {}) {
     scoreSave = await saveVsBossPracticeScore(config.id, result);
   } catch (error) {
     console.error("[VS Bosses] failed to save best score:", error);
+    const fallbackPlayer = playerData && typeof playerData === "object"
+      ? playerData
+      : { vsBossAssessmentRecords: { [config.id]: practice.scores?.[config.id] || {} } };
+    const historySave = saveVsBossAttemptHistory(fallbackPlayer, config, result);
+    const fallbackEntry = combineVsBossScoreAndHistory(
+      practice.scores?.[config.id] || {},
+      result,
+      historySave.record
+    );
     practice.scores = {
       ...practice.scores,
-      [config.id]: createVsBossScoreEntry(practice.scores?.[config.id] || {}, result, (Number(practice.scores?.[config.id]?.attempts) || 0) + 1)
+      [config.id]: fallbackEntry
+    };
+    scoreSave = {
+      previousBest: localPrevious,
+      bestScore: fallbackEntry.bestScore,
+      isNewBest: result.score > localPrevious,
+      entry: fallbackEntry,
+      attempt: historySave.attempt
     };
     saveWarning = "ไม่สามารถบันทึกคะแนนสูงสุดได้ แต่คะแนนรอบนี้ยังแสดงอยู่";
   }
@@ -36047,6 +36638,107 @@ function exitVsBossPracticeToSelection() {
   state.vsBossPractice.evaluation = null;
   renderVsBossesGrid();
   showScene("vsBosses");
+}
+
+function validateVsBossScoreHistorySystem() {
+  const failures = [];
+  const warnings = [];
+  const expect = (condition, message) => {
+    if (!condition) failures.push(message);
+  };
+  const player = { vsBossAssessmentRecords: {}, bossPracticeScores: {} };
+  VS_BOSS_REGISTRY.forEach(config => {
+    const record = ensureVsBossRecord(player, config);
+    expect(Boolean(record && Array.isArray(record.history)), `${config.id}: history record missing`);
+    if (typeof document !== "undefined") {
+      const button = renderVsBossHistoryButton(config);
+      expect(button.textContent === "ประวัติคะแนน", `${config.id}: history button label mismatch`);
+      expect(button.dataset.bossId === config.id, `${config.id}: history button bossId mismatch`);
+    }
+  });
+  if (typeof document === "undefined") {
+    warnings.push("DOM button and modal rendering checks require a browser");
+  }
+
+  const rewind = getVsBossConfig("rewind_slime");
+  const echo = getVsBossConfig("echo_tick");
+  const saveAttempt = (config, correct, total, minute, score = correct * 20) => saveVsBossAttemptHistory(player, config, {
+    correctAnswers: correct,
+    wrongAnswers: total - correct,
+    totalQuestions: total,
+    score,
+    maxGameScore: 300,
+    bossDefeated: correct >= Math.ceil(total / 2),
+    startedAt: `2026-09-06T02:${String(minute).padStart(2, "0")}:00.000Z`,
+    endedAt: `2026-09-06T02:${String(minute).padStart(2, "0")}:30.000Z`
+  });
+  const first = saveAttempt(rewind, 6, 10, 1);
+  const higher = saveAttempt(rewind, 8, 10, 2);
+  const lower = saveAttempt(rewind, 7, 10, 3);
+  const same = saveAttempt(rewind, 7, 10, 4);
+  saveAttempt(echo, 9, 10, 5);
+  expect(first.attempt.trendFromPrevious === "first-attempt", "first attempt trend is incorrect");
+  expect(higher.attempt.trendFromPrevious === "up", "higher attempt trend is incorrect");
+  expect(lower.attempt.trendFromPrevious === "down", "lower attempt trend is incorrect");
+  expect(same.attempt.trendFromPrevious === "same", "same attempt trend is incorrect");
+  expect(player.vsBossAssessmentRecords.rewind_slime.history.every(attempt => attempt.bossId === "rewind_slime"), "Rewind Slime history mixed bossId");
+  expect(player.vsBossAssessmentRecords.echo_tick.history.every(attempt => attempt.bossId === "echo_tick"), "Echo Tick history mixed bossId");
+  expect(player.vsBossAssessmentRecords.rewind_slime.firstAttempt.attemptId === first.attempt.attemptId, "firstAttempt was overwritten");
+  expect(player.vsBossAssessmentRecords.rewind_slime.latestAttempt.attemptId === same.attempt.attemptId, "latestAttempt did not update");
+  expect(player.vsBossAssessmentRecords.rewind_slime.bestAttempt.attemptId === higher.attempt.attemptId, "bestAttempt is incorrect");
+  expect(getVsBossQualityLevel(95) === "ดีเยี่ยม", "95 quality threshold failed");
+  expect(getVsBossQualityLevel(85) === "ดี", "85 quality threshold failed");
+  expect(getVsBossQualityLevel(70) === "พอใช้", "70 quality threshold failed");
+  expect(getVsBossQualityLevel(55) === "ปรับปรุง", "55 quality threshold failed");
+  expect(formatVsBossAttemptDateTime("invalid") === "ไม่ทราบวันที่", "invalid date fallback failed");
+  if (typeof document !== "undefined") {
+    const emptyPanel = renderVsBossHistoryModal(getVsBossConfig("memory_bat"), {});
+    const historyPanel = renderVsBossHistoryModal(rewind, player.vsBossAssessmentRecords.rewind_slime);
+    expect(emptyPanel.textContent.includes("ยังไม่มีประวัติคะแนนของบอสตัวนี้"), "empty history modal message missing");
+    expect(historyPanel.querySelectorAll("tbody tr").length === 4, "history modal row count is incorrect");
+    expect(historyPanel.dataset.bossId === "rewind_slime", "history modal bossId is incorrect");
+    const resultPanel = buildVsBossResultPanel(rewind, {
+      correctAnswers: 7,
+      totalQuestions: 10,
+      score: 140,
+      maxGameScore: 300
+    }, {
+      previousBest: 120,
+      bestScore: 140,
+      isNewBest: true,
+      attempt: same.attempt
+    });
+    ["คะแนนความรู้", "คะแนนเกม", "ระดับคุณภาพ", "พัฒนาการจากครั้งก่อน"].forEach(label => {
+      expect(resultPanel.textContent.includes(label), `result panel missing ${label}`);
+    });
+  }
+
+  const limitPlayer = { vsBossAssessmentRecords: {} };
+  let firstLimitedId = "";
+  for (let index = 0; index < 55; index += 1) {
+    const completedAt = new Date(Date.UTC(2026, 8, 7, 0, index, 0)).toISOString();
+    const saved = saveVsBossAttemptHistory(limitPlayer, echo, {
+      correctAnswers: index === 0 ? 10 : 5,
+      wrongAnswers: index === 0 ? 0 : 5,
+      totalQuestions: 10,
+      score: index,
+      endedAt: completedAt,
+      bossDefeated: true
+    });
+    if (index === 0) firstLimitedId = saved.attempt.attemptId;
+  }
+  const limited = limitPlayer.vsBossAssessmentRecords.echo_tick;
+  expect(limited.history.length === VS_BOSS_HISTORY_LIMIT, "history limit is not 50");
+  expect(limited.attempts === 55, "total attempts were not preserved after trimming");
+  expect(limited.firstAttempt.attemptId === firstLimitedId, "trimmed firstAttempt was not preserved");
+  expect(limited.bestAttempt.attemptId === firstLimitedId, "trimmed bestAttempt was not preserved");
+
+  return {
+    ok: failures.length === 0,
+    failures,
+    warnings,
+    checkedBosses: VS_BOSS_REGISTRY.length
+  };
 }
 
 function normalizeVerbMemoryChoiceText(value) {
@@ -48740,6 +49432,8 @@ window.validateVerbMemoryChoiceGeneration = validateVerbMemoryChoiceGeneration;
 window.validateVerbMemoryMissingSlotDistribution = validateVerbMemoryMissingSlotDistribution;
 if (window.location.protocol === "file:" || /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
   window.validateEditableBackgroundAssets = validateEditableBackgroundAssets;
+  window.validateVsBossScoreHistorySystem = validateVsBossScoreHistorySystem;
+  console.info("[VS Boss Score History]", JSON.stringify(validateVsBossScoreHistorySystem()));
   const runEditableBackgroundValidation = () => {
     validateEditableBackgroundAssets().then(result => {
       console.info("[Editable Background Assets]", JSON.stringify(result));
