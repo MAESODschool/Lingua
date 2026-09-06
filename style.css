@@ -2243,6 +2243,46 @@ button {
   font-weight: 800;
 }
 
+.vs-boss-best-score strong {
+  color: #fff0ba;
+}
+
+.vs-boss-quality-level {
+  margin: -4px 0 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 219, 134, 0.22);
+  border-radius: 6px;
+  background: rgba(4, 8, 24, 0.42);
+  color: #d9ecff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.vs-boss-quality-level strong {
+  color: #fff0ba;
+}
+
+.vs-boss-quality-level.vs-boss-quality-excellent strong {
+  color: #ffe18a;
+}
+
+.vs-boss-quality-level.vs-boss-quality-good strong {
+  color: #8fe8ff;
+}
+
+.vs-boss-quality-level.vs-boss-quality-fair strong {
+  color: #9ce5b3;
+}
+
+.vs-boss-quality-level.vs-boss-quality-needs-improvement strong {
+  color: #ffbdc7;
+}
+
+.vs-boss-quality-level.vs-boss-quality-empty strong {
+  color: #b8c9e8;
+}
+
 .vs-boss-card-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -43,7 +43,8 @@ vm.runInContext(declaration('actAttackCharms', 'const'), context);
 for (const name of [
   'makeCharm', 'getVsBossRegistryList', 'getVsBossBestAttemptForBoss', 'getVsBossBossScorePercent',
   'getVsBossOverallRank', 'calculateVsBossOverallRank',
-  'getVsBossQualityLevel', 'formatVsBossAttemptDateTime', 'getVsBossAttemptKnowledgePercent', 'getVsBossAttemptIso', 'getVsBossAttemptId',
+  'getVsBossQualityLevel', 'getVsBossQualityClass', 'clampVsBossPercent', 'getVsBossBestAssessmentPercent', 'getVsBossQualityPresentation',
+  'formatVsBossAttemptDateTime', 'getVsBossAttemptKnowledgePercent', 'getVsBossAttemptIso', 'getVsBossAttemptId',
   'normalizeVsBossAttempt', 'calculateVsBossAttemptTrend', 'isBetterVsBossAttempt', 'getVsBossRecord', 'getLegacyVsBossScore',
   'normalizeVsBossRecord', 'migrateLegacyBossPracticeScoreIfNeeded', 'ensureVsBossRecord', 'createVsBossAttemptRecord',
   'saveVsBossAttemptHistory', 'mergeVsBossScoreEntries', 'normalizeVsBossScores', 'mergeVsBossScoreSources', 'createVsBossScoreEntry',
@@ -91,6 +92,17 @@ for (const [percent, quality] of [[95,'ดีเยี่ยม'], [90,'ดี�
   context.percent = percent;
   assert.equal(run('getVsBossQualityLevel(percent)'), quality);
 }
+assert.equal(run('getVsBossQualityLevel(null)'), 'ยังไม่มีผลประเมิน');
+context.qualityPlayer = {vsBossAssessmentRecords:{rewind_slime:{bestAttempt:{knowledgeScorePercent:95}},echo_tick:{bestAttempt:{knowledgeScorePercent:70}}}};
+assert.equal(run('getVsBossBestAssessmentPercent(qualityPlayer,"rewind_slime")'), 95);
+assert.equal(run('getVsBossBestAssessmentPercent(qualityPlayer,"echo_tick")'), 70);
+context.qualityPlayer = {bossPracticeScores:{rewind_slime:{bestAccuracy:85}}};
+assert.equal(run('getVsBossBestAssessmentPercent(qualityPlayer,"rewind_slime")'), 85);
+context.qualityPlayer = {bossPracticeScores:{rewind_slime:{bestCorrect:9,bestTotal:12}}};
+assert.equal(run('getVsBossBestAssessmentPercent(qualityPlayer,"rewind_slime")'), 75);
+context.qualityPlayer = {bossPracticeScores:{rewind_slime:{bestScore:210,maxGameScore:300}}};
+assert.equal(run('getVsBossBestAssessmentPercent(qualityPlayer,"rewind_slime")'), 70);
+assert.equal(run('getVsBossBestAssessmentPercent({},"memory_bat")'), null);
 assert.equal(run('formatVsBossAttemptDateTime("not-a-date")'), 'ไม่ทราบวันที่');
 context.historyPlayer = {vsBossAssessmentRecords:{},bossPracticeScores:{}};
 function saveHistory(bossId, correct, minute, score = correct * 20) {

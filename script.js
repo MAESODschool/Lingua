@@ -35642,7 +35642,10 @@ function getVsBossLocalStorageKey() {
 const VS_BOSS_HISTORY_LIMIT = 50;
 
 function getVsBossQualityLevel(percent) {
-  const value = clamp(Number(percent) || 0, 0, 100);
+  if (percent === null || percent === undefined || percent === "" || !Number.isFinite(Number(percent))) {
+    return "ยังไม่มีผลประเมิน";
+  }
+  const value = clamp(Number(percent), 0, 100);
   if (value >= 90) return "ดีเยี่ยม";
   if (value >= 80) return "ดี";
   if (value >= 60) return "พอใช้";
@@ -35654,8 +35657,75 @@ function getVsBossQualityClass(qualityLevel) {
     "ดีเยี่ยม": "vs-boss-quality-excellent",
     "ดี": "vs-boss-quality-good",
     "พอใช้": "vs-boss-quality-fair",
-    "ปรับปรุง": "vs-boss-quality-needs-improvement"
+    "ปรับปรุง": "vs-boss-quality-needs-improvement",
+    "ยังไม่มีผลประเมิน": "vs-boss-quality-empty"
   }[qualityLevel] || "";
+}
+
+function clampVsBossPercent(value) {
+  if (value === null || value === undefined || value === "" || !Number.isFinite(Number(value))) {
+    return null;
+  }
+  return Math.round(clamp(Number(value), 0, 100) * 10) / 10;
+}
+
+function getVsBossBestAssessmentPercent(player, bossId, scoreRecords = null) {
+  const record = getVsBossRecord(player, bossId)
+    || (scoreRecords && typeof scoreRecords === "object" ? scoreRecords[bossId] : null)
+    || null;
+  const legacy = getLegacyVsBossScore(player, bossId);
+  const firstFinitePercent = values => {
+    for (const value of values) {
+      const percent = clampVsBossPercent(value);
+      if (percent !== null) return percent;
+    }
+    return null;
+  };
+  const knowledgePercent = firstFinitePercent([
+    record?.bestAttempt?.knowledgeScorePercent,
+    record?.bestAttempt?.accuracyPercent,
+    record?.bestAttempt?.scorePercent,
+    record?.bestAttempt?.accuracy
+  ]);
+  if (knowledgePercent !== null) return knowledgePercent;
+
+  const legacyAccuracy = firstFinitePercent([
+    record?.bestAccuracy,
+    record?.bestAccuracyPercent,
+    legacy?.bestAccuracy,
+    legacy?.bestAccuracyPercent
+  ]);
+  if (legacyAccuracy !== null) return legacyAccuracy;
+
+  const correct = [record?.bestCorrect, legacy?.bestCorrect]
+    .find(value => value !== null && value !== "" && Number.isFinite(Number(value)));
+  const total = [record?.bestTotal, legacy?.bestTotal]
+    .find(value => value !== null && value !== "" && Number.isFinite(Number(value)) && Number(value) > 0);
+  if (correct !== undefined && total !== undefined) {
+    return clampVsBossPercent((Number(correct) / Number(total)) * 100);
+  }
+
+  const scoreSource = record || legacy;
+  if (!scoreSource) return null;
+  const bestScore = scoreSource.bestAttempt?.gameScore
+    ?? scoreSource.bestAttempt?.score
+    ?? scoreSource.bestScore;
+  const maxGameScore = scoreSource.bestAttempt?.maxGameScore ?? scoreSource.maxGameScore ?? 300;
+  if (bestScore !== null && bestScore !== "" && Number.isFinite(Number(bestScore))
+    && Number.isFinite(Number(maxGameScore)) && Number(maxGameScore) > 0) {
+    return clampVsBossPercent((Number(bestScore) / Number(maxGameScore)) * 100);
+  }
+  return null;
+}
+
+function getVsBossQualityPresentation(percent) {
+  const safePercent = clampVsBossPercent(percent);
+  const label = getVsBossQualityLevel(safePercent);
+  return {
+    label,
+    className: getVsBossQualityClass(label),
+    percent: safePercent
+  };
 }
 
 function formatVsBossAttemptDateTime(isoString) {
@@ -36397,10 +36467,31 @@ function createVsBossCard(config) {
   description.textContent = config.description;
   const score = document.createElement("p");
   score.className = "vs-boss-best-score";
-  const bestScore = Math.max(0, Number(state.vsBossPractice.scores?.[config.id]?.bestScore) || 0);
-  score.textContent = bestScore > 0
-    ? `คะแนนสูงสุด: ${bestScore} Grammaria`
-    : "คะแนนสูงสุด: ยังไม่มี";
+  const bossRecord = state.vsBossPractice.scores?.[config.id] || null;
+  const bestPercent = getVsBossBestAssessmentPercent(null, config.id, state.vsBossPractice.scores);
+  const quality = getVsBossQualityPresentation(bestPercent);
+  const bestScore = Math.max(0, Number(bossRecord?.bestScore) || 0);
+  const maxGameScore = Math.max(1, Number(bossRecord?.bestAttempt?.maxGameScore || bossRecord?.maxGameScore) || 300);
+  const hasGameScore = Boolean(bossRecord && (
+    Number(bossRecord.attempts) > 0 || bestScore > 0 || bossRecord.bestAttempt
+  ));
+  const scoreLabel = document.createElement("span");
+  scoreLabel.textContent = "คะแนนสูงสุดของคุณ: ";
+  const scoreValue = document.createElement("strong");
+  scoreValue.textContent = hasGameScore
+    ? `${bestScore} / ${maxGameScore}`
+    : bestPercent !== null
+      ? formatVsBossPercent(bestPercent)
+      : "ยังไม่มีข้อมูล";
+  score.append(scoreLabel, scoreValue);
+  const qualityLine = document.createElement("p");
+  qualityLine.className = `vs-boss-quality-level ${quality.className}`;
+  qualityLine.dataset.bossId = config.id;
+  const qualityLabel = document.createElement("span");
+  qualityLabel.textContent = "ระดับคุณภาพ: ";
+  const qualityValue = document.createElement("strong");
+  qualityValue.textContent = quality.label;
+  qualityLine.append(qualityLabel, qualityValue);
   const actions = document.createElement("div");
   actions.className = "vs-boss-card-actions";
   const button = document.createElement("button");
@@ -36409,7 +36500,7 @@ function createVsBossCard(config) {
   button.textContent = "เริ่มฝึกฝน";
   button.addEventListener("click", () => startVsBossPracticeBattle(config.id));
   actions.append(button, renderVsBossHistoryButton(config));
-  card.append(frame, name, topic, description, score, actions);
+  card.append(frame, name, topic, description, score, qualityLine, actions);
   return card;
 }
 
@@ -36732,6 +36823,91 @@ function validateVsBossScoreHistorySystem() {
   expect(limited.attempts === 55, "total attempts were not preserved after trimming");
   expect(limited.firstAttempt.attemptId === firstLimitedId, "trimmed firstAttempt was not preserved");
   expect(limited.bestAttempt.attemptId === firstLimitedId, "trimmed bestAttempt was not preserved");
+
+  return {
+    ok: failures.length === 0,
+    failures,
+    warnings,
+    checkedBosses: VS_BOSS_REGISTRY.length
+  };
+}
+
+function validateVsBossCardQualityLevels() {
+  const failures = [];
+  const warnings = [];
+  const expect = (condition, message) => {
+    if (!condition) failures.push(message);
+  };
+  [
+    [100, "ดีเยี่ยม"],
+    [95, "ดีเยี่ยม"],
+    [90, "ดีเยี่ยม"],
+    [89, "ดี"],
+    [80, "ดี"],
+    [79, "พอใช้"],
+    [60, "พอใช้"],
+    [59, "ปรับปรุง"],
+    [0, "ปรับปรุง"],
+    [null, "ยังไม่มีผลประเมิน"]
+  ].forEach(([percent, label]) => {
+    expect(getVsBossQualityLevel(percent) === label, `${percent}: expected ${label}`);
+  });
+
+  const newRecordsPlayer = {
+    vsBossAssessmentRecords: {
+      rewind_slime: { bestAttempt: { knowledgeScorePercent: 95 } },
+      echo_tick: { bestAttempt: { knowledgeScorePercent: 70 } }
+    }
+  };
+  expect(getVsBossBestAssessmentPercent(newRecordsPlayer, "rewind_slime") === 95, "Rewind Slime did not use rewind_slime record");
+  expect(getVsBossBestAssessmentPercent(newRecordsPlayer, "echo_tick") === 70, "Echo Tick did not use echo_tick record");
+  expect(getVsBossQualityLevel(getVsBossBestAssessmentPercent(newRecordsPlayer, "rewind_slime")) === "ดีเยี่ยม", "new history record quality failed");
+  expect(getVsBossQualityLevel(getVsBossBestAssessmentPercent(newRecordsPlayer, "echo_tick")) === "พอใช้", "per-boss separation failed");
+
+  const legacyAccuracyPlayer = { bossPracticeScores: { rewind_slime: { bestAccuracy: 85 } } };
+  const legacyRatioPlayer = { bossPracticeScores: { rewind_slime: { bestCorrect: 9, bestTotal: 12 } } };
+  const legacyScorePlayer = { bossPracticeScores: { rewind_slime: { bestScore: 210, maxGameScore: 300 } } };
+  expect(getVsBossBestAssessmentPercent(legacyAccuracyPlayer, "rewind_slime") === 85, "legacy bestAccuracy failed");
+  expect(getVsBossBestAssessmentPercent(legacyRatioPlayer, "rewind_slime") === 75, "legacy correct/total failed");
+  expect(getVsBossBestAssessmentPercent(legacyScorePlayer, "rewind_slime") === 70, "legacy game score fallback failed");
+  expect(getVsBossBestAssessmentPercent({}, "memory_bat") === null, "unplayed boss should return null");
+
+  if (typeof document !== "undefined") {
+    const previousScores = state.vsBossPractice.scores;
+    try {
+      state.vsBossPractice.scores = Object.fromEntries(VS_BOSS_REGISTRY.map((config, index) => [
+        config.id,
+        {
+          attempts: 1,
+          bestScore: 100 + index,
+          bestAttempt: {
+            bossId: config.id,
+            knowledgeScorePercent: index === 6 ? 95 : index === 5 ? 70 : 80,
+            gameScore: 100 + index,
+            maxGameScore: 300
+          }
+        }
+      ]));
+      VS_BOSS_REGISTRY.forEach(config => {
+        const card = createVsBossCard(config);
+        const qualityLine = card.querySelector(".vs-boss-quality-level");
+        expect(Boolean(qualityLine), `${config.id}: quality line missing`);
+        expect(qualityLine?.dataset.bossId === config.id, `${config.id}: quality line bossId mismatch`);
+        expect(!qualityLine?.textContent.includes("NaN"), `${config.id}: quality line contains NaN`);
+      });
+      const rewindCard = createVsBossCard(getVsBossConfig("rewind_slime"));
+      const echoCard = createVsBossCard(getVsBossConfig("echo_tick"));
+      expect(rewindCard.querySelector(".vs-boss-quality-level")?.textContent.includes("ดีเยี่ยม"), "Rewind Slime card quality failed");
+      expect(echoCard.querySelector(".vs-boss-quality-level")?.textContent.includes("พอใช้"), "Echo Tick card quality failed");
+      state.vsBossPractice.scores = {};
+      const emptyCard = createVsBossCard(getVsBossConfig("memory_bat"));
+      expect(emptyCard.querySelector(".vs-boss-quality-level")?.textContent.includes("ยังไม่มีผลประเมิน"), "empty card quality failed");
+    } finally {
+      state.vsBossPractice.scores = previousScores;
+    }
+  } else {
+    warnings.push("Card rendering checks require a browser");
+  }
 
   return {
     ok: failures.length === 0,
@@ -49433,7 +49609,9 @@ window.validateVerbMemoryMissingSlotDistribution = validateVerbMemoryMissingSlot
 if (window.location.protocol === "file:" || /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
   window.validateEditableBackgroundAssets = validateEditableBackgroundAssets;
   window.validateVsBossScoreHistorySystem = validateVsBossScoreHistorySystem;
+  window.validateVsBossCardQualityLevels = validateVsBossCardQualityLevels;
   console.info("[VS Boss Score History]", JSON.stringify(validateVsBossScoreHistorySystem()));
+  console.info("[VS Boss Card Quality]", JSON.stringify(validateVsBossCardQualityLevels()));
   const runEditableBackgroundValidation = () => {
     validateEditableBackgroundAssets().then(result => {
       console.info("[Editable Background Assets]", JSON.stringify(result));
