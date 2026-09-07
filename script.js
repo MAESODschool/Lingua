@@ -21810,11 +21810,27 @@ const GAME_ASSET_REGISTRY = Object.freeze([
     recommendedSize: "ภาพแนวตั้ง โปร่งใส หรือ GIF"
   },
   {
+    key: "memory_shade",
+    category: "enemies",
+    displayName: "Memory Shade",
+    description: "เงาความทรงจำและภาพศัตรูสำรองในฉากต่อสู้",
+    defaultPath: assetPath("memory-shade.png"),
+    recommendedSize: "ภาพจัตุรัสหรือโปร่งใส"
+  },
+  {
     key: "time_dust_sprite",
     category: "enemies",
     displayName: "Time Dust Sprite",
     description: "ภาพศัตรู Time Dust ในฉากต่อสู้",
     defaultPath: TIME_DUST_IMAGE_PATH,
+    recommendedSize: "ภาพจัตุรัสหรือโปร่งใส"
+  },
+  {
+    key: "yesterday_mite",
+    category: "enemies",
+    displayName: "Yesterday Mite",
+    description: "ภาพไรเมื่อวานประจำบทคำบอกเวลาอดีต",
+    defaultPath: YESTERDAY_SPIRIT_IMAGE_PATH,
     recommendedSize: "ภาพจัตุรัสหรือโปร่งใส"
   },
   {
@@ -21826,6 +21842,22 @@ const GAME_ASSET_REGISTRY = Object.freeze([
     recommendedSize: "ภาพจัตุรัสหรือโปร่งใส"
   },
   {
+    key: "memory_lantern",
+    category: "enemies",
+    displayName: "Memory Lantern",
+    description: "ภาพโคมความทรงจำประจำบท there was / there were",
+    defaultPath: assetPath("memory-shade.png"),
+    recommendedSize: "ภาพจัตุรัสหรือโปร่งใส"
+  },
+  {
+    key: "lost_pouch_imp",
+    category: "enemies",
+    displayName: "Lost Pouch Imp",
+    description: "ภาพอิมป์ถุงของหายประจำบท had",
+    defaultPath: assetPath("memory-shade.png"),
+    recommendedSize: "ภาพจัตุรัสหรือโปร่งใส"
+  },
+  {
     key: "echo_tick",
     category: "enemies",
     displayName: "Echo Tick",
@@ -21834,12 +21866,36 @@ const GAME_ASSET_REGISTRY = Object.freeze([
     recommendedSize: "ภาพจัตุรัสหรือโปร่งใส"
   },
   {
+    key: "yesterday_sprite",
+    category: "enemies",
+    displayName: "Yesterday Sprite",
+    description: "ภาพภูตเมื่อวานประจำบท Regular Verb Rule 3",
+    defaultPath: YESTERDAY_SPIRIT_IMAGE_PATH,
+    recommendedSize: "ภาพจัตุรัสหรือโปร่งใส"
+  },
+  {
+    key: "rewind_slime",
+    category: "enemies",
+    displayName: "Rewind Slime",
+    description: "ภาพสไลม์ย้อนเวลาประจำบท Regular Verb Rule 4: CVC",
+    defaultPath: assetPath("enemies/rewind-slime.png"),
+    recommendedSize: "ภาพแนวตั้งหรือจัตุรัส"
+  },
+  {
     key: "ed_forger",
     category: "enemies",
     displayName: "The -ed Forger",
     description: "ภาพบอสช่างหลอม -ed",
     defaultPath: "assets/enemies/ed-forger.png",
     recommendedSize: "ภาพแนวตั้งหรือจัตุรัส"
+  },
+  {
+    key: "memory_bat",
+    category: "enemies",
+    displayName: "Memory Bat",
+    description: "ภาพค้างคาวความทรงจำประจำบท Irregular Verbs",
+    defaultPath: assetPath("memory-shade.png"),
+    recommendedSize: "ภาพจัตุรัสหรือโปร่งใส"
   },
   {
     key: "irregular_wraith",
@@ -21961,6 +22017,65 @@ const GAME_ASSET_REGISTRY = Object.freeze([
   }
 ].map(item => Object.freeze({ ...item, allowedTypes: GAME_ASSET_ALLOWED_TYPES })));
 const GAME_ASSET_REGISTRY_BY_KEY = new Map(GAME_ASSET_REGISTRY.map(item => [item.key, item]));
+const ENEMY_ASSET_KEY_ALIASES = Object.freeze({
+  "memory shade": "memory_shade",
+  "memory-shade": "memory_shade",
+  "time dust": "time_dust_sprite",
+  "time dust sprite": "time_dust_sprite",
+  "time-dust": "time_dust_sprite",
+  "what-is-past": "time_dust_sprite",
+  "yesterday mite": "yesterday_mite",
+  "ไรเมื่อวาน": "yesterday_mite",
+  "what-is-tense": "yesterday_mite",
+  "was-were wisp": "was_were_wisp",
+  "วิสป์ was-were": "was_were_wisp",
+  "act1_phase1_unit3_was_were": "was_were_wisp",
+  "memory lantern": "memory_lantern",
+  "โคมความทรงจำ": "memory_lantern",
+  "act1_phase1_unit4_there_was_were": "memory_lantern",
+  "lost pouch imp": "lost_pouch_imp",
+  "อิมป์ถุงของหาย": "lost_pouch_imp",
+  "act1_phase1_unit5_had": "lost_pouch_imp",
+  "echo tick": "echo_tick",
+  "ติ๊กสะท้อนอดีต": "echo_tick",
+  "regular-rule-1": "echo_tick",
+  "regular-rule-2": "echo_tick",
+  "yesterday sprite": "yesterday_sprite",
+  "ภูตเมื่อวาน": "yesterday_sprite",
+  "regular-rule-3": "yesterday_sprite",
+  "rewind slime": "rewind_slime",
+  "rewind-slime": "rewind_slime",
+  "รีไวน์สไลม์": "rewind_slime",
+  "สไลม์ย้อนเวลา": "rewind_slime",
+  "regular-rule-4": "rewind_slime",
+  "the -ed forger": "ed_forger",
+  "ช่างหลอม -ed": "ed_forger",
+  "ed-forger": "ed_forger",
+  "ed-mini-boss": "ed_forger",
+  "memory bat": "memory_bat",
+  "ค้างคาวความทรงจำ": "memory_bat",
+  "irregular-lesson": "memory_bat",
+  "the irregular wraith": "irregular_wraith",
+  "วิญญาณกริยาไร้กฎ": "irregular_wraith",
+  "ภูต irregular": "irregular_wraith",
+  "irregular-wraith": "irregular_wraith",
+  "irregular-mini-boss": "irregular_wraith",
+  "the memory breaker": "memory_breaker",
+  "ผู้ทำลายความทรงจำ": "memory_breaker",
+  "memory-breaker": "memory_breaker",
+  "final-boss": "memory_breaker"
+});
+
+function getCanonicalGameAssetKey(assetKey) {
+  const rawKey = String(assetKey || "").trim();
+  if (!rawKey) {
+    return "";
+  }
+  if (GAME_ASSET_REGISTRY_BY_KEY.has(rawKey)) {
+    return rawKey;
+  }
+  return ENEMY_ASSET_KEY_ALIASES[rawKey.toLowerCase()] || rawKey;
+}
 const ACT1_BACKGROUND_ASSET_KEYS = Object.freeze({
   timeDustFields: "act1_time_dust_background",
   echoTickRuins: "act1_echo_tick_background",
@@ -21978,12 +22093,13 @@ const gameAssetOverrideState = {
 };
 
 function getGameAssetRegistryItem(assetKey) {
-  return GAME_ASSET_REGISTRY_BY_KEY.get(String(assetKey || "")) || null;
+  return GAME_ASSET_REGISTRY_BY_KEY.get(getCanonicalGameAssetKey(assetKey)) || null;
 }
 
 function getGameAssetUrl(assetKey, fallbackPath = "") {
-  const item = getGameAssetRegistryItem(assetKey);
-  const override = gameAssetOverrideState.overrides?.[assetKey];
+  const canonicalKey = getCanonicalGameAssetKey(assetKey);
+  const item = getGameAssetRegistryItem(canonicalKey);
+  const override = gameAssetOverrideState.overrides?.[canonicalKey];
   if (override?.isActive === true && typeof override.activeUrl === "string" && override.activeUrl.trim()) {
     return override.activeUrl.trim();
   }
@@ -22017,7 +22133,7 @@ function applyGameAssetImage(img, assetKey, fallbackPath = "") {
   const item = getGameAssetRegistryItem(assetKey);
   const fallback = fallbackPath || item?.defaultPath || "";
   const resolved = getGameAssetUrl(assetKey, fallback);
-  img.dataset.assetKey = assetKey;
+  img.dataset.assetKey = item?.key || getCanonicalGameAssetKey(assetKey);
   img.dataset.assetFallbackApplied = "false";
   img.classList.remove("hidden");
   img.onerror = () => handleAssetImageError(img, fallback);
@@ -22040,7 +22156,8 @@ async function loadGameAssetOverrides() {
     const overrides = {};
     snapshot.docs.forEach(assetDocument => {
       const data = assetDocument.data() || {};
-      const key = data.key || assetDocument.id;
+      const sourceKey = data.key || assetDocument.id;
+      const key = getCanonicalGameAssetKey(sourceKey);
       if (!getGameAssetRegistryItem(key)) {
         return;
       }
@@ -22250,6 +22367,12 @@ function applyGameAssetOverridesToUi() {
   setActBackground(backgroundKey);
   if (state.actBattle && scenes.battle?.classList.contains("active")) {
     updateBattleEnemyVisual(state.currentLessonStage || state.actBattle.stage || null);
+  }
+  if (scenes.vsBosses?.classList.contains("active")) {
+    renderVsBossesGrid();
+  }
+  if (scenes.verbMemoryPractice?.classList.contains("active")) {
+    applyVerbMemoryBossImage();
   }
   if (state.actBattle && els.itemPanel && !els.itemPanel.classList.contains("hidden")) {
     renderBattleItemMenu();
@@ -22520,25 +22643,22 @@ const enemySpriteMap = {
 };
 
 function getEnemyGameAssetKey(stage = {}) {
-  const enemyName = stage?.enemy || stage?.name || "";
-  const thaiName = stage?.thaiEnemy || "";
-  if (stage?.id === "act1_phase1_unit3_was_were" || enemyName === "Was-Were Wisp" || thaiName === "วิสป์ was-were") {
-    return "was_were_wisp";
-  }
-  if (enemyName === "Time Dust" || enemyName === "Time Dust Sprite") {
-    return "time_dust_sprite";
-  }
-  if (enemyName === "Echo Tick") {
-    return "echo_tick";
-  }
-  if (enemyName === "The -ed Forger" || enemyName === "ช่างหลอม -ed" || thaiName === "ช่างหลอม -ed") {
-    return "ed_forger";
-  }
-  if (enemyName === "The Irregular Wraith" || enemyName === "ภูต Irregular" || thaiName === "ภูต Irregular") {
-    return "irregular_wraith";
-  }
-  if (enemyName === "The Memory Breaker" || enemyName === "ผู้ทำลายความทรงจำ" || thaiName === "ผู้ทำลายความทรงจำ") {
-    return "memory_breaker";
+  const candidates = [
+    stage?.enemyAssetKey,
+    stage?.assetKey,
+    stage?.id,
+    stage?.stageId,
+    stage?.enemy,
+    stage?.name,
+    stage?.thaiEnemy,
+    stage?.thaiName
+  ];
+  for (const candidate of candidates) {
+    const key = getCanonicalGameAssetKey(candidate);
+    const item = getGameAssetRegistryItem(key);
+    if (item?.category === "enemies") {
+      return item.key;
+    }
   }
   return "";
 }
@@ -22592,7 +22712,7 @@ const VS_BOSS_REGISTRY = Object.freeze([
     topic: "Past Time Words",
     topicTh: "คำบอกเวลาอดีต",
     description: "ฝึกสังเกต yesterday, last และ ago",
-    enemyAssetKey: "",
+    enemyAssetKey: "yesterday_mite",
     fallbackImage: YESTERDAY_SPIRIT_IMAGE_PATH,
     relatedStageIds: ["what-is-tense"],
     difficulty: "early",
@@ -22618,7 +22738,7 @@ const VS_BOSS_REGISTRY = Object.freeze([
     topic: "there was / there were",
     topicTh: "การใช้ there was และ there were",
     description: "ฝึกบอกสิ่งที่มีอยู่ในอดีตตามจำนวน",
-    enemyAssetKey: "",
+    enemyAssetKey: "memory_lantern",
     fallbackImage: assetPath("memory-shade.png"),
     relatedStageIds: ["act1_phase1_unit4_there_was_were"],
     difficulty: "basic",
@@ -22631,7 +22751,7 @@ const VS_BOSS_REGISTRY = Object.freeze([
     topic: "had",
     topicTh: "การใช้ had ในอดีต",
     description: "ฝึกใช้ had กับประธานทุกชนิดในอดีต",
-    enemyAssetKey: "",
+    enemyAssetKey: "lost_pouch_imp",
     fallbackImage: assetPath("memory-shade.png"),
     relatedStageIds: ["act1_phase1_unit5_had"],
     difficulty: "basic",
@@ -22684,7 +22804,7 @@ const VS_BOSS_REGISTRY = Object.freeze([
     topic: "Irregular Verbs",
     topicTh: "กริยา Irregular รูปอดีต",
     description: "ฝึกจำและเลือกกริยาช่องที่ 2 แบบไม่เติม -ed",
-    enemyAssetKey: "",
+    enemyAssetKey: "memory_bat",
     fallbackImage: assetPath("memory-shade.png"),
     relatedStageIds: ["irregular-lesson"],
     difficulty: "irregular",
@@ -22898,6 +23018,150 @@ const skipBattleEnemies = [
     lesson: "Past Fragment Final Boss"
   }
 ];
+
+function validateAssetManagerEnemyCoverage() {
+  const failures = [];
+  const warnings = [];
+  const enemyAssets = GAME_ASSET_REGISTRY.filter(item => item.category === "enemies");
+  const duplicateKeys = [...new Set(
+    GAME_ASSET_REGISTRY
+      .map(item => item.key)
+      .filter((key, index, keys) => keys.indexOf(key) !== index)
+  )];
+  const coverageSources = [
+    { source: "default battle", name: "Memory Shade" },
+    ...PAST_FRAGMENT_ACT.stages
+      .filter(stage => stage.enemy)
+      .map(stage => ({ source: `story:${stage.id}`, ...stage })),
+    ...VS_BOSS_REGISTRY.map(config => ({ source: `vs:${config.id}`, ...config })),
+    ...skipBattleEnemies.map(enemy => ({ source: `skip:${enemy.id}`, ...enemy })),
+    ...Object.keys(enemySpriteMap).map(name => ({ source: `image-map:${name}`, name }))
+  ];
+  const coveredEnemyKeys = new Set();
+  const missing = [];
+
+  coverageSources.forEach(source => {
+    const assetKey = getEnemyGameAssetKey(source);
+    const item = getGameAssetRegistryItem(assetKey);
+    if (!assetKey || !item || item.category !== "enemies") {
+      missing.push({
+        source: source.source,
+        enemy: source.enemy || source.name || source.thaiEnemy || source.thaiName || "unknown"
+      });
+      return;
+    }
+    coveredEnemyKeys.add(item.key);
+  });
+
+  enemyAssets.forEach(item => {
+    if (!item.key || !item.displayName || !item.defaultPath) {
+      failures.push(`${item.key || "unknown"}: ข้อมูล Asset ศัตรูไม่ครบ`);
+    }
+    if (getGameAssetUrl(item.key, item.defaultPath) === "") {
+      failures.push(`${item.key}: resolver ไม่คืน path ภาพ`);
+    }
+    const card = createAssetManagerCard(item);
+    const actionLabels = [...card.querySelectorAll("button")].map(button => button.textContent.trim());
+    ["อัปโหลดภาพใหม่", "ใช้ภาพเดิม", "ดูตัวอย่าง"].forEach(label => {
+      if (!actionLabels.includes(label)) {
+        failures.push(`${item.key}: การ์ด Asset ขาดปุ่ม ${label}`);
+      }
+    });
+
+    const previousOverride = gameAssetOverrideState.overrides[item.key];
+    const validatorUrl = `https://asset-validator.invalid/${item.key}.png`;
+    try {
+      gameAssetOverrideState.overrides[item.key] = { key: item.key, isActive: true, activeUrl: validatorUrl };
+      if (getGameAssetUrl(item.key, item.defaultPath) !== validatorUrl) {
+        failures.push(`${item.key}: resolver ไม่ใช้ภาพ override`);
+      }
+      PAST_FRAGMENT_ACT.stages
+        .filter(stage => getEnemyGameAssetKey(stage) === item.key)
+        .forEach(stage => {
+          if (resolveEnemySpriteForStage(stage) !== validatorUrl) {
+            failures.push(`${item.key}: Story stage ${stage.id} ไม่ใช้ภาพ override`);
+          }
+        });
+      VS_BOSS_REGISTRY
+        .filter(config => getEnemyGameAssetKey(config) === item.key)
+        .forEach(config => {
+          if (resolveVsBossImage(config) !== validatorUrl) {
+            failures.push(`${item.key}: VS Boss ${config.id} ไม่ใช้ภาพ override`);
+          }
+        });
+      gameAssetOverrideState.overrides[item.key] = { key: item.key, isActive: false, activeUrl: validatorUrl };
+      if (getGameAssetUrl(item.key, item.defaultPath) !== item.defaultPath) {
+        failures.push(`${item.key}: reset resolver ไม่คืนภาพเดิม`);
+      }
+    } finally {
+      if (previousOverride) {
+        gameAssetOverrideState.overrides[item.key] = previousOverride;
+      } else {
+        delete gameAssetOverrideState.overrides[item.key];
+      }
+    }
+  });
+  VS_BOSS_REGISTRY.forEach(config => {
+    const assetKey = getEnemyGameAssetKey(config);
+    if (!assetKey) {
+      failures.push(`${config.id}: VS Boss ไม่มี enemy asset key ที่ใช้งานได้`);
+    } else if (resolveVsBossImage(config) !== getGameAssetUrl(assetKey, config.fallbackImage)) {
+      failures.push(`${config.id}: VS Boss ไม่ได้ใช้ Asset Override resolver กลาง`);
+    }
+  });
+  if (missing.length > 0) {
+    failures.push(`พบศัตรูที่ไม่มี Asset Manager entry ${missing.length} รายการ`);
+  }
+  if (duplicateKeys.length > 0) {
+    failures.push(`พบ Asset key ซ้ำ: ${duplicateKeys.join(", ")}`);
+  }
+  if (enemyAssets.length !== new Set(enemyAssets.map(item => item.key)).size) {
+    failures.push("พบการ์ดศัตรูซ้ำจาก Asset key เดียวกัน");
+  }
+  const requiredKeys = [
+    "memory_shade",
+    "time_dust_sprite",
+    "yesterday_mite",
+    "was_were_wisp",
+    "memory_lantern",
+    "lost_pouch_imp",
+    "echo_tick",
+    "yesterday_sprite",
+    "rewind_slime",
+    "ed_forger",
+    "memory_bat",
+    "irregular_wraith",
+    "memory_breaker"
+  ];
+  requiredKeys.forEach(key => {
+    if (!getGameAssetRegistryItem(key)) {
+      failures.push(`ไม่พบ Asset ศัตรูที่จำเป็น: ${key}`);
+    }
+  });
+  const sharedDefaults = new Map();
+  enemyAssets.forEach(item => {
+    const keys = sharedDefaults.get(item.defaultPath) || [];
+    keys.push(item.key);
+    sharedDefaults.set(item.defaultPath, keys);
+  });
+  sharedDefaults.forEach((keys, path) => {
+    if (keys.length > 1) {
+      warnings.push(`Asset หลายตัวใช้ภาพเดิมร่วมกัน (${path}): ${keys.join(", ")}`);
+    }
+  });
+
+  return {
+    ok: failures.length === 0,
+    failures,
+    warnings,
+    enemyCoverage: {
+      totalEnemiesFound: coveredEnemyKeys.size,
+      totalEnemyAssets: enemyAssets.length,
+      missing,
+      duplicates: duplicateKeys
+    }
+  };
+}
 
 let playerData = null;
 
@@ -36451,6 +36715,7 @@ function createVsBossCard(config) {
   image.alt = `${config.name} ${config.thaiName}`;
   image.loading = "lazy";
   image.decoding = "async";
+  image.dataset.assetKey = getEnemyGameAssetKey(config);
   image.dataset.fallbackApplied = "false";
   image.onerror = () => {
     if (config.fallbackImage && image.dataset.fallbackApplied !== "true" && image.getAttribute("src") !== config.fallbackImage) {
@@ -49753,12 +50018,14 @@ window.validateVerbMemoryChoiceGeneration = validateVerbMemoryChoiceGeneration;
 window.validateVerbMemoryMissingSlotDistribution = validateVerbMemoryMissingSlotDistribution;
 if (window.location.protocol === "file:" || /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
   window.validateEditableBackgroundAssets = validateEditableBackgroundAssets;
+  window.validateAssetManagerEnemyCoverage = validateAssetManagerEnemyCoverage;
   window.validateVsBossScoreHistorySystem = validateVsBossScoreHistorySystem;
   window.validateVsBossCardQualityLevels = validateVsBossCardQualityLevels;
   window.validateBattleSkillDamageDifferences = validateBattleSkillDamageDifferences;
   console.info("[VS Boss Score History]", JSON.stringify(validateVsBossScoreHistorySystem()));
   console.info("[VS Boss Card Quality]", JSON.stringify(validateVsBossCardQualityLevels()));
   console.info("[Battle Skill Damage]", JSON.stringify(validateBattleSkillDamageDifferences()));
+  console.info("[Asset Manager Enemy Coverage]", JSON.stringify(validateAssetManagerEnemyCoverage()));
   const runEditableBackgroundValidation = () => {
     validateEditableBackgroundAssets().then(result => {
       console.info("[Editable Background Assets]", JSON.stringify(result));
