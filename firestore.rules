@@ -15,8 +15,198 @@ service cloud.firestore {
     function isTeacher() {
       return signedIn() && (
         request.auth.token.get('role', '') == 'teacher' ||
+        request.auth.token.get('teacher', false) == true ||
         request.auth.token.get('admin', false) == true
       );
+    }
+
+    function ownerPlayerCreateKeys() {
+      return [
+        'uid',
+        'authUid',
+        'username',
+        'usernameLower',
+        'loginEmail',
+        'displayName',
+        'mode',
+        'accountMode',
+        'profileCompleted',
+        'characterCreated',
+        'characterId',
+        'characterName',
+        'characterGender',
+        'avatarId',
+        'avatarImage',
+        'studentProfile',
+        'studentFullName',
+        'classLevel',
+        'room',
+        'studentNo',
+        'classGroup',
+        'classGroupKey',
+        'studentSortKey',
+        'avatar',
+        'settings',
+        'preferences',
+        'tutorialState',
+        'hasSeenPrologue',
+        'createdAt',
+        'updatedAt',
+        'lastLoginAt',
+        'lastActiveAt'
+      ];
+    }
+
+    function ownerPlayerUpdateKeys() {
+      return [
+        'displayName',
+        'profileCompleted',
+        'characterCreated',
+        'characterId',
+        'characterName',
+        'characterGender',
+        'avatarId',
+        'avatarImage',
+        'studentProfile',
+        'studentFullName',
+        'classLevel',
+        'room',
+        'studentNo',
+        'classGroup',
+        'classGroupKey',
+        'studentSortKey',
+        'avatar',
+        'settings',
+        'preferences',
+        'tutorialState',
+        'hasSeenPrologue',
+        'updatedAt',
+        'lastLoginAt',
+        'lastActiveAt'
+      ];
+    }
+
+    function protectedPlayerKeys() {
+      return [
+        'grammaria',
+        'progress',
+        'progressPercent',
+        'currentLessonTitle',
+        'currentAreaTitle',
+        'nextGoalTitle',
+        'bossesDefeated',
+        'completedStages',
+        'unlockedStages',
+        'defeatedBosses',
+        'rewardClaims',
+        'bossPracticeScores',
+        'vsBossAssessmentRecords',
+        'vsBossScoreHistory',
+        'verbMemoryPracticeBest',
+        'assessmentRecords',
+        'officialAssessment',
+        'verifiedAssessment',
+        'teacherAssessment',
+        'teacherNotes',
+        'teacherFlags',
+        'teacherAdjustments',
+        'manualGrammariaAdjustedAt',
+        'manualGrammariaAdjustedBy',
+        'manualGrammariaAdjustReason',
+        'manualGrammariaLastDelta',
+        'isDeleted',
+        'deletedAt',
+        'deletedBy',
+        'deleteReason',
+        'restoredAt',
+        'restoredBy',
+        'restoreReason',
+        'role',
+        'roles',
+        'claims',
+        'admin',
+        'teacher',
+        'isAdmin',
+        'isTeacher'
+      ];
+    }
+
+    function teacherPlayerUpdateKeys() {
+      return [
+        'grammaria',
+        'teacherNotes',
+        'teacherFlags',
+        'teacherAdjustments',
+        'officialAssessment',
+        'verifiedAssessment',
+        'teacherAssessment',
+        'isDeleted',
+        'deletedAt',
+        'deletedBy',
+        'deleteReason',
+        'restoredAt',
+        'restoredBy',
+        'restoreReason',
+        'manualGrammariaAdjustedAt',
+        'manualGrammariaAdjustedBy',
+        'manualGrammariaAdjustReason',
+        'manualGrammariaLastDelta',
+        'updatedAt'
+      ];
+    }
+
+    function ownerPlayerCreateIsValid(playerId) {
+      return request.resource.data.keys().hasOnly(ownerPlayerCreateKeys())
+        && request.resource.data.uid == playerId
+        && request.resource.data.authUid == playerId
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 80
+        && request.resource.data.username is string
+        && request.resource.data.username.size() <= 80;
+    }
+
+    function ownerPlayerUpdateIsValid() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(ownerPlayerUpdateKeys())
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedPlayerKeys());
+    }
+
+    function teacherPlayerUpdateIsValid() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(teacherPlayerUpdateKeys());
+    }
+
+    function clientProgressCreateIsValid(playerId) {
+      return request.resource.data.keys().hasOnly([
+          'uid',
+          'authUid',
+          'schemaVersion',
+          'clientReported',
+          'progress',
+          'createdAt',
+          'updatedAt',
+          'lastActiveAt'
+        ])
+        && request.resource.data.uid == playerId
+        && request.resource.data.authUid == playerId
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.clientReported == true
+        && request.resource.data.progress is map;
+    }
+
+    function clientProgressUpdateIsValid(playerId) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'schemaVersion',
+          'clientReported',
+          'progress',
+          'updatedAt',
+          'lastActiveAt'
+        ])
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.authUid == resource.data.authUid
+        && request.resource.data.uid == playerId
+        && request.resource.data.authUid == playerId
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.clientReported == true
+        && request.resource.data.progress is map;
     }
 
     function pvpRoomDoesNotExist(roomId) {
@@ -64,8 +254,22 @@ service cloud.firestore {
     match /players/{playerId} {
       allow get: if isOwner(playerId) || isTeacher();
       allow list: if isTeacher();
-      allow create: if isOwner(playerId);
-      allow update: if isOwner(playerId) || isTeacher();
+      allow create: if isOwner(playerId) && ownerPlayerCreateIsValid(playerId);
+      allow update: if (
+        isOwner(playerId) && ownerPlayerUpdateIsValid()
+      ) || (
+        isTeacher() && teacherPlayerUpdateIsValid()
+      );
+      allow delete: if false;
+    }
+
+    // This document is explicitly client-reported. It preserves cross-device
+    // prototype saves but is not trusted assessment evidence or an official score.
+    match /playerClientProgress/{playerId} {
+      allow get: if isOwner(playerId) || isTeacher();
+      allow list: if isTeacher();
+      allow create: if isOwner(playerId) && clientProgressCreateIsValid(playerId);
+      allow update: if isOwner(playerId) && clientProgressUpdateIsValid(playerId);
       allow delete: if false;
     }
 

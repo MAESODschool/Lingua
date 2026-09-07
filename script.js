@@ -22154,6 +22154,7 @@ async function loadGameAssetOverrides() {
   try {
     const snapshot = await getDocs(collection(firestoreDb, GAME_ASSET_OVERRIDE_COLLECTION));
     const overrides = {};
+    const overridePriorities = {};
     snapshot.docs.forEach(assetDocument => {
       const data = assetDocument.data() || {};
       const sourceKey = data.key || assetDocument.id;
@@ -22161,6 +22162,11 @@ async function loadGameAssetOverrides() {
       if (!getGameAssetRegistryItem(key)) {
         return;
       }
+      const priority = sourceKey === key ? 2 : 1;
+      if ((overridePriorities[key] || 0) > priority) {
+        return;
+      }
+      overridePriorities[key] = priority;
       overrides[key] = { ...data, key };
     });
     gameAssetOverrideState.overrides = overrides;
@@ -22961,8 +22967,9 @@ function resolveVsBossImage(config) {
   if (!config) {
     return "";
   }
-  return config.enemyAssetKey
-    ? getGameAssetUrl(config.enemyAssetKey, config.fallbackImage)
+  const assetKey = getEnemyGameAssetKey(config);
+  return assetKey
+    ? getGameAssetUrl(assetKey, config.fallbackImage)
     : config.fallbackImage || "";
 }
 
@@ -23536,6 +23543,10 @@ async function restoreLastSceneForCurrentUser() {
 }
 
 const STUDENT_DASHBOARD_COLLECTION = "players";
+// Browser-written gameplay data is intentionally separated from official/teacher-managed player fields.
+// Nothing in this collection should be treated as verified assessment evidence without a trusted backend.
+const PLAYER_CLIENT_PROGRESS_COLLECTION = "playerClientProgress";
+const PLAYER_CLIENT_PROGRESS_SCHEMA_VERSION = 1;
 
 const AUTH_COPY = {
   localModeLabel: "Close Beta: Local Test Mode",
@@ -27855,29 +27866,85 @@ function getPlayerDocRef(uid) {
   return doc(firestoreDb, STUDENT_DASHBOARD_COLLECTION, uid);
 }
 
-function createFirestorePlayerDoc(sessionUser, progress) {
+function getPlayerClientProgressDocRef(uid) {
+  return doc(firestoreDb, PLAYER_CLIENT_PROGRESS_COLLECTION, uid);
+}
+
+const OWNER_PLAYER_CREATE_FIELDS = Object.freeze([
+  "uid", "authUid", "username", "usernameLower", "loginEmail", "displayName", "mode", "accountMode",
+  "profileCompleted", "characterCreated", "characterId", "characterName", "characterGender", "avatarId",
+  "avatarImage", "studentProfile", "studentFullName", "classLevel", "room", "studentNo", "classGroup",
+  "classGroupKey", "studentSortKey", "avatar", "settings", "preferences", "tutorialState", "hasSeenPrologue",
+  "createdAt", "updatedAt", "lastLoginAt", "lastActiveAt"
+]);
+
+const OWNER_PLAYER_UPDATE_FIELDS = Object.freeze([
+  "displayName", "profileCompleted", "characterCreated", "characterId", "characterName", "characterGender",
+  "avatarId", "avatarImage", "studentProfile", "studentFullName", "classLevel", "room", "studentNo",
+  "classGroup", "classGroupKey", "studentSortKey", "avatar", "settings", "preferences", "tutorialState",
+  "hasSeenPrologue", "updatedAt", "lastLoginAt", "lastActiveAt"
+]);
+
+const TEACHER_PLAYER_UPDATE_FIELDS = Object.freeze([
+  "grammaria", "teacherNotes", "teacherFlags", "teacherAdjustments", "officialAssessment",
+  "verifiedAssessment", "teacherAssessment", "isDeleted", "deletedAt", "deletedBy", "deleteReason",
+  "restoredAt", "restoredBy", "restoreReason", "manualGrammariaAdjustedAt",
+  "manualGrammariaAdjustedBy", "manualGrammariaAdjustReason", "manualGrammariaLastDelta", "updatedAt"
+]);
+
+const PROTECTED_PLAYER_FIELDS = new Set([
+  "grammaria", "progress", "progressPercent", "currentLessonTitle", "currentAreaTitle", "nextGoalTitle",
+  "bossesDefeated", "completedStages", "unlockedStages", "defeatedBosses", "rewardClaims",
+  "bossPracticeScores", "vsBossAssessmentRecords", "vsBossScoreHistory", "verbMemoryPracticeBest",
+  "assessmentRecords", "officialAssessment", "verifiedAssessment", "teacherAssessment", "teacherNotes",
+  "teacherFlags", "teacherAdjustments", "manualGrammariaAdjustedAt", "manualGrammariaAdjustedBy",
+  "manualGrammariaAdjustReason", "manualGrammariaLastDelta", "isDeleted", "deletedAt", "deletedBy", "deleteReason",
+  "restoredAt", "restoredBy", "restoreReason", "role", "roles", "claims", "admin", "teacher",
+  "isAdmin", "isTeacher"
+]);
+
+function isProtectedPlayerField(fieldPath = "") {
+  return PROTECTED_PLAYER_FIELDS.has(String(fieldPath).split(".")[0]);
+}
+
+function pickAllowedPlayerFields(source = {}, allowedFields = []) {
+  const output = {};
+  allowedFields.forEach(key => {
+    if (typeof source[key] !== "undefined") {
+      output[key] = source[key];
+    }
+  });
+  return output;
+}
+
+function sanitizeOwnerPlayerProfilePayload(payload = {}, options = {}) {
+  return pickAllowedPlayerFields(
+    payload,
+    options.forCreate ? OWNER_PLAYER_CREATE_FIELDS : OWNER_PLAYER_UPDATE_FIELDS
+  );
+}
+
+function sanitizeTeacherPlayerUpdatePayload(payload = {}) {
+  return pickAllowedPlayerFields(payload, TEACHER_PLAYER_UPDATE_FIELDS);
+}
+
+function buildOwnerPlayerProfilePayload(sessionUser, progress, options = {}) {
   ensurePlayerCharacterData(progress);
   const studentProfile = getStudentProfileFromPlayer(progress);
   const profileCompleted = hasCompleteStudentProfile(studentProfile);
   const characterCreated = profileCompleted && Boolean(progress.characterName);
-  const actProgress = progress?.progress?.pastFragmentAct || progress?.pastFragmentAct || {};
-  const labels = profileCompleted
-    ? getMainMenuStageLabels(actProgress)
-    : { lesson: "ยังไม่เริ่ม", area: "ยังไม่เริ่ม", goal: "เริ่มสร้างตัวละคร" };
-  const defeatedBosses = Array.isArray(actProgress.defeatedBosses) ? actProgress.defeatedBosses : [];
-  const grammariaState = progress?.progress?.grammaria || progress?.grammaria || {};
-  const grammariaTotal = Number(grammariaState?.total ?? progress?.grammaria ?? 0) || 0;
   const studentSortKey = Number.isFinite(Number(studentProfile?.studentSortKey))
     ? Number(studentProfile.studentSortKey)
     : 9999;
-  return {
+  const payload = {
     uid: sessionUser.uid,
+    authUid: sessionUser.uid,
     username: sessionUser.username,
+    usernameLower: normalizeUsername(sessionUser.username),
     loginEmail: sessionUser.email || "",
-    displayName: sessionUser.displayName,
+    displayName: progress.displayName || sessionUser.displayName || sessionUser.username || "Lingua Player",
     mode: "registered",
     accountMode: "online",
-    role: "student",
     profileCompleted,
     characterCreated,
     characterId: characterCreated ? progress.characterId : "",
@@ -27893,33 +27960,139 @@ function createFirestorePlayerDoc(sessionUser, progress) {
     classGroup: studentProfile?.classGroup || "",
     classGroupKey: studentProfile?.classGroupKey || "",
     studentSortKey,
-    currentLessonTitle: labels.lesson || "ยังไม่เริ่ม",
-    currentAreaTitle: labels.area || "ยังไม่เริ่ม",
-    nextGoalTitle: labels.goal || "เริ่มสร้างตัวละคร",
-    progressPercent: profileCompleted ? calculateMainMenuActProgress(actProgress) : 0,
-    grammaria: profileCompleted ? grammariaTotal : 0,
-    bossesDefeated: profileCompleted ? defeatedBosses.length : 0,
+    avatar: sanitizeForFirestore(progress.avatar || {}),
     hasSeenPrologue: Boolean(progress.hasSeenPrologue),
-    progress: sanitizeForFirestore(progress),
-    settings: {
-      soundEnabled: true,
-      musicEnabled: true,
-      language: "th"
-    }
+    settings: sanitizeForFirestore(progress.settings || {}),
+    preferences: sanitizeForFirestore(progress.preferences || {}),
+    tutorialState: sanitizeForFirestore(progress.tutorialState || {})
   };
+  return sanitizeOwnerPlayerProfilePayload(payload, options);
+}
+
+function createFirestorePlayerDoc(sessionUser, progress) {
+  return buildOwnerPlayerProfilePayload(sessionUser, progress, { forCreate: true });
+}
+
+function buildClientReportedProgressPayload(userId, progress, options = {}) {
+  const payload = {
+    uid: userId,
+    authUid: userId,
+    schemaVersion: PLAYER_CLIENT_PROGRESS_SCHEMA_VERSION,
+    clientReported: true,
+    progress: sanitizeForFirestore(progress || {}),
+    updatedAt: options.updatedAt || serverTimestamp(),
+    lastActiveAt: options.lastActiveAt || serverTimestamp()
+  };
+  if (options.forCreate) {
+    payload.createdAt = options.createdAt || serverTimestamp();
+  }
+  return payload;
+}
+
+function normalizeLegacyPlayerDocSafely(playerDoc = {}, clientProgressDoc = {}) {
+  const clientProgress = clientProgressDoc?.progress && typeof clientProgressDoc.progress === "object"
+    ? clientProgressDoc.progress
+    : null;
+  const legacyProgress = playerDoc?.progress && typeof playerDoc.progress === "object"
+    ? playerDoc.progress
+    : null;
+  return {
+    progress: clientProgress || legacyProgress || {},
+    source: clientProgress ? "client-reported" : (legacyProgress ? "legacy-player-document" : "empty"),
+    clientReported: Boolean(clientProgress)
+  };
+}
+
+function applyTeacherManagedPlayerFields(progress, playerDoc = {}) {
+  const hasTeacherGrammariaAdjustment = Boolean(playerDoc.manualGrammariaAdjustedAt);
+  const officialGrammaria = Number(playerDoc.grammaria);
+  if (!progress || !hasTeacherGrammariaAdjustment || !Number.isFinite(officialGrammaria)) {
+    return progress;
+  }
+  const safeTotal = Math.max(0, Math.floor(officialGrammaria));
+  progress.grammaria = safeTotal;
+  progress.progress = progress.progress && typeof progress.progress === "object" ? progress.progress : {};
+  const grammariaState = progress.progress.grammaria && typeof progress.progress.grammaria === "object"
+    ? progress.progress.grammaria
+    : createDefaultGrammariaState();
+  progress.progress.grammaria = { ...grammariaState, total: safeTotal };
+  return progress;
+}
+
+function validatePlayerWritePayloadSafety() {
+  const failures = [];
+  const warnings = [
+    "playerClientProgress เป็นข้อมูลที่ผู้เล่นรายงานจากเบราว์เซอร์ ไม่ใช่คะแนนหรือหลักฐานที่ผ่านการรับรอง"
+  ];
+  const expect = (condition, message) => {
+    if (!condition) failures.push(message);
+  };
+  const sampleSession = {
+    uid: "security-test-user",
+    username: "security_test_user",
+    email: "security_test_user@lingua.local",
+    displayName: "Security Test"
+  };
+  const sampleProgress = {
+    displayName: "Security Test",
+    characterId: "male_wanderer",
+    characterName: "Tester",
+    studentProfile: {},
+    avatar: {},
+    settings: {},
+    preferences: {},
+    tutorialState: {},
+    progress: { grammaria: { total: 999999 } },
+    grammaria: 999999,
+    bossPracticeScores: {},
+    vsBossAssessmentRecords: {},
+    vsBossScoreHistory: {},
+    rewardClaims: {},
+    completedStages: [],
+    unlockedStages: [],
+    defeatedBosses: [],
+    teacherNotes: "forbidden",
+    role: "teacher",
+    admin: true
+  };
+  const ownerCreatePayload = buildOwnerPlayerProfilePayload(sampleSession, sampleProgress, { forCreate: true });
+  const ownerUpdatePayload = buildOwnerPlayerProfilePayload(sampleSession, sampleProgress, { forCreate: false });
+  const forbiddenOwnerKeys = [
+    "progress", "grammaria", "bossPracticeScores", "vsBossAssessmentRecords", "vsBossScoreHistory",
+    "rewardClaims", "completedStages", "unlockedStages", "defeatedBosses", "teacherNotes", "role", "admin"
+  ];
+  forbiddenOwnerKeys.forEach(key => {
+    expect(!(key in ownerCreatePayload), `owner create payload contains protected field: ${key}`);
+    expect(!(key in ownerUpdatePayload), `owner update payload contains protected field: ${key}`);
+  });
+  expect(Object.keys(ownerCreatePayload).every(key => OWNER_PLAYER_CREATE_FIELDS.includes(key)), "owner create payload escaped its allowlist");
+  expect(Object.keys(ownerUpdatePayload).every(key => OWNER_PLAYER_UPDATE_FIELDS.includes(key)), "owner update payload escaped its allowlist");
+
+  const teacherPayload = sanitizeTeacherPlayerUpdatePayload({
+    grammaria: 10,
+    teacherNotes: "ok",
+    isDeleted: true,
+    progress: { forged: true },
+    displayName: "forbidden"
+  });
+  expect(Object.keys(teacherPayload).every(key => TEACHER_PLAYER_UPDATE_FIELDS.includes(key)), "teacher payload escaped its allowlist");
+  expect(!("progress" in teacherPayload) && !("displayName" in teacherPayload), "teacher payload contains unrelated player fields");
+
+  const saveProgressSource = typeof progressService?.saveProgress === "function"
+    ? progressService.saveProgress.toString()
+    : "";
+  expect(saveProgressSource.includes("getPlayerClientProgressDocRef"), "online progress is not routed to playerClientProgress");
+  expect(!saveProgressSource.includes("createFirestorePlayerDoc"), "online save still builds a full /players document");
+
+  return { ok: failures.length === 0, failures, warnings };
 }
 
 function createDefaultStudentDashboardFields(sessionUser) {
   return {
-    uid: sessionUser.uid,
-    username: sessionUser.username || sessionUser.email || sessionUser.uid,
-    loginEmail: sessionUser.email || "",
     displayName: sessionUser.displayName || sessionUser.username || "Lingua Player",
-    mode: "registered",
-    accountMode: "online",
-    role: "student",
     profileCompleted: false,
     characterCreated: false,
+    studentProfile: {},
     studentFullName: "",
     classLevel: "",
     room: "",
@@ -27930,13 +28103,7 @@ function createDefaultStudentDashboardFields(sessionUser) {
     characterName: "",
     characterGender: "",
     avatarId: "",
-    avatarImage: "",
-    currentLessonTitle: "ยังไม่เริ่ม",
-    currentAreaTitle: "ยังไม่เริ่ม",
-    nextGoalTitle: "เริ่มสร้างตัวละคร",
-    progressPercent: 0,
-    grammaria: 0,
-    bossesDefeated: 0
+    avatarImage: ""
   };
 }
 
@@ -27972,21 +28139,24 @@ async function ensureStudentDashboardDocument(firebaseUser, fallbackUsername = "
       createdAt: serverTimestamp(),
       lastLoginAt: serverTimestamp(),
       lastActiveAt: serverTimestamp()
-    }, { merge: true });
+    });
+    await setDoc(
+      getPlayerClientProgressDocRef(firebaseUser.uid),
+      buildClientReportedProgressPayload(firebaseUser.uid, serializeProgressValue(defaultProgress), { forCreate: true })
+    );
     return sessionUser;
   }
 
   const data = snapshot.data() || {};
   const repairFields = buildMissingStudentDashboardFields(data, sessionUser);
-  await setDoc(playerRef, {
+  const safeUpdate = sanitizeOwnerPlayerProfilePayload({
     ...repairFields,
-    uid: firebaseUser.uid,
-    loginEmail: firebaseUser.email || data.loginEmail || "",
-    accountMode: data.accountMode || "online",
-    role: data.role || "student",
     lastActiveAt: serverTimestamp(),
     ...(options.updateLoginAt ? { lastLoginAt: serverTimestamp() } : {})
-  }, { merge: true });
+  });
+  if (Object.keys(safeUpdate).length) {
+    await setDoc(playerRef, safeUpdate, { merge: true });
+  }
   return createSessionUser({
     uid: firebaseUser.uid,
     id: firebaseUser.uid,
@@ -28375,7 +28545,10 @@ const progressService = {
         return playerData;
       }
       const data = snapshot.data();
-      const remoteProgress = createRemotePlayerData(sessionUser, data.progress || {});
+      const clientProgressSnapshot = await getDoc(getPlayerClientProgressDocRef(userId));
+      const clientProgressData = clientProgressSnapshot.exists() ? clientProgressSnapshot.data() : {};
+      const normalizedRemoteData = normalizeLegacyPlayerDocSafely(data, clientProgressData);
+      const remoteProgress = createRemotePlayerData(sessionUser, normalizedRemoteData.progress);
       const savedStudentProfile = data.studentProfile || data.progress?.studentProfile || data.progress?.progress?.playerProfile?.studentProfile || null;
       if (savedStudentProfile && typeof savedStudentProfile === "object") {
         remoteProgress.studentProfile = savedStudentProfile;
@@ -28386,6 +28559,8 @@ const progressService = {
       }
       remoteProgress.hasSeenPrologue = Boolean(data.hasSeenPrologue || remoteProgress.hasSeenPrologue);
       remoteProgress.displayName = data.displayName || remoteProgress.displayName;
+      remoteProgress.clientReportedProgressSource = normalizedRemoteData.source;
+      applyTeacherManagedPlayerFields(remoteProgress, data);
       playerData = remoteProgress;
       return playerData;
     }
@@ -28424,8 +28599,17 @@ const progressService = {
         displayName: nextProgress.displayName || nextProgress.username || "Lingua Player",
         mode: "registered"
       });
+      const clientProgressRef = getPlayerClientProgressDocRef(userId);
+      const clientProgressSnapshot = await getDoc(clientProgressRef);
+      await setDoc(
+        clientProgressRef,
+        buildClientReportedProgressPayload(userId, nextProgress, { forCreate: !clientProgressSnapshot.exists() }),
+        { merge: clientProgressSnapshot.exists() }
+      );
+      const safeProfileUpdate = buildOwnerPlayerProfilePayload(sessionUser, nextProgress, { forCreate: false });
       await setDoc(getPlayerDocRef(userId), {
-        ...createFirestorePlayerDoc(sessionUser, nextProgress),
+        ...safeProfileUpdate,
+        updatedAt: serverTimestamp(),
         lastActiveAt: serverTimestamp()
       }, { merge: true });
       return true;
@@ -28934,12 +29118,19 @@ function serializeProgressValue(value) {
 }
 
 function queuePlayerDataSave(snapshot, reason = "auto") {
+  if (snapshot?.userId) {
+    playerStorage.set(getPlayerStorageKey(snapshot.userId), JSON.stringify(snapshot));
+  }
   pendingProgressSave = pendingProgressSave
     .catch(() => false)
     .then(() => progressService.saveProgress(snapshot.userId, snapshot))
     .catch(error => {
       console.warn(`[Progress] Failed to save player data (${reason})`, error);
-      setAuthStatus(AUTH_COPY.remoteAuthUnavailable);
+      setAuthStatus(
+        isFirebasePermissionDeniedError(error)
+          ? "ระบบออนไลน์ไม่อนุญาตให้บันทึกข้อมูลส่วนนี้ ข้อมูลการเล่นยังอยู่ในเครื่องนี้"
+          : AUTH_COPY.remoteAuthUnavailable
+      );
       return false;
     });
   return pendingProgressSave;
@@ -28996,15 +29187,8 @@ async function saveCompletedStudentProfileToFirestore(user, completedProgress) {
   });
   const studentProfile = getStudentProfileFromPlayer(snapshot) || {};
   const character = getPlayerCharacter(snapshot.characterId);
-  const dashboardDoc = createFirestorePlayerDoc(sessionUser, snapshot);
-
-  await setDoc(getPlayerDocRef(firebaseUser.uid), {
-    ...dashboardDoc,
-    uid: firebaseUser.uid,
-    username: sessionUser.username,
-    loginEmail: firebaseUser.email || sessionUser.email || "",
-    accountMode: "online",
-    role: "student",
+  const profileUpdate = sanitizeOwnerPlayerProfilePayload({
+    ...buildOwnerPlayerProfilePayload(sessionUser, snapshot, { forCreate: false }),
     profileCompleted: true,
     characterCreated: true,
     studentProfile: sanitizeForFirestore({
@@ -29024,11 +29208,18 @@ async function saveCompletedStudentProfileToFirestore(user, completedProgress) {
     characterGender: snapshot.avatar?.gender || "",
     avatarId: snapshot.avatar?.characterId || snapshot.characterId || "",
     avatarImage: character?.asset || "",
-    progressPercent: dashboardDoc.progressPercent || 0,
-    grammaria: dashboardDoc.grammaria || 0,
-    bossesDefeated: dashboardDoc.bossesDefeated || 0,
+    updatedAt: serverTimestamp(),
     lastActiveAt: serverTimestamp()
-  }, { merge: true });
+  });
+
+  await setDoc(getPlayerDocRef(firebaseUser.uid), profileUpdate, { merge: true });
+  const clientProgressRef = getPlayerClientProgressDocRef(firebaseUser.uid);
+  const clientProgressSnapshot = await getDoc(clientProgressRef);
+  await setDoc(
+    clientProgressRef,
+    buildClientReportedProgressPayload(firebaseUser.uid, snapshot, { forCreate: !clientProgressSnapshot.exists() }),
+    { merge: clientProgressSnapshot.exists() }
+  );
   return true;
 }
 
@@ -33929,7 +34120,8 @@ function getTeacherStudentGrammaria(record = {}) {
 
 function getTeacherStudentLastActiveValue(record = {}) {
   const progressSnapshot = record.progress && typeof record.progress === "object" ? record.progress : {};
-  return record.lastActiveAt ||
+  return record.clientProgressUpdatedAt ||
+    record.lastActiveAt ||
     progressSnapshot.lastActiveAt ||
     record.lastLoginAt ||
     progressSnapshot.updatedAt ||
@@ -34025,7 +34217,7 @@ function normalizeTeacherStudentRecord(record = {}, sourceId = "") {
   const labels = profileCompleted ? getMainMenuStageLabels(actProgress) : { lesson: "ยังไม่เริ่ม" };
   const defeatedBosses = Array.isArray(actProgress.defeatedBosses) ? actProgress.defeatedBosses : [];
   const savedProgressPercent = Number(record.progressPercent);
-  const progressPercent = Number.isFinite(savedProgressPercent)
+  const progressPercent = !record.clientReportedProgress && Number.isFinite(savedProgressPercent)
     ? clamp(Math.round(savedProgressPercent), 0, 100)
     : (profileCompleted ? calculateMainMenuActProgress(actProgress) : 0);
   const characterId = record.characterId || progressSnapshot.characterId || progressSnapshot.avatar?.characterId || "male_wanderer";
@@ -34034,7 +34226,8 @@ function normalizeTeacherStudentRecord(record = {}, sourceId = "") {
   const username = record.username || progressSnapshot.username || sourceId;
   const savedGrammaria = Number(record.grammaria);
   const savedBossesDefeated = Number(record.bossesDefeated);
-  const grammariaTotal = Number.isFinite(savedGrammaria)
+  const useTeacherManagedGrammaria = Boolean(record.manualGrammariaAdjustedAt) && Number.isFinite(savedGrammaria);
+  const grammariaTotal = useTeacherManagedGrammaria
     ? Math.max(0, Math.floor(savedGrammaria))
     : (profileCompleted ? getTeacherStudentGrammaria(record) : 0);
   const lastActiveValue = getTeacherStudentLastActiveValue(record);
@@ -34055,11 +34248,14 @@ function normalizeTeacherStudentRecord(record = {}, sourceId = "") {
       : "ยังไม่ได้สร้างตัวละคร",
     characterId: character?.id || "",
     characterAsset: character?.asset || record.avatarImage || "",
-    currentLesson: safeDisplayText(record.currentLessonTitle || labels.lesson, "ยังไม่เริ่ม"),
+    currentLesson: safeDisplayText(
+      record.clientReportedProgress ? labels.lesson : (record.currentLessonTitle || labels.lesson),
+      "ยังไม่เริ่ม"
+    ),
     progressPercent,
     grammaria: grammariaTotal,
     grammariaRank: getGrammariaAttackRank(grammariaTotal).thaiTitle,
-    bossesDefeated: Number.isFinite(savedBossesDefeated)
+    bossesDefeated: !record.clientReportedProgress && Number.isFinite(savedBossesDefeated)
       ? savedBossesDefeated
       : (profileCompleted ? defeatedBosses.length : 0),
     completedStagesCount: getStudentProgressListCount(actProgress, "completedStages", "completedLessons"),
@@ -34080,8 +34276,23 @@ async function loadTeacherDashboardRecords() {
   if (getAuthMode() === "firebase") {
     try {
       const snapshot = await getDocs(collection(firestoreDb, STUDENT_DASHBOARD_COLLECTION));
+      const clientProgressSnapshot = await getDocs(collection(firestoreDb, PLAYER_CLIENT_PROGRESS_COLLECTION));
+      const clientProgressByUid = new Map(
+        clientProgressSnapshot.docs.map(progressDoc => [progressDoc.id, progressDoc.data() || {}])
+      );
       const students = snapshot.docs
-        .map(docSnapshot => normalizeTeacherStudentRecord(docSnapshot.data(), docSnapshot.id))
+        .map(docSnapshot => {
+          const playerRecord = docSnapshot.data() || {};
+          const clientRecord = clientProgressByUid.get(docSnapshot.id);
+          return normalizeTeacherStudentRecord({
+            ...playerRecord,
+            ...(clientRecord?.progress ? {
+              progress: clientRecord.progress,
+              clientReportedProgress: true,
+              clientProgressUpdatedAt: clientRecord.updatedAt || clientRecord.lastActiveAt || null
+            } : {})
+          }, docSnapshot.id);
+        })
         .filter(Boolean);
       console.log("[Teacher Dashboard] loaded student count:", students.length);
       return students;
@@ -34535,13 +34746,13 @@ async function adjustStudentGrammaria(studentUid, delta, reason) {
     if (newGrammaria < 0) {
       throw createStudentManagementError("student-management/below-zero", "แต้มหลังปรับต้องไม่ต่ำกว่า 0");
     }
-    transaction.update(studentRef, {
+    transaction.update(studentRef, sanitizeTeacherPlayerUpdatePayload({
       grammaria: newGrammaria,
       manualGrammariaAdjustedAt: serverTimestamp(),
       manualGrammariaAdjustedBy: performedBy,
       manualGrammariaAdjustReason: cleanReason,
       manualGrammariaLastDelta: delta
-    });
+    }));
     return { before: currentGrammaria, after: newGrammaria, delta };
   });
 }
@@ -34559,12 +34770,12 @@ async function softDeleteStudent(studentUid, reason) {
     if (!snapshot.exists()) {
       throw createStudentManagementError("student-management/not-found", "ไม่พบข้อมูลผู้เรียน");
     }
-    transaction.update(studentRef, {
+    transaction.update(studentRef, sanitizeTeacherPlayerUpdatePayload({
       isDeleted: true,
       deletedAt: serverTimestamp(),
       deletedBy: performedBy,
       deleteReason: cleanReason
-    });
+    }));
     return { isDeleted: true };
   });
 }
@@ -34582,12 +34793,12 @@ async function restoreStudent(studentUid, reason) {
     if (!snapshot.exists()) {
       throw createStudentManagementError("student-management/not-found", "ไม่พบข้อมูลผู้เรียน");
     }
-    transaction.update(studentRef, {
+    transaction.update(studentRef, sanitizeTeacherPlayerUpdatePayload({
       isDeleted: false,
       restoredAt: serverTimestamp(),
       restoredBy: performedBy,
       restoreReason: cleanReason
-    });
+    }));
     return { isDeleted: false };
   });
 }
@@ -36395,10 +36606,20 @@ async function loadVsBossPracticeScores({ force = false } = {}) {
     const user = getCurrentUser();
     const useFirestore = getAuthMode() === "firebase" && !user?.isGuest && ownerId !== "guest";
     if (useFirestore) {
-      const snapshot = await getDoc(getPlayerDocRef(ownerId));
-      const data = snapshot.exists() ? snapshot.data() : {};
-      scores = mergeVsBossScoreSources(data?.bossPracticeScores, data?.progress?.bossPracticeScores,
-        data?.progress?.vsBossAssessmentRecords, data?.vsBossAssessmentRecords);
+      const clientSnapshot = await getDoc(getPlayerClientProgressDocRef(ownerId));
+      const playerSnapshot = await getDoc(getPlayerDocRef(ownerId));
+      const clientProgress = clientSnapshot.exists() ? clientSnapshot.data()?.progress || {} : {};
+      const legacyData = playerSnapshot.exists() ? playerSnapshot.data() : {};
+      scores = mergeVsBossScoreSources(
+        clientProgress?.bossPracticeScores,
+        clientProgress?.vsBossAssessmentRecords,
+        clientProgress?.progress?.bossPracticeScores,
+        clientProgress?.progress?.vsBossAssessmentRecords,
+        legacyData?.bossPracticeScores,
+        legacyData?.progress?.bossPracticeScores,
+        legacyData?.progress?.vsBossAssessmentRecords,
+        legacyData?.vsBossAssessmentRecords
+      );
     } else {
       const saved = playerStorage.get(getVsBossLocalStorageKey());
       scores = mergeVsBossScoreSources(saved ? JSON.parse(saved) : {},
@@ -36460,15 +36681,16 @@ async function saveVsBossPracticeScore(bossId, result) {
   let nextEntry = null;
   let savedAttempt = null;
   if (useFirestore) {
-    const playerRef = getPlayerDocRef(ownerId);
+    const clientProgressRef = getPlayerClientProgressDocRef(ownerId);
     await runTransaction(firestoreDb, async transaction => {
-      const snapshot = await transaction.get(playerRef);
-      if (!snapshot.exists()) {
-        throw new Error("Player document not found");
-      }
-      const remoteData = snapshot.data() || {};
-      const remoteEntry = remoteData?.progress?.bossPracticeScores?.[bossId] || {};
-      const remoteHistoryEntry = remoteData?.progress?.vsBossAssessmentRecords?.[bossId] || {};
+      const snapshot = await transaction.get(clientProgressRef);
+      const remoteProgress = snapshot.exists() ? snapshot.data()?.progress || {} : {};
+      const remoteEntry = remoteProgress?.bossPracticeScores?.[bossId]
+        || remoteProgress?.progress?.bossPracticeScores?.[bossId]
+        || {};
+      const remoteHistoryEntry = remoteProgress?.vsBossAssessmentRecords?.[bossId]
+        || remoteProgress?.progress?.vsBossAssessmentRecords?.[bossId]
+        || {};
       const cachedEntry = state.vsBossPractice.scores?.[bossId] || {};
       const previousEntry = mergeVsBossScoreSources(
         { [bossId]: remoteEntry },
@@ -36489,10 +36711,22 @@ async function saveVsBossPracticeScore(bossId, result) {
         result,
         historySave.record
       );
-      transaction.update(playerRef, {
-        [`progress.bossPracticeScores.${bossId}`]: nextEntry,
-        [`progress.vsBossAssessmentRecords.${bossId}`]: nextEntry
-      });
+      const nextProgress = {
+        ...remoteProgress,
+        bossPracticeScores: {
+          ...(remoteProgress.bossPracticeScores || {}),
+          [bossId]: nextEntry
+        },
+        vsBossAssessmentRecords: {
+          ...(remoteProgress.vsBossAssessmentRecords || {}),
+          [bossId]: nextEntry
+        }
+      };
+      transaction.set(
+        clientProgressRef,
+        buildClientReportedProgressPayload(ownerId, nextProgress, { forCreate: !snapshot.exists() }),
+        { merge: snapshot.exists() }
+      );
     });
   } else {
     const previousEntry = state.vsBossPractice.scores?.[bossId] || {};
@@ -37747,8 +37981,12 @@ async function loadVerbMemoryPracticeBestScore({ force = false } = {}) {
   let record = {};
   try {
     if (shouldUseFirestoreForVerbMemoryPractice()) {
-      const snapshot = await getDoc(getPlayerDocRef(ownerId));
-      record = snapshot.exists() ? snapshot.data()?.verbMemoryPracticeBest || {} : {};
+      const clientSnapshot = await getDoc(getPlayerClientProgressDocRef(ownerId));
+      const playerSnapshot = await getDoc(getPlayerDocRef(ownerId));
+      const clientRecord = clientSnapshot.exists()
+        ? clientSnapshot.data()?.progress?.verbMemoryPracticeBest || null
+        : null;
+      record = clientRecord || (playerSnapshot.exists() ? playerSnapshot.data()?.verbMemoryPracticeBest || {} : {});
     } else {
       const saved = playerStorage.get(getVerbMemoryPracticeLocalStorageKey());
       record = saved ? JSON.parse(saved) : {};
@@ -37783,20 +38021,21 @@ async function saveVerbMemoryPracticeBestScore(result) {
   let previousRecord = normalizeVerbMemoryBestRecord(verbMemoryPracticeState.bestRecord);
   let nextRecord = createVerbMemoryBestRecord(previousRecord, result);
   if (shouldUseFirestoreForVerbMemoryPractice()) {
-    const playerRef = getPlayerDocRef(ownerId);
+    const clientProgressRef = getPlayerClientProgressDocRef(ownerId);
     await runTransaction(firestoreDb, async transaction => {
-      const snapshot = await transaction.get(playerRef);
-      if (!snapshot.exists()) {
-        throw new Error("Player document not found");
-      }
-      previousRecord = normalizeVerbMemoryBestRecord(snapshot.data()?.verbMemoryPracticeBest || previousRecord);
+      const snapshot = await transaction.get(clientProgressRef);
+      const remoteProgress = snapshot.exists() ? snapshot.data()?.progress || {} : {};
+      previousRecord = normalizeVerbMemoryBestRecord(remoteProgress.verbMemoryPracticeBest || previousRecord);
       nextRecord = createVerbMemoryBestRecord(previousRecord, result);
-      transaction.update(playerRef, {
-        verbMemoryPracticeBest: {
-          ...nextRecord,
-          updatedAt: serverTimestamp()
-        }
-      });
+      const nextProgress = {
+        ...remoteProgress,
+        verbMemoryPracticeBest: { ...nextRecord }
+      };
+      transaction.set(
+        clientProgressRef,
+        buildClientReportedProgressPayload(ownerId, nextProgress, { forCreate: !snapshot.exists() }),
+        { merge: snapshot.exists() }
+      );
     });
   } else {
     playerStorage.set(getVerbMemoryPracticeLocalStorageKey(), JSON.stringify(nextRecord));
@@ -50019,6 +50258,7 @@ window.validateVerbMemoryMissingSlotDistribution = validateVerbMemoryMissingSlot
 if (window.location.protocol === "file:" || /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
   window.validateEditableBackgroundAssets = validateEditableBackgroundAssets;
   window.validateAssetManagerEnemyCoverage = validateAssetManagerEnemyCoverage;
+  window.validatePlayerWritePayloadSafety = validatePlayerWritePayloadSafety;
   window.validateVsBossScoreHistorySystem = validateVsBossScoreHistorySystem;
   window.validateVsBossCardQualityLevels = validateVsBossCardQualityLevels;
   window.validateBattleSkillDamageDifferences = validateBattleSkillDamageDifferences;
@@ -50026,6 +50266,7 @@ if (window.location.protocol === "file:" || /^(localhost|127\.0\.0\.1)$/.test(wi
   console.info("[VS Boss Card Quality]", JSON.stringify(validateVsBossCardQualityLevels()));
   console.info("[Battle Skill Damage]", JSON.stringify(validateBattleSkillDamageDifferences()));
   console.info("[Asset Manager Enemy Coverage]", JSON.stringify(validateAssetManagerEnemyCoverage()));
+  console.info("[Player Write Payload Safety]", JSON.stringify(validatePlayerWritePayloadSafety()));
   const runEditableBackgroundValidation = () => {
     validateEditableBackgroundAssets().then(result => {
       console.info("[Editable Background Assets]", JSON.stringify(result));
