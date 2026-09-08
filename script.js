@@ -23558,8 +23558,15 @@ const AUTH_COPY = {
   registerLocalSuccess: "สมัครสำเร็จแล้ว บัญชีนี้ยังเป็นบัญชี Local ใช้ได้เฉพาะเครื่อง/เบราว์เซอร์นี้",
   remoteRegisterSuccess: "สมัครสำเร็จแล้ว บัญชีนี้เป็นบัญชีออนไลน์ สามารถใช้ข้ามเครื่องได้",
   localUserNotFound: "ไม่พบผู้ใช้ในเบราว์เซอร์นี้ หากคุณสมัครจากเครื่องหรือเบราว์เซอร์อื่น ระบบ Local จะยังไม่สามารถดึงบัญชีเดิมได้",
-  remoteAuthUnavailable: "ไม่สามารถเชื่อมต่อบัญชีออนไลน์ได้ กรุณาลองใหม่",
-  remoteLoginFailed: "ไม่พบบัญชีนี้ หรือ PIN ไม่ถูกต้อง"
+  remoteAuthUnavailable: "เชื่อมต่อ Firebase ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต",
+  remoteLoginFailed: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
+  remoteUserNotFound: "ไม่พบบัญชีนี้ในระบบออนไลน์",
+  remoteWrongPassword: "รหัสผ่านไม่ถูกต้อง",
+  remoteTooManyRequests: "มีการพยายามเข้าสู่ระบบหลายครั้ง กรุณารอสักครู่แล้วลองใหม่",
+  remoteNetworkFailed: "เชื่อมต่อเครือข่ายไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ต",
+  remotePlayerPermissionDenied: "บัญชีเข้าสู่ระบบแล้ว แต่ไม่มีสิทธิ์อ่าน/บันทึกข้อมูลผู้เล่น กรุณาตรวจสอบ Firestore rules",
+  remotePlayerCreateBlocked: "เข้าสู่ระบบสำเร็จ แต่ระบบไม่สามารถสร้างข้อมูลผู้เล่นได้ เนื่องจาก payload ไม่ตรงกับกฎความปลอดภัย",
+  remoteLoginDefault: "เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง"
 };
 
 // This PIN only hides the classroom UI. Firestore rules and teacher custom
@@ -27989,18 +27996,51 @@ function buildClientReportedProgressPayload(userId, progress, options = {}) {
   return payload;
 }
 
-function normalizeLegacyPlayerDocSafely(playerDoc = {}, clientProgressDoc = {}) {
+function readCachedPlayerProgress(userId) {
+  const saved = playerStorage.get(getPlayerStorageKey(userId));
+  if (!saved) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(saved);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (error) {
+    console.warn("[Progress] Local fallback could not be parsed; using remote profile defaults.");
+    return null;
+  }
+}
+
+function normalizeLegacyPlayerDocSafely(playerDoc = {}, clientProgressDoc = {}, localProgress = null) {
   const clientProgress = clientProgressDoc?.progress && typeof clientProgressDoc.progress === "object"
     ? clientProgressDoc.progress
     : null;
   const legacyProgress = playerDoc?.progress && typeof playerDoc.progress === "object"
     ? playerDoc.progress
     : null;
+  const cachedProgress = localProgress && typeof localProgress === "object" ? localProgress : null;
+  const progress = clientProgress || cachedProgress || legacyProgress || {};
   return {
-    progress: clientProgress || legacyProgress || {},
-    source: clientProgress ? "client-reported" : (legacyProgress ? "legacy-player-document" : "empty"),
+    progress,
+    source: clientProgress
+      ? "client-reported"
+      : (cachedProgress ? "local-fallback" : (legacyProgress ? "legacy-player-document" : "empty")),
     clientReported: Boolean(clientProgress)
   };
+}
+
+function createOnlineLoginStageError(stage, error) {
+  const stagedError = new Error(error?.message || AUTH_COPY.remoteLoginDefault);
+  stagedError.name = "OnlineLoginStageError";
+  stagedError.code = error?.code || "";
+  stagedError.loginStage = stage;
+  stagedError.cause = error;
+  return stagedError;
+}
+
+function warnOptionalOnlineDataFailure(area, error) {
+  console.warn(`[Online Account] ${area} unavailable; continuing with a safe fallback.`, {
+    code: String(error?.code || "unknown")
+  });
 }
 
 function applyTeacherManagedPlayerFields(progress, playerDoc = {}) {
@@ -28131,19 +28171,33 @@ async function ensureStudentDashboardDocument(firebaseUser, fallbackUsername = "
     mode: "registered"
   });
   const playerRef = getPlayerDocRef(firebaseUser.uid);
-  const snapshot = await getDoc(playerRef);
+  let snapshot;
+  try {
+    snapshot = await getDoc(playerRef);
+  } catch (error) {
+    throw createOnlineLoginStageError("player-read", error);
+  }
   if (!snapshot.exists()) {
     const defaultProgress = progress || createDefaultPlayerData(sessionUser);
-    await setDoc(playerRef, {
-      ...createFirestorePlayerDoc(sessionUser, defaultProgress),
-      createdAt: serverTimestamp(),
-      lastLoginAt: serverTimestamp(),
-      lastActiveAt: serverTimestamp()
-    });
-    await setDoc(
-      getPlayerClientProgressDocRef(firebaseUser.uid),
-      buildClientReportedProgressPayload(firebaseUser.uid, serializeProgressValue(defaultProgress), { forCreate: true })
-    );
+    try {
+      await setDoc(playerRef, {
+        ...createFirestorePlayerDoc(sessionUser, defaultProgress),
+        createdAt: serverTimestamp(),
+        lastLoginAt: serverTimestamp(),
+        lastActiveAt: serverTimestamp()
+      });
+    } catch (error) {
+      throw createOnlineLoginStageError("player-create", error);
+    }
+    playerStorage.set(getPlayerStorageKey(firebaseUser.uid), JSON.stringify(serializeProgressValue(defaultProgress)));
+    try {
+      await setDoc(
+        getPlayerClientProgressDocRef(firebaseUser.uid),
+        buildClientReportedProgressPayload(firebaseUser.uid, serializeProgressValue(defaultProgress), { forCreate: true })
+      );
+    } catch (error) {
+      warnOptionalOnlineDataFailure("client progress creation", error);
+    }
     return sessionUser;
   }
 
@@ -28155,7 +28209,11 @@ async function ensureStudentDashboardDocument(firebaseUser, fallbackUsername = "
     ...(options.updateLoginAt ? { lastLoginAt: serverTimestamp() } : {})
   });
   if (Object.keys(safeUpdate).length) {
-    await setDoc(playerRef, safeUpdate, { merge: true });
+    try {
+      await setDoc(playerRef, safeUpdate, { merge: true });
+    } catch (error) {
+      warnOptionalOnlineDataFailure("profile maintenance update", error);
+    }
   }
   return createSessionUser({
     uid: firebaseUser.uid,
@@ -28183,14 +28241,25 @@ function createRemotePlayerData(sessionUser, savedProgress = null) {
 }
 
 function mapFirebaseAuthError(error) {
-  const code = error?.code || "";
-  if (
-    code.includes("invalid-credential") ||
-    code.includes("user-not-found") ||
-    code.includes("wrong-password") ||
-    code.includes("invalid-login-credentials")
-  ) {
+  const code = String(error?.code || error?.cause?.code || "").toLowerCase();
+  const loginStage = error?.loginStage || "";
+  if (loginStage === "player-create" && isFirebasePermissionDeniedError(error?.cause || error)) {
+    return AUTH_COPY.remotePlayerCreateBlocked;
+  }
+  if (isFirebasePermissionDeniedError(error?.cause || error)) {
+    return AUTH_COPY.remotePlayerPermissionDenied;
+  }
+  if (code.includes("invalid-credential") || code.includes("invalid-login-credentials")) {
     return AUTH_COPY.remoteLoginFailed;
+  }
+  if (code.includes("user-not-found")) {
+    return AUTH_COPY.remoteUserNotFound;
+  }
+  if (code.includes("wrong-password")) {
+    return AUTH_COPY.remoteWrongPassword;
+  }
+  if (code.includes("too-many-requests")) {
+    return AUTH_COPY.remoteTooManyRequests;
   }
   if (code.includes("email-already-in-use")) {
     return "ชื่อผู้ใช้นี้ถูกใช้แล้ว";
@@ -28198,19 +28267,27 @@ function mapFirebaseAuthError(error) {
   if (code.includes("weak-password")) {
     return "PIN ต้องมีอย่างน้อย 6 ตัว";
   }
-  if (code.includes("network-request-failed") || code.includes("unavailable")) {
+  if (code.includes("network-request-failed")) {
+    return AUTH_COPY.remoteNetworkFailed;
+  }
+  if (code.includes("unavailable") || code.includes("deadline-exceeded")) {
     return AUTH_COPY.remoteAuthUnavailable;
   }
   if (code.includes("unauthorized-domain")) {
     return "โดเมนนี้ยังไม่ได้รับอนุญาตใน Firebase Auth กรุณาเพิ่มโดเมนของเว็บใน Authorized domains";
   }
-  return error?.message ? "ไม่สามารถเชื่อมต่อบัญชีออนไลน์ได้ กรุณาลองใหม่" : AUTH_COPY.remoteAuthUnavailable;
+  return AUTH_COPY.remoteLoginDefault;
 }
 
 async function loadRemoteSessionUser(firebaseUser, fallbackUsername = "") {
   const playerRef = getPlayerDocRef(firebaseUser.uid);
   await ensureStudentDashboardDocument(firebaseUser, fallbackUsername, null, { updateLoginAt: true });
-  const snapshot = await getDoc(playerRef);
+  let snapshot;
+  try {
+    snapshot = await getDoc(playerRef);
+  } catch (error) {
+    throw createOnlineLoginStageError("player-read", error);
+  }
   if (snapshot.exists()) {
     const data = snapshot.data();
     return createSessionUser({
@@ -28377,9 +28454,7 @@ const remoteAuthProvider = {
       }
 
       await firebasePersistenceReady;
-      console.log("[Auth] registering username:", normalizedUsername);
       const credential = await createUserWithEmailAndPassword(firebaseAuth, usernameToInternalEmail(normalizedUsername), pin);
-      console.log("[Auth] Firebase uid:", credential.user.uid);
       const sessionUser = createSessionUser({
         uid: credential.user.uid,
         id: credential.user.uid,
@@ -28399,13 +28474,12 @@ const remoteAuthProvider = {
         console.error("[Lingua Register] Failed to create Firestore student document", firestoreError);
         throw firestoreError;
       }
-      console.log("[Firestore] player profile saved:", sessionUser.uid);
       state.currentUser = sessionUser;
       playerData = defaultProgress;
       playerStorage.set(AUTH_STORAGE_KEYS.currentUser, JSON.stringify(sessionUser));
       return sessionUser;
     } catch (error) {
-      if (error instanceof Error && !error.code) {
+      if (error instanceof Error && !error.code && !error.loginStage) {
         throw error;
       }
       throw new Error(mapFirebaseAuthError(error));
@@ -28413,6 +28487,8 @@ const remoteAuthProvider = {
   },
 
   async login({ username, pin }) {
+    let signedInUser = null;
+    let loginCommitted = false;
     try {
       const normalizedUsername = normalizeUsername(username);
       if (!isValidUsername(normalizedUsername)) {
@@ -28423,18 +28499,33 @@ const remoteAuthProvider = {
       }
 
       await firebasePersistenceReady;
-      const credential = await signInWithEmailAndPassword(firebaseAuth, usernameToInternalEmail(normalizedUsername), pin);
+      let credential;
+      try {
+        credential = await signInWithEmailAndPassword(firebaseAuth, usernameToInternalEmail(normalizedUsername), pin);
+      } catch (error) {
+        throw createOnlineLoginStageError("firebase-auth", error);
+      }
+      signedInUser = credential.user;
       const sessionUser = await loadRemoteSessionUser(credential.user, normalizedUsername);
+      await progressService.loadProgress(sessionUser.uid, { sessionUser });
       state.currentUser = sessionUser;
       playerStorage.set(AUTH_STORAGE_KEYS.currentUser, JSON.stringify(sessionUser));
-      await progressService.loadProgress(sessionUser.uid);
-      await setDoc(getPlayerDocRef(sessionUser.uid), {
-        lastLoginAt: serverTimestamp(),
-        lastActiveAt: serverTimestamp()
-      }, { merge: true });
+      loginCommitted = true;
       return sessionUser;
     } catch (error) {
-      if (error instanceof Error && !error.code) {
+      if (signedInUser && !loginCommitted) {
+        try {
+          await signOut(firebaseAuth);
+        } catch (signOutError) {
+          console.warn("[Online Account] Failed to clear an incomplete Firebase session.", {
+            code: String(signOutError?.code || "unknown")
+          });
+        }
+        state.currentUser = null;
+        playerData = null;
+        playerStorage.remove(AUTH_STORAGE_KEYS.currentUser);
+      }
+      if (error instanceof Error && !error.code && !error.loginStage) {
         throw error;
       }
       throw new Error(mapFirebaseAuthError(error));
@@ -28527,14 +28618,19 @@ const authService = {
 };
 
 const progressService = {
-  async loadProgress(userId) {
+  async loadProgress(userId, options = {}) {
     if (userId !== "guest" && getAuthMode() === "firebase") {
       const firebaseUser = firebaseAuth.currentUser;
       if (!firebaseUser || firebaseUser.uid !== userId) {
         throw new Error(AUTH_COPY.remoteAuthUnavailable);
       }
-      const sessionUser = getCurrentUser() || await loadRemoteSessionUser(firebaseUser);
-      const snapshot = await getDoc(getPlayerDocRef(userId));
+      const sessionUser = options.sessionUser || getCurrentUser() || await loadRemoteSessionUser(firebaseUser);
+      let snapshot;
+      try {
+        snapshot = await getDoc(getPlayerDocRef(userId));
+      } catch (error) {
+        throw createOnlineLoginStageError("player-read", error);
+      }
       if (!snapshot.exists()) {
         const defaultProgress = createDefaultPlayerData(sessionUser);
         await ensureStudentDashboardDocument(firebaseUser, sessionUser.username, defaultProgress, {
@@ -28545,9 +28641,18 @@ const progressService = {
         return playerData;
       }
       const data = snapshot.data();
-      const clientProgressSnapshot = await getDoc(getPlayerClientProgressDocRef(userId));
-      const clientProgressData = clientProgressSnapshot.exists() ? clientProgressSnapshot.data() : {};
-      const normalizedRemoteData = normalizeLegacyPlayerDocSafely(data, clientProgressData);
+      let clientProgressData = {};
+      try {
+        const clientProgressSnapshot = await getDoc(getPlayerClientProgressDocRef(userId));
+        clientProgressData = clientProgressSnapshot.exists() ? clientProgressSnapshot.data() : {};
+      } catch (error) {
+        warnOptionalOnlineDataFailure("client progress read", error);
+      }
+      const normalizedRemoteData = normalizeLegacyPlayerDocSafely(
+        data,
+        clientProgressData,
+        readCachedPlayerProgress(userId)
+      );
       const remoteProgress = createRemotePlayerData(sessionUser, normalizedRemoteData.progress);
       const savedStudentProfile = data.studentProfile || data.progress?.studentProfile || data.progress?.progress?.playerProfile?.studentProfile || null;
       if (savedStudentProfile && typeof savedStudentProfile === "object") {
@@ -50327,8 +50432,15 @@ bindVisibleViewportSync();
 initializeAuthUi().catch(error => {
   console.warn("[Auth] Failed to initialize Firebase auth state", error);
   updateAuthUi();
-  setAuthStatus(AUTH_COPY.remoteAuthUnavailable);
-}).finally(() => loadGameAssetOverrides());
+  setAuthStatus(mapFirebaseAuthError(error));
+}).finally(() => {
+  void loadGameAssetOverrides().catch(error => {
+    gameAssetOverrideState.overrides = {};
+    gameAssetOverrideState.loadError = "ไม่สามารถโหลด Asset Override ได้ ระบบกำลังใช้ภาพเดิม";
+    applyGameAssetOverridesToUi();
+    warnOptionalOnlineDataFailure("asset overrides", error);
+  });
+});
 setupAnimatedGrammarHallBackground();
 setupMainCharacterGifs();
 setupTeacherCharacterGifs();
