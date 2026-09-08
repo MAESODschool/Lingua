@@ -24100,9 +24100,18 @@ const linguaAdvisorState = {
   }
 };
 
+const LESSON_MUSIC_TRACK = Object.freeze({
+  id: "lesson",
+  name: "Lingua Grammar Gate",
+  src: "assets/audio/lingua-lesson-theme.mp3",
+  loop: true,
+  volume: 0.42
+});
+
 const BGM_PATHS = {
   login: "assets/bgm/into-lingua-v1.mp3",
   hall: "assets/bgm/verions-grammar-hall.mp3",
+  [LESSON_MUSIC_TRACK.id]: LESSON_MUSIC_TRACK.src,
   battle: "assets/bgm/lingua-spell-battle.mp3",
   victoryScene: "assets/bgm/victory-scene.mp3",
   edForge: "assets/bgm/ed_forge_bgm.mp3",
@@ -24112,6 +24121,7 @@ const BGM_PATHS = {
 const BGM_LOOP = {
   login: true,
   hall: true,
+  [LESSON_MUSIC_TRACK.id]: LESSON_MUSIC_TRACK.loop,
   battle: true,
   victoryScene: false,
   edForge: true,
@@ -24121,6 +24131,7 @@ const BGM_LOOP = {
 const DEFAULT_BGM_VOLUME = 0.45;
 const BGM_FADE_MS = 650;
 const BGM_VOLUME = {
+  [LESSON_MUSIC_TRACK.id]: LESSON_MUSIC_TRACK.volume,
   edForge: 0.32,
   linguaBreaker: 0.4
 };
@@ -24148,6 +24159,10 @@ Object.entries(bgmTracks).forEach(([key, track]) => {
   track.preload = "auto";
   track.volume = getBgmVolume(key);
   track.addEventListener("error", error => {
+    if (key === LESSON_MUSIC_TRACK.id) {
+      console.warn("Lesson music file not found or cannot be played. Continuing without lesson music.");
+      return;
+    }
     if (key === "linguaBreaker") {
       console.warn("[Audio] Lingua Breaker BGM could not be loaded");
       return;
@@ -24721,6 +24736,9 @@ function cleanupButtonsForSceneChange(nextScene) {
 function bgmKeyForScene(sceneName) {
   if (sceneName === "login" || sceneName === "mainMenu" || sceneName === "createCharacter") {
     return "login";
+  }
+  if (sceneName === "story") {
+    return LESSON_MUSIC_TRACK.id;
   }
   if (shouldUseLinguaBreakerBgm(sceneName)) {
     return "linguaBreaker";
