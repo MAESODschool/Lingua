@@ -49,7 +49,9 @@ expect(script.includes("!options.claimVerified && !(await requireAssetManagerOnl
 expect(script.includes("Storage bucket ไม่ถูกต้อง"), "Storage bucket diagnostic is missing");
 expect(script.includes('code === "storage/canceled"'), "Storage canceled diagnostic is missing");
 expect(script.includes('code === "storage/bucket-not-found"'), "missing Storage bucket diagnostic is absent");
-expect(script.includes("getStorage(firebaseApp, firebaseStorageBucketUrl)"), "Storage is not initialized with the configured bucket");
+expect(script.includes("const ASSET_MANAGER_ENABLED = false"), "Asset Manager is not disabled while Storage is unavailable");
+expect(!script.includes("firebase-storage.js"), "disabled Asset Manager still loads the Firebase Storage SDK");
+expect(script.includes("const firebaseStorage = null"), "disabled Asset Manager does not keep Storage uninitialized");
 expect(script.includes("ไฟล์มีขนาดใหญ่เกิน 5 MB"), "Thai file-size message is missing");
 expect(script.includes("รองรับเฉพาะ PNG, JPG, WEBP หรือ GIF"), "Thai file-type message is missing");
 expect(script.includes('key: "was_were_wisp"'), "Was-Were Wisp Asset Manager key is missing");
@@ -61,7 +63,7 @@ expect(script.includes('saveButton.textContent = "บันทึกและใ
 expect(script.includes("setButtonEnabled(els.gameModalClose, true)"), "modal close button is not restored");
 expect(script.includes('classList.remove("is-saving")'), "saving state is not removed");
 expect(script.includes("finally {\n    resetAssetManagerOperationUi(options);\n  }"), "operation UI is not reset in finally");
-expect(/script\.js\?v=[a-z0-9-]+20260908/.test(index), "current script cache version is missing");
+expect(index.includes("script.js?v=teacher-dashboard-no-storage-20260908"), "current script cache version is missing");
 expect(firebaseConfig.storage?.rules === "storage.rules", "firebase.json does not register Storage rules");
 expect(firebaseConfig.firestore?.rules === "firestore.rules", "firebase.json does not register Firestore rules");
 
@@ -206,6 +208,7 @@ expect(sandbox.validateFile({ name: "wisp.png", type: "image/png", size: 5 * 102
   let openedTokenRefresh = null;
   const accessModals = [];
   const accessSandbox = {
+    ASSET_MANAGER_ENABLED: true,
     getAuthMode: () => "firebase",
     firebaseAuth: { currentUser: null },
     waitForFirebaseAuthReady: async () => ({

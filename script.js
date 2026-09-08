@@ -20,12 +20,6 @@ import {
   onSnapshot,
   runTransaction
 } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
-import {
-  getStorage,
-  ref as storageRef,
-  uploadBytes,
-  getDownloadURL
-} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-storage.js";
 
 // Lingua Prototype 1 uses small scene switches and one shared state object.
 const scenes = {
@@ -21768,6 +21762,8 @@ const YESTERDAY_SPIRIT_IMAGE_PATH = "assets/characters/yesterday-spirit-transpar
 const YESTERDAY_SPIRIT_FALLBACK_IMAGE_PATH = assetPath("memory-shade.png");
 const MEMORY_BREAKER_IMAGE_PATH = "assets/bosses/memory_breaker_battle_idle_v3.gif";
 const MEMORY_BREAKER_FALLBACK_IMAGE_PATH = assetPath("enemies/memory-breaker.png");
+// Keep the Asset Manager implementation dormant until Firebase Storage is enabled.
+const ASSET_MANAGER_ENABLED = false;
 const GAME_ASSET_OVERRIDE_COLLECTION = "gameAssetOverrides";
 const GAME_ASSET_MAX_FILE_SIZE = 5 * 1024 * 1024;
 const GAME_ASSET_TIMEOUT_MS = Object.freeze({
@@ -23750,13 +23746,7 @@ function getAuthPanelNotice(panelName) {
 const firebaseApp = initializeApp(REMOTE_AUTH_CONFIG.firebaseConfig);
 const firebaseAuth = getAuth(firebaseApp);
 const firestoreDb = getFirestore(firebaseApp);
-const firebaseStorageBucket = String(REMOTE_AUTH_CONFIG.firebaseConfig.storageBucket || "").trim();
-const firebaseStorageBucketUrl = firebaseStorageBucket
-  ? (firebaseStorageBucket.startsWith("gs://") ? firebaseStorageBucket : `gs://${firebaseStorageBucket}`)
-  : "";
-const firebaseStorage = firebaseStorageBucketUrl
-  ? getStorage(firebaseApp, firebaseStorageBucketUrl)
-  : getStorage(firebaseApp);
+const firebaseStorage = null;
 const firebaseReady = getAuthMode() === "firebase";
 console.log("[Auth] mode:", AUTH_CONFIG.mode);
 console.log("[Firebase] initialized:", firebaseReady);
@@ -34234,7 +34224,16 @@ function renderMainMenu() {
   setButtonAction(els.tutorialGuideButton, "วิธีเล่น", openTutorialGuide, { lock: false });
   setButtonAction(els.linguaAdvisorButton, "ถามที่ปรึกษา", () => openLinguaAdvisor("main-menu"), { lock: false });
   setButtonAction(els.accountSettingsButton, "ตั้งค่าบัญชี", openAccountSettingsModal, { lock: false });
-  setButtonAction(els.customizeGameButton, "ปรับแต่ง", openGameCustomizationPanel, { lock: false });
+  if (ASSET_MANAGER_ENABLED) {
+    setButtonAction(els.customizeGameButton, "ปรับแต่ง", openGameCustomizationPanel, { lock: false, hidden: false });
+  } else {
+    clearButtonAction(els.customizeGameButton);
+    els.customizeGameButton?.classList.add("hidden");
+    if (els.customizeGameButton) {
+      els.customizeGameButton.hidden = true;
+      els.customizeGameButton.setAttribute("aria-hidden", "true");
+    }
+  }
   setButtonAction(els.teacherDashboardButton, "Teacher Dashboard", openTeacherDashboardPasswordModal, { lock: false });
   setButtonAction(els.creatorCreditsButton, "เครดิตผู้สร้าง", openCreatorCredits, { lock: false });
   setButtonAction(els.mainMenuLogoutButton, "ออกจากระบบ", logoutCurrentUser, { lock: true });
@@ -35292,6 +35291,9 @@ function requireAssetManagerAccess(options = {}) {
 }
 
 function validateAssetManagerWriteAccess(assetKey) {
+  if (!ASSET_MANAGER_ENABLED) {
+    throw createStudentManagementError("asset-manager/disabled", "Asset Manager ถูกปิดใช้งานชั่วคราว");
+  }
   if (!requireAssetManagerAccess({ showMessage: false })) {
     throw createStudentManagementError("asset-manager/access-denied", "กรุณาเข้าสู่เมนูผู้ดูแลก่อน");
   }
@@ -35480,6 +35482,9 @@ function renderAssetManagerGrid() {
 }
 
 async function requireAssetManagerOnlineAccess() {
+  if (!ASSET_MANAGER_ENABLED) {
+    return false;
+  }
   if (getAuthMode() !== "firebase") {
     openGameModal({
       title: "ไม่มีสิทธิ์จัดการ Asset",
@@ -35530,6 +35535,10 @@ async function requireAssetManagerOnlineAccess() {
 }
 
 async function openAssetManagerPanel(options = {}) {
+  if (!ASSET_MANAGER_ENABLED) {
+    els.assetManagerPanel?.classList.add("hidden");
+    return false;
+  }
   if (!requireAssetManagerAccess()) {
     return false;
   }
@@ -35557,6 +35566,9 @@ function closeAssetManagerPanel() {
 }
 
 async function openGameCustomizationPanel() {
+  if (!ASSET_MANAGER_ENABLED) {
+    return;
+  }
   closeGameModal();
   if (!requireAssetManagerAccess({ showMessage: false })) {
     openGameModal({
@@ -50392,7 +50404,14 @@ els.studentManagementAddPointsButton?.addEventListener("click", () => openStuden
 els.studentManagementReducePointsButton?.addEventListener("click", () => openStudentPointAdjustModal("reduce"));
 els.studentManagementDeleteButton?.addEventListener("click", openStudentDeleteConfirmModal);
 els.studentManagementRestoreButton?.addEventListener("click", openStudentRestoreConfirmModal);
-els.assetManagerButton?.addEventListener("click", openAssetManagerPanel);
+if (ASSET_MANAGER_ENABLED) {
+  els.assetManagerButton?.addEventListener("click", openAssetManagerPanel);
+} else if (els.assetManagerButton) {
+  els.assetManagerButton.classList.add("hidden");
+  els.assetManagerButton.hidden = true;
+  els.assetManagerButton.disabled = true;
+  els.assetManagerButton.setAttribute("aria-hidden", "true");
+}
 els.assetManagerCloseButton?.addEventListener("click", closeGameCustomizationPanel);
 els.assetManagerSearchInput?.addEventListener("input", renderAssetManagerGrid);
 els.assetManagerCategoryFilter?.addEventListener("change", renderAssetManagerGrid);
@@ -50731,12 +50750,14 @@ initializeAuthUi().catch(error => {
   updateAuthUi();
   setAuthStatus(mapFirebaseAuthError(error));
 }).finally(() => {
-  void loadGameAssetOverrides().catch(error => {
-    gameAssetOverrideState.overrides = {};
-    gameAssetOverrideState.loadError = "ไม่สามารถโหลด Asset Override ได้ ระบบกำลังใช้ภาพเดิม";
-    applyGameAssetOverridesToUi();
-    warnOptionalOnlineDataFailure("asset overrides", error);
-  });
+  if (ASSET_MANAGER_ENABLED) {
+    void loadGameAssetOverrides().catch(error => {
+      gameAssetOverrideState.overrides = {};
+      gameAssetOverrideState.loadError = "ไม่สามารถโหลด Asset Override ได้ ระบบกำลังใช้ภาพเดิม";
+      applyGameAssetOverridesToUi();
+      warnOptionalOnlineDataFailure("asset overrides", error);
+    });
+  }
 });
 setupAnimatedGrammarHallBackground();
 setupMainCharacterGifs();

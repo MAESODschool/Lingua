@@ -162,7 +162,7 @@
             <button id="tutorialGuideButton" class="secondary-button main-menu-button" type="button">วิธีเล่น</button>
             <button id="linguaAdvisorButton" class="secondary-button main-menu-button" type="button">ถามที่ปรึกษา</button>
             <button id="accountSettingsButton" class="secondary-button main-menu-button" type="button">ตั้งค่าบัญชี</button>
-            <button id="customizeGameButton" class="secondary-button main-menu-button" type="button" aria-label="ปรับแต่ง จัดการภาพและ Asset เกม">ปรับแต่ง</button>
+            <button id="customizeGameButton" class="secondary-button main-menu-button hidden" type="button" aria-label="ปรับแต่ง จัดการภาพและ Asset เกม" aria-hidden="true" hidden disabled>ปรับแต่ง</button>
             <button id="teacherDashboardButton" class="secondary-button main-menu-button" type="button">Teacher Dashboard</button>
             <button id="creatorCreditsButton" class="secondary-button main-menu-button" type="button">เครดิตผู้สร้าง</button>
             <button id="mainMenuLogoutButton" class="secondary-button main-menu-button danger-button" type="button">ออกจากระบบ</button>
@@ -575,7 +575,7 @@
           </div>
           <div class="teacher-dashboard-header-actions">
             <button id="studentManagementButton" class="primary-button" type="button">จัดการรายชื่อผู้เรียน</button>
-            <button id="assetManagerButton" class="primary-button" type="button">จัดการภาพและ Asset เกม</button>
+            <button id="assetManagerButton" class="primary-button hidden" type="button" aria-hidden="true" hidden disabled>จัดการภาพและ Asset เกม</button>
             <button id="teacherDashboardBackButton" class="secondary-button" type="button">กลับหน้าหลัก</button>
           </div>
         </header>
@@ -1116,6 +1116,6 @@
   </main>
 
   <script src="assets/data/irregular_verb_memory_bank.js?v=verb-memory-bank-20260901"></script>
-  <script type="module" src="script.js?v=teacher-dashboard-permission-20260908"></script>
+  <script type="module" src="script.js?v=teacher-dashboard-no-storage-20260908"></script>
 </body>
 </html>
