@@ -20906,7 +20906,11 @@ function validateExactAct1QuestionBanks() {
 }
 validateExactAct1QuestionBanks();
 
-const WAS_WERE_WISP_IMAGE_PATH = "assets/memory-shade.png";
+const WAS_WERE_WISP_IMAGE_PATH = "assets/enemies/was-were-wisp.png";
+const MEMORY_LANTERN_IMAGE_PATH = "assets/enemies/memory-lantern.png";
+const LOST_POUCH_IMP_IMAGE_PATH = "assets/enemies/lost-pouch-imp.png";
+const MEMORY_BAT_IMAGE_PATH = "assets/enemies/memory-bat.png";
+const MEMORY_BREAKER_IMAGE_PATH = "assets/enemies/the-memory-breaker.png";
 
 const PAST_FRAGMENT_ACT = {
   id: "past-fragment",
@@ -21714,7 +21718,7 @@ const DIALOGUE_SPEAKER_PORTRAITS = {
   },
   memory_breaker: {
     name: "ผู้ทำลายความทรงจำ",
-    portrait: "assets/portraits/memory_breaker_portrait.png"
+    portrait: MEMORY_BREAKER_IMAGE_PATH
   },
   ed_forger: {
     name: "The Ed Forger",
@@ -21760,7 +21764,6 @@ const ECHO_TRICK_IMAGE_PATH = "assets/characters/echo-trick-transparent-clean-op
 const ECHO_TRICK_FALLBACK_IMAGE_PATH = assetPath("enemies/echo-tick.png");
 const YESTERDAY_SPIRIT_IMAGE_PATH = "assets/characters/yesterday-spirit-transparent.gif";
 const YESTERDAY_SPIRIT_FALLBACK_IMAGE_PATH = assetPath("memory-shade.png");
-const MEMORY_BREAKER_IMAGE_PATH = "assets/bosses/memory_breaker_battle_idle_v3.gif";
 const MEMORY_BREAKER_FALLBACK_IMAGE_PATH = assetPath("enemies/memory-breaker.png");
 // Keep the Asset Manager implementation dormant until Firebase Storage is enabled.
 const ASSET_MANAGER_ENABLED = false;
@@ -21849,7 +21852,7 @@ const GAME_ASSET_REGISTRY = Object.freeze([
     category: "enemies",
     displayName: "Memory Lantern",
     description: "ภาพโคมความทรงจำประจำบท there was / there were",
-    defaultPath: assetPath("memory-shade.png"),
+    defaultPath: MEMORY_LANTERN_IMAGE_PATH,
     recommendedSize: "ภาพจัตุรัสหรือโปร่งใส"
   },
   {
@@ -21857,7 +21860,7 @@ const GAME_ASSET_REGISTRY = Object.freeze([
     category: "enemies",
     displayName: "Lost Pouch Imp",
     description: "ภาพอิมป์ถุงของหายประจำบท had",
-    defaultPath: assetPath("memory-shade.png"),
+    defaultPath: LOST_POUCH_IMP_IMAGE_PATH,
     recommendedSize: "ภาพจัตุรัสหรือโปร่งใส"
   },
   {
@@ -21897,7 +21900,7 @@ const GAME_ASSET_REGISTRY = Object.freeze([
     category: "enemies",
     displayName: "Memory Bat",
     description: "ภาพค้างคาวความทรงจำประจำบท Irregular Verbs",
-    defaultPath: assetPath("memory-shade.png"),
+    defaultPath: MEMORY_BAT_IMAGE_PATH,
     recommendedSize: "ภาพจัตุรัสหรือโปร่งใส"
   },
   {
@@ -22638,11 +22641,11 @@ const enemySpriteMap = {
   "Echo Tick": ECHO_TRICK_IMAGE_PATH,
   "Yesterday Mite": YESTERDAY_SPIRIT_IMAGE_PATH,
   "Was-Were Wisp": WAS_WERE_WISP_IMAGE_PATH,
-  "Memory Lantern": assetPath("memory-shade.png"),
-  "Lost Pouch Imp": assetPath("memory-shade.png"),
+  "Memory Lantern": MEMORY_LANTERN_IMAGE_PATH,
+  "Lost Pouch Imp": LOST_POUCH_IMP_IMAGE_PATH,
   "Rewind Slime": assetPath("enemies/rewind-slime.png"),
   "Yesterday Sprite": YESTERDAY_SPIRIT_IMAGE_PATH,
-  "Memory Bat": assetPath("memory-shade.png"),
+  "Memory Bat": MEMORY_BAT_IMAGE_PATH,
   "The -ed Forger": assetPath("enemies/ed-forger.png"),
   "ช่างหลอม -ed": assetPath("enemies/ed-forger.png"),
   "The Irregular Wraith": assetPath("enemies/irregular-wraith.png"),
@@ -22748,7 +22751,7 @@ const VS_BOSS_REGISTRY = Object.freeze([
     topicTh: "การใช้ there was และ there were",
     description: "ฝึกบอกสิ่งที่มีอยู่ในอดีตตามจำนวน",
     enemyAssetKey: "memory_lantern",
-    fallbackImage: assetPath("memory-shade.png"),
+    fallbackImage: MEMORY_LANTERN_IMAGE_PATH,
     relatedStageIds: ["act1_phase1_unit4_there_was_were"],
     difficulty: "basic",
     practiceHp: 130
@@ -22761,7 +22764,7 @@ const VS_BOSS_REGISTRY = Object.freeze([
     topicTh: "การใช้ had ในอดีต",
     description: "ฝึกใช้ had กับประธานทุกชนิดในอดีต",
     enemyAssetKey: "lost_pouch_imp",
-    fallbackImage: assetPath("memory-shade.png"),
+    fallbackImage: LOST_POUCH_IMP_IMAGE_PATH,
     relatedStageIds: ["act1_phase1_unit5_had"],
     difficulty: "basic",
     practiceHp: 140
@@ -22814,7 +22817,7 @@ const VS_BOSS_REGISTRY = Object.freeze([
     topicTh: "กริยา Irregular รูปอดีต",
     description: "ฝึกจำและเลือกกริยาช่องที่ 2 แบบไม่เติม -ed",
     enemyAssetKey: "memory_bat",
-    fallbackImage: assetPath("memory-shade.png"),
+    fallbackImage: MEMORY_BAT_IMAGE_PATH,
     relatedStageIds: ["irregular-lesson"],
     difficulty: "irregular",
     practiceHp: 190

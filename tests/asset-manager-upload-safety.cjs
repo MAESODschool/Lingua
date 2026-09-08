@@ -63,7 +63,7 @@ expect(script.includes('saveButton.textContent = "บันทึกและใ
 expect(script.includes("setButtonEnabled(els.gameModalClose, true)"), "modal close button is not restored");
 expect(script.includes('classList.remove("is-saving")'), "saving state is not removed");
 expect(script.includes("finally {\n    resetAssetManagerOperationUi(options);\n  }"), "operation UI is not reset in finally");
-expect(index.includes("script.js?v=teacher-dashboard-no-storage-20260908"), "current script cache version is missing");
+expect(index.includes("script.js?v=teacher-dashboard-no-storage-boss-assets-20260908"), "current script cache version is missing");
 expect(firebaseConfig.storage?.rules === "storage.rules", "firebase.json does not register Storage rules");
 expect(firebaseConfig.firestore?.rules === "firestore.rules", "firebase.json does not register Firestore rules");
 

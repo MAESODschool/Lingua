@@ -50,7 +50,7 @@ expect(teacherLoader.includes("getDocs(collection(firestoreDb, PLAYER_CLIENT_PRO
 expect(teacherScene.includes("teacherDashboardStudents = await loadTeacherDashboardRecords()"), "Teacher Dashboard no longer loads student data");
 expect(teacherScene.includes("renderTeacherDashboardSummary(teacherDashboardStudents)"), "Teacher Dashboard statistics render was removed");
 expect(teacherScene.includes("renderTeacherDashboardTable()"), "Teacher Dashboard table render was removed");
-expect(index.includes("script.js?v=teacher-dashboard-no-storage-20260908"), "Teacher Dashboard cache version is missing");
+expect(index.includes("script.js?v=teacher-dashboard-no-storage-boss-assets-20260908"), "Teacher Dashboard cache version is missing");
 
 if (failures.length) {
   console.error(`Teacher Dashboard no-Storage checks failed (${failures.length}):`);

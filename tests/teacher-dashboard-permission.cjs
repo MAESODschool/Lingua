@@ -34,7 +34,7 @@ const loadStart = script.indexOf("async function loadTeacherDashboardRecords");
 const claimCheck = script.indexOf("isCurrentUserTeacherClaimed(true)", loadStart);
 const playersQuery = script.indexOf("getDocs(collection(firestoreDb, STUDENT_DASHBOARD_COLLECTION))", loadStart);
 expect(claimCheck >= loadStart && claimCheck < playersQuery, "claim is not refreshed before the players query");
-expect(index.includes("script.js?v=teacher-dashboard-no-storage-20260908"), "Teacher Dashboard cache version is missing");
+expect(index.includes("script.js?v=teacher-dashboard-no-storage-boss-assets-20260908"), "Teacher Dashboard cache version is missing");
 
 expect(rules.includes("function isTeacherOrAdmin()"), "isTeacherOrAdmin rules helper is missing");
 expect(rules.includes("request.auth.token.get('teacher', false) == true"), "teacher claim is missing from rules");
