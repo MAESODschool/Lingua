@@ -23928,7 +23928,7 @@ const state = {
 
 const VERB_MEMORY_CONFIG = Object.freeze({
   playerMaxHp: 100,
-  bossMaxHp: 360,
+  bossMaxHp: 1000,
   correctDamageBase: 15,
   correctDamageStreak3: 20,
   correctDamageStreak5: 25,
