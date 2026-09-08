@@ -20,6 +20,12 @@ service cloud.firestore {
       );
     }
 
+    function isAssetManager() {
+      return isTeacher() || (
+        signedIn() && request.auth.token.get('assetManager', false) == true
+      );
+    }
+
     function ownerPlayerCreateKeys() {
       return [
         'uid',
@@ -174,6 +180,74 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(teacherPlayerUpdateKeys());
     }
 
+    function gameAssetOverrideKeys() {
+      return [
+        'key',
+        'category',
+        'displayName',
+        'defaultPath',
+        'activeUrl',
+        'storagePath',
+        'fileName',
+        'contentType',
+        'fileSize',
+        'isActive',
+        'updatedAt',
+        'updatedBy',
+        'note',
+        'resetAt',
+        'resetBy'
+      ];
+    }
+
+    function gameAssetOverrideCreateIsValid(assetKey) {
+      return request.resource.data.keys().hasOnly(gameAssetOverrideKeys())
+        && request.resource.data.keys().hasAll([
+          'key',
+          'category',
+          'displayName',
+          'defaultPath',
+          'activeUrl',
+          'storagePath',
+          'fileName',
+          'contentType',
+          'fileSize',
+          'isActive',
+          'updatedAt',
+          'updatedBy',
+          'note'
+        ])
+        && request.resource.data.key == assetKey
+        && request.resource.data.isActive == true
+        && request.resource.data.activeUrl is string
+        && request.resource.data.storagePath is string
+        && request.resource.data.storagePath.matches('game-assets/.*')
+        && request.resource.data.contentType is string
+        && request.resource.data.contentType.matches('image/(png|jpeg|webp|gif)')
+        && request.resource.data.fileSize is int
+        && request.resource.data.fileSize > 0
+        && request.resource.data.fileSize <= 5 * 1024 * 1024;
+    }
+
+    function gameAssetOverrideUpdateIsValid(assetKey) {
+      return request.resource.data.keys().hasOnly(gameAssetOverrideKeys())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(gameAssetOverrideKeys())
+        && request.resource.data.key == assetKey
+        && request.resource.data.isActive is bool
+        && (
+          request.resource.data.isActive == false || (
+            request.resource.data.activeUrl is string
+            && request.resource.data.storagePath is string
+            && request.resource.data.storagePath.matches('game-assets/.*')
+            && request.resource.data.contentType is string
+            && request.resource.data.contentType.matches('image/(png|jpeg|webp|gif)')
+            && request.resource.data.fileSize is int
+            && request.resource.data.fileSize > 0
+            && request.resource.data.fileSize <= 5 * 1024 * 1024
+          )
+        );
+    }
+
     function clientProgressCreateIsValid(playerId) {
       return request.resource.data.keys().hasOnly([
           'uid',
@@ -308,7 +382,8 @@ service cloud.firestore {
 
     match /gameAssetOverrides/{assetKey} {
       allow read: if signedIn();
-      allow create, update: if isTeacher();
+      allow create: if isAssetManager() && gameAssetOverrideCreateIsValid(assetKey);
+      allow update: if isAssetManager() && gameAssetOverrideUpdateIsValid(assetKey);
       allow delete: if false;
     }
 

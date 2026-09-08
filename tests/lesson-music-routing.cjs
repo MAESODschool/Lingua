@@ -46,7 +46,7 @@ expect(script.includes("return LESSON_MUSIC_TRACK.id;"), "story scene does not r
 expect(script.includes("state.currentBgmKey === key && !bgmTracks[key].paused"), "shared BGM duplicate-play guard is missing");
 expect(script.includes("Object.values(bgmTracks).forEach(track =>"), "mute does not cover all BGM tracks");
 expect(script.includes("Lesson music file not found or cannot be played. Continuing without lesson music."), "missing-file warning is absent");
-expect(index.includes("script.js?v=lesson-music-20260908"), "lesson music cache version is missing");
+expect(/script\.js\?v=[a-z0-9-]+20260908/.test(index), "current script cache version is missing");
 
 const routingSandbox = {
   LESSON_MUSIC_TRACK: { id: "lesson" },

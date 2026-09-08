@@ -21770,6 +21770,13 @@ const MEMORY_BREAKER_IMAGE_PATH = "assets/bosses/memory_breaker_battle_idle_v3.g
 const MEMORY_BREAKER_FALLBACK_IMAGE_PATH = assetPath("enemies/memory-breaker.png");
 const GAME_ASSET_OVERRIDE_COLLECTION = "gameAssetOverrides";
 const GAME_ASSET_MAX_FILE_SIZE = 5 * 1024 * 1024;
+const GAME_ASSET_TIMEOUT_MS = Object.freeze({
+  teacherClaim: 15000,
+  storageUpload: 30000,
+  downloadUrl: 15000,
+  firestoreSave: 15000,
+  totalSave: 60000
+});
 const GAME_ASSET_ALLOWED_TYPES = Object.freeze([
   "image/png",
   "image/jpeg",
@@ -23787,9 +23794,31 @@ async function isCurrentUserTeacherClaimed() {
   }
   try {
     const tokenResult = await currentFirebaseUser.getIdTokenResult();
-    return tokenResult.claims?.role === "teacher" || tokenResult.claims?.admin === true;
+    return tokenResult.claims?.role === "teacher" ||
+      tokenResult.claims?.teacher === true ||
+      tokenResult.claims?.admin === true;
   } catch (error) {
     console.error("[Teacher Authorization] unable to inspect custom claims:", error);
+    return false;
+  }
+}
+
+async function isCurrentUserAssetManagerClaimed() {
+  if (getAuthMode() !== "firebase") {
+    return false;
+  }
+  const currentFirebaseUser = firebaseAuth.currentUser || await waitForFirebaseAuthReady();
+  if (!currentFirebaseUser?.getIdTokenResult) {
+    return false;
+  }
+  try {
+    const tokenResult = await currentFirebaseUser.getIdTokenResult();
+    return tokenResult.claims?.role === "teacher" ||
+      tokenResult.claims?.teacher === true ||
+      tokenResult.claims?.admin === true ||
+      tokenResult.claims?.assetManager === true;
+  } catch (error) {
+    console.error("[Asset Manager Authorization] unable to inspect custom claims:", error);
     return false;
   }
 }
@@ -35497,15 +35526,62 @@ function validateGameAssetFile(file) {
   }
   const hasAllowedExtension = /\.(png|jpe?g|webp|gif)$/i.test(file.name || "");
   if (!GAME_ASSET_ALLOWED_TYPES.includes(file.type) || !hasAllowedExtension) {
-    return "รองรับเฉพาะไฟล์ PNG, JPG, WEBP หรือ GIF";
+    return "รองรับเฉพาะ PNG, JPG, WEBP หรือ GIF";
   }
   if (!Number.isFinite(file.size) || file.size <= 0) {
     return "ไม่สามารถอ่านไฟล์นี้ได้";
   }
   if (file.size > GAME_ASSET_MAX_FILE_SIZE) {
-    return "ขนาดไฟล์ต้องไม่เกิน 5 MB";
+    return "ไฟล์มีขนาดใหญ่เกิน 5 MB";
   }
   return "";
+}
+
+function withTimeout(promise, ms, label, step = "") {
+  let timeoutId = null;
+  const timeoutPromise = new Promise((resolve, reject) => {
+    timeoutId = setTimeout(() => {
+      const error = createStudentManagementError(
+        "asset-manager/timeout",
+        `${label} timeout after ${ms}ms`
+      );
+      error.assetManagerStep = step;
+      reject(error);
+    }, ms);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  });
+}
+
+function createAssetManagerStepError(step, error) {
+  if (error?.code === "asset-manager/timeout") {
+    return error;
+  }
+  const stagedError = new Error(error?.message || "Asset operation failed");
+  stagedError.name = "AssetManagerStepError";
+  stagedError.code = error?.code || "asset-manager/unknown";
+  stagedError.assetManagerStep = step;
+  stagedError.cause = error;
+  return stagedError;
+}
+
+async function runAssetManagerStep(step, label, timeoutMs, operation) {
+  console.info(`[Asset Manager] ${step} started`);
+  try {
+    const result = await withTimeout(
+      Promise.resolve().then(operation),
+      timeoutMs,
+      label,
+      step
+    );
+    console.info(`[Asset Manager] ${step} completed`);
+    return result;
+  } catch (error) {
+    throw createAssetManagerStepError(step, error);
+  }
 }
 
 function getAssetManagerAdminIdentifier() {
@@ -35513,16 +35589,38 @@ function getAssetManagerAdminIdentifier() {
 }
 
 function getAssetManagerErrorMessage(error) {
-  if (isFirebasePermissionDeniedError(error) ||
-      error?.code === "storage/unauthorized" ||
-      error?.code === "asset-manager/teacher-claim-required") {
-    return "ไม่มีสิทธิ์จัดการ Asset เกม กรุณาตรวจสอบสิทธิ์บัญชีครู";
+  const code = String(error?.code || error?.cause?.code || "").toLowerCase();
+  const step = error?.assetManagerStep || "";
+  if (code === "asset-manager/timeout") {
+    return "บันทึก Asset ไม่สำเร็จ: การอัปโหลดใช้เวลานานเกินไป กรุณาตรวจสอบอินเทอร์เน็ตหรือสิทธิ์ Storage";
   }
-  return error?.message || "อัปโหลดไม่สำเร็จ กรุณาลองใหม่";
+  if (code === "storage/unauthorized") {
+    return "ไม่มีสิทธิ์อัปโหลดไฟล์ไปยัง Firebase Storage กรุณาตรวจสอบ Storage rules และสิทธิ์ teacher/admin";
+  }
+  if (isFirebasePermissionDeniedError(error?.cause || error) && step === "firestore-save") {
+    return "อัปโหลดไฟล์สำเร็จ แต่ไม่มีสิทธิ์บันทึกข้อมูล Asset ใน Firestore กรุณาตรวจสอบ Firestore rules";
+  }
+  if (code === "asset-manager/teacher-claim-required" || code === "asset-manager/access-denied") {
+    return "ไม่มีสิทธิ์จัดการ Asset เกม กรุณาตรวจสอบสิทธิ์ teacher/admin";
+  }
+  if (isFirebasePermissionDeniedError(error?.cause || error)) {
+    return "ไม่มีสิทธิ์จัดการ Asset เกม กรุณาตรวจสอบ Firestore rules และสิทธิ์ teacher/admin";
+  }
+  if (
+    code.includes("network-request-failed") ||
+    code.includes("retry-limit-exceeded") ||
+    code.includes("unavailable")
+  ) {
+    return "เชื่อมต่อ Firebase ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต";
+  }
+  if (code === "asset-manager/invalid-file") {
+    return error?.message || "ไม่สามารถใช้ไฟล์นี้ได้";
+  }
+  return `บันทึก Asset ไม่สำเร็จ: ${error?.message || "กรุณาลองใหม่"}`;
 }
 
 async function requireAssetManagerTeacherClaim() {
-  if (await isCurrentUserTeacherClaimed()) {
+  if (await isCurrentUserAssetManagerClaimed()) {
     return true;
   }
   throw createStudentManagementError(
@@ -35532,23 +35630,41 @@ async function requireAssetManagerTeacherClaim() {
 }
 
 async function uploadGameAssetOverride(assetKey, file, note = "") {
+  console.info("[Asset Manager] validation started");
   validateAssetManagerWriteAccess(assetKey);
-  await requireAssetManagerTeacherClaim();
   const item = getGameAssetRegistryItem(assetKey);
   const validationMessage = validateGameAssetFile(file);
   if (validationMessage) {
     throw createStudentManagementError("asset-manager/invalid-file", validationMessage);
   }
+  console.info("[Asset Manager] validation completed");
+  await runAssetManagerStep(
+    "teacher-claim",
+    "Teacher claim check",
+    GAME_ASSET_TIMEOUT_MS.teacherClaim,
+    requireAssetManagerTeacherClaim
+  );
   const timestamp = Date.now();
   const safeFileName = sanitizeAssetFileName(file.name);
   const storagePath = `game-assets/${item.category}/${item.key}/${timestamp}_${safeFileName}`;
+  console.info("[Asset Manager] asset path prepared", { assetKey: item.key });
   const performedBy = getAssetManagerAdminIdentifier();
   const cleanNote = String(note || "").trim().slice(0, 500);
-  const uploaded = await uploadBytes(storageRef(firebaseStorage, storagePath), file, {
-    contentType: file.type,
-    customMetadata: { assetKey: item.key }
-  });
-  const activeUrl = await getDownloadURL(uploaded.ref);
+  const uploaded = await runAssetManagerStep(
+    "storage-upload",
+    "Firebase Storage upload",
+    GAME_ASSET_TIMEOUT_MS.storageUpload,
+    () => uploadBytes(storageRef(firebaseStorage, storagePath), file, {
+      contentType: file.type,
+      customMetadata: { assetKey: item.key }
+    })
+  );
+  const activeUrl = await runAssetManagerStep(
+    "download-url",
+    "Firebase Storage download URL",
+    GAME_ASSET_TIMEOUT_MS.downloadUrl,
+    () => getDownloadURL(uploaded.ref)
+  );
   const metadata = {
     key: item.key,
     category: item.category,
@@ -35564,19 +35680,30 @@ async function uploadGameAssetOverride(assetKey, file, note = "") {
     updatedBy: performedBy,
     note: cleanNote
   };
-  await setDoc(doc(firestoreDb, GAME_ASSET_OVERRIDE_COLLECTION, item.key), metadata, { merge: true });
+  await runAssetManagerStep(
+    "firestore-save",
+    "Firestore asset override save",
+    GAME_ASSET_TIMEOUT_MS.firestoreSave,
+    () => setDoc(doc(firestoreDb, GAME_ASSET_OVERRIDE_COLLECTION, item.key), metadata, { merge: true })
+  );
   gameAssetOverrideState.overrides[item.key] = {
     ...(gameAssetOverrideState.overrides[item.key] || {}),
     ...metadata,
     updatedAt: new Date()
   };
+  console.info("[Asset Manager] applying saved override", { assetKey: item.key });
   applyGameAssetOverridesToUi();
   return gameAssetOverrideState.overrides[item.key];
 }
 
 async function resetGameAssetToDefault(assetKey) {
   validateAssetManagerWriteAccess(assetKey);
-  await requireAssetManagerTeacherClaim();
+  await runAssetManagerStep(
+    "teacher-claim",
+    "Teacher claim check",
+    GAME_ASSET_TIMEOUT_MS.teacherClaim,
+    requireAssetManagerTeacherClaim
+  );
   const item = getGameAssetRegistryItem(assetKey);
   const resetBy = getAssetManagerAdminIdentifier();
   const resetMetadata = {
@@ -35588,7 +35715,12 @@ async function resetGameAssetToDefault(assetKey) {
     resetAt: serverTimestamp(),
     resetBy
   };
-  await setDoc(doc(firestoreDb, GAME_ASSET_OVERRIDE_COLLECTION, item.key), resetMetadata, { merge: true });
+  await runAssetManagerStep(
+    "firestore-save",
+    "Firestore asset reset save",
+    GAME_ASSET_TIMEOUT_MS.firestoreSave,
+    () => setDoc(doc(firestoreDb, GAME_ASSET_OVERRIDE_COLLECTION, item.key), resetMetadata, { merge: true })
+  );
   gameAssetOverrideState.overrides[item.key] = {
     ...(gameAssetOverrideState.overrides[item.key] || {}),
     ...resetMetadata,
@@ -35598,16 +35730,49 @@ async function resetGameAssetToDefault(assetKey) {
   return gameAssetOverrideState.overrides[item.key];
 }
 
-async function performAssetManagerOperation(operation, successMessage) {
+function resetAssetManagerOperationUi(options = {}) {
+  gameAssetOverrideState.operationBusy = false;
+  els.gameModal?.classList.remove("is-saving");
+  if (!els.gameModal || els.gameModal.classList.contains("hidden")) {
+    return;
+  }
+  const uploadModalStillOpen = Boolean(els.gameModalContent?.querySelector("#assetUploadModal"));
+  if (options.keepUploadModalOnError && uploadModalStillOpen) {
+    els.gameModal.dataset.modalLocked = "false";
+    els.gameModalActions?.querySelectorAll("button").forEach(button => setButtonEnabled(button, true));
+    const saveButton = els.gameModalActions?.querySelector(".primary-button");
+    if (saveButton) {
+      saveButton.textContent = "บันทึกและใช้ภาพนี้";
+    }
+    setButtonEnabled(els.gameModalClose, true);
+    els.gameModalClose?.classList.remove("hidden");
+    if (els.gameModalBody && options.idleMessage) {
+      els.gameModalBody.textContent = options.idleMessage;
+    }
+  }
+}
+
+async function performAssetManagerOperation(operation, successMessage, options = {}) {
   if (gameAssetOverrideState.operationBusy) {
     return;
   }
   gameAssetOverrideState.operationBusy = true;
+  els.gameModal?.classList.add("is-saving");
   if (els.gameModalBody) {
     els.gameModalBody.textContent = "กำลังบันทึก Asset...";
   }
+  const saveButton = els.gameModalActions?.querySelector(".primary-button");
+  if (saveButton) {
+    saveButton.textContent = "กำลังบันทึก...";
+  }
   try {
-    await operation();
+    await withTimeout(
+      Promise.resolve().then(operation),
+      GAME_ASSET_TIMEOUT_MS.totalSave,
+      "Asset save",
+      "total-save"
+    );
+    console.info("[Asset Manager] re-rendering saved asset");
     setAssetManagerStatus(successMessage, "success");
     renderAssetManagerGrid();
     openGameModal({
@@ -35619,13 +35784,17 @@ async function performAssetManagerOperation(operation, successMessage) {
     console.error("[Asset Manager] upload failed:", error);
     const message = getAssetManagerErrorMessage(error);
     setAssetManagerStatus(message, "error");
-    openGameModal({
-      title: "จัดการ Asset ไม่สำเร็จ",
-      body: message,
-      actions: [{ label: "ปิด", primary: true, onClick: closeGameModal }]
-    });
+    if (options.keepUploadModalOnError && els.gameModalContent?.querySelector("#assetUploadModal")) {
+      options.onError?.(message);
+    } else {
+      openGameModal({
+        title: "จัดการ Asset ไม่สำเร็จ",
+        body: message,
+        actions: [{ label: "ปิด", primary: true, onClick: closeGameModal }]
+      });
+    }
   } finally {
-    gameAssetOverrideState.operationBusy = false;
+    resetAssetManagerOperationUi(options);
   }
 }
 
@@ -35751,7 +35920,14 @@ function openAssetUploadModal(assetKey) {
           }
           performAssetManagerOperation(
             () => uploadGameAssetOverride(item.key, selectedFile, noteInput.value),
-            "อัปโหลดและใช้ภาพใหม่แล้ว"
+            "อัปโหลดและใช้ภาพใหม่แล้ว",
+            {
+              keepUploadModalOnError: true,
+              idleMessage: "ไฟล์ใหม่จะถูกใช้เฉพาะการแสดงผล และภาพเดิมจะยังอยู่เป็น fallback",
+              onError: message => {
+                error.textContent = message;
+              }
+            }
           );
         }
       }
