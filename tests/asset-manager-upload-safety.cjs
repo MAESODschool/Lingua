@@ -7,6 +7,7 @@ const script = fs.readFileSync(path.join(root, "script.js"), "utf8");
 const index = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const firestoreRules = fs.readFileSync(path.join(root, "firestore.rules"), "utf8");
 const storageRules = fs.readFileSync(path.join(root, "storage.rules"), "utf8");
+const firebaseConfig = JSON.parse(fs.readFileSync(path.join(root, "firebase.json"), "utf8"));
 const failures = [];
 
 function expect(condition, message) {
@@ -38,6 +39,17 @@ expect(script.includes("การอัปโหลดใช้เวลาน�
 expect(script.includes("ไม่มีสิทธิ์อัปโหลดไฟล์ไปยัง Firebase Storage"), "Thai Storage permission message is missing");
 expect(script.includes("ไม่มีสิทธิ์บันทึกข้อมูล Asset ใน Firestore"), "Thai Firestore permission message is missing");
 expect(script.includes("เชื่อมต่อ Firebase ไม่สำเร็จ"), "Thai network message is missing");
+expect(script.includes("getIdTokenResult(forceRefresh)"), "Asset Manager token refresh support is missing");
+expect(script.includes("isCurrentUserAssetManagerClaimed(true)"), "upload does not force-refresh the current token");
+expect(script.includes("currentUser.getIdTokenResult(true)"), "Asset Manager open flow does not force-refresh the current token");
+expect(script.includes("firebaseAuth.currentUser || await withTimeout("), "Asset Manager open flow does not wait for Firebase Auth");
+expect(script.includes("async function requireAssetManagerOnlineAccess()"), "Asset Manager online access gate is missing");
+expect(script.includes("Asset Manager ต้องใช้บัญชีออนไลน์ที่มีสิทธิ์ teacher/admin/assetManager"), "guest Asset Manager rejection is missing");
+expect(script.includes("!options.claimVerified && !(await requireAssetManagerOnlineAccess())"), "Asset Manager panel does not enforce the online claim gate");
+expect(script.includes("Storage bucket ไม่ถูกต้อง"), "Storage bucket diagnostic is missing");
+expect(script.includes('code === "storage/canceled"'), "Storage canceled diagnostic is missing");
+expect(script.includes('code === "storage/bucket-not-found"'), "missing Storage bucket diagnostic is absent");
+expect(script.includes("getStorage(firebaseApp, firebaseStorageBucketUrl)"), "Storage is not initialized with the configured bucket");
 expect(script.includes("ไฟล์มีขนาดใหญ่เกิน 5 MB"), "Thai file-size message is missing");
 expect(script.includes("รองรับเฉพาะ PNG, JPG, WEBP หรือ GIF"), "Thai file-type message is missing");
 expect(script.includes('key: "was_were_wisp"'), "Was-Were Wisp Asset Manager key is missing");
@@ -49,7 +61,9 @@ expect(script.includes('saveButton.textContent = "บันทึกและใ
 expect(script.includes("setButtonEnabled(els.gameModalClose, true)"), "modal close button is not restored");
 expect(script.includes('classList.remove("is-saving")'), "saving state is not removed");
 expect(script.includes("finally {\n    resetAssetManagerOperationUi(options);\n  }"), "operation UI is not reset in finally");
-expect(index.includes("script.js?v=asset-manager-timeout-20260908"), "Asset Manager cache version is missing");
+expect(/script\.js\?v=[a-z0-9-]+20260908/.test(index), "current script cache version is missing");
+expect(firebaseConfig.storage?.rules === "storage.rules", "firebase.json does not register Storage rules");
+expect(firebaseConfig.firestore?.rules === "firestore.rules", "firebase.json does not register Firestore rules");
 
 expect(storageRules.includes("match /game-assets/{category}/{assetKey}/{fileName}"), "Storage rules do not match the upload path");
 expect(storageRules.includes("request.auth.token.get('teacher', false) == true"), "Storage teacher claim is missing");
@@ -165,6 +179,62 @@ expect(sandbox.validateFile({ name: "wisp.png", type: "image/png", size: 5 * 102
   expect(!modalClassList.has("is-saving"), "failure leaves the saving class active");
   expect(inlineError === "ทดสอบข้อผิดพลาด", "failure is not displayed inside the upload modal");
 
+  let forceRefreshArgument = null;
+  const claimSandbox = {
+    getAuthMode: () => "firebase",
+    firebaseAuth: {
+      currentUser: {
+        getIdTokenResult: async forceRefresh => {
+          forceRefreshArgument = forceRefresh;
+          return { claims: { teacher: true } };
+        }
+      }
+    },
+    waitForFirebaseAuthReady: async () => null,
+    console: { error() {} }
+  };
+  vm.runInNewContext(
+    `${extractFunction(script, "hasAssetManagerClaim")}\n` +
+    `${extractFunction(script, "isCurrentUserAssetManagerClaimed")}\n` +
+    "this.hasAssetClaim = isCurrentUserAssetManagerClaimed;",
+    claimSandbox
+  );
+  expect(await claimSandbox.hasAssetClaim(true) === true, "teacher claim is not accepted for Asset Manager");
+  expect(forceRefreshArgument === true, "teacher claim token is not force-refreshed before upload");
+
+  const requestedUid = "WJtnnbrZibUUyYOS348hHDVVbf53";
+  let openedTokenRefresh = null;
+  const accessModals = [];
+  const accessSandbox = {
+    getAuthMode: () => "firebase",
+    firebaseAuth: { currentUser: null },
+    waitForFirebaseAuthReady: async () => ({
+      uid: requestedUid,
+      getIdTokenResult: async forceRefresh => {
+        openedTokenRefresh = forceRefresh;
+        return { claims: { teacher: true } };
+      }
+    }),
+    GAME_ASSET_TIMEOUT_MS: { teacherClaim: 50 },
+    setTimeout,
+    clearTimeout,
+    console: { error() {} },
+    openGameModal: config => accessModals.push(config),
+    closeGameModal() {},
+    getAssetManagerErrorMessage: error => error.message
+  };
+  vm.runInNewContext(
+    `${extractFunction(script, "createStudentManagementError")}\n` +
+    `${extractFunction(script, "withTimeout")}\n` +
+    `${extractFunction(script, "hasAssetManagerClaim")}\n` +
+    `${extractFunction(script, "requireAssetManagerOnlineAccess")}\n` +
+    "this.requireOnlineAccess = requireAssetManagerOnlineAccess;",
+    accessSandbox
+  );
+  expect(await accessSandbox.requireOnlineAccess() === true, `teacher UID ${requestedUid} was rejected`);
+  expect(openedTokenRefresh === true, `teacher UID ${requestedUid} token was not force-refreshed`);
+  expect(accessModals.length === 0, `teacher UID ${requestedUid} received an unexpected access error`);
+
   if (failures.length) {
     console.error(JSON.stringify({ ok: false, failures }, null, 2));
     process.exit(1);
@@ -172,7 +242,7 @@ expect(sandbox.validateFile({ name: "wisp.png", type: "image/png", size: 5 * 102
 
   console.log(JSON.stringify({
     ok: true,
-    checks: 53,
+    checks: 71,
     uploadPath: "game-assets/{category}/{assetKey}/{fileName}",
     firestorePath: "gameAssetOverrides/{assetKey}"
   }, null, 2));

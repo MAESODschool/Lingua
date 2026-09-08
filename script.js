@@ -23750,7 +23750,13 @@ function getAuthPanelNotice(panelName) {
 const firebaseApp = initializeApp(REMOTE_AUTH_CONFIG.firebaseConfig);
 const firebaseAuth = getAuth(firebaseApp);
 const firestoreDb = getFirestore(firebaseApp);
-const firebaseStorage = getStorage(firebaseApp);
+const firebaseStorageBucket = String(REMOTE_AUTH_CONFIG.firebaseConfig.storageBucket || "").trim();
+const firebaseStorageBucketUrl = firebaseStorageBucket
+  ? (firebaseStorageBucket.startsWith("gs://") ? firebaseStorageBucket : `gs://${firebaseStorageBucket}`)
+  : "";
+const firebaseStorage = firebaseStorageBucketUrl
+  ? getStorage(firebaseApp, firebaseStorageBucketUrl)
+  : getStorage(firebaseApp);
 const firebaseReady = getAuthMode() === "firebase";
 console.log("[Auth] mode:", AUTH_CONFIG.mode);
 console.log("[Firebase] initialized:", firebaseReady);
@@ -23783,7 +23789,7 @@ function isFirebasePermissionDeniedError(error) {
     message.includes("missing or insufficient permissions");
 }
 
-async function isCurrentUserTeacherClaimed() {
+async function isCurrentUserTeacherClaimed(forceRefresh = false) {
   // UI preflight only. Firestore and Storage rules remain authoritative.
   if (getAuthMode() !== "firebase") {
     return false;
@@ -23793,7 +23799,7 @@ async function isCurrentUserTeacherClaimed() {
     return false;
   }
   try {
-    const tokenResult = await currentFirebaseUser.getIdTokenResult();
+    const tokenResult = await currentFirebaseUser.getIdTokenResult(forceRefresh);
     return tokenResult.claims?.role === "teacher" ||
       tokenResult.claims?.teacher === true ||
       tokenResult.claims?.admin === true;
@@ -23803,7 +23809,14 @@ async function isCurrentUserTeacherClaimed() {
   }
 }
 
-async function isCurrentUserAssetManagerClaimed() {
+function hasAssetManagerClaim(claims = {}) {
+  return claims?.role === "teacher" ||
+    claims?.teacher === true ||
+    claims?.admin === true ||
+    claims?.assetManager === true;
+}
+
+async function isCurrentUserAssetManagerClaimed(forceRefresh = false) {
   if (getAuthMode() !== "firebase") {
     return false;
   }
@@ -23812,14 +23825,11 @@ async function isCurrentUserAssetManagerClaimed() {
     return false;
   }
   try {
-    const tokenResult = await currentFirebaseUser.getIdTokenResult();
-    return tokenResult.claims?.role === "teacher" ||
-      tokenResult.claims?.teacher === true ||
-      tokenResult.claims?.admin === true ||
-      tokenResult.claims?.assetManager === true;
+    const tokenResult = await currentFirebaseUser.getIdTokenResult(forceRefresh);
+    return hasAssetManagerClaim(tokenResult.claims);
   } catch (error) {
     console.error("[Asset Manager Authorization] unable to inspect custom claims:", error);
-    return false;
+    throw error;
   }
 }
 
@@ -34427,6 +34437,10 @@ async function loadTeacherDashboardRecords() {
   teacherDashboardLoadError = "";
   if (getAuthMode() === "firebase") {
     try {
+      if (!(await isCurrentUserTeacherClaimed(true))) {
+        teacherDashboardLoadError = "ไม่มีสิทธิ์อ่านข้อมูลผู้เรียน กรุณาตรวจสอบสิทธิ์บัญชีครูใน Firestore Rules / Custom Claims";
+        return [];
+      }
       const snapshot = await getDocs(collection(firestoreDb, STUDENT_DASHBOARD_COLLECTION));
       const clientProgressSnapshot = await getDocs(collection(firestoreDb, PLAYER_CLIENT_PROGRESS_COLLECTION));
       const clientProgressByUid = new Map(
@@ -35284,8 +35298,20 @@ function validateAssetManagerWriteAccess(assetKey) {
   if (!getGameAssetRegistryItem(assetKey)) {
     throw createStudentManagementError("asset-manager/unknown-asset", "ไม่พบ Asset ที่ต้องการจัดการ");
   }
-  if (getAuthMode() !== "firebase" || !firestoreDb || !firebaseStorage || !firebaseAuth?.currentUser) {
+  if (getAuthMode() !== "firebase" || !firebaseAuth?.currentUser) {
     throw createStudentManagementError("asset-manager/firebase-required", "การจัดการ Asset ต้องใช้บัญชีออนไลน์ของผู้ดูแล");
+  }
+  if (!firebaseStorage) {
+    throw createStudentManagementError(
+      "asset-manager/storage-not-initialized",
+      "Firebase Storage ยังไม่พร้อมใช้งาน กรุณาตรวจสอบ Storage bucket"
+    );
+  }
+  if (!firestoreDb) {
+    throw createStudentManagementError(
+      "asset-manager/firestore-not-initialized",
+      "Firestore ยังไม่พร้อมใช้งาน กรุณาตรวจสอบการตั้งค่า Firebase"
+    );
   }
 }
 
@@ -35453,9 +35479,62 @@ function renderAssetManagerGrid() {
   items.forEach(item => els.assetManagerGrid.appendChild(createAssetManagerCard(item)));
 }
 
-async function openAssetManagerPanel() {
+async function requireAssetManagerOnlineAccess() {
+  if (getAuthMode() !== "firebase") {
+    openGameModal({
+      title: "ไม่มีสิทธิ์จัดการ Asset",
+      body: "Asset Manager ต้องใช้บัญชีออนไลน์ที่มีสิทธิ์ teacher/admin/assetManager",
+      actions: [{ label: "รับทราบ", primary: true, onClick: closeGameModal }]
+    });
+    return false;
+  }
+  try {
+    const currentUser = firebaseAuth.currentUser || await withTimeout(
+      waitForFirebaseAuthReady(),
+      GAME_ASSET_TIMEOUT_MS.teacherClaim,
+      "Firebase Auth ready check",
+      "teacher-claim"
+    );
+    if (!currentUser?.getIdTokenResult) {
+      openGameModal({
+        title: "ไม่มีสิทธิ์จัดการ Asset",
+        body: "Asset Manager ต้องใช้บัญชีออนไลน์ที่มีสิทธิ์ teacher/admin/assetManager",
+        actions: [{ label: "รับทราบ", primary: true, onClick: closeGameModal }]
+      });
+      return false;
+    }
+    const tokenResult = await withTimeout(
+      currentUser.getIdTokenResult(true),
+      GAME_ASSET_TIMEOUT_MS.teacherClaim,
+      "Asset Manager token refresh",
+      "teacher-claim"
+    );
+    if (hasAssetManagerClaim(tokenResult.claims)) {
+      return true;
+    }
+    openGameModal({
+      title: "ไม่มีสิทธิ์จัดการ Asset",
+      body: "บัญชีนี้ยังไม่มีสิทธิ์ teacher/admin/assetManager ใน token ปัจจุบัน กรุณา Logout แล้ว Login ใหม่",
+      actions: [{ label: "รับทราบ", primary: true, onClick: closeGameModal }]
+    });
+    return false;
+  } catch (error) {
+    console.error("[Asset Manager] access check failed:", error);
+    openGameModal({
+      title: "ตรวจสอบสิทธิ์ Asset Manager ไม่สำเร็จ",
+      body: getAssetManagerErrorMessage(error),
+      actions: [{ label: "รับทราบ", primary: true, onClick: closeGameModal }]
+    });
+    return false;
+  }
+}
+
+async function openAssetManagerPanel(options = {}) {
   if (!requireAssetManagerAccess()) {
-    return;
+    return false;
+  }
+  if (!options.claimVerified && !(await requireAssetManagerOnlineAccess())) {
+    return false;
   }
   els.teacherDashboardOverviewPanel?.classList.add("hidden");
   els.studentManagementPanel?.classList.add("hidden");
@@ -35468,6 +35547,7 @@ async function openAssetManagerPanel() {
     gameAssetOverrideState.loadError ? "error" : ""
   );
   renderAssetManagerGrid();
+  return true;
 }
 
 function closeAssetManagerPanel() {
@@ -35493,8 +35573,11 @@ async function openGameCustomizationPanel() {
     });
     return;
   }
+  if (!(await requireAssetManagerOnlineAccess())) {
+    return;
+  }
   showScene("teacherDashboard");
-  await openAssetManagerPanel();
+  await openAssetManagerPanel({ claimVerified: true });
 }
 
 function closeGameCustomizationPanel() {
@@ -35592,7 +35675,7 @@ function getAssetManagerErrorMessage(error) {
   const code = String(error?.code || error?.cause?.code || "").toLowerCase();
   const step = error?.assetManagerStep || "";
   if (code === "asset-manager/timeout") {
-    return "บันทึก Asset ไม่สำเร็จ: การอัปโหลดใช้เวลานานเกินไป กรุณาตรวจสอบอินเทอร์เน็ตหรือสิทธิ์ Storage";
+    return "บันทึก Asset ไม่สำเร็จ: การอัปโหลดใช้เวลานานเกินไป กรุณาตรวจสอบอินเทอร์เน็ต สิทธิ์ Storage หรือ Storage bucket";
   }
   if (code === "storage/unauthorized") {
     return "ไม่มีสิทธิ์อัปโหลดไฟล์ไปยัง Firebase Storage กรุณาตรวจสอบ Storage rules และสิทธิ์ teacher/admin";
@@ -35600,8 +35683,28 @@ function getAssetManagerErrorMessage(error) {
   if (isFirebasePermissionDeniedError(error?.cause || error) && step === "firestore-save") {
     return "อัปโหลดไฟล์สำเร็จ แต่ไม่มีสิทธิ์บันทึกข้อมูล Asset ใน Firestore กรุณาตรวจสอบ Firestore rules";
   }
+  if (code === "storage/canceled") {
+    return "การอัปโหลดถูกยกเลิก";
+  }
+  if (
+    code === "storage/unknown" ||
+    code === "storage/bucket-not-found" ||
+    code === "storage/project-not-found" ||
+    code === "asset-manager/storage-not-initialized"
+  ) {
+    return "ยังไม่ได้เปิดใช้งาน Firebase Storage ในโปรเจกต์นี้ หรือ Storage bucket ไม่ถูกต้อง กรุณาตรวจสอบ Firebase Console";
+  }
+  if (
+    code === "storage/unauthenticated" ||
+    code === "unauthenticated"
+  ) {
+    return "เซสชัน Firebase หมดอายุ กรุณา Logout แล้ว Login ใหม่";
+  }
+  if (code === "asset-manager/firestore-not-initialized") {
+    return "Firestore ยังไม่พร้อมใช้งาน กรุณาตรวจสอบการตั้งค่า Firebase";
+  }
   if (code === "asset-manager/teacher-claim-required" || code === "asset-manager/access-denied") {
-    return "ไม่มีสิทธิ์จัดการ Asset เกม กรุณาตรวจสอบสิทธิ์ teacher/admin";
+    return error?.message || "ไม่มีสิทธิ์จัดการ Asset เกม กรุณาตรวจสอบสิทธิ์ teacher/admin";
   }
   if (isFirebasePermissionDeniedError(error?.cause || error)) {
     return "ไม่มีสิทธิ์จัดการ Asset เกม กรุณาตรวจสอบ Firestore rules และสิทธิ์ teacher/admin";
@@ -35620,12 +35723,12 @@ function getAssetManagerErrorMessage(error) {
 }
 
 async function requireAssetManagerTeacherClaim() {
-  if (await isCurrentUserAssetManagerClaimed()) {
+  if (await isCurrentUserAssetManagerClaimed(true)) {
     return true;
   }
   throw createStudentManagementError(
     "asset-manager/teacher-claim-required",
-    "ไม่มีสิทธิ์จัดการ Asset เกม กรุณาตรวจสอบสิทธิ์บัญชีครู"
+    "บัญชีนี้ยังไม่มีสิทธิ์ teacher/admin/assetManager ใน token ปัจจุบัน กรุณา Logout แล้ว Login ใหม่"
   );
 }
 

@@ -10,13 +10,18 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
+    function isTeacherOrAdmin() {
+      return signedIn() && (
+        request.auth.token.get('teacher', false) == true ||
+        request.auth.token.get('admin', false) == true
+      );
+    }
+
     // The dashboard PIN is only a client-side UI gate. Real teacher access must
     // come from a custom claim set by a trusted backend or the Admin SDK.
     function isTeacher() {
-      return signedIn() && (
-        request.auth.token.get('role', '') == 'teacher' ||
-        request.auth.token.get('teacher', false) == true ||
-        request.auth.token.get('admin', false) == true
+      return isTeacherOrAdmin() || (
+        signedIn() && request.auth.token.get('role', '') == 'teacher'
       );
     }
 
