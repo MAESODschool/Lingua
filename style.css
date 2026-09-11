@@ -2552,8 +2552,8 @@ button {
   padding: clamp(12px, 3vw, 36px);
   color: #f8f3e6;
   background:
-    linear-gradient(rgba(5, 9, 28, 0.76), rgba(12, 7, 32, 0.93)),
-    url("assets/backgrounds/act1/act1_memory_breaker_citadel.png") center / cover fixed;
+    linear-gradient(180deg, rgba(5, 9, 28, 0.3) 0%, rgba(8, 8, 29, 0.48) 50%, rgba(12, 7, 32, 0.72) 100%),
+    url("assets/backgrounds/act1/verb_memory_practice_floating_citadel.png") center 38% / cover fixed;
 }
 
 .verb-memory-practice-shell {
@@ -2562,8 +2562,8 @@ button {
   padding: clamp(14px, 2.5vw, 26px);
   border: 1px solid rgba(244, 202, 96, 0.58);
   border-radius: 8px;
-  background: rgba(7, 13, 36, 0.86);
-  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.42), inset 0 0 42px rgba(93, 106, 225, 0.08);
+  background: linear-gradient(180deg, rgba(7, 13, 36, 0.44), rgba(7, 13, 36, 0.58));
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.38), inset 0 0 42px rgba(93, 106, 225, 0.1);
 }
 
 .verb-memory-practice-header {
@@ -2610,12 +2610,30 @@ button {
 }
 
 .verb-memory-arena {
-  min-height: 330px;
+  position: relative;
+  min-height: 450px;
   display: grid;
-  grid-template-columns: minmax(170px, 1fr) minmax(220px, 340px) minmax(170px, 1fr);
+  grid-template-columns: minmax(130px, 1fr) minmax(330px, 500px) minmax(130px, 1fr);
   align-items: center;
-  gap: clamp(14px, 3vw, 32px);
-  padding: 18px 0 12px;
+  gap: clamp(12px, 2.3vw, 28px);
+  padding: 22px 0 14px;
+  isolation: isolate;
+}
+
+.verb-memory-arena::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 5% 11% 3%;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(151, 83, 255, 0.3) 0%, rgba(89, 127, 255, 0.16) 30%, rgba(32, 90, 180, 0.06) 50%, transparent 68%),
+    radial-gradient(ellipse at 50% 88%, rgba(93, 224, 255, 0.2) 0%, rgba(132, 91, 255, 0.09) 34%, transparent 64%);
+  pointer-events: none;
+}
+
+.verb-memory-arena > * {
+  position: relative;
+  z-index: 1;
 }
 
 .verb-memory-arena::after {
@@ -2645,12 +2663,15 @@ button {
 
 #verbMemoryPracticeScene .verb-memory-boss-sprite {
   display: block;
-  width: clamp(220px, 24vw, 340px);
+  width: clamp(330px, 36vw, 500px);
   max-width: 100%;
   height: auto;
   margin: 0 auto;
   object-fit: contain;
-  filter: drop-shadow(0 14px 16px rgba(0, 0, 0, 0.54)) drop-shadow(0 0 18px rgba(137, 91, 255, 0.35));
+  filter:
+    drop-shadow(0 20px 22px rgba(0, 0, 0, 0.58))
+    drop-shadow(0 0 28px rgba(137, 91, 255, 0.52))
+    drop-shadow(0 0 10px rgba(92, 218, 255, 0.26));
 }
 
 .verb-memory-boss-fallback {
@@ -2668,7 +2689,8 @@ button {
 .verb-memory-boss-frame h3 {
   margin: 0;
   color: #ffe6a6;
-  font-size: 1rem;
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8), 0 0 12px rgba(125, 90, 255, 0.28);
 }
 
 .verb-memory-boss-thai-name {
@@ -2937,6 +2959,10 @@ button {
     padding: 12px 0;
   }
 
+  .verb-memory-arena::before {
+    inset: 0 -4% 17%;
+  }
+
   .verb-memory-arena::after {
     display: none;
   }
@@ -2950,7 +2976,7 @@ button {
   }
 
   #verbMemoryPracticeScene .verb-memory-boss-sprite {
-    width: clamp(210px, 58vw, 280px);
+    width: clamp(240px, 72vw, 340px);
     max-width: 100%;
     height: auto;
   }
