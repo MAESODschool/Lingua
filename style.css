@@ -11485,3 +11485,180 @@ body.lingua-advisor-open {
     padding: 7px 10px;
   }
 }
+
+/* =========================================================
+   LINGUA FANTASY FRAME DESIGN SYSTEM
+   Surface-only theme: never set display, sizing, padding, overflow,
+   flex/grid or content stacking on an existing game component.
+   Legacy frame tokens above remain untouched for non-pilot surfaces.
+   ========================================================= */
+:root {
+  --lingua-frame-gold: var(--lingua-gold);
+  --lingua-frame-gold-light: var(--lingua-gold-light);
+  --lingua-frame-blue: var(--lingua-crystal-blue);
+  --lingua-frame-blue-glow: var(--lingua-crystal-blue-soft);
+  --lingua-frame-background: linear-gradient(145deg, rgba(10, 29, 72, .97), rgba(7, 20, 45, .97));
+  --lingua-frame-border-radius: var(--lingua-radius-major);
+  --lingua-frame-padding: 18px;
+  --lingua-frame-ornament: 16px;
+  --lingua-frame-crystal: 10px;
+  --lingua-frame-inset: 4px;
+  --lingua-frame-elevation: 0 12px 28px rgba(0, 0, 0, .32);
+}
+
+/* Standalone component defaults. Existing components retain their own layout. */
+.lingua-frame {
+  position: relative;
+  border: 1px solid var(--lingua-frame-gold);
+  border-radius: var(--lingua-frame-border-radius);
+  padding: var(--lingua-frame-padding);
+}
+
+/* Component integration: pilots plus reviewed outer cards, no HTML changes.
+   The specific battle/speaker aliases override their old surface paint only. */
+:is(.lingua-frame, .dialogue-panel, .dialogue-panel.speaker-player,
+    .dialogue-panel.speaker-verion, .dialogue-panel.speaker-system,
+    #battleScene .battle-panel, .game-modal-card, .victory-card, .advisor-panel,
+    .main-menu-card, .create-card, .tutorial-guide-card, .creator-credits-panel,
+    .vs-boss-card, .verb-memory-result-panel, .pvp-room-panel, .pvp-bottom-panel,
+    .pvp-log-panel, .teacher-dashboard-header, .student-management-heading) {
+  isolation: isolate;
+  border-color: var(--lingua-frame-gold);
+  background:
+    radial-gradient(ellipse at 50% 0%, var(--lingua-frame-blue-glow), transparent 55%),
+    var(--lingua-frame-background);
+  box-shadow:
+    var(--lingua-frame-elevation),
+    inset 0 0 0 1px rgba(241, 217, 138, .09),
+    inset 0 0 22px rgba(58, 174, 232, .06);
+}
+
+/* These decorative hosts have no existing positioned layout to replace.
+   Dialogue keeps its existing absolute positioning; all offsets stay untouched. */
+.advisor-panel, .tutorial-guide-card, .creator-credits-panel { position: relative; }
+
+/* Horizontal and panel forms differ only in the decorative edge length. */
+.lingua-frame--horizontal,
+.dialogue-panel { --lingua-frame-ornament: 24px; }
+
+.lingua-frame--panel { --lingua-frame-border-radius: var(--lingua-radius-major); }
+
+.lingua-frame--success,
+.victory-card {
+  --lingua-frame-gold: var(--lingua-gold-light);
+  --lingua-frame-blue-glow: rgba(98, 191, 234, .22);
+  --lingua-frame-elevation: 0 12px 28px rgba(0, 0, 0, .32), 0 0 18px rgba(215, 179, 90, .12);
+}
+
+.lingua-frame--warning {
+  --lingua-frame-blue-glow: rgba(191, 91, 67, .16);
+  --lingua-frame-background: linear-gradient(145deg, #291c31, #171423);
+}
+
+.lingua-frame--dark {
+  --lingua-frame-background: linear-gradient(145deg, #08152e, #050f22);
+}
+
+.lingua-frame--compact,
+.lingua-frame--dense {
+  --lingua-frame-crystal-content: none;
+  --lingua-frame-padding: 10px;
+  --lingua-frame-ornament: 9px;
+  --lingua-frame-crystal: 6px;
+  --lingua-frame-inset: 3px;
+  --lingua-frame-border-radius: var(--lingua-radius-small);
+  --lingua-frame-elevation: var(--lingua-frame-shadow-compact);
+}
+
+/* Both pseudo-elements are behind content within a local stacking context.
+   Inset ornaments never extend the scrollable bounds or receive pointer input.
+   Include the old, more-specific dialogue selector to replace its ornament. */
+:is(.lingua-frame, .dialogue-panel, #storyScene .story-illustration .vn-dialogue,
+    .battle-panel, .game-modal-card, .victory-card, .advisor-panel,
+    .main-menu-card, .create-card, .tutorial-guide-card, .creator-credits-panel)::before {
+  content: "";
+  position: absolute;
+  inset: var(--lingua-frame-inset);
+  z-index: -1;
+  border: 1px solid rgba(98, 191, 234, .22);
+  border-radius: inherit;
+  background:
+    linear-gradient(var(--lingua-frame-gold-light), var(--lingua-frame-gold)) left top / var(--lingua-frame-ornament) 1px,
+    linear-gradient(var(--lingua-frame-gold-light), var(--lingua-frame-gold)) left top / 1px var(--lingua-frame-ornament),
+    linear-gradient(var(--lingua-frame-gold-light), var(--lingua-frame-gold)) right top / var(--lingua-frame-ornament) 1px,
+    linear-gradient(var(--lingua-frame-gold-light), var(--lingua-frame-gold)) right top / 1px var(--lingua-frame-ornament),
+    linear-gradient(var(--lingua-frame-gold), var(--lingua-frame-gold-light)) left bottom / var(--lingua-frame-ornament) 1px,
+    linear-gradient(var(--lingua-frame-gold), var(--lingua-frame-gold-light)) left bottom / 1px var(--lingua-frame-ornament),
+    linear-gradient(var(--lingua-frame-gold), var(--lingua-frame-gold-light)) right bottom / var(--lingua-frame-ornament) 1px,
+    linear-gradient(var(--lingua-frame-gold), var(--lingua-frame-gold-light)) right bottom / 1px var(--lingua-frame-ornament);
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+:is(.lingua-frame, .dialogue-panel, #storyScene .story-illustration .vn-dialogue,
+    .battle-panel, .game-modal-card, .victory-card, .advisor-panel,
+    .main-menu-card, .create-card, .tutorial-guide-card, .creator-credits-panel)::after {
+  content: var(--lingua-frame-crystal-content, "");
+  position: absolute;
+  inset: 3px auto auto 50%;
+  z-index: -1;
+  width: var(--lingua-frame-crystal);
+  height: var(--lingua-frame-crystal);
+  transform: translateX(-50%) rotate(45deg);
+  border: 1px solid var(--lingua-frame-gold-light);
+  border-radius: 1px;
+  background: conic-gradient(from 0deg, #c3efff, #389edc 25%, #25499a 50%, #8bcfea 75%, #c3efff);
+  box-shadow: 0 0 0 2px rgba(7, 20, 45, .9), 0 0 8px var(--lingua-frame-blue-glow);
+  pointer-events: none;
+}
+
+/* Preserve speaker identity as a restrained tint without changing state classes. */
+.dialogue-panel.speaker-player { --lingua-frame-blue-glow: rgba(98, 191, 234, .24); }
+.dialogue-panel.speaker-verion { --lingua-frame-blue-glow: rgba(215, 179, 90, .13); }
+.dialogue-panel.speaker-system { --lingua-frame-blue-glow: rgba(140, 99, 232, .16); }
+
+/* Battle retains every existing pixel of padding and all scrolling mechanics. */
+#battleScene .battle-panel {
+  --lingua-frame-ornament: 12px;
+  --lingua-frame-crystal: 6px;
+}
+
+/* Dense integrations receive surface paint only: no new pseudo-elements,
+   border widths, table styling or scroll containers. */
+:is(.vs-boss-card, .verb-memory-result-panel, .pvp-room-panel, .pvp-bottom-panel,
+    .pvp-log-panel, .teacher-dashboard-header, .student-management-heading) {
+  --lingua-frame-blue-glow: rgba(98, 191, 234, .09);
+  --lingua-frame-elevation: var(--lingua-frame-shadow-compact);
+}
+
+/* Login retains its parchment surface and dark text for contrast. */
+#loginScene .login-card {
+  border-color: var(--lingua-frame-gold);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .28),
+    inset 0 0 0 1px rgba(241, 217, 138, .5),
+    inset 0 0 0 4px rgba(98, 191, 234, .12);
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --lingua-frame-ornament: 13px;
+    --lingua-frame-crystal: 8px;
+  }
+  .lingua-frame--horizontal,
+  .dialogue-panel { --lingua-frame-ornament: 19px; }
+}
+
+@media (max-width: 559px), (max-height: 420px) {
+  :root {
+    --lingua-frame-padding: 12px;
+    --lingua-frame-ornament: 10px;
+    --lingua-frame-crystal: 6px;
+    --lingua-frame-inset: 3px;
+  }
+  .lingua-frame--horizontal,
+  .dialogue-panel { --lingua-frame-ornament: 14px; }
+  #battleScene .battle-panel {
+    --lingua-frame-ornament: 8px;
+    --lingua-frame-crystal: 4px;
+  }
+}

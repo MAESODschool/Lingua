@@ -1,0 +1,172 @@
+{
+  "banks": [
+    {
+      "bank": "phase1PastMeaningQuestions",
+      "count": 100,
+      "status": "OK",
+      "issues": ""
+    },
+    {
+      "bank": "phase1PastTimeWordsQuestions",
+      "count": 100,
+      "status": "OK",
+      "issues": ""
+    },
+    {
+      "bank": "phase1WasWereQuestions",
+      "count": 100,
+      "status": "OK",
+      "issues": ""
+    },
+    {
+      "bank": "phase1ThereWasWereQuestions",
+      "count": 100,
+      "status": "OK",
+      "issues": ""
+    },
+    {
+      "bank": "phase1HadQuestions",
+      "count": 100,
+      "status": "OK",
+      "issues": ""
+    },
+    {
+      "bank": "regularRuleOneQuestions",
+      "count": 100,
+      "status": "OK",
+      "issues": ""
+    },
+    {
+      "bank": "regularRuleTwoQuestions",
+      "count": 100,
+      "status": "OK",
+      "issues": ""
+    },
+    {
+      "bank": "regularRuleThreeQuestions",
+      "count": 100,
+      "status": "OK",
+      "issues": ""
+    },
+    {
+      "bank": "regularRuleFourQuestions",
+      "count": 100,
+      "status": "OK",
+      "issues": ""
+    },
+    {
+      "bank": "edForgerQuestions",
+      "count": 100,
+      "status": "OK",
+      "issues": ""
+    },
+    {
+      "bank": "irregularPracticeQuestions",
+      "count": 100,
+      "status": "OK",
+      "issues": ""
+    },
+    {
+      "bank": "irregularWraithQuestions",
+      "count": 100,
+      "status": "OK",
+      "issues": ""
+    },
+    {
+      "bank": "finalBossQuestions",
+      "count": 100,
+      "status": "OK",
+      "issues": ""
+    }
+  ],
+  "progression": {
+    "valid": true,
+    "issues": []
+  },
+  "stages": [
+    {
+      "id": "prologue",
+      "type": "story"
+    },
+    {
+      "id": "what-is-past",
+      "type": "lesson-quiz",
+      "questions": 100
+    },
+    {
+      "id": "what-is-tense",
+      "type": "lesson-quiz",
+      "questions": 100
+    },
+    {
+      "id": "act1_phase1_unit3_was_were",
+      "type": "lesson-quiz",
+      "questions": 100
+    },
+    {
+      "id": "act1_phase1_unit4_there_was_were",
+      "type": "lesson-quiz",
+      "questions": 100
+    },
+    {
+      "id": "act1_phase1_unit5_had",
+      "type": "lesson-quiz",
+      "questions": 100
+    },
+    {
+      "id": "regular-intro",
+      "type": "lesson-only",
+      "questions": 0
+    },
+    {
+      "id": "regular-rule-1",
+      "type": "lesson-quiz",
+      "questions": 100
+    },
+    {
+      "id": "regular-rule-2",
+      "type": "lesson-quiz",
+      "questions": 100
+    },
+    {
+      "id": "regular-rule-3",
+      "type": "lesson-quiz",
+      "questions": 100
+    },
+    {
+      "id": "regular-rule-4",
+      "type": "lesson-quiz",
+      "questions": 100
+    },
+    {
+      "id": "ed-mini-boss",
+      "type": "mini-boss",
+      "questions": 100
+    },
+    {
+      "id": "irregular-lesson",
+      "type": "lesson-quiz",
+      "questions": 100
+    },
+    {
+      "id": "irregular-mini-boss",
+      "type": "mini-boss",
+      "questions": 100
+    },
+    {
+      "id": "merge-twist",
+      "type": "story-stage",
+      "questions": 0
+    },
+    {
+      "id": "final-boss",
+      "type": "final-boss",
+      "questions": 100
+    },
+    {
+      "id": "ending",
+      "type": "ending"
+    }
+  ],
+  "verbs": 169
+}
