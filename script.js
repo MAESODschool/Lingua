@@ -41568,13 +41568,8 @@ function inspectBattleQuestion(question, index = 0) {
     if (!options.some(option => normalizeBattleAnswer(option) === normalizeBattleAnswer(primaryAnswer))) {
       failures.push("correct answer is not renderable");
     }
-  } else if (questionType === "word-arrangement" && primaryAnswer) {
-    const tiles = Array.isArray(question.tiles) && question.tiles.length
-      ? question.tiles
-      : Array.isArray(question.words) && question.words.length
-        ? question.words
-        : primaryAnswer.split(/\s+/);
-    if (!tiles.some(tile => String(tile ?? "").trim())) {
+  } else if (questionType === "word-arrangement") {
+    if (!getActArrangementTileData(question).tiles.length) {
       failures.push("missing arrangement tiles");
     }
   }
@@ -42320,6 +42315,13 @@ function startActFocusAction() {
   }
 
   const focusQuestion = prepareQuestion(rawFocusQuestion, battle.focusQuestionIndex || 0);
+  if (
+    getActBattleQuestionType(focusQuestion) === "word-arrangement" &&
+    !getActArrangementTileData(focusQuestion).tiles.length
+  ) {
+    showBattleQuestionExhaustedRecovery("โจทย์เรียงคำสำหรับการตั้งสมาธิไม่สมบูรณ์ เลือกสู้ใหม่หรือกลับไปบทเรียน");
+    return;
+  }
   battle.currentFocusQuestion = focusQuestion;
   const focusPrefix = rawFocusQuestion.isFocusRecoveryFallback
     ? `focus-recovery-${battle.stage?.id || "stage"}`
@@ -42669,6 +42671,43 @@ function getActQuestionPrimaryAnswer(question = {}) {
   return getBattleCorrectAnswer(question) || getActQuestionAcceptedAnswers(question)[0] || "";
 }
 
+function normalizeActArrangementTiles(values) {
+  return (Array.isArray(values) ? values : [])
+    .map(value => String(value ?? "").trim())
+    .filter(Boolean);
+}
+
+function getActArrangementTileData(question = {}) {
+  let tiles = normalizeActArrangementTiles(question.tiles);
+  let source = "tiles";
+  if (!tiles.length) {
+    tiles = normalizeActArrangementTiles(question.words);
+    source = "words";
+  }
+
+  if (!tiles.length) {
+    const primaryAnswer = String(getActQuestionPrimaryAnswer(question) || "").trim();
+    const mode = String(question.arrangementMode || question.tileMode || "").trim().toLowerCase();
+    const prompt = String(getBattleQuestionPromptSource(question) || "");
+    const isCharacterArrangement = ["character", "characters", "char", "letter", "letters"].includes(mode) ||
+      (!mode && /(?:เรียง\s*ตัวอักษร|arrange\s+(?:the\s+)?letters?)/i.test(prompt));
+    tiles = primaryAnswer
+      ? normalizeActArrangementTiles(
+          isCharacterArrangement
+            ? Array.from(primaryAnswer.replace(/\s+/g, ""))
+            : primaryAnswer.split(/\s+/)
+        )
+      : [];
+    source = tiles.length ? "answer" : "none";
+  }
+
+  return {
+    tiles,
+    source,
+    joiner: tiles.length && tiles.every(tile => tile.length === 1) ? "" : " "
+  };
+}
+
 function isActQuestionAnswerCorrect(question, selectedAnswer) {
   const ignoreFinalPeriod = getActBattleQuestionType(question) === "word-arrangement";
   const selected = normalizeActFreeAnswer(selectedAnswer, { ignoreFinalPeriod });
@@ -42723,22 +42762,18 @@ function renderActWordArrangementQuestion(question, onSubmit = chooseActAnswer) 
   const panel = document.createElement("div");
   panel.className = "boss-v2-challenge-panel boss-v2-arrangement-panel";
   const selectedWords = [];
-  let tiles = Array.isArray(question.tiles) && question.tiles.length
-    ? question.tiles.filter(tile => String(tile || "").trim())
-    : Array.isArray(question.words) && question.words.length
-      ? question.words.filter(word => String(word || "").trim())
-      : [];
-  if (!tiles.length && getActQuestionPrimaryAnswer(question)) {
-    tiles = String(getActQuestionPrimaryAnswer(question)).split(/\s+/).filter(Boolean);
+  const arrangementData = getActArrangementTileData(question);
+  const { tiles } = arrangementData;
+  if (arrangementData.source === "answer") {
     console.warn("[PvE Question] Generated arrangement tiles from the accepted answer", {
       questionId: question?.id || ""
     });
   }
   if (!tiles.length) {
     renderActQuestionDataError(question, "โจทย์เรียงคำนี้ไม่มีคำให้เรียง");
-    return;
+    return false;
   }
-  const arrangementJoiner = tiles.every(tile => String(tile).length === 1) ? "" : " ";
+  const arrangementJoiner = arrangementData.joiner;
   const tileState = shuffleArray(tiles).map((word, index) => ({
     id: `${index}-${word}`,
     word,
@@ -42817,6 +42852,7 @@ function renderActWordArrangementQuestion(question, onSubmit = chooseActAnswer) 
   panel.append(answerRow, tileRow, controlRow);
   els.answerOptions.appendChild(panel);
   render();
+  return true;
 }
 
 function renderActBattleQuestionControls(question, visibleOptions = [], onSubmit = chooseActAnswer) {
@@ -42873,6 +42909,13 @@ function showActBattleQuestion() {
   battle.attackQuestionsExhausted = false;
   const rawQuestionIndex = Math.max(0, picked.index);
   const question = prepareQuestion(rawQuestion, rawQuestionIndex);
+  if (
+    getActBattleQuestionType(question) === "word-arrangement" &&
+    !getActArrangementTileData(question).tiles.length
+  ) {
+    showBattleQuestionExhaustedRecovery("โจทย์เรียงคำนี้ไม่สมบูรณ์ เลือกตั้งสมาธิ สู้ใหม่ หรือกลับไปบทเรียน");
+    return;
+  }
   battle.currentQuestion = question;
   markBattleQuestionUsed(question, battle, rawQuestionIndex, picked.prefix || `player-${battle.stage.id || "stage"}`);
   battle.lastQuestionBaseVerb = question.baseVerb || "";
@@ -46843,11 +46886,7 @@ function isRenderableBossQuestion(question) {
     return true;
   }
   if (questionType === "word-arrangement") {
-    return Boolean(
-      (Array.isArray(question.tiles) && question.tiles.length) ||
-      (Array.isArray(question.words) && question.words.length) ||
-      getActQuestionPrimaryAnswer(question)
-    );
+    return getActArrangementTileData(question).tiles.length > 0;
   }
   const options = getActQuestionOptions(question);
   return options.length >= 2 && options.some(option => isActQuestionAnswerCorrect(question, option));

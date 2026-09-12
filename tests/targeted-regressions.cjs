@@ -414,7 +414,8 @@ async function testAttackResolution() {
   // Exercise the production controls for all three supported answer adapters.
   for (const name of [
     'normalizeActFreeAnswer','getBattleAcceptedAnswers','getActQuestionAcceptedAnswers','getBattleQuestionType','getActBattleQuestionType','getBattleCorrectAnswer',
-    'normalizeBattleAnswer','isInvalidBattleOption','normalizeBattleOptions','renderActTypingQuestion','renderActWordArrangementQuestion',
+    'normalizeBattleAnswer','isInvalidBattleOption','normalizeBattleOptions','getBattleQuestionPromptSource','getActQuestionPrimaryAnswer',
+    'normalizeActArrangementTiles','getActArrangementTileData','renderActTypingQuestion','renderActWordArrangementQuestion',
     'renderActBattleQuestionControls'
   ]) vm.runInContext(declaration(name), context);
   context.scenes = {battle:element()};
