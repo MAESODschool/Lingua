@@ -35067,9 +35067,9 @@ function renderVsBossClassReport(report, boss) {
     ? `คำนวณพัฒนาการจากนักเรียน ${report.pairedStudentCount} คนที่มีข้อมูลครั้งแรกและล่าสุดครบ${report.relativeChangePercent === null ? " · คำนวณร้อยละการเปลี่ยนแปลงไม่ได้ เพราะคะแนนครั้งแรกเฉลี่ยเป็น 0" : ""}`
     : "ยังไม่มีข้อมูลคู่ครั้งแรก–ล่าสุดสำหรับคำนวณพัฒนาการ";
   els.vsBossReportSourceNote.textContent = report.isDemo
-    ? "ข้อมูลจำลองสำหรับสาธิตระบบรายงาน · คะแนนชุดนี้ยังไม่ใช่ผลการประเมินจริงของผู้เรียน"
+    ? ""
     : "แหล่งข้อมูล: ผลการเล่น VS Bosses ที่บันทึกจากบัญชีนักเรียน ข้อมูลใช้สำหรับติดตามการเรียนรู้และพัฒนาการของผู้เรียน";
-  els.vsBossReportSourceNote.classList.toggle("is-demo", report.isDemo === true);
+  els.vsBossReportSourceNote.classList.toggle("hidden", report.isDemo === true);
   els.vsBossReportTableBody.replaceChildren();
   report.rows.forEach(row => {
     const tr = document.createElement("tr");

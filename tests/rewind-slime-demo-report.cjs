@@ -73,11 +73,21 @@ for (const call of [
 const disabled = context(false);
 assert.equal(vm.runInContext('isRewindSlimeDemoReportSelection("vs-bosses", "rewind_slime", "ม.3", "1")', disabled), false);
 assert.ok(index.includes('id="vsBossReportSourceNote"'));
-assert.ok(source.includes('ข้อมูลจำลองสำหรับสาธิตระบบรายงาน · คะแนนชุดนี้ยังไม่ใช่ผลการประเมินจริงของผู้เรียน'));
+assert.ok(!source.includes('ข้อมูลจำลองสำหรับสาธิตระบบรายงาน · คะแนนชุดนี้ยังไม่ใช่ผลการประเมินจริงของผู้เรียน'));
 function element() {
+  const classes = new Set();
   return {
     children: [], textContent: '', value: '', disabled: false,
-    classList: { add() {}, remove() {}, toggle() {} },
+    classList: {
+      add(name) { classes.add(name); },
+      remove(name) { classes.delete(name); },
+      toggle(name, force) {
+        if (force === undefined ? !classes.has(name) : force) classes.add(name);
+        else classes.delete(name);
+        return classes.has(name);
+      },
+      contains(name) { return classes.has(name); }
+    },
     replaceChildren(...children) { this.children = children; },
     appendChild(child) { this.children.push(child); },
     append(...children) { this.children.push(...children); }
@@ -137,15 +147,16 @@ view.demoReport = reportOne;
 view.boss = { name: 'Rewind Slime', thaiName: 'สไลม์ย้อนเวลา', topicTh: 'กฎ CVC' };
 vm.runInContext('renderVsBossClassReport(demoReport, boss)', view);
 assert.equal(view.els.vsBossReportSummary.children.length, 8);
-assert.ok(view.els.vsBossReportSourceNote.textContent.includes('ข้อมูลจำลองสำหรับสาธิตระบบรายงาน'));
-assert.ok(view.els.vsBossReportSourceNote.textContent.includes('คะแนนชุดนี้ยังไม่ใช่ผลการประเมินจริงของผู้เรียน'));
+assert.equal(view.els.vsBossReportSourceNote.textContent, '');
+assert.equal(view.els.vsBossReportSourceNote.classList.contains('hidden'), true);
 assert.ok(view.els.vsBossReportTableBody.children.every(row => row.children[2].textContent === '—'));
 view.realReport = { bossId: 'other', classLevel: 'ม.2', room: '1', rosterCount: 0,
   assessedCount: 0, coveragePercent: null, latestAverage: null, firstAverage: null,
   bestAverage: null, differencePoints: null, pairedStudentCount: 0, rows: [] };
 vm.runInContext('renderVsBossClassReport(realReport, boss)', view);
 assert.equal(view.els.vsBossReportSummary.children.length, 6);
-assert.ok(!view.els.vsBossReportSourceNote.textContent.includes('ข้อมูลจำลอง'));
+assert.ok(view.els.vsBossReportSourceNote.textContent.startsWith('แหล่งข้อมูล:'));
+assert.equal(view.els.vsBossReportSourceNote.classList.contains('hidden'), false);
 const loader = declaration('loadVsBossClassReport');
 assert.ok(!/\b(setDoc|updateDoc|runTransaction|addDoc|deleteDoc)\s*\(/.test(loader));
 vm.runInContext(loader, sandbox);
