@@ -17,7 +17,7 @@ const sandbox = vm.createContext({});
 vm.runInContext('const VS_BOSS_HISTORY_LIMIT = 50;', sandbox);
 for (const name of [
   'getVsBossAttemptIso', 'getVsBossAttemptId',
-  'isValidVsBossReportAttempt', 'deriveStudentVsBossReport', 'buildVsBossClassReport',
+  'isValidVsBossReportAttempt', 'deriveStudentVsBossReport', 'summarizeVsBossClassRows', 'buildVsBossClassReport',
   'formatVsBossReportPercent', 'formatVsBossReportPoints', 'formatVsBossReportDevelopment'
 ]) vm.runInContext(declaration(name), sandbox);
 const run = code => vm.runInContext(code, sandbox);
@@ -169,6 +169,7 @@ sandbox.clearVsBossReportContent = () => { sandbox.vsBossReportLoadVersion += 1;
 sandbox.setVsBossReportStatus = () => {};
 sandbox.isCurrentUserTeacherClaimed = async () => true;
 sandbox.getVsBossConfig = id => id === bossId ? { id } : null;
+sandbox.isRewindSlimeDemoReportSelection = () => false;
 sandbox.getEligibleVsBossReportStudents = () => entries.filter(item => !item.isDeleted && item.reportIdentityValid);
 sandbox.getPlayerClientProgressDocRef = uid => uid;
 sandbox.isFirebasePermissionDeniedError = () => false;
