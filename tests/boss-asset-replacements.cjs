@@ -34,7 +34,7 @@ expect(script.includes('"Lost Pouch Imp": LOST_POUCH_IMP_IMAGE_PATH'), "Lost Pou
 expect(script.includes('"Memory Bat": MEMORY_BAT_IMAGE_PATH'), "Memory Bat story sprite mapping is incorrect");
 expect(script.includes('fallbackImage: MEMORY_BREAKER_IMAGE_PATH'), "Memory Breaker VS Bosses fallback is incorrect");
 expect(index.includes('id="verbMemoryBossSprite" class="verb-memory-boss-sprite" src="assets/enemies/the-memory-breaker.png"'), "Verb Memory Practice still uses the old Memory Breaker image");
-expect(index.includes("script.js?v=teacher-dashboard-no-storage-boss-assets-20260908"), "boss asset cache version is missing");
+expect(index.includes("script.js?v=player-score-reports-20260913"), "boss asset cache version is missing");
 
 if (failures.length) {
   console.error(`Boss asset replacement checks failed (${failures.length}):`);

@@ -1766,6 +1766,198 @@ button {
   font-weight: 900;
 }
 
+.player-score-reports-panel,
+.vs-boss-report-content {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.player-score-reports-heading,
+.player-score-reports-mode,
+.vs-boss-report-filters,
+.vs-boss-report-title-row,
+.vs-boss-report-summary-card,
+.vs-boss-report-table-wrap {
+  border: 1px solid rgba(255, 219, 134, 0.34);
+  border-radius: 14px;
+  background: rgba(12, 17, 45, 0.9);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+}
+
+.player-score-reports-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px;
+}
+
+.player-score-reports-heading h3,
+.player-score-reports-heading p,
+.vs-boss-report-title-row h4,
+.vs-boss-report-title-row p {
+  margin: 0;
+}
+
+.player-score-reports-heading h3,
+.vs-boss-report-title-row h4 {
+  color: #fff7d6;
+  font-size: clamp(1.25rem, 3vw, 1.7rem);
+}
+
+.player-score-reports-heading p:not(.eyebrow),
+.vs-boss-report-title-row p,
+.vs-boss-report-note,
+.vs-boss-report-status {
+  color: #bfe9ff;
+}
+
+.player-score-reports-mode {
+  width: fit-content;
+  padding: 10px 16px;
+  color: #ffe39a;
+  font-weight: 900;
+}
+
+.vs-boss-report-filters {
+  display: grid;
+  grid-template-columns: minmax(200px, 1.5fr) repeat(2, minmax(130px, 0.8fr)) auto;
+  align-items: end;
+  gap: 12px;
+  padding: 14px;
+}
+
+.vs-boss-report-filters label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.vs-boss-report-filters label span {
+  color: #9edcff;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.vs-boss-report-filters select {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(173, 141, 255, 0.42);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(8, 7, 28, 0.72);
+  font: inherit;
+}
+
+.vs-boss-report-filters button {
+  min-height: 44px;
+}
+
+.vs-boss-report-filters :disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.vs-boss-report-status,
+.vs-boss-report-note {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.vs-boss-report-status.is-error {
+  color: #ffb6b6;
+}
+
+.vs-boss-report-title-row {
+  padding: 14px 16px;
+}
+
+.vs-boss-report-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.vs-boss-report-summary-card {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.vs-boss-report-summary-card span {
+  color: #9edcff;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.vs-boss-report-summary-card strong {
+  color: #ffe39a;
+  font-size: clamp(1.12rem, 2.5vw, 1.5rem);
+  overflow-wrap: anywhere;
+}
+
+.vs-boss-report-summary-card.is-improved strong,
+.vs-boss-report-table tr.is-improved td:last-child {
+  color: #91e3b1;
+}
+
+.vs-boss-report-summary-card.is-decreased strong,
+.vs-boss-report-table tr.is-decreased td:last-child {
+  color: #ffb6b6;
+}
+
+.vs-boss-report-summary-card.is-same strong,
+.vs-boss-report-table tr.is-same td:last-child {
+  color: #ffe39a;
+}
+
+.vs-boss-report-table-wrap {
+  overflow-x: auto;
+  padding: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.vs-boss-report-table {
+  width: 100%;
+  min-width: 1000px;
+  border-collapse: collapse;
+}
+
+.vs-boss-report-table th,
+.vs-boss-report-table td {
+  padding: 10px 9px;
+  border-bottom: 1px solid rgba(255, 219, 134, 0.16);
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.86rem;
+  overflow-wrap: anywhere;
+}
+
+.vs-boss-report-table th {
+  color: #ffe39a;
+  font-size: 0.75rem;
+}
+
+.vs-boss-report-table td:nth-child(2),
+.vs-boss-report-table td:nth-child(3) {
+  min-width: 140px;
+}
+
+@media (max-width: 900px) {
+  .vs-boss-report-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .vs-boss-report-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  .player-score-reports-heading { display: grid; }
+  .player-score-reports-heading button { width: 100%; }
+  .vs-boss-report-filters,
+  .vs-boss-report-summary { grid-template-columns: 1fr; }
+}
+
 .student-management-panel {
   display: grid;
   gap: 14px;

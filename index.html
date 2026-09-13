@@ -6,7 +6,7 @@
   <meta name="lingua-advisor-mode" content="auto">
   <meta name="lingua-advisor-api-url" content="">
   <title>Lingua - RPG แห่งแกรมมาเรีย</title>
-  <link rel="stylesheet" href="style.css?v=battle-post-correct-20260905">
+  <link rel="stylesheet" href="style.css?v=player-score-reports-20260913">
 </head>
 <body>
   <div class="game-utility-controls" aria-label="ตัวเลือกเกม">
@@ -574,6 +574,7 @@
             <p>ดูข้อมูลผู้เล่นจริงจากระบบเท่านั้น โดยไม่แก้ไขความคืบหน้าของนักเรียน</p>
           </div>
           <div class="teacher-dashboard-header-actions">
+            <button id="playerScoreReportsButton" class="primary-button" type="button">รายงานคะแนนผู้เล่น</button>
             <button id="studentManagementButton" class="primary-button" type="button">จัดการรายชื่อผู้เรียน</button>
             <button id="assetManagerButton" class="primary-button hidden" type="button" aria-hidden="true" hidden disabled>จัดการภาพและ Asset เกม</button>
             <button id="teacherDashboardBackButton" class="secondary-button" type="button">กลับหน้าหลัก</button>
@@ -632,6 +633,40 @@
             <p id="teacherDashboardEmptyState" class="teacher-dashboard-empty hidden">ยังไม่พบข้อมูลนักเรียน</p>
           </div>
         </div>
+
+        <section id="playerScoreReportsPanel" class="player-score-reports-panel hidden" aria-labelledby="playerScoreReportsTitle">
+          <div class="player-score-reports-heading">
+            <div>
+              <p class="eyebrow">PLAYER SCORE REPORTS</p>
+              <h3 id="playerScoreReportsTitle">รายงานคะแนนผู้เล่น</h3>
+              <p>สรุปผลการประเมินจากการเล่นของผู้เรียน</p>
+            </div>
+            <button id="playerScoreReportsCloseButton" class="secondary-button" type="button">กลับหน้าภาพรวม</button>
+          </div>
+          <div class="player-score-reports-mode">รายงานผล VS Bosses</div>
+          <div class="vs-boss-report-filters">
+            <label><span>เลือกบอส</span><select id="vsBossReportBossSelect"><option value="">เลือกบอส</option></select></label>
+            <label><span>ระดับชั้น</span><select id="vsBossReportClassSelect" disabled><option value="">เลือกระดับชั้น</option></select></label>
+            <label><span>ห้อง</span><select id="vsBossReportRoomSelect" disabled><option value="">เลือกห้อง</option></select></label>
+            <button id="vsBossReportLoadButton" class="primary-button" type="button" disabled>แสดงรายงาน</button>
+          </div>
+          <p id="vsBossReportStatus" class="vs-boss-report-status" aria-live="polite">เลือกบอส ระดับชั้น และห้องเพื่อแสดงรายงาน</p>
+          <section id="vsBossReportContent" class="vs-boss-report-content hidden" aria-labelledby="vsBossReportTitle">
+            <div class="vs-boss-report-title-row">
+              <h4 id="vsBossReportTitle"></h4>
+              <p id="vsBossReportTopic"></p>
+            </div>
+            <div id="vsBossReportSummary" class="vs-boss-report-summary"></div>
+            <p id="vsBossReportDevelopmentNote" class="vs-boss-report-note"></p>
+            <p class="vs-boss-report-note">แหล่งข้อมูล: ผลการเล่น VS Bosses ที่บันทึกจากบัญชีนักเรียน ข้อมูลใช้สำหรับติดตามการเรียนรู้และพัฒนาการของผู้เรียน</p>
+            <div class="vs-boss-report-table-wrap">
+              <table class="vs-boss-report-table">
+                <thead><tr><th>เลขที่</th><th>ชื่อ-สกุล</th><th>ชื่อในเกม</th><th>ครั้งแรก</th><th>ล่าสุด</th><th>สูงสุด</th><th>จำนวนครั้ง</th><th>ผลต่าง</th><th>สถานะ</th></tr></thead>
+                <tbody id="vsBossReportTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
 
         <section id="studentManagementPanel" class="student-management-panel hidden" aria-labelledby="studentManagementTitle">
           <div class="student-management-heading">
@@ -1116,6 +1151,6 @@
   </main>
 
   <script src="assets/data/irregular_verb_memory_bank.js?v=verb-memory-bank-20260901"></script>
-  <script type="module" src="script.js?v=teacher-dashboard-no-storage-boss-assets-20260908"></script>
+  <script type="module" src="script.js?v=player-score-reports-20260913"></script>
 </body>
 </html>

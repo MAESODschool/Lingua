@@ -23581,6 +23581,7 @@ const TEACHER_DASHBOARD_PASSWORD_SHA256 = "b687b757bd658e9ae5624be7705283c8d3a56
 let teacherDashboardStudents = [];
 let teacherDashboardLoadError = "";
 let teacherDashboardAccessGranted = false;
+let vsBossReportLoadVersion = 0;
 const studentManagementState = {
   selectedUid: "",
   operationBusy: false
@@ -24581,6 +24582,20 @@ const els = {
   advisorMasterVerionPlaceholder: document.getElementById("advisorMasterVerionPlaceholder"),
   teacherDashboardBackButton: document.getElementById("teacherDashboardBackButton"),
   teacherDashboardOverviewPanel: document.getElementById("teacherDashboardOverviewPanel"),
+  playerScoreReportsButton: document.getElementById("playerScoreReportsButton"),
+  playerScoreReportsPanel: document.getElementById("playerScoreReportsPanel"),
+  playerScoreReportsCloseButton: document.getElementById("playerScoreReportsCloseButton"),
+  vsBossReportBossSelect: document.getElementById("vsBossReportBossSelect"),
+  vsBossReportClassSelect: document.getElementById("vsBossReportClassSelect"),
+  vsBossReportRoomSelect: document.getElementById("vsBossReportRoomSelect"),
+  vsBossReportLoadButton: document.getElementById("vsBossReportLoadButton"),
+  vsBossReportStatus: document.getElementById("vsBossReportStatus"),
+  vsBossReportContent: document.getElementById("vsBossReportContent"),
+  vsBossReportTitle: document.getElementById("vsBossReportTitle"),
+  vsBossReportTopic: document.getElementById("vsBossReportTopic"),
+  vsBossReportSummary: document.getElementById("vsBossReportSummary"),
+  vsBossReportDevelopmentNote: document.getElementById("vsBossReportDevelopmentNote"),
+  vsBossReportTableBody: document.getElementById("vsBossReportTableBody"),
   teacherDashboardSummary: document.getElementById("teacherDashboardSummary"),
   teacherClassLevelFilter: document.getElementById("teacherClassLevelFilter"),
   teacherRoomFilter: document.getElementById("teacherRoomFilter"),
@@ -34435,6 +34450,177 @@ function normalizeTeacherStudentRecord(record = {}, sourceId = "") {
   };
 }
 
+// Classroom reports read the raw VS Bosses attempt objects. The normal VS Bosses
+// display normalizer accepts legacy summaries, so it must not supply evidence here.
+function isValidVsBossReportAttempt(attempt, bossId) {
+  if (!attempt || typeof attempt !== "object" || Array.isArray(attempt) || attempt.bossId !== bossId) {
+    return false;
+  }
+  const completedAt = getVsBossAttemptIso(attempt.completedAt);
+  const startedAt = getVsBossAttemptIso(attempt.startedAt);
+  if (!completedAt || !startedAt || startedAt > completedAt ||
+      attempt.attemptId !== getVsBossAttemptId(bossId, completedAt) ||
+      !Number.isInteger(attempt.attemptNumber) || attempt.attemptNumber < 1) {
+    return false;
+  }
+  if (!["victory", "defeat"].includes(attempt.resultStatus) ||
+      !["practice", "pre-test", "post-test"].includes(attempt.assessmentType) ||
+      attempt.debug === true || attempt.isDebug === true || attempt.teacherSkipped === true) {
+    return false;
+  }
+  const total = attempt.totalQuestions;
+  const correct = attempt.correctAnswers;
+  const percent = attempt.knowledgeScorePercent;
+  if (!Number.isInteger(total) || total < 0 || !Number.isInteger(correct) || correct < 0 || correct > total ||
+      typeof percent !== "number" || !Number.isFinite(percent) || percent < 0 || percent > 100) {
+    return false;
+  }
+  if (attempt.wrongAnswers !== undefined &&
+      (!Number.isInteger(attempt.wrongAnswers) || attempt.wrongAnswers < 0 || correct + attempt.wrongAnswers !== total)) {
+    return false;
+  }
+  const expectedPercent = total > 0 ? Math.round((correct / total) * 1000) / 10 : 0;
+  return Math.abs(percent - expectedPercent) < 0.051;
+}
+
+function deriveStudentVsBossReport(student, record, bossId) {
+  const empty = {
+    student,
+    firstScore: null,
+    latestScore: null,
+    bestScore: null,
+    attemptCount: null,
+    attemptCountIsTotal: false,
+    deltaPoints: null,
+    status: "ยังไม่มีผลประเมิน",
+    evidenceStatus: "none"
+  };
+  if (!record || typeof record !== "object" || Array.isArray(record)) {
+    return record === null || record === undefined ? empty : {
+      ...empty, status: "ข้อมูลผลประเมินไม่สมบูรณ์", evidenceStatus: "invalid"
+    };
+  }
+  if (record.bossId !== undefined && record.bossId !== bossId) {
+    return { ...empty, status: "ข้อมูลผลประเมินไม่สมบูรณ์", evidenceStatus: "invalid" };
+  }
+  const history = (Array.isArray(record.history) ? record.history : [])
+    .filter(attempt => isValidVsBossReportAttempt(attempt, bossId));
+  const dedicated = [record.firstAttempt, record.latestAttempt, record.bestAttempt]
+    .filter(attempt => isValidVsBossReportAttempt(attempt, bossId));
+  const byId = new Map();
+  for (const attempt of [...history, ...dedicated]) {
+    const previous = byId.get(attempt.attemptId);
+    if (previous && (previous.knowledgeScorePercent !== attempt.knowledgeScorePercent ||
+        previous.correctAnswers !== attempt.correctAnswers || previous.totalQuestions !== attempt.totalQuestions ||
+        previous.resultStatus !== attempt.resultStatus)) {
+      return { ...empty, status: "ข้อมูลผลประเมินไม่สมบูรณ์", evidenceStatus: "invalid" };
+    }
+    byId.set(attempt.attemptId, attempt);
+  }
+  const attempts = [...byId.values()];
+  if (!attempts.length) {
+    const isLegacy = record.hasLegacySummary === true || record.bestScore !== undefined || record.bestAccuracy !== undefined;
+    return {
+      ...empty,
+      status: isLegacy ? "ยังไม่มีผลประเมิน (ข้อมูลเดิมไม่เพียงพอสำหรับรายงาน)" : "ข้อมูลผลประเมินไม่สมบูรณ์",
+      evidenceStatus: isLegacy ? "legacy" : "invalid"
+    };
+  }
+  // The capped history alone cannot prove the first or personal best score.
+  const historyIsComplete = Array.isArray(record.history) &&
+    history.length === record.history.length &&
+    (record.hasLegacySummary === true
+      ? history.length < VS_BOSS_HISTORY_LIMIT
+      : Number.isInteger(record.attempts) && record.attempts === history.length);
+  if ((!isValidVsBossReportAttempt(record.firstAttempt, bossId) ||
+       !isValidVsBossReportAttempt(record.latestAttempt, bossId) ||
+       !isValidVsBossReportAttempt(record.bestAttempt, bossId)) && !historyIsComplete) {
+    return {
+      ...empty,
+      status: "ข้อมูลผลประเมินไม่สมบูรณ์",
+      evidenceStatus: "invalid"
+    };
+  }
+  const chronological = attempts.sort((left, right) =>
+    new Date(left.completedAt).getTime() - new Date(right.completedAt).getTime() ||
+    left.attemptNumber - right.attemptNumber
+  );
+  const first = chronological[0];
+  const latest = chronological.at(-1);
+  const best = attempts.reduce((current, attempt) =>
+    attempt.knowledgeScorePercent > current.knowledgeScorePercent ? attempt : current
+  );
+  const validTotal = record.hasLegacySummary !== true &&
+    Array.isArray(record.history) && history.length === record.history.length &&
+    Number.isInteger(record.attempts) && record.attempts >= attempts.length;
+  const attemptCount = validTotal ? record.attempts : attempts.length;
+  const deltaPoints = latest.knowledgeScorePercent - first.knowledgeScorePercent;
+  return {
+    student,
+    firstScore: first.knowledgeScorePercent,
+    latestScore: latest.knowledgeScorePercent,
+    bestScore: best.knowledgeScorePercent,
+    attemptCount,
+    attemptCountIsTotal: validTotal,
+    deltaPoints,
+    status: attemptCount === 1 ? "มีผล 1 ครั้ง" : deltaPoints > 0 ? "สูงขึ้น" : deltaPoints < 0 ? "ต่ำลง" : "คงที่",
+    evidenceStatus: "valid"
+  };
+}
+
+function buildVsBossClassReport(students, recordsByUid, bossId, classLevel, room) {
+  const roster = (Array.isArray(students) ? students : [])
+    .filter(student => student && !student.isDeleted && student.reportProfileCompleted && student.reportIdentityValid &&
+      student.sourceId && student.uid === student.sourceId &&
+      student.reportProfile?.classLevel === classLevel && String(student.reportProfile?.room) === String(room))
+    .sort((left, right) => {
+      const leftNo = Number(left.reportProfile.studentNo);
+      const rightNo = Number(right.reportProfile.studentNo);
+      const numberOrder = (Number.isInteger(leftNo) ? leftNo : Infinity) - (Number.isInteger(rightNo) ? rightNo : Infinity);
+      return (Number.isNaN(numberOrder) ? 0 : numberOrder) ||
+        String(left.reportProfile.fullName).localeCompare(String(right.reportProfile.fullName), "th");
+    });
+  const rows = roster.map(student => {
+    const evidence = recordsByUid instanceof Map ? recordsByUid.get(student.sourceId) : null;
+    if (evidence?.invalid) {
+      return {
+        ...deriveStudentVsBossReport(student, {}, bossId),
+        status: "ข้อมูลผลประเมินไม่สมบูรณ์",
+        evidenceStatus: "invalid"
+      };
+    }
+    return deriveStudentVsBossReport(student, evidence?.record ?? null, bossId);
+  });
+  const scored = rows.filter(row => row.evidenceStatus === "valid");
+  const mean = values => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+  const paired = scored.filter(row => row.firstScore !== null && row.latestScore !== null);
+  const firstAverage = mean(scored.map(row => row.firstScore));
+  const latestAverage = mean(scored.map(row => row.latestScore));
+  const bestAverage = mean(scored.map(row => row.bestScore));
+  const preAverage = mean(paired.map(row => row.firstScore));
+  const postAverage = mean(paired.map(row => row.latestScore));
+  const differencePoints = mean(paired.map(row => row.deltaPoints));
+  return {
+    bossId,
+    classLevel,
+    room,
+    rosterCount: rows.length,
+    assessedCount: scored.length,
+    coveragePercent: rows.length ? scored.length / rows.length * 100 : null,
+    firstAverage,
+    latestAverage,
+    bestAverage,
+    pairedStudentCount: paired.length,
+    preAverage,
+    postAverage,
+    differencePoints,
+    relativeChangePercent: preAverage !== null && preAverage !== 0
+      ? (postAverage - preAverage) / preAverage * 100
+      : null,
+    rows
+  };
+}
+
 async function loadTeacherDashboardRecords() {
   teacherDashboardLoadError = "";
   if (getAuthMode() === "firebase") {
@@ -34452,7 +34638,7 @@ async function loadTeacherDashboardRecords() {
         .map(docSnapshot => {
           const playerRecord = docSnapshot.data() || {};
           const clientRecord = clientProgressByUid.get(docSnapshot.id);
-          return normalizeTeacherStudentRecord({
+          const normalized = normalizeTeacherStudentRecord({
             ...playerRecord,
             ...(clientRecord?.progress ? {
               progress: clientRecord.progress,
@@ -34460,6 +34646,13 @@ async function loadTeacherDashboardRecords() {
               clientProgressUpdatedAt: clientRecord.updatedAt || clientRecord.lastActiveAt || null
             } : {})
           }, docSnapshot.id);
+          if (normalized) {
+            normalized.reportProfile = getDirectTeacherProfile(playerRecord);
+            normalized.reportProfileCompleted = hasCompleteStudentProfile(normalized.reportProfile);
+            normalized.reportIdentityValid = (!playerRecord.uid || playerRecord.uid === docSnapshot.id) &&
+              (!playerRecord.authUid || playerRecord.authUid === docSnapshot.id);
+          }
+          return normalized;
         })
         .filter(Boolean);
       console.log("[Teacher Dashboard] loaded student count:", students.length);
@@ -34501,6 +34694,274 @@ async function loadTeacherDashboardRecords() {
     }
   });
   return students;
+}
+
+function setVsBossReportStatus(message, isError = false) {
+  if (!els.vsBossReportStatus) return;
+  els.vsBossReportStatus.textContent = message;
+  els.vsBossReportStatus.classList.toggle("is-error", isError);
+}
+
+function clearVsBossReportContent() {
+  vsBossReportLoadVersion += 1;
+  els.vsBossReportContent?.classList.add("hidden");
+  els.vsBossReportSummary?.replaceChildren();
+  els.vsBossReportTableBody?.replaceChildren();
+  if (els.vsBossReportTitle) els.vsBossReportTitle.textContent = "";
+  if (els.vsBossReportTopic) els.vsBossReportTopic.textContent = "";
+  if (els.vsBossReportDevelopmentNote) els.vsBossReportDevelopmentNote.textContent = "";
+  if (els.vsBossReportLoadButton) {
+    els.vsBossReportLoadButton.disabled = !(
+      els.vsBossReportBossSelect?.value &&
+      els.vsBossReportClassSelect?.value &&
+      els.vsBossReportRoomSelect?.value
+    );
+  }
+}
+
+function setVsBossReportSelectOptions(select, placeholder, values) {
+  if (!select) return;
+  select.replaceChildren();
+  const prompt = document.createElement("option");
+  prompt.value = "";
+  prompt.textContent = placeholder;
+  select.appendChild(prompt);
+  values.forEach(({ value, label }) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    select.appendChild(option);
+  });
+  select.value = "";
+}
+
+function getEligibleVsBossReportStudents() {
+  return teacherDashboardStudents.filter(student =>
+    student && !student.isDeleted && student.reportProfileCompleted && student.reportIdentityValid &&
+    student.sourceId && student.uid === student.sourceId
+  );
+}
+
+function resetVsBossReportFilters() {
+  setVsBossReportSelectOptions(
+    els.vsBossReportBossSelect, "เลือกบอส",
+    getVsBossRegistryList().map(boss => ({
+      value: boss.id,
+      label: `${boss.name} — ${boss.thaiName} · ${boss.topicTh || boss.topic}`
+    }))
+  );
+  setVsBossReportSelectOptions(els.vsBossReportClassSelect, "เลือกระดับชั้น", []);
+  setVsBossReportSelectOptions(els.vsBossReportRoomSelect, "เลือกห้อง", []);
+  if (els.vsBossReportClassSelect) els.vsBossReportClassSelect.disabled = true;
+  if (els.vsBossReportRoomSelect) els.vsBossReportRoomSelect.disabled = true;
+  clearVsBossReportContent();
+}
+
+function onVsBossReportBossChange() {
+  clearVsBossReportContent();
+  const classes = [...new Set(getEligibleVsBossReportStudents().map(student => student.reportProfile.classLevel))]
+    .sort((left, right) => left.localeCompare(right, "th", { numeric: true }));
+  setVsBossReportSelectOptions(
+    els.vsBossReportClassSelect, "เลือกระดับชั้น",
+    classes.map(value => ({ value, label: value }))
+  );
+  setVsBossReportSelectOptions(els.vsBossReportRoomSelect, "เลือกห้อง", []);
+  if (els.vsBossReportClassSelect) els.vsBossReportClassSelect.disabled = !els.vsBossReportBossSelect?.value;
+  if (els.vsBossReportRoomSelect) els.vsBossReportRoomSelect.disabled = true;
+  if (els.vsBossReportLoadButton) els.vsBossReportLoadButton.disabled = true;
+  setVsBossReportStatus("เลือกระดับชั้นและห้องเพื่อแสดงรายงาน");
+}
+
+function onVsBossReportClassChange() {
+  clearVsBossReportContent();
+  const classLevel = els.vsBossReportClassSelect?.value || "";
+  const rooms = [...new Set(getEligibleVsBossReportStudents()
+    .filter(student => student.reportProfile.classLevel === classLevel)
+    .map(student => String(student.reportProfile.room)))]
+    .sort((left, right) => left.localeCompare(right, "th", { numeric: true }));
+  setVsBossReportSelectOptions(
+    els.vsBossReportRoomSelect, "เลือกห้อง",
+    rooms.map(value => ({ value, label: `ห้อง ${value}` }))
+  );
+  if (els.vsBossReportRoomSelect) els.vsBossReportRoomSelect.disabled = !classLevel;
+  if (els.vsBossReportLoadButton) els.vsBossReportLoadButton.disabled = true;
+  setVsBossReportStatus("เลือกห้องเพื่อแสดงรายงาน");
+}
+
+function onVsBossReportRoomChange() {
+  clearVsBossReportContent();
+  setVsBossReportStatus(els.vsBossReportRoomSelect?.value
+    ? "พร้อมแสดงรายงาน กดแสดงรายงานเพื่ออ่านผลการเล่น"
+    : "เลือกห้องเพื่อแสดงรายงาน");
+}
+
+async function openPlayerScoreReportsPanel() {
+  if (!requireStudentManagementAccess()) return;
+  els.teacherDashboardOverviewPanel?.classList.add("hidden");
+  els.studentManagementPanel?.classList.add("hidden");
+  els.assetManagerPanel?.classList.add("hidden");
+  els.playerScoreReportsPanel?.classList.remove("hidden");
+  resetVsBossReportFilters();
+  if (els.vsBossReportBossSelect) els.vsBossReportBossSelect.disabled = true;
+  setVsBossReportStatus("กำลังตรวจสอบสิทธิ์และรายชื่อนักเรียน...");
+  const version = vsBossReportLoadVersion;
+  const claimed = await isCurrentUserTeacherClaimed(true);
+  if (version !== vsBossReportLoadVersion || els.playerScoreReportsPanel?.classList.contains("hidden")) return;
+  if (!claimed) {
+    setVsBossReportStatus("ไม่มีสิทธิ์อ่านรายงาน กรุณาใช้บัญชีครูที่ได้รับสิทธิ์", true);
+    return;
+  }
+  if (teacherDashboardLoadError) {
+    setVsBossReportStatus(teacherDashboardLoadError, true);
+    return;
+  }
+  els.vsBossReportBossSelect.disabled = false;
+  setVsBossReportStatus("เลือกบอส ระดับชั้น และห้องเพื่อแสดงรายงาน");
+}
+
+function closePlayerScoreReportsPanel() {
+  clearVsBossReportContent();
+  els.playerScoreReportsPanel?.classList.add("hidden");
+  els.teacherDashboardOverviewPanel?.classList.remove("hidden");
+  renderTeacherDashboardSummary(teacherDashboardStudents);
+  renderTeacherDashboardTable();
+}
+
+function formatVsBossReportPercent(value) {
+  return value === null || !Number.isFinite(value) ? "—" : `${value.toFixed(1)}%`;
+}
+
+function formatVsBossReportPoints(value) {
+  return value === null || !Number.isFinite(value)
+    ? "—"
+    : `${value > 0 ? "+" : ""}${value.toFixed(1)} จุด`;
+}
+
+function formatVsBossReportDevelopment(report) {
+  if (report.differencePoints === null) return "—";
+  const direction = report.differencePoints > 0 ? "สูงขึ้น" : report.differencePoints < 0 ? "ต่ำลง" : "คงที่";
+  const relative = report.relativeChangePercent;
+  const relativeText = relative === null ? "" :
+    ` (${relative > 0 ? "+" : ""}${relative.toFixed(1)}%)`;
+  return `${direction} ${formatVsBossReportPoints(report.differencePoints)}${relativeText}`;
+}
+
+function renderVsBossClassReport(report, boss) {
+  els.vsBossReportTitle.textContent = `${boss.name} — ${boss.thaiName} · ${report.classLevel} ห้อง ${report.room}`;
+  els.vsBossReportTopic.textContent = boss.topicTh || boss.topic;
+  const cards = [
+    ["นักเรียนทั้งหมด", `${report.rosterCount} คน`],
+    ["มีผลประเมิน", `${report.assessedCount} / ${report.rosterCount} คน (${formatVsBossReportPercent(report.coveragePercent)})`],
+    ["คะแนนเฉลี่ยล่าสุด", formatVsBossReportPercent(report.latestAverage)],
+    ["คะแนนครั้งแรกเฉลี่ย", formatVsBossReportPercent(report.firstAverage)],
+    ["คะแนนสูงสุดเฉลี่ย", formatVsBossReportPercent(report.bestAverage)],
+    ["ผลต่างก่อน–หลัง", formatVsBossReportDevelopment(report)]
+  ];
+  els.vsBossReportSummary.replaceChildren();
+  cards.forEach(([label, value]) => {
+    const card = document.createElement("div");
+    card.className = "vs-boss-report-summary-card";
+    if (label === "ผลต่างก่อน–หลัง" && report.differencePoints !== null) {
+      card.classList.add(report.differencePoints > 0 ? "is-improved" : report.differencePoints < 0 ? "is-decreased" : "is-same");
+    }
+    const caption = document.createElement("span");
+    caption.textContent = label;
+    const number = document.createElement("strong");
+    number.textContent = value;
+    card.append(caption, number);
+    els.vsBossReportSummary.appendChild(card);
+  });
+  els.vsBossReportDevelopmentNote.textContent = report.pairedStudentCount
+    ? `คำนวณพัฒนาการจากนักเรียน ${report.pairedStudentCount} คนที่มีข้อมูลครั้งแรกและล่าสุดครบ${report.relativeChangePercent === null ? " · คำนวณร้อยละการเปลี่ยนแปลงไม่ได้ เพราะคะแนนครั้งแรกเฉลี่ยเป็น 0" : ""}`
+    : "ยังไม่มีข้อมูลคู่ครั้งแรก–ล่าสุดสำหรับคำนวณพัฒนาการ";
+  els.vsBossReportTableBody.replaceChildren();
+  report.rows.forEach(row => {
+    const tr = document.createElement("tr");
+    if (row.evidenceStatus === "valid" && row.attemptCount !== 1) {
+      tr.classList.add(row.deltaPoints > 0 ? "is-improved" : row.deltaPoints < 0 ? "is-decreased" : "is-same");
+    }
+    appendTeacherTableCell(tr, String(row.student.reportProfile.studentNo || "—"));
+    appendTeacherTableCell(tr, row.student.reportProfile.fullName);
+    appendTeacherTableCell(tr, row.student.characterCreated
+      ? String(row.student.characterName || row.student.displayName || "—")
+      : "ยังไม่ได้สร้างตัวละคร");
+    appendTeacherTableCell(tr, formatVsBossReportPercent(row.firstScore));
+    appendTeacherTableCell(tr, formatVsBossReportPercent(row.latestScore));
+    appendTeacherTableCell(tr, formatVsBossReportPercent(row.bestScore));
+    appendTeacherTableCell(tr, row.attemptCount === null
+      ? "—"
+      : `${row.attemptCount} ครั้ง${row.attemptCountIsTotal ? "" : " (อย่างน้อย)"}`);
+    appendTeacherTableCell(tr, formatVsBossReportPoints(row.deltaPoints));
+    appendTeacherTableCell(tr, row.status);
+    els.vsBossReportTableBody.appendChild(tr);
+  });
+  els.vsBossReportContent.classList.remove("hidden");
+  const invalidCount = report.rows.filter(row => row.evidenceStatus === "invalid").length;
+  setVsBossReportStatus(report.rosterCount === 0
+    ? "ไม่พบนักเรียนในห้องที่เลือก"
+    : report.assessedCount === 0
+      ? "ห้องนี้ยังไม่มีผลประเมิน VS Bosses ที่สมบูรณ์"
+      : `แสดงผลการเล่นของนักเรียน ${report.assessedCount} จาก ${report.rosterCount} คน${invalidCount ? ` · ข้อมูลไม่สมบูรณ์ ${invalidCount} คน` : ""}`);
+}
+
+async function loadVsBossClassReport() {
+  const boss = getVsBossConfig(els.vsBossReportBossSelect?.value);
+  const classLevel = els.vsBossReportClassSelect?.value || "";
+  const room = els.vsBossReportRoomSelect?.value || "";
+  if (!boss || !classLevel || !room || !teacherDashboardAccessGranted || teacherDashboardLoadError) return;
+  clearVsBossReportContent();
+  const version = vsBossReportLoadVersion;
+  els.vsBossReportLoadButton.disabled = true;
+  setVsBossReportStatus("กำลังโหลดผลการเล่นของห้องที่เลือก...");
+  if (!(await isCurrentUserTeacherClaimed(true))) {
+    if (version === vsBossReportLoadVersion) {
+      setVsBossReportStatus("ไม่มีสิทธิ์อ่านรายงาน กรุณาใช้บัญชีครูที่ได้รับสิทธิ์", true);
+      els.vsBossReportLoadButton.disabled = false;
+    }
+    return;
+  }
+  if (version !== vsBossReportLoadVersion) return;
+  const roster = getEligibleVsBossReportStudents().filter(student =>
+    student.reportProfile.classLevel === classLevel && String(student.reportProfile.room) === room
+  );
+  const recordsByUid = new Map();
+  if (roster.length) {
+    try {
+      const snapshots = await Promise.all(roster.map(student =>
+        getDoc(getPlayerClientProgressDocRef(student.sourceId))
+      ));
+      if (version !== vsBossReportLoadVersion) return;
+      snapshots.forEach((snapshot, index) => {
+        const uid = roster[index].sourceId;
+        if (!snapshot.exists()) {
+          recordsByUid.set(uid, { record: null });
+          return;
+        }
+        const data = snapshot.data();
+        const progress = data?.progress;
+        if (data?.uid !== uid || data?.authUid !== uid || data?.schemaVersion !== PLAYER_CLIENT_PROGRESS_SCHEMA_VERSION ||
+            data?.clientReported !== true || !progress || typeof progress !== "object" || Array.isArray(progress) ||
+            (progress.vsBossAssessmentRecords !== undefined &&
+              (!progress.vsBossAssessmentRecords || typeof progress.vsBossAssessmentRecords !== "object" ||
+               Array.isArray(progress.vsBossAssessmentRecords)))) {
+          recordsByUid.set(uid, { invalid: true });
+          return;
+        }
+        recordsByUid.set(uid, { record: progress.vsBossAssessmentRecords?.[boss.id] ?? null });
+      });
+    } catch (error) {
+      if (version !== vsBossReportLoadVersion) return;
+      console.error("[Player Score Reports] read failed:", error);
+      setVsBossReportStatus(isFirebasePermissionDeniedError(error)
+        ? "ไม่มีสิทธิ์อ่านผลการเล่นของนักเรียน กรุณาตรวจสอบสิทธิ์บัญชีครู"
+        : "ไม่สามารถโหลดผลการเล่นได้ กรุณาตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง", true);
+      els.vsBossReportLoadButton.disabled = false;
+      return;
+    }
+  }
+  if (version !== vsBossReportLoadVersion) return;
+  renderVsBossClassReport(buildVsBossClassReport(teacherDashboardStudents, recordsByUid, boss.id, classLevel, room), boss);
+  els.vsBossReportLoadButton.disabled = false;
 }
 
 function getFilteredTeacherDashboardStudents() {
@@ -34831,6 +35292,8 @@ function openStudentManagementPanel() {
   if (!requireStudentManagementAccess()) {
     return;
   }
+  clearVsBossReportContent();
+  els.playerScoreReportsPanel?.classList.add("hidden");
   els.teacherDashboardOverviewPanel?.classList.add("hidden");
   els.assetManagerPanel?.classList.add("hidden");
   els.studentManagementPanel?.classList.remove("hidden");
@@ -34854,6 +35317,8 @@ function closeStudentManagementPanel() {
 }
 
 function leaveTeacherDashboard() {
+  clearVsBossReportContent();
+  els.playerScoreReportsPanel?.classList.add("hidden");
   els.studentManagementPanel?.classList.add("hidden");
   els.assetManagerPanel?.classList.add("hidden");
   els.teacherDashboardOverviewPanel?.classList.remove("hidden");
@@ -35549,6 +36014,8 @@ async function openAssetManagerPanel(options = {}) {
     return false;
   }
   els.teacherDashboardOverviewPanel?.classList.add("hidden");
+  clearVsBossReportContent();
+  els.playerScoreReportsPanel?.classList.add("hidden");
   els.studentManagementPanel?.classList.add("hidden");
   els.assetManagerPanel?.classList.remove("hidden");
   setAssetManagerStatus("กำลังตรวจสอบ Asset Override...");
@@ -36083,6 +36550,8 @@ function openAssetResetConfirmModal(assetKey) {
 async function showTeacherDashboard() {
   closeGameModal();
   showScene("teacherDashboard");
+  clearVsBossReportContent();
+  els.playerScoreReportsPanel?.classList.add("hidden");
   els.teacherDashboardOverviewPanel?.classList.remove("hidden");
   els.studentManagementPanel?.classList.add("hidden");
   els.assetManagerPanel?.classList.add("hidden");
@@ -50431,6 +50900,12 @@ document.addEventListener("keydown", event => {
 });
 els.createCharacterButton.addEventListener("click", createCharacterFromForm);
 els.teacherDashboardBackButton?.addEventListener("click", returnFromCustomizationToMainMenu);
+els.playerScoreReportsButton?.addEventListener("click", openPlayerScoreReportsPanel);
+els.playerScoreReportsCloseButton?.addEventListener("click", closePlayerScoreReportsPanel);
+els.vsBossReportBossSelect?.addEventListener("change", onVsBossReportBossChange);
+els.vsBossReportClassSelect?.addEventListener("change", onVsBossReportClassChange);
+els.vsBossReportRoomSelect?.addEventListener("change", onVsBossReportRoomChange);
+els.vsBossReportLoadButton?.addEventListener("click", loadVsBossClassReport);
 els.teacherClassLevelFilter?.addEventListener("change", renderTeacherDashboardTable);
 els.teacherRoomFilter?.addEventListener("change", renderTeacherDashboardTable);
 els.teacherStudentSearchInput?.addEventListener("input", renderTeacherDashboardTable);
