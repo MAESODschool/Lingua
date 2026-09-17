@@ -5,6 +5,10 @@ const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8');
 const index = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const removedDataPrefix = ['rewind', 'demo'].join('-') + '-';
+const removedFeatureName = ['REWIND', 'SLIME', 'DEMO', 'REPORT'].join('_');
+assert.equal(source.includes(removedDataPrefix), false);
+assert.equal(source.includes(removedFeatureName), false);
 function declaration(name) {
   const functionStart = source.indexOf(`function ${name}(`);
   const start = source.slice(functionStart - 6, functionStart) === 'async ' ? functionStart - 6 : functionStart;
@@ -93,6 +97,8 @@ assert.equal(run('buildVsBossClassReport(entries, new Map(), bossId, "ม.2", "4
 const noData = run('buildVsBossClassReport(entries, new Map(), bossId, "ม.2", "3")');
 assert.equal(noData.firstAverage, null);
 assert.equal(noData.coveragePercent, 0);
+sandbox.noData = noData;
+assert.equal(run('formatVsBossReportPercent(noData.firstAverage)'), '—');
 const zeroOnly = new Map([['b', records.get('b')]]);
 sandbox.zeroOnly = vm.runInContext('new Map()', sandbox);
 for (const [uid, value] of zeroOnly) sandbox.zeroOnly.set(uid, value);
@@ -151,6 +157,9 @@ const loader = declaration('loadVsBossClassReport');
 assert.ok(loader.includes('getDoc(getPlayerClientProgressDocRef(student.sourceId))'));
 assert.ok(loader.includes('progress.vsBossAssessmentRecords?.[boss.id]'));
 assert.ok(!/\b(setDoc|updateDoc|runTransaction|addDoc|deleteDoc)\s*\(/.test(loader));
+for (const name of ['onVsBossReportBossChange', 'onVsBossReportClassChange', 'loadVsBossClassReport']) {
+  assert.equal(declaration(name).includes('"rewind_slime"'), false, `${name} contains a Rewind Slime override`);
+}
 const renderer = declaration('renderVsBossClassReport');
 assert.ok(!renderer.includes('innerHTML'));
 vm.runInContext('const PLAYER_CLIENT_PROGRESS_SCHEMA_VERSION = 1;', sandbox);
@@ -168,8 +177,7 @@ sandbox.vsBossReportLoadVersion = 0;
 sandbox.clearVsBossReportContent = () => { sandbox.vsBossReportLoadVersion += 1; };
 sandbox.setVsBossReportStatus = () => {};
 sandbox.isCurrentUserTeacherClaimed = async () => true;
-sandbox.getVsBossConfig = id => id === bossId ? { id } : null;
-sandbox.isRewindSlimeDemoReportSelection = () => false;
+sandbox.getVsBossConfig = id => [bossId, 'rewind_slime'].includes(id) ? { id } : null;
 sandbox.getEligibleVsBossReportStudents = () => entries.filter(item => !item.isDeleted && item.reportIdentityValid);
 sandbox.getPlayerClientProgressDocRef = uid => uid;
 sandbox.isFirebasePermissionDeniedError = () => false;
@@ -186,6 +194,20 @@ sandbox.renderVsBossClassReport = report => { drawn = report; };
   assert.deepEqual(reads.sort(), ['a', 'b', 'c']);
   assert.equal(drawn.assessedCount, 2);
   assert.equal(sandbox.els.vsBossReportLoadButton.disabled, false);
+
+  drawn = null;
+  reads.length = 0;
+  sandbox.els.vsBossReportBossSelect.value = 'rewind_slime';
+  await run('loadVsBossClassReport()');
+  assert.deepEqual(reads.sort(), ['a', 'b', 'c']);
+  assert.equal(drawn.bossId, 'rewind_slime');
+  assert.equal(drawn.rosterCount, 3);
+  assert.equal(drawn.assessedCount, 0);
+  assert.equal(drawn.firstAverage, null);
+  assert.equal(drawn.latestAverage, null);
+  assert.equal(drawn.bestAverage, null);
+  assert.equal(drawn.coveragePercent, 0);
+  assert.ok(drawn.rows.every(row => row.status === 'ยังไม่มีผลประเมิน'));
 
   drawn = null;
   const resolvers = [];

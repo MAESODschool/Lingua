@@ -24595,7 +24595,6 @@ const els = {
   vsBossReportTopic: document.getElementById("vsBossReportTopic"),
   vsBossReportSummary: document.getElementById("vsBossReportSummary"),
   vsBossReportDevelopmentNote: document.getElementById("vsBossReportDevelopmentNote"),
-  vsBossReportSourceNote: document.getElementById("vsBossReportSourceNote"),
   vsBossReportTableBody: document.getElementById("vsBossReportTableBody"),
   teacherDashboardSummary: document.getElementById("teacherDashboardSummary"),
   teacherClassLevelFilter: document.getElementById("teacherClassLevelFilter"),
@@ -34626,176 +34625,6 @@ function summarizeVsBossClassRows(rows, bossId, classLevel, room) {
   };
 }
 
-// ============================================================
-// TEMPORARY REWIND SLIME DEMO REPORT
-// DEMONSTRATION DATA ONLY
-// DOES NOT MODIFY STUDENT ACCOUNTS OR FIRESTORE
-// REMOVE / DISABLE AFTER DEMONSTRATION
-// ============================================================
-const REWIND_SLIME_DEMO_REPORT_ENABLED = true;
-const REWIND_SLIME_DEMO_REPORT_DATA = Object.freeze({
-  "1": Object.freeze([
-    {"demoId":"rewind-demo-m3-1-01","classLevel":"ม.3","room":"1","studentNo":1,"fullName":"เด็กชายกรวิชญ์ หลวงหลาย","firstScore":68,"latestScore":87,"bestScore":88,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-1-02","classLevel":"ม.3","room":"1","studentNo":2,"fullName":"เด็กชายณัฐพงศ์ สมบูรณ์","firstScore":78,"latestScore":94,"bestScore":96,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-1-03","classLevel":"ม.3","room":"1","studentNo":3,"fullName":"เด็กชายเจษฎา ชนะการี","firstScore":67,"latestScore":85,"bestScore":88,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-1-04","classLevel":"ม.3","room":"1","studentNo":4,"fullName":"เด็กชายณัฐดนัย จันทวงษ์","firstScore":77,"latestScore":92,"bestScore":96,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-1-05","classLevel":"ม.3","room":"1","studentNo":5,"fullName":"เด็กชายรามิล ดวงไชยภพ","firstScore":66,"latestScore":83,"bestScore":83,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-1-06","classLevel":"ม.3","room":"1","studentNo":6,"fullName":"เด็กชายพิชญะ กาเหมือยวงษ์","firstScore":76,"latestScore":90,"bestScore":91,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-1-07","classLevel":"ม.3","room":"1","studentNo":7,"fullName":"เด็กชายธาม -","firstScore":65,"latestScore":76,"bestScore":77,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-1-08","classLevel":"ม.3","room":"1","studentNo":8,"fullName":"เด็กชายอัศม์เดช รัตนเจริญศิลป์","firstScore":75,"latestScore":88,"bestScore":91,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-1-09","classLevel":"ม.3","room":"1","studentNo":9,"fullName":"เด็กชายสมิต -","firstScore":64,"latestScore":95,"bestScore":99,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-1-10","classLevel":"ม.3","room":"1","studentNo":10,"fullName":"เด็กชายธนกร วิโรจไพศาล","firstScore":74,"latestScore":86,"bestScore":86,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-1-11","classLevel":"ม.3","room":"1","studentNo":11,"fullName":"เด็กชายจิรายุทธ","firstScore":63,"latestScore":93,"bestScore":94,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-1-12","classLevel":"ม.3","room":"1","studentNo":12,"fullName":"เด็กชายเวย่างแทด","firstScore":73,"latestScore":84,"bestScore":86,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-1-13","classLevel":"ม.3","room":"1","studentNo":13,"fullName":"เด็กชายมงคลสิริ หมื่นคำวัง","firstScore":62,"latestScore":91,"bestScore":94,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-1-14","classLevel":"ม.3","room":"1","studentNo":14,"fullName":"เด็กหญิงชญานิศ ธีรรัตนกุล","firstScore":72,"latestScore":82,"bestScore":86,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-1-15","classLevel":"ม.3","room":"1","studentNo":15,"fullName":"เด็กหญิงวาสนา ประทาน","firstScore":61,"latestScore":89,"bestScore":89,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-1-16","classLevel":"ม.3","room":"1","studentNo":16,"fullName":"เด็กหญิงจรัญพร ดุจดังพลอย","firstScore":71,"latestScore":76,"bestScore":77,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-1-17","classLevel":"ม.3","room":"1","studentNo":17,"fullName":"เด็กหญิงอาวิภาวี แย้มโกสุม","firstScore":60,"latestScore":87,"bestScore":89,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-1-18","classLevel":"ม.3","room":"1","studentNo":18,"fullName":"เด็กหญิงปรียาลักษณ์ สีสะแล","firstScore":70,"latestScore":94,"bestScore":97,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-1-19","classLevel":"ม.3","room":"1","studentNo":19,"fullName":"เด็กหญิงโมโม","firstScore":59,"latestScore":85,"bestScore":89,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-1-20","classLevel":"ม.3","room":"1","studentNo":20,"fullName":"เด็กหญิงกัญญาเรศ ปันมูล","firstScore":69,"latestScore":92,"bestScore":92,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-1-21","classLevel":"ม.3","room":"1","studentNo":21,"fullName":"เด็กหญิงปวริศา อิ่มอ่วม","firstScore":58,"latestScore":83,"bestScore":84,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-1-22","classLevel":"ม.3","room":"1","studentNo":22,"fullName":"เด็กหญิงจินตนา จิตปรารถนา","firstScore":68,"latestScore":90,"bestScore":92,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-1-23","classLevel":"ม.3","room":"1","studentNo":23,"fullName":"เด็กหญิงชลธิชา ต๊ะมะปุ๊ด","firstScore":78,"latestScore":81,"bestScore":84,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-1-24","classLevel":"ม.3","room":"1","studentNo":24,"fullName":"เด็กหญิงวริศรา กาเหมือยวงษ์","firstScore":67,"latestScore":88,"bestScore":92,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-1-25","classLevel":"ม.3","room":"1","studentNo":25,"fullName":"เด็กหญิงน้องฟ้า","firstScore":72,"latestScore":76,"bestScore":77,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-1-26","classLevel":"ม.3","room":"1","studentNo":26,"fullName":"เด็กหญิงอารยา","firstScore":66,"latestScore":86,"bestScore":87,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-1-27","classLevel":"ม.3","room":"1","studentNo":27,"fullName":"เด็กหญิงพิมพิดา","firstScore":76,"latestScore":93,"bestScore":95,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-1-28","classLevel":"ม.3","room":"1","studentNo":28,"fullName":"เด็กหญิงสุรัษสดา ธาราเคหะกุล","firstScore":65,"latestScore":84,"bestScore":87,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-1-29","classLevel":"ม.3","room":"1","studentNo":29,"fullName":"เด็กหญิงนดา ศิริชยกร","firstScore":75,"latestScore":91,"bestScore":95,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-1-30","classLevel":"ม.3","room":"1","studentNo":30,"fullName":"เด็กหญิงพัฒน์นรี โพธิ์พันธ์","firstScore":64,"latestScore":82,"bestScore":82,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-1-31","classLevel":"ม.3","room":"1","studentNo":31,"fullName":"เด็กหญิงวิภาดา ข้างจะงาม","firstScore":74,"latestScore":89,"bestScore":90,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-1-32","classLevel":"ม.3","room":"1","studentNo":32,"fullName":"เด็กหญิงณัฐธิดา ประสิทธิ์นอก","firstScore":63,"latestScore":80,"bestScore":82,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-1-33","classLevel":"ม.3","room":"1","studentNo":33,"fullName":"เด็กหญิงนภาพร นาลาย","firstScore":73,"latestScore":87,"bestScore":90,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-1-34","classLevel":"ม.3","room":"1","studentNo":34,"fullName":"เด็กหญิงนางฟา","firstScore":62,"latestScore":76,"bestScore":77,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-1-35","classLevel":"ม.3","room":"1","studentNo":35,"fullName":"เด็กหญิงรัญญา มูลใจ","firstScore":72,"latestScore":85,"bestScore":85,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-1-36","classLevel":"ม.3","room":"1","studentNo":36,"fullName":"เด็กหญิงทักษอร จี๋คีรี","firstScore":61,"latestScore":92,"bestScore":93,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-1-37","classLevel":"ม.3","room":"1","studentNo":37,"fullName":"เด็กหญิงนารีรัตน์","firstScore":71,"latestScore":83,"bestScore":85,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-1-38","classLevel":"ม.3","room":"1","studentNo":38,"fullName":"เด็กหญิงปพิชญา ถาตะนาน","firstScore":60,"latestScore":90,"bestScore":93,"attemptCount":4}
-  ]),
-  "2": Object.freeze([
-    {"demoId":"rewind-demo-m3-2-01","classLevel":"ม.3","room":"2","studentNo":1,"fullName":"เด็กชายพีระเดช ส่างน้อย","firstScore":61,"latestScore":85,"bestScore":89,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-2-02","classLevel":"ม.3","room":"2","studentNo":2,"fullName":"เด็กชายรุจ","firstScore":71,"latestScore":92,"bestScore":92,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-2-03","classLevel":"ม.3","room":"2","studentNo":3,"fullName":"เด็กชายศัภกร ถอดมูล","firstScore":60,"latestScore":83,"bestScore":84,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-2-04","classLevel":"ม.3","room":"2","studentNo":4,"fullName":"เด็กชายธเนศ -","firstScore":70,"latestScore":90,"bestScore":92,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-2-05","classLevel":"ม.3","room":"2","studentNo":5,"fullName":"เด็กชายกันต์ธีร์ วงค์แก้วมา","firstScore":59,"latestScore":81,"bestScore":84,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-2-06","classLevel":"ม.3","room":"2","studentNo":6,"fullName":"เด็กชายไตรภพ แสงโสตา","firstScore":69,"latestScore":88,"bestScore":92,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-2-07","classLevel":"ม.3","room":"2","studentNo":7,"fullName":"เด็กชายอ่องทิสอู","firstScore":58,"latestScore":95,"bestScore":95,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-2-08","classLevel":"ม.3","room":"2","studentNo":8,"fullName":"เด็กชายต่อต่าลินเอ","firstScore":68,"latestScore":86,"bestScore":87,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-2-09","classLevel":"ม.3","room":"2","studentNo":9,"fullName":"เด็กชายธนภัทร","firstScore":70,"latestScore":76,"bestScore":78,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-2-10","classLevel":"ม.3","room":"2","studentNo":10,"fullName":"เด็กชายมูฮำมัดสะอัด เต็มมาก","firstScore":67,"latestScore":84,"bestScore":87,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-2-11","classLevel":"ม.3","room":"2","studentNo":11,"fullName":"เด็กชายพัชรพล พลมั่น","firstScore":77,"latestScore":91,"bestScore":95,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-2-12","classLevel":"ม.3","room":"2","studentNo":12,"fullName":"เด็กชายอรรถชัย หุ้นมัชชะ","firstScore":66,"latestScore":82,"bestScore":82,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-2-13","classLevel":"ม.3","room":"2","studentNo":13,"fullName":"เด็กชายนราวิชญ์ เครือโต","firstScore":76,"latestScore":89,"bestScore":90,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-2-14","classLevel":"ม.3","room":"2","studentNo":14,"fullName":"เด็กชายชวกร อินชม","firstScore":65,"latestScore":80,"bestScore":82,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-2-15","classLevel":"ม.3","room":"2","studentNo":15,"fullName":"เด็กชายศักรินทร์ ปาระมี","firstScore":75,"latestScore":87,"bestScore":90,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-2-16","classLevel":"ม.3","room":"2","studentNo":16,"fullName":"เด็กชายวุฒินนท์ สุขรื่น","firstScore":64,"latestScore":94,"bestScore":98,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-2-17","classLevel":"ม.3","room":"2","studentNo":17,"fullName":"เด็กชายณัฐปรัชฐ์ จำปีพันธ์","firstScore":74,"latestScore":85,"bestScore":85,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-2-18","classLevel":"ม.3","room":"2","studentNo":18,"fullName":"เด็กชายแยมินตู่","firstScore":63,"latestScore":92,"bestScore":93,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-2-19","classLevel":"ม.3","room":"2","studentNo":19,"fullName":"เด็กชายสิริภพ","firstScore":73,"latestScore":83,"bestScore":85,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-2-20","classLevel":"ม.3","room":"2","studentNo":20,"fullName":"เด็กหญิงสุทัตตา จักรวิทยา","firstScore":62,"latestScore":90,"bestScore":93,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-2-21","classLevel":"ม.3","room":"2","studentNo":21,"fullName":"เด็กหญิงสุภาภรณ์","firstScore":72,"latestScore":81,"bestScore":85,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-2-22","classLevel":"ม.3","room":"2","studentNo":22,"fullName":"เด็กหญิงแตโบ่โบ่ -","firstScore":61,"latestScore":78,"bestScore":78,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-2-23","classLevel":"ม.3","room":"2","studentNo":23,"fullName":"เด็กหญิงปุลิน -","firstScore":71,"latestScore":95,"bestScore":96,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-2-24","classLevel":"ม.3","room":"2","studentNo":24,"fullName":"เด็กหญิงชมพู่ -","firstScore":60,"latestScore":86,"bestScore":88,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-2-25","classLevel":"ม.3","room":"2","studentNo":25,"fullName":"เด็กหญิงมะส่วยเซ่อู","firstScore":70,"latestScore":93,"bestScore":96,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-2-26","classLevel":"ม.3","room":"2","studentNo":26,"fullName":"เด็กหญิงจำปา","firstScore":59,"latestScore":84,"bestScore":88,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-2-27","classLevel":"ม.3","room":"2","studentNo":27,"fullName":"เด็กหญิงชนินธร เขียวมาก","firstScore":69,"latestScore":91,"bestScore":91,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-2-28","classLevel":"ม.3","room":"2","studentNo":28,"fullName":"เด็กหญิงซาฮิมะ","firstScore":58,"latestScore":82,"bestScore":83,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-2-29","classLevel":"ม.3","room":"2","studentNo":29,"fullName":"เด็กหญิงไลฮานา -","firstScore":68,"latestScore":89,"bestScore":91,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-2-30","classLevel":"ม.3","room":"2","studentNo":30,"fullName":"เด็กหญิงนิสา","firstScore":78,"latestScore":80,"bestScore":83,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-2-32","classLevel":"ม.3","room":"2","studentNo":32,"fullName":"เด็กหญิงดีแอนแจ่ -","firstScore":70,"latestScore":89,"bestScore":93,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-2-33","classLevel":"ม.3","room":"2","studentNo":33,"fullName":"เด็กหญิงวริศรา แก้วปินะ","firstScore":59,"latestScore":80,"bestScore":80,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-2-34","classLevel":"ม.3","room":"2","studentNo":34,"fullName":"เด็กหญิงแกพอ","firstScore":69,"latestScore":87,"bestScore":88,"attemptCount":4},
-    {"demoId":"rewind-demo-m3-2-35","classLevel":"ม.3","room":"2","studentNo":35,"fullName":"เด็กหญิงณิชาภัทร วาโพ","firstScore":58,"latestScore":79,"bestScore":79,"attemptCount":2},
-    {"demoId":"rewind-demo-m3-2-36","classLevel":"ม.3","room":"2","studentNo":36,"fullName":"เด็กหญิงดวงดาว","firstScore":68,"latestScore":85,"bestScore":88,"attemptCount":3},
-    {"demoId":"rewind-demo-m3-2-37","classLevel":"ม.3","room":"2","studentNo":37,"fullName":"เด็กหญิงชมพู -","firstScore":78,"latestScore":92,"bestScore":96,"attemptCount":4}
-  ])
-});
-
-function isRewindSlimeDemoReportSelection(reportMode, bossId, classLevel, room) {
-  return REWIND_SLIME_DEMO_REPORT_ENABLED && reportMode === "vs-bosses" &&
-    bossId === "rewind_slime" && classLevel === "ม.3" && (room === "1" || room === "2");
-}
-
-function validateRewindSlimeDemoReportData() {
-  const roomOne = REWIND_SLIME_DEMO_REPORT_DATA["1"];
-  const roomTwo = REWIND_SLIME_DEMO_REPORT_DATA["2"];
-  const all = [...roomOne, ...roomTwo];
-  const error = message => { throw new Error(`[Rewind Slime Demo Report] ${message}`); };
-  if (roomOne.length !== 38 || roomTwo.length !== 36 || all.length !== 74) error("Roster counts must be 38, 36 and 74");
-  if (new Set(all.map(record => record.demoId)).size !== all.length) error("Duplicate demo IDs");
-  if (Object.entries(REWIND_SLIME_DEMO_REPORT_DATA).some(([room, records]) =>
-    records.some(record => record.room !== room))) error("Demo room mapping is inconsistent");
-  for (const record of all) {
-    const room = record.room;
-    if (record.classLevel !== "ม.3" || !["1", "2"].includes(room) ||
-        !Number.isInteger(record.studentNo) || record.studentNo < 1 ||
-        record.demoId !== `rewind-demo-m3-${room}-${String(record.studentNo).padStart(2, "0")}` ||
-        typeof record.fullName !== "string" || !record.fullName.trim()) error("Invalid demo roster entry");
-    if (![record.firstScore, record.latestScore, record.bestScore].every(score =>
-      typeof score === "number" && Number.isFinite(score) && score >= 0 && score <= 100) ||
-        record.bestScore < record.firstScore || record.bestScore < record.latestScore ||
-        !Number.isInteger(record.attemptCount) || record.attemptCount < 1) error("Invalid demo score");
-  }
-  if (roomTwo.some(record => record.studentNo === 31)) {
-    error("Excluded student is present in demo data");
-  }
-  const roomOnePass = roomOne.filter(record => record.latestScore >= 80).length;
-  const roomTwoPass = roomTwo.filter(record => record.latestScore >= 80).length;
-  const passCount = roomOnePass + roomTwoPass;
-  const belowCount = all.length - passCount;
-  const mean = field => all.reduce((total, record) => total + record[field], 0) / all.length;
-  const firstAverage = mean("firstScore");
-  const latestAverage = mean("latestScore");
-  const bestAverage = mean("bestScore");
-  const differencePoints = latestAverage - firstAverage;
-  const relativeChangePercent = differencePoints / firstAverage * 100;
-  if (roomOnePass !== 34 || roomTwoPass !== 33 || passCount !== 67 || belowCount !== 7 ||
-      (passCount / all.length * 100).toFixed(2) !== "90.54" ||
-      firstAverage.toFixed(2) !== "67.72" || latestAverage.toFixed(2) !== "86.34" ||
-      bestAverage.toFixed(2) !== "88.30" || differencePoints.toFixed(2) !== "18.62" ||
-      relativeChangePercent.toFixed(2) !== "27.50") error("Demo aggregate does not match the supplied dataset");
-  return { totalCount: all.length, passCount, belowCount, roomPassCount: { "1": roomOnePass, "2": roomTwoPass } };
-}
-
-function getRewindSlimeDemoReportRows(room) {
-  return [...REWIND_SLIME_DEMO_REPORT_DATA[room]].sort((left, right) => left.studentNo - right.studentNo).map(record => {
-    const deltaPoints = record.latestScore - record.firstScore;
-    return {
-      demoId: record.demoId,
-      isDemo: true,
-      student: { reportProfile: { studentNo: record.studentNo, fullName: record.fullName } },
-      firstScore: record.firstScore,
-      latestScore: record.latestScore,
-      bestScore: record.bestScore,
-      attemptCount: record.attemptCount,
-      attemptCountIsTotal: true,
-      deltaPoints,
-      status: deltaPoints > 0 ? "สูงขึ้น" : deltaPoints < 0 ? "ต่ำลง" : "คงที่",
-      evidenceStatus: "valid"
-    };
-  });
-}
-
-function buildRewindSlimeDemoClassReport(room) {
-  const validation = validateRewindSlimeDemoReportData();
-  const rows = getRewindSlimeDemoReportRows(room);
-  const report = summarizeVsBossClassRows(rows, "rewind_slime", "ม.3", room);
-  const roomPassCount = validation.roomPassCount[room];
-  return {
-    ...report,
-    isDemo: true,
-    roomPassCount,
-    roomBelowCount: rows.length - roomPassCount,
-    roomPassPercent: roomPassCount / rows.length * 100,
-    combinedPassCount: validation.passCount,
-    combinedTotalCount: validation.totalCount,
-    combinedPassPercent: validation.passCount / validation.totalCount * 100
-  };
-}
-// END TEMPORARY REWIND SLIME DEMO REPORT
 
 async function loadTeacherDashboardRecords() {
   teacherDashboardLoadError = "";
@@ -34937,9 +34766,6 @@ function onVsBossReportBossChange() {
   clearVsBossReportContent();
   const classes = [...new Set(getEligibleVsBossReportStudents().map(student => student.reportProfile.classLevel))]
     .sort((left, right) => left.localeCompare(right, "th", { numeric: true }));
-  if (REWIND_SLIME_DEMO_REPORT_ENABLED && els.vsBossReportBossSelect?.value === "rewind_slime" &&
-      !classes.includes("ม.3")) classes.push("ม.3");
-  classes.sort((left, right) => left.localeCompare(right, "th", { numeric: true }));
   setVsBossReportSelectOptions(
     els.vsBossReportClassSelect, "เลือกระดับชั้น",
     classes.map(value => ({ value, label: value }))
@@ -34958,11 +34784,6 @@ function onVsBossReportClassChange() {
     .filter(student => student.reportProfile.classLevel === classLevel)
     .map(student => String(student.reportProfile.room)))]
     .sort((left, right) => left.localeCompare(right, "th", { numeric: true }));
-  if (REWIND_SLIME_DEMO_REPORT_ENABLED && els.vsBossReportBossSelect?.value === "rewind_slime" &&
-      classLevel === "ม.3") {
-    ["1", "2"].forEach(room => { if (!rooms.includes(room)) rooms.push(room); });
-  }
-  rooms.sort((left, right) => left.localeCompare(right, "th", { numeric: true }));
   setVsBossReportSelectOptions(
     els.vsBossReportRoomSelect, "เลือกห้อง",
     rooms.map(value => ({ value, label: `ห้อง ${value}` }))
@@ -34995,14 +34816,12 @@ async function openPlayerScoreReportsPanel() {
     setVsBossReportStatus("ไม่มีสิทธิ์อ่านรายงาน กรุณาใช้บัญชีครูที่ได้รับสิทธิ์", true);
     return;
   }
-  if (teacherDashboardLoadError && !REWIND_SLIME_DEMO_REPORT_ENABLED) {
+  if (teacherDashboardLoadError) {
     setVsBossReportStatus(teacherDashboardLoadError, true);
     return;
   }
   els.vsBossReportBossSelect.disabled = false;
-  setVsBossReportStatus(teacherDashboardLoadError
-    ? "รายชื่อจริงโหลดไม่ได้ แต่ยังดูข้อมูลจำลอง Rewind Slime ม.3 ห้อง 1–2 ได้"
-    : "เลือกบอส ระดับชั้น และห้องเพื่อแสดงรายงาน");
+  setVsBossReportStatus("เลือกบอส ระดับชั้น และห้องเพื่อแสดงรายงาน");
 }
 
 function closePlayerScoreReportsPanel() {
@@ -35043,12 +34862,6 @@ function renderVsBossClassReport(report, boss) {
     ["คะแนนสูงสุดเฉลี่ย", formatVsBossReportPercent(report.bestAverage)],
     ["ผลต่างก่อน–หลัง", formatVsBossReportDevelopment(report)]
   ];
-  if (report.isDemo) {
-    cards.push(
-      ["ผ่านเกณฑ์ 80% (ห้องนี้)", `${report.roomPassCount} / ${report.rosterCount} คน (${report.roomPassPercent.toFixed(2)}%)`],
-      ["ผ่านเกณฑ์ 80% (รวม 2 ห้อง)", `${report.combinedPassCount} / ${report.combinedTotalCount} คน (${report.combinedPassPercent.toFixed(2)}%)`]
-    );
-  }
   els.vsBossReportSummary.replaceChildren();
   cards.forEach(([label, value]) => {
     const card = document.createElement("div");
@@ -35066,10 +34879,6 @@ function renderVsBossClassReport(report, boss) {
   els.vsBossReportDevelopmentNote.textContent = report.pairedStudentCount
     ? `คำนวณพัฒนาการจากนักเรียน ${report.pairedStudentCount} คนที่มีข้อมูลครั้งแรกและล่าสุดครบ${report.relativeChangePercent === null ? " · คำนวณร้อยละการเปลี่ยนแปลงไม่ได้ เพราะคะแนนครั้งแรกเฉลี่ยเป็น 0" : ""}`
     : "ยังไม่มีข้อมูลคู่ครั้งแรก–ล่าสุดสำหรับคำนวณพัฒนาการ";
-  els.vsBossReportSourceNote.textContent = report.isDemo
-    ? ""
-    : "แหล่งข้อมูล: ผลการเล่น VS Bosses ที่บันทึกจากบัญชีนักเรียน ข้อมูลใช้สำหรับติดตามการเรียนรู้และพัฒนาการของผู้เรียน";
-  els.vsBossReportSourceNote.classList.toggle("hidden", report.isDemo === true);
   els.vsBossReportTableBody.replaceChildren();
   report.rows.forEach(row => {
     const tr = document.createElement("tr");
@@ -35078,7 +34887,7 @@ function renderVsBossClassReport(report, boss) {
     }
     appendTeacherTableCell(tr, String(row.student.reportProfile.studentNo || "—"));
     appendTeacherTableCell(tr, row.student.reportProfile.fullName);
-    appendTeacherTableCell(tr, row.isDemo ? "—" : row.student.characterCreated
+    appendTeacherTableCell(tr, row.student.characterCreated
       ? String(row.student.characterName || row.student.displayName || "—")
       : "ยังไม่ได้สร้างตัวละคร");
     appendTeacherTableCell(tr, formatVsBossReportPercent(row.firstScore));
@@ -35093,9 +34902,7 @@ function renderVsBossClassReport(report, boss) {
   });
   els.vsBossReportContent.classList.remove("hidden");
   const invalidCount = report.rows.filter(row => row.evidenceStatus === "invalid").length;
-  setVsBossReportStatus(report.isDemo
-    ? `กำลังแสดงข้อมูลจำลองสำหรับสาธิต ม.3 ห้อง ${report.room} จำนวน ${report.rosterCount} คน`
-    : report.rosterCount === 0
+  setVsBossReportStatus(report.rosterCount === 0
     ? "ไม่พบนักเรียนในห้องที่เลือก"
     : report.assessedCount === 0
       ? "ห้องนี้ยังไม่มีผลประเมิน VS Bosses ที่สมบูรณ์"
@@ -35106,8 +34913,7 @@ async function loadVsBossClassReport() {
   const boss = getVsBossConfig(els.vsBossReportBossSelect?.value);
   const classLevel = els.vsBossReportClassSelect?.value || "";
   const room = els.vsBossReportRoomSelect?.value || "";
-  if (!boss || !classLevel || !room || !teacherDashboardAccessGranted ||
-      (teacherDashboardLoadError && !isRewindSlimeDemoReportSelection("vs-bosses", boss.id, classLevel, room))) return;
+  if (!boss || !classLevel || !room || !teacherDashboardAccessGranted || teacherDashboardLoadError) return;
   clearVsBossReportContent();
   const version = vsBossReportLoadVersion;
   els.vsBossReportLoadButton.disabled = true;
@@ -35120,16 +34926,6 @@ async function loadVsBossClassReport() {
     return;
   }
   if (version !== vsBossReportLoadVersion) return;
-  if (isRewindSlimeDemoReportSelection("vs-bosses", boss.id, classLevel, room)) {
-    try {
-      renderVsBossClassReport(buildRewindSlimeDemoClassReport(room), boss);
-    } catch (error) {
-      console.error("[Rewind Slime Demo Report] invalid demo data:", error);
-      setVsBossReportStatus("ข้อมูลจำลองสำหรับสาธิตไม่ถูกต้อง กรุณาตรวจสอบชุดข้อมูล", true);
-    }
-    els.vsBossReportLoadButton.disabled = false;
-    return;
-  }
   const roster = getEligibleVsBossReportStudents().filter(student =>
     student.reportProfile.classLevel === classLevel && String(student.reportProfile.room) === room
   );
