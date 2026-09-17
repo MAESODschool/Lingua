@@ -15,7 +15,7 @@
   </div>
   <button id="logoutButton" class="logout-button hidden" type="button">Logout</button>
   <main class="game-shell">
-    <section id="loginScene" class="scene active">
+    <section id="loginScene" class="scene active auth-booting">
       <div class="sky-orbit"></div>
       <div class="login-card">
         <p class="eyebrow">Close Beta</p>
@@ -67,7 +67,8 @@
             <p>โหมด Guest จะบันทึกข้อมูลเฉพาะเครื่องนี้เท่านั้น</p>
           </div>
         </div>
-        <p id="loginStatus" class="form-status">บัญชีออนไลน์สามารถเข้าสู่ระบบจากเบราว์เซอร์หรืออุปกรณ์อื่นได้</p>
+        <p id="loginStatus" class="form-status" aria-live="polite">กำลังเข้าสู่ Lingua...</p>
+        <button id="authRestoreRetryButton" class="secondary-button auth-restore-retry hidden" type="button">ลองอีกครั้ง</button>
       </div>
     </section>
 

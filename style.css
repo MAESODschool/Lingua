@@ -761,6 +761,37 @@ button {
   font-size: 0.78rem;
 }
 
+#loginScene.auth-booting .auth-mode-label,
+#loginScene.auth-booting .form-grid,
+#loginScene.auth-restore-error .auth-mode-label,
+#loginScene.auth-restore-error .form-grid {
+  display: none;
+}
+
+#loginScene.auth-booting .login-card,
+#loginScene.auth-restore-error .login-card {
+  min-height: 132px;
+  display: grid;
+  align-content: center;
+}
+
+#loginScene.auth-booting #loginStatus,
+#loginScene.auth-restore-error #loginStatus {
+  margin-top: 0;
+  line-height: 1.45;
+}
+
+#loginScene .auth-restore-retry {
+  min-height: 44px;
+  margin-top: 12px;
+  border: 2px solid rgba(171, 222, 255, 0.82);
+  border-radius: 999px;
+  color: white;
+  background: linear-gradient(180deg, #3985dc, #144da5);
+  box-shadow: 0 5px 0 #173164, 0 0 16px rgba(57, 133, 220, 0.28);
+  font-weight: 900;
+}
+
 .main-menu-scene {
   min-height: 100dvh;
   padding: clamp(16px, 3vw, 32px);

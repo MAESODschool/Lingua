@@ -23572,6 +23572,7 @@ const AUTH_COPY = {
   remoteNetworkFailed: "เชื่อมต่อเครือข่ายไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ต",
   remotePlayerPermissionDenied: "บัญชีเข้าสู่ระบบแล้ว แต่ไม่มีสิทธิ์อ่าน/บันทึกข้อมูลผู้เล่น กรุณาตรวจสอบ Firestore rules",
   remotePlayerCreateBlocked: "เข้าสู่ระบบสำเร็จ แต่ระบบไม่สามารถสร้างข้อมูลผู้เล่นได้ เนื่องจาก payload ไม่ตรงกับกฎความปลอดภัย",
+  remoteSessionRestoreFailed: "พบการเข้าสู่ระบบเดิม แต่ยังโหลดข้อมูลผู้เล่นไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ตและลองอีกครั้ง",
   remoteLoginDefault: "เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง"
 };
 
@@ -24442,6 +24443,7 @@ const els = {
   registerConfirmPin: document.getElementById("registerConfirmPin"),
   registerBetaCode: document.getElementById("registerBetaCode"),
   loginStatus: document.getElementById("loginStatus"),
+  authRestoreRetryButton: document.getElementById("authRestoreRetryButton"),
   studentFullNameInput: document.getElementById("studentFullNameInput"),
   studentClassLevelSelect: document.getElementById("studentClassLevelSelect"),
   studentRoomSelect: document.getElementById("studentRoomSelect"),
@@ -29111,26 +29113,74 @@ async function logoutCurrentUser() {
   gameAssetOverrideState.operationBusy = false;
   await authService.logout();
   updateAuthUi();
+  setAuthRestoreUiState("ready");
   setAuthStatus("ออกจากระบบแล้ว สามารถเลือกผู้เล่นใหม่ได้");
   showScene("login");
 }
 
+function setAuthRestoreUiState(mode = "ready") {
+  const isLoading = mode === "loading";
+  const hasError = mode === "error";
+  scenes.login.classList.toggle("auth-booting", isLoading);
+  scenes.login.classList.toggle("auth-restore-error", hasError);
+  els.authRestoreRetryButton?.classList.toggle("hidden", !hasError);
+  if (els.authRestoreRetryButton) {
+    els.authRestoreRetryButton.disabled = isLoading;
+  }
+}
+
 async function initializeAuthUi() {
+  setAuthRestoreUiState("loading");
   showAuthPanel("login");
-  setAuthStatus("กำลังตรวจสอบสถานะการเข้าสู่ระบบ...");
+  setAuthStatus("กำลังเข้าสู่ Lingua...");
   if (getAuthMode() === "firebase") {
-    const firebaseUser = await waitForFirebaseAuthReady();
-    if (firebaseUser && (!state.currentUser || state.currentUser.isGuest || state.currentUser.uid !== firebaseUser.uid)) {
-      state.currentUser = await loadRemoteSessionUser(firebaseUser);
-      playerStorage.set(AUTH_STORAGE_KEYS.currentUser, JSON.stringify(state.currentUser));
-      await progressService.loadProgress(firebaseUser.uid);
-    } else if (!firebaseUser && state.currentUser && !state.currentUser.isGuest) {
-      state.currentUser = null;
-      playerStorage.remove(AUTH_STORAGE_KEYS.currentUser);
+    let firebaseUser = null;
+    try {
+      firebaseUser = await waitForFirebaseAuthReady();
+      if (!firebaseUser) {
+        const cachedUser = getCurrentUser();
+        if (cachedUser && !cachedUser.isGuest) {
+          state.currentUser = null;
+          playerData = null;
+          playerStorage.remove(AUTH_STORAGE_KEYS.currentUser);
+        }
+      } else {
+        state.currentUser = await loadRemoteSessionUser(firebaseUser);
+        playerStorage.set(AUTH_STORAGE_KEYS.currentUser, JSON.stringify(state.currentUser));
+        setAuthStatus("กำลังโหลดข้อมูลผู้เล่น...");
+        playerData = await loadPlayerProfile(firebaseUser.uid);
+        updateAuthUi();
+        setAuthRestoreUiState("ready");
+        if (!playerData || !hasCompleteStudentProfile(getStudentProfileFromPlayer())) {
+          els.createStatus.textContent = `${state.currentUser.displayName} ยังไม่มีข้อมูลนักเรียนที่สมบูรณ์ กรุณาสร้างตัวละครหรือกรอกข้อมูลให้ครบ`;
+          showScene("createCharacter");
+          return;
+        }
+        setAuthStatus(`พบ session ของ ${state.currentUser.displayName} กำลังเข้าสู่เมนูผู้เล่น`);
+        showMainMenu();
+        return;
+      }
+    } catch (error) {
+      if (firebaseUser) {
+        console.warn("[Auth] Existing Firebase session could not load player data", error);
+        const cachedUser = getCurrentUser();
+        if (cachedUser && cachedUser.uid !== firebaseUser.uid) {
+          state.currentUser = null;
+          playerData = null;
+          playerStorage.remove(AUTH_STORAGE_KEYS.currentUser);
+        }
+        updateAuthUi();
+        setAuthRestoreUiState("error");
+        showScene("login");
+        setAuthStatus(AUTH_COPY.remoteSessionRestoreFailed);
+        return;
+      }
+      throw error;
     }
   }
   const user = getCurrentUser();
   updateAuthUi();
+  setAuthRestoreUiState("ready");
   if (user) {
     setAuthStatus(`พบ session ของ ${user.displayName} กำลังพากลับเข้าสู่เกม`);
     if (!playerData) {
@@ -50878,6 +50928,7 @@ els.showRegisterPanelButton.addEventListener("click", () => showAuthPanel("regis
 els.loginButton.addEventListener("click", loginRegisteredUser);
 els.registerButton.addEventListener("click", registerCloseBetaUser);
 els.guestLoginButton.addEventListener("click", loginAsGuest);
+els.authRestoreRetryButton?.addEventListener("click", initializeAuthUi);
 els.logoutButton.addEventListener("click", logoutCurrentUser);
 els.loginPin.addEventListener("keydown", event => {
   if (event.key === "Enter") {
@@ -51269,7 +51320,8 @@ bindGameAudioUnlockEvents();
 bindVisibleViewportSync();
 initializeAuthUi().catch(error => {
   console.warn("[Auth] Failed to initialize Firebase auth state", error);
-  updateAuthUi();
+  setAuthRestoreUiState("error");
+  showScene("login");
   setAuthStatus(mapFirebaseAuthError(error));
 }).finally(() => {
   if (ASSET_MANAGER_ENABLED) {
