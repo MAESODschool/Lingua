@@ -10499,7 +10499,7 @@ h3 {
   transform-origin: center bottom;
 }
 
-/* Grammaria Duel: isolated Round 1 UI shell. */
+/* Grammaria Duel: real-time classroom PvP UI. */
 .pvp-duel-scene {
   min-height: 100vh;
   padding: 18px;
@@ -10614,10 +10614,14 @@ h3 {
 
 .pvp-room-panel {
   display: grid;
-  grid-template-columns: auto minmax(180px, 1fr) auto auto minmax(220px, 1.4fr);
+  grid-template-columns: auto minmax(180px, 1fr) auto auto;
   align-items: end;
   gap: 10px;
   padding: 12px;
+}
+
+.pvp-room-panel > p {
+  grid-column: 1 / -1;
 }
 
 .pvp-room-input {

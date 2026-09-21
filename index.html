@@ -281,7 +281,7 @@
           </div>
           <div class="pvp-header-status">
             <strong id="pvpRoomCodeDisplay">ห้อง: ยังไม่ได้สร้าง</strong>
-            <span id="pvpConnectionStatus">สถานะ: โหมดจำลอง</span>
+            <span id="pvpConnectionStatus">สถานะ: พร้อมเชื่อมต่อ</span>
           </div>
         </header>
 
@@ -289,17 +289,14 @@
           <button id="pvpCreateOnlineRoomButton" class="pvp-action-button" type="button">สร้างห้องออนไลน์</button>
           <label class="pvp-room-input">
             <span>รหัสห้อง</span>
-            <input id="pvpRoomCodeInput" type="text" maxlength="6" placeholder="กรอกรหัสห้อง" autocomplete="off">
+            <input id="pvpRoomCodeInput" type="text" maxlength="6" pattern="[A-HJ-NP-Z2-9]{6}" placeholder="กรอกรหัสห้อง 6 ตัว" autocomplete="off" autocapitalize="characters" spellcheck="false">
           </label>
           <button id="pvpJoinOnlineRoomButton" class="pvp-action-button" type="button">เข้าร่วมห้องออนไลน์</button>
           <button id="pvpCopyRoomCodeButton" class="pvp-action-button pvp-muted-action hidden" type="button">คัดลอกรหัสห้อง</button>
           <button id="pvpResumeOnlineRoomButton" class="pvp-action-button pvp-muted-action hidden" type="button">กลับเข้าห้องเดิม</button>
           <button id="pvpLeaveOnlineRoomButton" class="pvp-action-button pvp-muted-action hidden" type="button">ออกจากห้องออนไลน์</button>
           <button id="pvpForfeitButton" class="pvp-action-button pvp-danger-action hidden" type="button">ยอมแพ้</button>
-          <button id="pvpCreateRoomButton" class="pvp-action-button pvp-muted-action" type="button">จำลอง: สร้างห้อง</button>
-          <button id="pvpJoinRoomButton" class="pvp-action-button pvp-muted-action" type="button">จำลอง: เข้าร่วมห้อง</button>
-          <button id="pvpLeaveRoomButton" class="pvp-action-button pvp-muted-action" type="button">ออกจากห้องจำลอง</button>
-          <p id="pvpRoomStatus" aria-live="polite">ยังไม่ได้สร้างห้อง</p>
+          <p id="pvpRoomStatus" aria-live="polite">สร้างห้องใหม่หรือกรอกรหัสเพื่อเข้าร่วมการดวล</p>
         </section>
 
         <section class="pvp-top-hud" aria-label="ข้อมูลผู้ดวล">
@@ -321,14 +318,14 @@
           <article id="pvpOpponentPanel" class="pvp-opponent-panel">
             <div class="pvp-hud-copy">
               <span>Player 2</span>
-              <h3 id="pvpOpponentName">คู่ต่อสู้จำลอง</h3>
+              <h3 id="pvpOpponentName">รอคู่ต่อสู้</h3>
               <div class="pvp-hp-track"><i id="pvpOpponentHpFill"></i></div>
               <p id="pvpOpponentHpText">HP 120 / 120</p>
               <div id="pvpOpponentCharge" class="pvp-charge-crystals" aria-label="Grammaria Charge">◇ ◇ ◇ ◇</div>
               <div id="pvpOpponentCharmSlots" class="pvp-mini-slots">ชาม: ปกปิด</div>
               <div id="pvpOpponentStatusIcons" class="pvp-status-icons">สถานะ: กำลังรอคู่ต่อสู้</div>
             </div>
-            <div class="pvp-avatar-frame pvp-opponent-avatar" id="pvpOpponentAvatar" aria-label="คู่ต่อสู้จำลอง">?</div>
+            <div class="pvp-avatar-frame pvp-opponent-avatar" id="pvpOpponentAvatar" aria-label="คู่ต่อสู้">?</div>
           </article>
         </section>
 
@@ -391,7 +388,7 @@
 
           <div id="pvpChargePanel" class="pvp-demo-panel hidden">
             <h3>Grammaria Charge</h3>
-            <p id="pvpSelectionSummary">เลือกผลชาร์จจำลอง</p>
+            <p id="pvpSelectionSummary">เลือกผล Grammaria Charge</p>
             <div id="pvpChargeChoices" class="pvp-control-grid">
               <button class="pvp-choice-button" type="button" data-pvp-charge="Weak">Weak ×0.9</button>
               <button class="pvp-choice-button" type="button" data-pvp-charge="Good">Good ×1.0</button>
@@ -401,26 +398,20 @@
           </div>
 
           <div id="pvpResolvePanel" class="pvp-demo-panel hidden">
-            <h3 id="pvpResolveTitle">จำลองการโจมตีสำเร็จ</h3>
-            <p id="pvpResolveText">Round 1 แสดงผลลัพธ์ใน UI เท่านั้น ไม่มีการคำนวณดาเมจจริง</p>
+            <h3 id="pvpResolveTitle">ดำเนินการสำเร็จ</h3>
+            <p id="pvpResolveText">ผลการโจมตีหรือรักษาจะซิงก์กับคู่ต่อสู้ในห้อง</p>
             <button id="pvpResolveContinueButton" class="pvp-action-button" type="button">เลือกคำถามให้คู่ต่อสู้</button>
           </div>
 
           <div id="pvpMatchEndPanel" class="pvp-demo-panel hidden">
             <h3 id="pvpMatchEndTitle">จบการดวล</h3>
             <p id="pvpMatchEndText"></p>
-            <button id="pvpRestartMatchButton" class="pvp-action-button" type="button">เริ่มการดวลจำลองใหม่</button>
+            <button id="pvpRestartMatchButton" class="pvp-action-button" type="button">กลับล็อบบี้ PvP</button>
           </div>
-
-          <nav class="pvp-quick-actions" aria-label="เครื่องมือทดสอบคู่ต่อสู้จำลอง">
-            <button id="pvpMockOpponentSendQuestionButton" class="pvp-action-button pvp-muted-action" type="button">จำลอง: คู่ต่อสู้ส่งคำถาม</button>
-            <button id="pvpMockOpponentAnswerCorrectButton" class="pvp-action-button pvp-muted-action" type="button">จำลอง: คู่ต่อสู้ตอบถูก</button>
-            <button id="pvpMockOpponentAttackButton" class="pvp-action-button pvp-muted-action" type="button">จำลอง: คู่ต่อสู้โจมตี</button>
-          </nav>
         </section>
 
         <aside class="pvp-log-panel"><h3>Battle Log</h3><div id="pvpBattleLog" aria-live="polite"></div></aside>
-        <footer class="pvp-footer"><button id="pvpExitButton" class="pvp-action-button" type="button">กลับหน้าหลัก</button><button class="pvp-action-button pvp-muted-action" type="button" disabled>รายงาน</button><button class="pvp-action-button pvp-muted-action" type="button" disabled>ตั้งค่า</button><span>Round 3: ออนไลน์แบบห้องเรียน ไม่มีรางวัลและไม่บันทึกผลลงโปรไฟล์</span></footer>
+        <footer class="pvp-footer"><button id="pvpExitButton" class="pvp-action-button" type="button">กลับหน้าหลัก</button><span>แข่งขันออนไลน์แบบห้องเรียน · ไม่มีรางวัลและไม่บันทึกผลลงโปรไฟล์</span></footer>
       </div>
     </section>
 

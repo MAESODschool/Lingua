@@ -24382,6 +24382,7 @@ const els = {
   pvpPlayerCharmSlots: document.getElementById("pvpPlayerCharmSlots"),
   pvpPlayerStatusIcons: document.getElementById("pvpPlayerStatusIcons"),
   pvpOpponentName: document.getElementById("pvpOpponentName"),
+  pvpOpponentAvatar: document.getElementById("pvpOpponentAvatar"),
   pvpOpponentHpFill: document.getElementById("pvpOpponentHpFill"),
   pvpOpponentHpText: document.getElementById("pvpOpponentHpText"),
   pvpOpponentCharge: document.getElementById("pvpOpponentCharge"),
@@ -29111,6 +29112,13 @@ async function logoutCurrentUser() {
   studentManagementState.selectedUid = "";
   studentManagementState.operationBusy = false;
   gameAssetOverrideState.operationBusy = false;
+  if (pvpState.mode === "online") {
+    await setPvpParticipantConnection(false);
+  }
+  unsubscribeFromPvpRoom();
+  clearPvpOnlineSession();
+  pvpState.active = false;
+  pvpState.mode = "idle";
   await authService.logout();
   updateAuthUi();
   setAuthRestoreUiState("ready");
@@ -32680,6 +32688,10 @@ function normalizePvpRoomCode(value) {
   return String(value || "").trim().toUpperCase();
 }
 
+function isValidPvpRoomCode(value) {
+  return /^[A-HJ-NP-Z2-9]{6}$/.test(normalizePvpRoomCode(value));
+}
+
 function getPvpOpponentSide(side) {
   return side === "A" ? "B" : side === "B" ? "A" : "";
 }
@@ -32725,7 +32737,7 @@ function createPvpOnlineLane() {
     selectedSkill: "",
     selectedCharm: "",
     chargeResult: "",
-    questionChoicesToSend: [],
+    questionChoicesToSend: createPvpOnlineQuestionChoices(),
     lastActionId: "",
     lastResolvedActionId: "",
     updatedAt: Date.now()
@@ -32750,7 +32762,8 @@ function createPvpOnlinePlayer(side, uid, name, avatar = "") {
 function getPvpOnlinePlayerIdentity(fallback = "Player") {
   const user = getCurrentUser();
   const firebaseUser = firebaseAuth?.currentUser || null;
-  const avatarCandidate = playerData?.avatar?.asset || playerData?.avatar || "";
+  const characterId = normalizePlayerCharacterId(playerData?.characterId || getCharacterIdFromAvatar(playerData?.avatar || {}));
+  const avatarCandidate = getPlayerCharacter(characterId)?.asset || "";
   return {
     uid: firebaseUser?.uid || "",
     name: playerData?.characterName
@@ -32785,7 +32798,7 @@ function clearPvpOnlineSession() {
 function getSavedPvpOnlineSession() {
   try {
     const parsed = JSON.parse(playerStorage.get(PVP_ONLINE_SESSION_KEY) || "null");
-    if (!parsed?.roomCode || !parsed?.uid || !["A", "B"].includes(parsed.side)) {
+    if (!isValidPvpRoomCode(parsed?.roomCode) || !parsed?.uid || !["A", "B"].includes(parsed.side)) {
       return null;
     }
     return { ...parsed, roomCode: normalizePvpRoomCode(parsed.roomCode) };
@@ -32837,6 +32850,12 @@ function getPvpOnlineErrorMessage(error, fallbackMessage) {
   if (message === "room-full") {
     return "ห้องนี้มีผู้เล่นครบแล้ว";
   }
+  if (message === "room-not-playing") {
+    return "ห้องยังไม่พร้อมเริ่มการดวล กรุณารอคู่ต่อสู้";
+  }
+  if (message === "stale-action") {
+    return "สถานะการดวลเปลี่ยนไปแล้ว ระบบกำลังซิงก์ข้อมูลล่าสุด";
+  }
   if (message === "room-code-exhausted") {
     return "ไม่สามารถสร้างรหัสห้องได้ กรุณาลองใหม่";
   }
@@ -32864,7 +32883,7 @@ function mapOnlineRoomToPvpState(roomData) {
   pvpState.onlineRoom = roomData;
   pvpState.connectionStatus = roomData.status === "waiting"
     ? "waiting"
-    : roomData.status === "finished"
+    : ["finished", "abandoned"].includes(roomData.status)
       ? "finished"
       : "online";
   pvpState.localSide = side;
@@ -32874,14 +32893,15 @@ function mapOnlineRoomToPvpState(roomData) {
   pvpState.player = { ...localPlayer, ...localLane };
   pvpState.opponent = { ...opponentPlayer, ...opponentLane };
   pvpState.activeIncomingQuestion = localLane.incomingQuestion || null;
-  pvpState.matchEnded = roomData.status === "finished";
+  pvpState.matchEnded = ["finished", "abandoned"].includes(roomData.status);
   pvpState.winner = roomData.winnerSide === side ? "player" : roomData.winnerSide ? "opponent" : "";
   if (roomData.status === "waiting") {
     pvpState.phase = "lobby";
-  } else if (roomData.status === "finished") {
+  } else if (["finished", "abandoned"].includes(roomData.status)) {
     pvpState.phase = "match-end";
   } else {
-    pvpState.phase = localLane.phase || "send-question";
+    const persistedPhase = localLane.phase || "send-question";
+    pvpState.phase = pvpState.answerResult?.nextPhase === persistedPhase ? "answer-result" : persistedPhase;
   }
   pvpState.battleLog = trimPvpActionLog(roomData.actionLog).map(entry => entry.message);
   return true;
@@ -32897,7 +32917,7 @@ function handlePvpRoomSnapshot(snapshot) {
   }
   const room = snapshot.data() || {};
   pvpState.onlineRoom = room;
-  pvpState.connectionStatus = room.status === "waiting" ? "waiting" : room.status === "finished" ? "finished" : "online";
+  pvpState.connectionStatus = room.status === "waiting" ? "waiting" : ["finished", "abandoned"].includes(room.status) ? "finished" : "online";
   if (!mapOnlineRoomToPvpState(room)) {
     showPvpOnlineError("บัญชีนี้ไม่ได้อยู่ในห้องดวล");
     return;
@@ -32909,8 +32929,8 @@ function handlePvpRoomSnapshot(snapshot) {
 function subscribeToPvpRoom(roomCode) {
   unsubscribeFromPvpRoom();
   const cleanCode = normalizePvpRoomCode(roomCode);
-  if (!cleanCode) {
-    showPvpOnlineError("กรุณากรอกรหัสห้อง");
+  if (!isValidPvpRoomCode(cleanCode)) {
+    showPvpOnlineError("กรุณากรอกรหัสห้อง 6 ตัวให้ถูกต้อง");
     return;
   }
   const roomRef = doc(firestoreDb, PVP_ONLINE_COLLECTION, cleanCode);
@@ -33007,7 +33027,10 @@ async function reconnectOnlinePvpParticipant(roomRef, identity, joinedSide) {
       connected: true,
       lastSeenAt: Date.now()
     };
-    lanes[joinedSide] = lanes[joinedSide] || createPvpOnlineLane();
+    lanes[joinedSide] = { ...(lanes[joinedSide] || createPvpOnlineLane()) };
+    if (lanes[joinedSide].phase === "send-question" && !lanes[joinedSide].questionChoicesToSend?.length) {
+      lanes[joinedSide].questionChoicesToSend = createPvpOnlineQuestionChoices();
+    }
     const playerBUid = room.playerBUid || "";
     const status = room.playerAUid && playerBUid ? "playing" : "waiting";
     const actionLog = wasConnected
@@ -33042,7 +33065,7 @@ async function joinOnlinePvpRoomAsPlayerB(roomRef, identity) {
 async function joinOnlinePvpRoom(roomCode) {
   if (pvpState.onlineBusy) return;
   const cleanCode = normalizePvpRoomCode(roomCode);
-  if (!cleanCode) return showPvpOnlineError("กรุณากรอกรหัสห้อง");
+  if (!isValidPvpRoomCode(cleanCode)) return showPvpOnlineError("กรุณากรอกรหัสห้อง 6 ตัวให้ถูกต้อง");
   const firebaseUser = await getAuthenticatedPvpFirebaseUser();
   if (!firebaseUser) return showPvpOnlineError("ต้องเข้าสู่ระบบก่อนใช้ห้องออนไลน์");
   const identity = getPvpOnlinePlayerIdentity("Player B");
@@ -33108,7 +33131,9 @@ async function resumePvpOnlineRoom() {
   if (!firebaseUser) return showPvpOnlineError("ต้องเข้าสู่ระบบก่อนใช้ห้องออนไลน์");
   if (saved.uid !== firebaseUser.uid) {
     clearPvpOnlineSession();
-    return showPvpOnlineError("บัญชีนี้ไม่ได้อยู่ในห้องเดิม");
+    showPvpOnlineError("บัญชีนี้ไม่ได้อยู่ในห้องเดิม");
+    renderPvpScene();
+    return;
   }
   setPvpOnlineBusy(true);
   try {
@@ -33117,6 +33142,7 @@ async function resumePvpOnlineRoom() {
     if (!snapshot.exists()) {
       clearPvpOnlineSession();
       showPvpOnlineError("ไม่พบห้องเดิมแล้ว");
+      renderPvpScene();
       return;
     }
     const room = snapshot.data() || {};
@@ -33124,9 +33150,10 @@ async function resumePvpOnlineRoom() {
     if (!side) {
       clearPvpOnlineSession();
       showPvpOnlineError("บัญชีนี้ไม่ได้อยู่ในห้องเดิม");
+      renderPvpScene();
       return;
     }
-    if (room.status === "finished") {
+    if (["finished", "abandoned"].includes(room.status)) {
       pvpState.mode = "online";
       pvpState.onlineRoom = room;
       pvpState.roomCode = saved.roomCode;
@@ -33144,6 +33171,37 @@ async function resumePvpOnlineRoom() {
   await joinOnlinePvpRoom(saved.roomCode);
 }
 
+async function setPvpParticipantConnection(connected, { addLog = false } = {}) {
+  const roomCode = normalizePvpRoomCode(pvpState.roomCode);
+  const side = pvpState.localSide || pvpState.onlineSide || getPvpLocalSide();
+  if (!roomCode || !side) return false;
+  try {
+    const roomRef = doc(firestoreDb, PVP_ONLINE_COLLECTION, roomCode);
+    await runTransaction(firestoreDb, async transaction => {
+      const snapshot = await transaction.get(roomRef);
+      if (!snapshot.exists()) return;
+      const room = snapshot.data() || {};
+      const player = room.players?.[side];
+      if (!player || player.uid !== firebaseAuth?.currentUser?.uid) return;
+      const players = {
+        ...(room.players || {}),
+        [side]: { ...player, connected: Boolean(connected), lastSeenAt: Date.now() }
+      };
+      const actionLog = addLog
+        ? trimPvpActionLog([
+          ...(room.actionLog || []),
+          buildPvpLogEntry(side, connected ? "reconnect" : "disconnect", `${player.name || `Player ${side}`} ${connected ? "กลับเข้าห้อง" : "พักการเชื่อมต่อ"}`)
+        ])
+        : trimPvpActionLog(room.actionLog);
+      transaction.update(roomRef, { players, actionLog, updatedAt: serverTimestamp() });
+    });
+    return true;
+  } catch (error) {
+    console.warn("[PvP Online] presence update failed", error);
+    return false;
+  }
+}
+
 async function leaveOnlinePvpRoom() {
   const roomCode = pvpState.roomCode;
   const side = pvpState.localSide || pvpState.onlineSide || getPvpLocalSide();
@@ -33159,7 +33217,14 @@ async function leaveOnlinePvpRoom() {
         const players = { ...room.players, [side]: { ...room.players?.[side], connected: false, lastSeenAt: Date.now() } };
         const name = players[side]?.name || `Player ${side}`;
         const actionLog = trimPvpActionLog([...(room.actionLog || []), buildPvpLogEntry(side, "leave", `${name} ออกจากห้องออนไลน์แล้ว`)]);
-        transaction.update(roomRef, { players, actionLog, updatedAt: serverTimestamp() });
+        const opponentSide = getPvpOpponentSide(side);
+        const opponentJoined = Boolean(room.players?.[opponentSide]?.uid);
+        const ending = room.status === "playing"
+          ? { status: "finished", winnerSide: opponentJoined ? opponentSide : "", loserSide: side, finishReason: "player_left" }
+          : room.status === "waiting"
+            ? { status: "abandoned", winnerSide: "", loserSide: side, finishReason: "host_left" }
+            : {};
+        transaction.update(roomRef, { players, actionLog, ...ending, updatedAt: serverTimestamp() });
       });
     }
   } catch (error) {
@@ -33168,7 +33233,7 @@ async function leaveOnlinePvpRoom() {
     setPvpOnlineBusy(false);
   }
   clearPvpOnlineSession();
-  resetPvpMockState();
+  resetPvpOnlineLobbyState();
   appendPvpLog("ออกจากห้องออนไลน์แล้ว");
   renderPvpScene();
 }
@@ -33269,6 +33334,17 @@ function resetPvpMockState() {
   ];
 }
 
+function resetPvpOnlineLobbyState() {
+  resetPvpMockState();
+  pvpState.mode = "online-lobby";
+  pvpState.connectionStatus = "ready";
+  pvpState.opponent.name = "รอคู่ต่อสู้";
+  pvpState.battleLog = [
+    "ยินดีต้อนรับสู่ Grammaria Duel",
+    "สร้างห้องใหม่หรือกรอกรหัส 6 ตัวเพื่อเข้าร่วมการดวลออนไลน์"
+  ];
+}
+
 function appendPvpLog(message) {
   const cleanMessage = String(message || "").trim();
   if (!cleanMessage) {
@@ -33313,6 +33389,18 @@ function renderPvpHud() {
   if (els.pvpPlayerAvatar) {
     const characterId = normalizePlayerCharacterId(playerData?.characterId || getCharacterIdFromAvatar(playerData?.avatar || {}));
     applyPlayerCharacterImage(els.pvpPlayerAvatar, characterId);
+  }
+  if (els.pvpOpponentAvatar) {
+    els.pvpOpponentAvatar.innerHTML = "";
+    if (onlineMode && pvpState.opponent.uid && pvpState.opponent.avatar) {
+      const image = document.createElement("img");
+      image.src = pvpState.opponent.avatar;
+      image.alt = pvpState.opponent.name || "คู่ต่อสู้";
+      image.draggable = false;
+      els.pvpOpponentAvatar.appendChild(image);
+    } else {
+      els.pvpOpponentAvatar.textContent = pvpState.opponent.uid ? "⚔" : "?";
+    }
   }
 }
 
@@ -33600,6 +33688,10 @@ function renderPvpOnlineFoundationState() {
   if (pvpState.mode !== "online") {
     return;
   }
+  const roomStatus = pvpState.onlineRoom?.status || "";
+  if (roomStatus === "playing" || ["finished", "abandoned"].includes(roomStatus)) {
+    return;
+  }
   const combatPanels = [
     els.pvpQuestionChoices,
     els.pvpIncomingQuestionPanel,
@@ -33612,19 +33704,18 @@ function renderPvpOnlineFoundationState() {
   ];
   combatPanels.forEach(panel => panel?.classList.add("hidden"));
   document.querySelectorAll("#pvpDuelScene [data-pvp-phase]").forEach(step => step.classList.remove("is-active"));
-  if (!pvpState.matchEnded) {
-    els.pvpMatchEndPanel?.classList.add("hidden");
-  }
+  els.pvpMatchEndPanel?.classList.add("hidden");
   els.pvpPhaseIndicator.textContent = pvpState.connectionStatus === "waiting"
     ? "รอคู่ต่อสู้เข้าห้องออนไลน์"
-    : pvpState.connectionStatus === "finished"
-      ? "ห้องออนไลน์สิ้นสุดแล้ว"
-      : "ห้องออนไลน์พร้อม";
-  els.pvpQuestionPreview.textContent = "ระบบต่อสู้ออนไลน์จะเปิดในรอบถัดไป";
+    : "กำลังเชื่อมต่อห้องออนไลน์";
+  els.pvpQuestionPreview.textContent = pvpState.connectionStatus === "waiting"
+    ? "ส่งรหัสห้องให้คู่ต่อสู้ เมื่อเข้าร่วมแล้วการดวลจะเริ่มทันที"
+    : "กำลังซิงก์ข้อมูลผู้เล่นและสถานะห้อง";
 }
 
 function renderPvpScene() {
   const onlineMode = pvpState.mode === "online";
+  const onlineLobbyMode = pvpState.mode === "online-lobby";
   const savedSession = getSavedPvpOnlineSession();
   els.pvpRoomCodeDisplay.textContent = pvpState.roomCode ? `ห้อง: ${pvpState.roomCode}` : "ห้อง: ยังไม่ได้สร้าง";
   const onlineStatusLabels = {
@@ -33633,11 +33724,12 @@ function renderPvpScene() {
     online: "สถานะ: ออนไลน์",
     disconnected: "สถานะ: การเชื่อมต่อหลุด",
     error: "สถานะ: เชื่อมต่อมีปัญหา",
-    finished: "สถานะ: จบการดวล"
+    finished: "สถานะ: จบการดวล",
+    ready: "สถานะ: พร้อมเชื่อมต่อ"
   };
   els.pvpConnectionStatus.textContent = onlineMode
     ? (onlineStatusLabels[pvpState.connectionStatus] || "สถานะ: ออนไลน์")
-    : "สถานะ: โหมดจำลอง";
+    : onlineLobbyMode ? "สถานะ: พร้อมเชื่อมต่อ" : "สถานะ: ออฟไลน์";
   if (!pvpState.onlineError) {
     els.pvpRoomStatus.textContent = onlineMode
       ? (pvpState.connectionStatus === "waiting"
@@ -33645,17 +33737,17 @@ function renderPvpScene() {
         : pvpState.connectionStatus === "disconnected"
           ? "การเชื่อมต่อหลุด สามารถกลับเข้าห้องเดิมได้"
           : `เชื่อมต่อห้อง ${pvpState.roomCode} แล้ว`)
-      : (pvpState.roomCode ? `ห้องจำลอง ${pvpState.roomCode} พร้อมใช้งาน` : "ยังไม่ได้สร้างห้อง");
+      : "สร้างห้องใหม่หรือกรอกรหัสเพื่อเข้าร่วมการดวล";
   }
   els.pvpCopyRoomCodeButton?.classList.toggle("hidden", !onlineMode || !pvpState.roomCode);
   els.pvpLeaveOnlineRoomButton?.classList.toggle("hidden", !onlineMode);
-  els.pvpForfeitButton?.classList.add("hidden");
+  els.pvpForfeitButton?.classList.toggle("hidden", !onlineMode || pvpState.matchEnded || pvpState.onlineRoom?.status !== "playing");
   els.pvpResumeOnlineRoomButton?.classList.toggle("hidden", onlineMode || !savedSession);
   els.pvpRoomCodeInput.disabled = onlineMode || pvpState.onlineBusy;
   [els.pvpCreateRoomButton, els.pvpJoinRoomButton, els.pvpLeaveRoomButton]
-    .forEach(button => button?.classList.toggle("hidden", onlineMode));
+    .forEach(button => button?.classList.add("hidden"));
   [els.pvpMockOpponentSendQuestionButton, els.pvpMockOpponentAnswerCorrectButton, els.pvpMockOpponentAttackButton]
-    .forEach(button => button?.classList.toggle("hidden", onlineMode));
+    .forEach(button => button?.classList.add("hidden"));
   renderPvpHud();
   renderPvpPhase();
   renderPvpQuestionCards();
@@ -33665,6 +33757,13 @@ function renderPvpScene() {
   renderPvpSkillPanel();
   renderPvpCharmPanel();
   renderPvpChargePanel();
+  if (onlineMode && pvpState.phase === "resolve-action") {
+    els.pvpResolveTitle.textContent = "กำลังซิงก์ผลการกระทำ";
+    els.pvpResolveText.textContent = "ระบบกำลังคำนวณและบันทึกผล หากการเชื่อมต่อสะดุดสามารถกดซิงก์อีกครั้งได้";
+    els.pvpResolveContinueButton.textContent = "ซิงก์ผลอีกครั้ง";
+  } else {
+    els.pvpResolveContinueButton.textContent = "เลือกคำถามให้คู่ต่อสู้";
+  }
   renderPvpMatchEnd();
   renderPvpBattleLog();
   renderPvpOnlineFoundationState();
@@ -33679,25 +33778,25 @@ function setPvpPhase(phase) {
 }
 
 function enterPvpMode() {
-  resetPvpMockState();
+  resetPvpOnlineLobbyState();
   Object.values(scenes).forEach(scene => scene?.classList.remove("active"));
   scenes.pvp.classList.add("active");
   updateDeveloperCreditVisibility("pvp");
   playBgmForScene("pvp");
   renderPvpScene();
+  if (getSavedPvpOnlineSession()) {
+    void resumePvpOnlineRoom();
+  }
 }
 
-function exitPvpMode() {
+async function exitPvpMode() {
+  if (pvpState.mode === "online") {
+    await setPvpParticipantConnection(false);
+  }
   unsubscribeFromPvpRoom();
   pvpState.active = false;
   pvpState.mode = "idle";
-  renderMainMenu();
-  Object.values(scenes).forEach(scene => scene?.classList.remove("active"));
-  scenes.mainMenu.classList.add("active");
-  updateDeveloperCreditVisibility("mainMenu");
-  applyDebugButtonVisibility();
-  updateManualSaveButtonVisibility("mainMenu");
-  playBgmForScene("mainMenu");
+  showMainMenu();
 }
 
 function createMockPvpRoom() {
@@ -33747,19 +33846,27 @@ async function updateOnlinePvpLane(operationName, updater) {
   setPvpOnlineBusy(true);
   try {
     const roomRef = doc(firestoreDb, PVP_ONLINE_COLLECTION, roomCode);
+    let didUpdate = false;
     await runTransaction(firestoreDb, async transaction => {
+      didUpdate = false;
       const snapshot = await transaction.get(roomRef);
       if (!snapshot.exists()) throw new Error("room-not-found");
       const room = snapshot.data();
       if (room.status !== "playing") throw new Error("room-not-playing");
       if ((Number(room.players?.[side]?.hp) || 0) <= 0) throw new Error("player-defeated");
       const nextRoom = updater(room, side, getPvpOpponentSide(side));
-      if (nextRoom) transaction.set(roomRef, { ...nextRoom, updatedAt: Date.now() });
+      if (nextRoom) {
+        didUpdate = true;
+        transaction.set(roomRef, { ...nextRoom, updatedAt: Date.now() });
+      }
     });
-    return true;
+    if (!didUpdate) {
+      showPvpOnlineError("สถานะการดวลเปลี่ยนไปแล้ว ระบบกำลังซิงก์ข้อมูลล่าสุด", pvpState.connectionStatus);
+    }
+    return didUpdate;
   } catch (error) {
     console.warn(`[PvP Online] ${operationName} failed`, error);
-    showPvpOnlineError("บันทึกการกระทำไม่สำเร็จ กรุณาลองอีกครั้ง");
+    showPvpOnlineError(getPvpOnlineErrorMessage(error, "บันทึกการกระทำไม่สำเร็จ กรุณาลองอีกครั้ง"), pvpState.connectionStatus);
     return false;
   } finally {
     setPvpOnlineBusy(false);
@@ -33826,6 +33933,10 @@ async function submitOnlinePvpAnswer(userAnswer) {
   if (success) {
     pvpState.selectedAnswer = "";
     pvpState.selectedTiles = [];
+    pvpState.phase = "answer-result";
+    renderPvpScene();
+  } else {
+    pvpState.answerResult = null;
   }
   return success;
 }
@@ -33905,7 +34016,8 @@ function checkOnlinePvpVictory(room, localSide, opponentSide) {
 }
 
 async function resolveOnlinePvpAction() {
-  // Prototype note: PvP action resolution is client-side for classroom testing. For secure competitive use, move validation and damage resolution to Cloud Functions or another trusted backend.
+  // Classroom PvP resolves through a Firestore transaction. Ranked or prize-based
+  // competition would still require trusted server-side answer and damage validation.
   if (pvpState.onlineBusy) return false;
   return updateOnlinePvpLane("resolve action", (room, side, opponentSide) => {
     const lane = { ...(room.lanes?.[side] || createPvpOnlineLane()) };
@@ -34020,7 +34132,7 @@ function continueAfterPvpAnswerResult() {
   const nextPhase = pvpState.answerResult?.nextPhase;
   if (!nextPhase) return;
   pvpState.answerResult = null;
-  if (nextPhase === "send-question") generatePvpQuestionChoices();
+  if (nextPhase === "send-question" && pvpState.mode !== "online") generatePvpQuestionChoices();
   setPvpPhase(nextPhase);
   renderPvpScene();
 }
@@ -51045,7 +51157,10 @@ document.querySelectorAll("[data-pvp-charge]").forEach(button => {
   button.addEventListener("click", () => choosePvpChargeResult(button.dataset.pvpCharge));
 });
 els.pvpResolveContinueButton?.addEventListener("click", () => {
-  if (pvpState.mode === "online") return;
+  if (pvpState.mode === "online") {
+    void resolveOnlinePvpAction();
+    return;
+  }
   if (!pvpState.matchEnded) {
     generatePvpQuestionChoices();
     setPvpPhase("send-question");

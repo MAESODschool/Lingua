@@ -301,9 +301,56 @@ service cloud.firestore {
 
     function keepsPvpRoomIdentity() {
       return request.resource.data.roomCode == resource.data.roomCode
+        && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.hostUid == resource.data.hostUid
+        && request.resource.data.guestUid == resource.data.guestUid
         && request.resource.data.playerAUid == resource.data.playerAUid
-        && request.resource.data.get('playerBUid', '') == resource.data.get('playerBUid', '');
+        && request.resource.data.get('playerBUid', '') == resource.data.get('playerBUid', '')
+        && request.resource.data.players.A.uid == resource.data.players.A.uid
+        && request.resource.data.players.B.uid == resource.data.players.B.uid;
+    }
+
+    function pvpRoomShapeIsValid(roomId) {
+      return request.resource.data.keys().hasOnly([
+          'roomCode',
+          'status',
+          'createdAt',
+          'updatedAt',
+          'hostUid',
+          'guestUid',
+          'playerAUid',
+          'playerBUid',
+          'players',
+          'lanes',
+          'actionLog',
+          'winnerSide',
+          'loserSide',
+          'finishReason'
+        ])
+        && request.resource.data.roomCode == roomId
+        && request.resource.data.hostUid == request.resource.data.playerAUid
+        && request.resource.data.guestUid == request.resource.data.playerBUid
+        && request.resource.data.status in ['waiting', 'playing', 'finished', 'abandoned']
+        && request.resource.data.players is map
+        && request.resource.data.players.A is map
+        && request.resource.data.players.B is map
+        && request.resource.data.players.A.uid == request.resource.data.playerAUid
+        && request.resource.data.players.B.uid == request.resource.data.playerBUid
+        && request.resource.data.players.A.maxHp == 120
+        && request.resource.data.players.B.maxHp == 120
+        && request.resource.data.players.A.hp is int
+        && request.resource.data.players.B.hp is int
+        && request.resource.data.players.A.hp >= 0
+        && request.resource.data.players.A.hp <= 120
+        && request.resource.data.players.B.hp >= 0
+        && request.resource.data.players.B.hp <= 120
+        && request.resource.data.lanes is map
+        && request.resource.data.lanes.A is map
+        && request.resource.data.lanes.B is map
+        && request.resource.data.actionLog is list
+        && request.resource.data.winnerSide in ['', 'A', 'B']
+        && request.resource.data.loserSide in ['', 'A', 'B']
+        && request.resource.data.finishReason is string;
     }
 
     function isJoiningAsPlayerB() {
@@ -373,10 +420,13 @@ service cloud.firestore {
         && request.resource.data.hostUid == request.auth.uid
         && request.resource.data.playerAUid == request.auth.uid
         && request.resource.data.playerBUid == ''
-        && request.resource.data.guestUid == '';
-      allow update: if isTeacher()
-        || (isPvpParticipant() && keepsPvpRoomIdentity())
-        || isJoiningAsPlayerB();
+        && request.resource.data.guestUid == ''
+        && pvpRoomShapeIsValid(roomId);
+      allow update: if (
+          isTeacher()
+          || (isPvpParticipant() && keepsPvpRoomIdentity())
+          || isJoiningAsPlayerB()
+        ) && pvpRoomShapeIsValid(roomId);
       allow delete: if false;
     }
 
@@ -392,7 +442,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // PvP remains a client-driven prototype. Competitive validation and strict
-    // state transitions should move to trusted Cloud Functions in a later phase.
+    // Classroom PvP remains client-authoritative and never grants profile rewards.
+    // Ranked or prize-based competition requires trusted server-side validation.
   }
 }
