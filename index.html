@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="lingua-advisor-mode" content="auto">
+  <meta name="lingua-advisor-api-url" content="">
+  <title>Lingua - RPG แห่งแกรมมาเรีย</title>
+  <link rel="stylesheet" href="style.css?v=player-score-reports-20260913">
+</head>
+<body>
+  <div class="game-utility-controls" aria-label="ตัวเลือกเกม">
+    <button id="muteButton" class="mute-button" type="button" aria-pressed="false">เสียง: เปิด</button>
+    <button id="manualSaveButton" class="manual-save-button hidden" type="button" aria-label="บันทึกความคืบหน้าปัจจุบัน">💾 บันทึก</button>
+  </div>
+  <button id="logoutButton" class="logout-button hidden" type="button">Logout</button>
+  <main class="game-shell">
+    <section id="loginScene" class="scene active auth-booting">
+      <div class="sky-orbit"></div>
+      <div class="login-card">
+        <p class="eyebrow">Close Beta</p>
+        <h1>Lingua</h1>
+        <p class="subtitle">A Grammaria RPG</p>
+        <p id="authModeLabel" class="auth-mode-label">Close Beta: Online Account Mode</p>
+        <div class="form-grid">
+          <div class="auth-tabs" role="tablist" aria-label="เลือกวิธีเข้าเกม">
+            <button id="showLoginPanelButton" class="auth-tab is-active" type="button">เข้าสู่ระบบ</button>
+            <button id="showRegisterPanelButton" class="auth-tab" type="button">สมัคร</button>
+          </div>
+
+          <div id="loginPanel" class="auth-panel">
+            <p id="loginLocalNotice" class="auth-local-note hidden">บัญชี Local ใช้ได้เฉพาะเครื่อง/เบราว์เซอร์ที่สมัครไว้ หากต้องการเล่นข้ามเครื่อง ต้องเชื่อมระบบฐานข้อมูลออนไลน์</p>
+            <label>
+              <span>ชื่อผู้ใช้</span>
+              <input id="loginUsername" type="text" autocomplete="username" placeholder="mina_beta">
+            </label>
+            <label>
+              <span>PIN / รหัสผ่าน</span>
+              <input id="loginPin" type="password" autocomplete="current-password" placeholder="อย่างน้อย 6 ตัว">
+            </label>
+            <button id="loginButton" class="primary-button" type="button">เข้าสู่เกม</button>
+          </div>
+
+          <div id="registerPanel" class="auth-panel hidden">
+            <p id="registerLocalNotice" class="auth-local-note hidden">ขณะนี้เป็นโหมดทดสอบแบบ Local บัญชีจะบันทึกเฉพาะเครื่องและเบราว์เซอร์นี้เท่านั้น หากเปลี่ยนเครื่องหรือเปลี่ยนเบราว์เซอร์ อาจไม่พบบัญชีเดิม</p>
+            <label>
+              <span>ชื่อเล่น</span>
+              <input id="registerDisplayName" type="text" autocomplete="name" placeholder="เช่น Mina">
+            </label>
+            <label>
+              <span>ชื่อผู้ใช้</span>
+              <input id="registerUsername" type="text" autocomplete="username" placeholder="a-z, 0-9, _">
+            </label>
+            <label>
+              <span>PIN / รหัสผ่าน</span>
+              <input id="registerPin" type="password" autocomplete="new-password" placeholder="อย่างน้อย 6 ตัว">
+            </label>
+            <label>
+              <span>ยืนยัน PIN</span>
+              <input id="registerConfirmPin" type="password" autocomplete="new-password" placeholder="กรอกซ้ำอีกครั้ง">
+            </label>
+            <button id="registerButton" class="primary-button" type="button">สร้างบัญชี</button>
+          </div>
+
+          <div class="guest-panel">
+            <button id="guestLoginButton" class="secondary-button" type="button">เข้าเล่นแบบ Guest</button>
+            <p>โหมด Guest จะบันทึกข้อมูลเฉพาะเครื่องนี้เท่านั้น</p>
+          </div>
+        </div>
+        <p id="loginStatus" class="form-status" aria-live="polite">กำลังเข้าสู่ Lingua...</p>
+        <button id="authRestoreRetryButton" class="secondary-button auth-restore-retry hidden" type="button">ลองอีกครั้ง</button>
+      </div>
+    </section>
+
+    <section id="mainMenuScene" class="scene main-menu-scene">
+      <div class="main-menu-dashboard">
+        <header class="main-menu-header">
+          <div class="main-menu-logo-wrap">
+            <img id="mainMenuLogo" class="main-menu-logo" src="assets/ui/lingua_logo_transparent.png" alt="Lingua - Where Time Lives in Words" draggable="false">
+            <div id="mainMenuLogoFallback" class="main-menu-logo-fallback hidden">
+              <strong>LINGUA</strong>
+              <span>WHERE TIME LIVES IN WORDS</span>
+            </div>
+          </div>
+          <p class="main-menu-kicker">Player Dashboard / เมนูผู้เล่น</p>
+        </header>
+
+        <div class="main-menu-grid">
+          <section class="main-menu-card player-profile-card">
+            <div class="profile-avatar-frame">
+              <img id="mainMenuAvatar" class="main-menu-avatar main-character-gif" src="assets/characters/male_wanderer_idle.gif" alt="ผู้เล่น Lingua" draggable="false">
+            </div>
+            <div class="profile-copy">
+              <span>Player / ผู้เล่น</span>
+              <h2 id="mainMenuPlayerName">นักเดินทางแห่ง Lingua</h2>
+              <p id="mainMenuPlayerTitle">Novice Wordmage</p>
+              <p id="mainMenuStudentInfo" class="main-menu-student-info hidden"></p>
+              <div class="profile-stat-row">
+                <span>Current Act</span>
+                <strong id="mainMenuCurrentAct">Act 1: Past Fragment</strong>
+              </div>
+              <div class="profile-stat-row">
+                <span>Grammaria</span>
+                <strong id="mainMenuGrammaria">0</strong>
+              </div>
+            </div>
+            <div id="mainMenuVsBossRank" class="vs-boss-overall-rank-card" aria-live="polite">
+              <div class="vs-boss-rank-heading">
+                <span>VS Boss Rank / แรงค์บอสรวม</span>
+                <strong id="mainMenuVsBossRankBadge" class="vs-boss-rank-badge vs-boss-rank-D">D</strong>
+              </div>
+              <div class="vs-boss-rank-progress" aria-hidden="true">
+                <i id="mainMenuVsBossRankProgress"></i>
+              </div>
+              <p>คะแนนรวมจากบอสทั้งหมด: <strong id="mainMenuVsBossScorePercent">0%</strong></p>
+              <p>ทำแบบประเมินแล้ว: <strong id="mainMenuVsBossCompleted">0/0 บอส</strong></p>
+              <p>ระดับ: <strong id="mainMenuVsBossRankTitle">เริ่มต้นการฝึก</strong></p>
+              <small id="mainMenuVsBossRankHint">เริ่มต่อสู้กับบอสใน VS Bosses เพื่อสะสมผลประเมิน</small>
+            </div>
+          </section>
+
+          <section class="main-menu-card current-progress-card">
+            <h3>Learning Progress / ความคืบหน้าการเรียนรู้</h3>
+            <dl class="main-menu-progress-list">
+              <div>
+                <dt>Current Lesson / บทเรียนปัจจุบัน</dt>
+                <dd id="mainMenuCurrentLesson">ยังไม่มีความคืบหน้าที่บันทึกไว้</dd>
+              </div>
+              <div>
+                <dt>Current Area / ด่านปัจจุบัน</dt>
+                <dd id="mainMenuCurrentArea">รอการบันทึกข้อมูล</dd>
+              </div>
+              <div>
+                <dt>Next Goal / เป้าหมายถัดไป</dt>
+                <dd id="mainMenuNextGoal">เริ่มการเดินทางใน Act 1</dd>
+              </div>
+            </dl>
+            <div class="main-menu-progress-meter" aria-label="Act progress">
+              <div class="progress-meter-topline">
+                <span>Act Progress / ความคืบหน้า</span>
+                <strong id="mainMenuProgressPercent">0%</strong>
+              </div>
+              <div class="progress-meter-track"><i id="mainMenuProgressFill"></i></div>
+            </div>
+            <div class="boss-progress-line">
+              <span>Bosses Defeated / บอสที่เอาชนะแล้ว</span>
+              <strong id="mainMenuBossesDefeated">0 / 6</strong>
+            </div>
+          </section>
+
+          <section class="main-menu-card grammaria-collection-card">
+            <h3>Grammaria Collection / คลัง Grammaria</h3>
+            <div id="mainMenuCollection" class="grammaria-collection-grid"></div>
+          </section>
+
+          <section class="main-menu-card main-menu-actions">
+            <button id="continueJourneyButton" class="primary-button main-menu-button" type="button">เดินทางต่อ</button>
+            <button id="lessonMapButton" class="secondary-button main-menu-button" type="button">แผนที่บทเรียน</button>
+            <button id="vsBossesButton" class="secondary-button main-menu-button" type="button">VS Bosses</button>
+            <button id="verbMemoryPracticeButton" class="secondary-button main-menu-button" type="button">ฝึกฝนกริยา 3 ช่อง</button>
+            <button id="pvpModeButton" class="secondary-button main-menu-button" type="button">PvP Duel</button>
+            <button id="assessmentResultButton" class="secondary-button main-menu-button" type="button">ผลการประเมิน</button>
+            <button id="tutorialGuideButton" class="secondary-button main-menu-button" type="button">วิธีเล่น</button>
+            <button id="linguaAdvisorButton" class="secondary-button main-menu-button" type="button">ถามที่ปรึกษา</button>
+            <button id="accountSettingsButton" class="secondary-button main-menu-button" type="button">ตั้งค่าบัญชี</button>
+            <button id="customizeGameButton" class="secondary-button main-menu-button hidden" type="button" aria-label="ปรับแต่ง จัดการภาพและ Asset เกม" aria-hidden="true" hidden disabled>ปรับแต่ง</button>
+            <button id="teacherDashboardButton" class="secondary-button main-menu-button" type="button">Teacher Dashboard</button>
+            <button id="creatorCreditsButton" class="secondary-button main-menu-button" type="button">เครดิตผู้สร้าง</button>
+            <button id="mainMenuLogoutButton" class="secondary-button main-menu-button danger-button" type="button">ออกจากระบบ</button>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section id="vsBossesScene" class="scene vs-bosses-scene">
+      <div class="vs-bosses-shell">
+        <header class="vs-bosses-header">
+          <button id="vsBossesBackButton" class="secondary-button" type="button">กลับหน้าหลัก</button>
+          <div>
+            <p class="eyebrow">BOSS PRACTICE</p>
+            <h2>VS Bosses</h2>
+            <p class="vs-bosses-thai-title">ฝึกฝนกับบอส</p>
+          </div>
+        </header>
+        <p class="vs-bosses-intro">เลือกบอสเพื่อฝึกฝนและวัดผลจากคะแนน Grammaria โดยไม่กระทบความคืบหน้าหลัก</p>
+        <p id="vsBossesStatus" class="vs-bosses-status" aria-live="polite"></p>
+        <div id="vsBossesGrid" class="vs-bosses-grid" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section id="verbMemoryPracticeScene" class="scene verb-memory-practice-scene">
+      <div class="verb-memory-practice-shell">
+        <header class="verb-memory-practice-header">
+          <button id="verbMemoryPracticeBackButton" class="secondary-button" type="button">กลับหน้าหลัก</button>
+          <div>
+            <p class="eyebrow">VERB MEMORY PRACTICE</p>
+            <h2 id="verbMemoryPracticeTitle">ฝึกฝนกริยา 3 ช่อง</h2>
+            <p id="verbMemoryPracticeSubtitle">เอาชนะ The Memory Breaker ด้วยความจำกริยา 3 ช่อง V1 / V2 / V3</p>
+          </div>
+          <strong id="verbMemoryBestScoreText" class="verb-memory-header-best">คะแนนสูงสุด 0</strong>
+        </header>
+
+        <p class="verb-memory-instruction">บอสจะทำให้กริยาหายไป 1 ช่อง เลือกคำที่หายไปให้ถูกต้อง</p>
+
+        <div class="verb-memory-arena" aria-live="polite">
+          <section class="verb-memory-player-panel" aria-label="พลังชีวิตผู้เล่น">
+            <span>ผู้เล่น</span>
+            <div class="verb-memory-hp-row">
+              <strong id="verbMemoryPlayerHpText">HP 100 / 100</strong>
+              <div class="verb-memory-hp-bar"><i id="verbMemoryPlayerHpBar"></i></div>
+            </div>
+          </section>
+
+          <section id="verbMemoryBossFrame" class="verb-memory-boss-frame" aria-label="บอสฝึกความจำ">
+            <img id="verbMemoryBossSprite" class="verb-memory-boss-sprite" src="assets/enemies/the-memory-breaker.png" alt="The Memory Breaker" draggable="false">
+            <span id="verbMemoryBossFallback" class="verb-memory-boss-fallback hidden" aria-label="ไม่พบภาพ The Memory Breaker">MB</span>
+            <h3 id="verbMemoryBossName">The Memory Breaker</h3>
+            <p id="verbMemoryBossThaiName" class="verb-memory-boss-thai-name">ผู้ทำลายความทรงจำ</p>
+            <div class="verb-memory-hp-row">
+              <strong id="verbMemoryBossHpText">HP 1000 / 1000</strong>
+              <div class="verb-memory-hp-bar verb-memory-boss-hp"><i id="verbMemoryBossHpBar"></i></div>
+            </div>
+          </section>
+        </div>
+
+        <section class="verb-memory-board" aria-label="กริยา 3 ช่อง">
+          <article class="verb-memory-slot">
+            <span>V1</span>
+            <strong id="verbMemorySlotV1">พร้อม</strong>
+          </article>
+          <article class="verb-memory-slot">
+            <span>V2</span>
+            <strong id="verbMemorySlotV2">เริ่ม</strong>
+          </article>
+          <article class="verb-memory-slot">
+            <span>V3</span>
+            <strong id="verbMemorySlotV3">ฝึก</strong>
+          </article>
+        </section>
+
+        <div id="verbMemoryChoices" class="verb-memory-choice-grid" aria-label="ตัวเลือกคำตอบ"></div>
+        <p id="verbMemoryStatusText" class="verb-memory-status" aria-live="polite">กดเริ่มฝึกเพื่อเผชิญหน้ากับบอสความจำ</p>
+
+        <div class="verb-memory-score-row" aria-label="คะแนนฝึกจำ">
+          <span id="verbMemoryScoreText">คะแนนฝึกจำ 0</span>
+          <span id="verbMemoryStreakText">คอมโบ 0</span>
+          <span>คะแนนนี้ไม่เพิ่ม Grammaria จริง</span>
+        </div>
+
+        <div class="verb-memory-start-row">
+          <button id="verbMemoryPracticeStartButton" class="primary-button" type="button">เริ่มฝึก</button>
+        </div>
+
+        <section id="verbMemoryResultPanel" class="verb-memory-result-panel hidden" aria-labelledby="verbMemoryResultTitle">
+          <h3 id="verbMemoryResultTitle">ผลการฝึก</h3>
+          <div class="verb-memory-result-grid">
+            <p>คะแนนฝึกจำ <strong id="verbMemoryResultScore">0</strong></p>
+            <p>ตอบถูก <strong id="verbMemoryResultAccuracy">0 / 0 (0%)</strong></p>
+            <p>คอมโบสูงสุด <strong id="verbMemoryResultBestStreak">0</strong></p>
+            <p>คะแนนสูงสุด <strong id="verbMemoryResultBestScore">0</strong></p>
+          </div>
+          <p id="verbMemoryResultRecord" class="verb-memory-result-record"></p>
+          <p class="verb-memory-result-note">คะแนนนี้ใช้เพื่อฝึกจำกริยา 3 ช่องเท่านั้น ไม่เพิ่มเข้า Grammaria จริง</p>
+          <div class="verb-memory-result-actions">
+            <button id="verbMemoryPracticeRestartButton" class="primary-button" type="button">ฝึกอีกครั้ง</button>
+            <button id="verbMemoryResultRetryButton" class="primary-button hidden" type="button">ฝึกอีกครั้ง</button>
+            <button id="verbMemoryResultMainMenuButton" class="secondary-button" type="button">กลับหน้าหลัก</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="pvpDuelScene" class="scene pvp-duel-scene">
+      <div class="pvp-shell">
+        <header class="pvp-header">
+          <button id="pvpBackButton" class="pvp-action-button pvp-back-button" type="button">กลับหน้าหลัก</button>
+          <div class="pvp-title-block">
+            <span>LINGUA</span>
+            <h2 id="pvpModeTitle">Grammaria Duel</h2>
+            <p>ดวลภาษาแบบเรียลไทม์</p>
+          </div>
+          <div class="pvp-header-status">
+            <strong id="pvpRoomCodeDisplay">ห้อง: ยังไม่ได้สร้าง</strong>
+            <span id="pvpConnectionStatus">สถานะ: พร้อมเชื่อมต่อ</span>
+          </div>
+        </header>
+
+        <section class="pvp-room-panel" aria-label="ห้อง Grammaria Duel">
+          <button id="pvpCreateOnlineRoomButton" class="pvp-action-button" type="button">สร้างห้องออนไลน์</button>
+          <label class="pvp-room-input">
+            <span>รหัสห้อง</span>
+            <input id="pvpRoomCodeInput" type="text" maxlength="6" pattern="[A-HJ-NP-Z2-9]{6}" placeholder="กรอกรหัสห้อง 6 ตัว" autocomplete="off" autocapitalize="characters" spellcheck="false">
+          </label>
+          <button id="pvpJoinOnlineRoomButton" class="pvp-action-button" type="button">เข้าร่วมห้องออนไลน์</button>
+          <button id="pvpCopyRoomCodeButton" class="pvp-action-button pvp-muted-action hidden" type="button">คัดลอกรหัสห้อง</button>
+          <button id="pvpResumeOnlineRoomButton" class="pvp-action-button pvp-muted-action hidden" type="button">กลับเข้าห้องเดิม</button>
+          <button id="pvpLeaveOnlineRoomButton" class="pvp-action-button pvp-muted-action hidden" type="button">ออกจากห้องออนไลน์</button>
+          <button id="pvpForfeitButton" class="pvp-action-button pvp-danger-action hidden" type="button">ยอมแพ้</button>
+          <p id="pvpRoomStatus" aria-live="polite">สร้างห้องใหม่หรือกรอกรหัสเพื่อเข้าร่วมการดวล</p>
+        </section>
+
+        <section class="pvp-top-hud" aria-label="ข้อมูลผู้ดวล">
+          <article id="pvpPlayerPanel" class="pvp-player-panel">
+            <div class="pvp-avatar-frame"><img id="pvpPlayerAvatar" src="assets/characters/male_wanderer_idle.gif" alt="Player 1"></div>
+            <div class="pvp-hud-copy">
+              <span>Player 1</span>
+              <h3 id="pvpPlayerName">นักเวทแห่ง Lingua</h3>
+              <div class="pvp-hp-track"><i id="pvpPlayerHpFill"></i></div>
+              <p id="pvpPlayerHpText">HP 120 / 120</p>
+              <div id="pvpPlayerCharge" class="pvp-charge-crystals" aria-label="Grammaria Charge">◆ ◇ ◇ ◇</div>
+              <div id="pvpPlayerCharmSlots" class="pvp-mini-slots">ชาม: ว่าง · ว่าง · ว่าง</div>
+              <div id="pvpPlayerStatusIcons" class="pvp-status-icons">สถานะ: พร้อมดวล</div>
+            </div>
+          </article>
+
+          <div class="pvp-vs-badge">VS</div>
+
+          <article id="pvpOpponentPanel" class="pvp-opponent-panel">
+            <div class="pvp-hud-copy">
+              <span>Player 2</span>
+              <h3 id="pvpOpponentName">รอคู่ต่อสู้</h3>
+              <div class="pvp-hp-track"><i id="pvpOpponentHpFill"></i></div>
+              <p id="pvpOpponentHpText">HP 120 / 120</p>
+              <div id="pvpOpponentCharge" class="pvp-charge-crystals" aria-label="Grammaria Charge">◇ ◇ ◇ ◇</div>
+              <div id="pvpOpponentCharmSlots" class="pvp-mini-slots">ชาม: ปกปิด</div>
+              <div id="pvpOpponentStatusIcons" class="pvp-status-icons">สถานะ: กำลังรอคู่ต่อสู้</div>
+            </div>
+            <div class="pvp-avatar-frame pvp-opponent-avatar" id="pvpOpponentAvatar" aria-label="คู่ต่อสู้">?</div>
+          </article>
+        </section>
+
+        <section id="pvpArenaStage" class="pvp-arena">
+          <div id="pvpLeftCharacter" class="pvp-arena-character pvp-arena-player">ผู้ท้าดวล</div>
+          <strong id="pvpVsMark" class="pvp-arena-vs">GRAMMARIA<br>DUEL</strong>
+          <div id="pvpRightCharacter" class="pvp-arena-character pvp-arena-opponent">คู่ต่อสู้</div>
+          <div id="pvpEffectLayer" class="pvp-effect-layer" aria-hidden="true"></div>
+          <div id="pvpFloatingTextLayer" class="pvp-floating-text-layer" aria-hidden="true"></div>
+        </section>
+
+        <div id="pvpPhaseTracker" class="pvp-phase-tracker" aria-label="ขั้นตอนการดวล">
+          <span class="pvp-phase-step" data-pvp-phase="send-question">1 เลือกคำถาม</span>
+          <span class="pvp-phase-step" data-pvp-phase="answer-question">2 ตอบคำถาม</span>
+          <span class="pvp-phase-step" data-pvp-phase="choose-action">3 เลือกการกระทำ</span>
+          <span class="pvp-phase-step" data-pvp-phase="choose-skill">4 สกิล/ชาม</span>
+          <span class="pvp-phase-step" data-pvp-phase="grammaria-charge">5 ชาร์จ</span>
+          <span class="pvp-phase-step" data-pvp-phase="resolve-action">6 ผลลัพธ์</span>
+        </div>
+
+        <section id="pvpBottomPanel" class="pvp-bottom-panel">
+          <div class="pvp-panel-heading">
+            <div><span>สถานะปัจจุบัน</span><strong id="pvpPhaseIndicator">ห้องรอจำลอง</strong></div>
+            <p id="pvpQuestionPreview">ยังไม่ได้เลือกคำถามให้คู่ต่อสู้</p>
+          </div>
+
+          <div id="pvpQuestionChoices" class="pvp-question-choices"></div>
+
+          <div id="pvpIncomingQuestionPanel" class="pvp-demo-panel hidden">
+            <h3>คำถามที่ได้รับ</h3>
+            <p id="pvpIncomingQuestionMeta" class="pvp-question-meta"></p>
+            <p id="pvpIncomingQuestionText">กำลังรอคำถามจากคู่ต่อสู้</p>
+            <div id="pvpAnswerOptions" class="pvp-answer-options"></div>
+            <div id="pvpArrangementSelected" class="pvp-arrangement-selected hidden" aria-live="polite"></div>
+            <div id="pvpArrangementControls" class="pvp-control-grid hidden"><button id="pvpArrangementUndoButton" class="pvp-action-button pvp-muted-action" type="button">ย้อนคำล่าสุด</button><button id="pvpArrangementClearButton" class="pvp-action-button pvp-muted-action" type="button">ล้างคำตอบ</button></div>
+            <input id="pvpTypingAnswerInput" class="pvp-answer-input hidden" type="text" autocomplete="off" placeholder="พิมพ์คำตอบ">
+            <button id="pvpAnswerConfirmButton" class="pvp-action-button" type="button">ยืนยันคำตอบ</button>
+          </div>
+
+          <div id="pvpAnswerResultPanel" class="pvp-demo-panel hidden">
+            <h3 id="pvpAnswerResultTitle">ผลคำตอบ</h3>
+            <p id="pvpAnswerResultText"></p>
+            <button id="pvpAnswerResultContinueButton" class="pvp-action-button" type="button">ดำเนินการต่อ</button>
+          </div>
+
+          <div id="pvpActionPanel" class="pvp-demo-panel hidden">
+            <h3>ตอบถูก! เลือกการกระทำ</h3>
+            <div class="pvp-control-grid"><button id="pvpAttackActionButton" class="pvp-action-button" type="button">โจมตี</button><button id="pvpHealActionButton" class="pvp-action-button" type="button">รักษา</button></div>
+          </div>
+
+          <div id="pvpSkillPanel" class="pvp-demo-panel hidden">
+            <h3>เลือกสกิลโจมตี</h3>
+            <div id="pvpSkillChoices" class="pvp-choice-grid"></div>
+          </div>
+
+          <div id="pvpCharmPanel" class="pvp-demo-panel hidden">
+            <h3>เลือกชาม Grammaria</h3>
+            <div id="pvpCharmChoices" class="pvp-choice-grid"></div>
+          </div>
+
+          <div id="pvpChargePanel" class="pvp-demo-panel hidden">
+            <h3>Grammaria Charge</h3>
+            <p id="pvpSelectionSummary">เลือกผล Grammaria Charge</p>
+            <div id="pvpChargeChoices" class="pvp-control-grid">
+              <button class="pvp-choice-button" type="button" data-pvp-charge="Weak">Weak ×0.9</button>
+              <button class="pvp-choice-button" type="button" data-pvp-charge="Good">Good ×1.0</button>
+              <button class="pvp-choice-button" type="button" data-pvp-charge="Great">Great ×1.2</button>
+              <button class="pvp-choice-button" type="button" data-pvp-charge="Perfect">Perfect ×1.5</button>
+            </div>
+          </div>
+
+          <div id="pvpResolvePanel" class="pvp-demo-panel hidden">
+            <h3 id="pvpResolveTitle">ดำเนินการสำเร็จ</h3>
+            <p id="pvpResolveText">ผลการโจมตีหรือรักษาจะซิงก์กับคู่ต่อสู้ในห้อง</p>
+            <button id="pvpResolveContinueButton" class="pvp-action-button" type="button">เลือกคำถามให้คู่ต่อสู้</button>
+          </div>
+
+          <div id="pvpMatchEndPanel" class="pvp-demo-panel hidden">
+            <h3 id="pvpMatchEndTitle">จบการดวล</h3>
+            <p id="pvpMatchEndText"></p>
+            <button id="pvpRestartMatchButton" class="pvp-action-button" type="button">กลับล็อบบี้ PvP</button>
+          </div>
+        </section>
+
+        <aside class="pvp-log-panel"><h3>Battle Log</h3><div id="pvpBattleLog" aria-live="polite"></div></aside>
+        <footer class="pvp-footer"><button id="pvpExitButton" class="pvp-action-button" type="button">กลับหน้าหลัก</button><span>แข่งขันออนไลน์แบบห้องเรียน · ไม่มีรางวัลและไม่บันทึกผลลงโปรไฟล์</span></footer>
+      </div>
+    </section>
+
+    <section id="tutorialGuideScene" class="scene tutorial-guide-scene">
+      <div class="tutorial-guide-shell">
+        <header class="tutorial-guide-header">
+          <p class="eyebrow">Tutorial Guide</p>
+          <h2>วิธีเล่น Lingua</h2>
+          <p>คู่มือการใช้งานเกมสำหรับนักเรียน</p>
+        </header>
+
+        <article class="tutorial-guide-card" aria-live="polite">
+          <div class="tutorial-guide-copy">
+            <h3 id="tutorialGuideTitle">ระบบสมัครสมาชิก เก็บคะแนน และติดตามคะแนน</h3>
+            <p id="tutorialGuideDescription">อธิบายการเข้าสู่ระบบ การสะสม Grammaria และการติดตามความก้าวหน้าจากหน้าเมนู</p>
+          </div>
+
+          <div class="tutorial-guide-image-frame">
+            <img id="tutorialGuideImage" class="tutorial-guide-image" src="assets/tutorial/tutorial_01_account_score_menu.png" alt="คู่มือวิธีเล่น Lingua: ระบบสมัครสมาชิก เก็บคะแนน และติดตามคะแนน" draggable="false">
+            <div id="tutorialGuidePlaceholder" class="tutorial-guide-placeholder hidden">ยังไม่มีภาพคู่มือในส่วนนี้</div>
+          </div>
+
+          <div class="tutorial-guide-controls">
+            <button id="tutorialPreviousButton" class="secondary-button tutorial-guide-nav-button" type="button">ก่อนหน้า</button>
+            <span id="tutorialGuideCounter" class="tutorial-guide-counter">1 / 3</span>
+            <button id="tutorialNextButton" class="secondary-button tutorial-guide-nav-button" type="button">ถัดไป</button>
+          </div>
+
+          <button id="tutorialBackButton" class="primary-button tutorial-guide-back-button" type="button">กลับหน้าหลัก</button>
+        </article>
+      </div>
+    </section>
+
+    <section id="creatorCreditsScene" class="scene creator-credits-scene">
+      <div class="creator-credits-shell">
+        <header class="creator-credits-header">
+          <p class="eyebrow">Creator Credits</p>
+          <h2>เครดิตผู้สร้าง Lingua</h2>
+          <p>ข้อมูลผู้พัฒนาและแรงบันดาลใจในการสร้างเกม</p>
+        </header>
+
+        <article class="creator-credits-panel">
+          <div class="creator-credits-image-frame">
+            <img id="creatorCreditsImage" class="creator-credits-image" src="assets/ui/creator-credits.png" alt="เครดิตผู้สร้าง Lingua" draggable="false">
+          </div>
+          <button id="creatorCreditsBackButton" class="primary-button creator-credits-back-button" type="button">กลับหน้าเมนู</button>
+        </article>
+      </div>
+    </section>
+
+    <section id="createCharacterScene" class="scene">
+      <div class="create-card">
+        <p class="eyebrow">ผู้เล่นใหม่</p>
+        <h2>สร้างตัวละคร</h2>
+        <div class="form-grid">
+          <div class="student-profile-form">
+            <label>
+              <span>ชื่อ-สกุล</span>
+              <input id="studentFullNameInput" type="text" placeholder="เช่น เด็กชายภาษา ใจดี" autocomplete="name">
+            </label>
+            <label>
+              <span>ระดับชั้น</span>
+              <select id="studentClassLevelSelect">
+                <option value="">เลือกระดับชั้น</option>
+                <option value="ม.1">ม.1</option>
+                <option value="ม.2">ม.2</option>
+                <option value="ม.3">ม.3</option>
+              </select>
+            </label>
+            <label>
+              <span>ห้อง</span>
+              <select id="studentRoomSelect">
+                <option value="">เลือกห้อง</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+              </select>
+            </label>
+            <label>
+              <span>เลขที่</span>
+              <input id="studentNoInput" type="number" min="1" max="60" inputmode="numeric" placeholder="1-60">
+            </label>
+            <label class="student-game-name-field">
+              <span>ชื่อในเกม</span>
+              <input id="characterNameInput" type="text" maxlength="24" placeholder="ชื่อนักเดินทางใน Lingua">
+            </label>
+          </div>
+          <fieldset class="avatar-options">
+            <legend>เลือก Avatar</legend>
+            <label>
+              <input type="radio" name="avatarType" value="littleMage" checked>
+              <span>นักเวทน้อย</span>
+            </label>
+            <label>
+              <input type="radio" name="avatarType" value="traveler">
+              <span>นักเดินทาง</span>
+            </label>
+            <label>
+              <input type="radio" name="avatarType" value="traineeGuardian">
+              <span>ผู้พิทักษ์ฝึกหัด</span>
+            </label>
+          </fieldset>
+          <fieldset class="avatar-options">
+            <legend>เพศ / รูปลักษณ์พื้นฐาน</legend>
+            <label>
+              <input type="radio" name="avatarGender" value="male">
+              <span>ชาย</span>
+            </label>
+            <label>
+              <input type="radio" name="avatarGender" value="female">
+              <span>หญิง</span>
+            </label>
+            <label>
+              <input type="radio" name="avatarGender" value="other" checked>
+              <span>ไม่ระบุ / อื่น ๆ</span>
+            </label>
+          </fieldset>
+          <fieldset class="avatar-options">
+            <legend>รูปร่างพื้นฐาน</legend>
+            <label>
+              <input type="radio" name="avatarBodyType" value="small">
+              <span>ตัวเล็ก</span>
+            </label>
+            <label>
+              <input type="radio" name="avatarBodyType" value="normal" checked>
+              <span>ปกติ</span>
+            </label>
+            <label>
+              <input type="radio" name="avatarBodyType" value="tall">
+              <span>สูง</span>
+            </label>
+          </fieldset>
+          <div class="avatar-preview-panel">
+            <img id="avatarPreview" class="avatar-preview main-character-gif main-character-preview-gif avatar-gender-other avatar-body-normal" src="assets/characters/male_wanderer_idle.gif" alt="ตัวอย่างตัวละครหลัก" draggable="false">
+            <p id="avatarPreviewText">ตัวอย่าง: ไม่ระบุ / ปกติ</p>
+          </div>
+          <button id="createCharacterButton" class="primary-button">เริ่มการเดินทาง</button>
+        </div>
+        <p id="createStatus" class="form-status">สร้างตัวละครเพื่อเริ่มบันทึกความก้าวหน้า</p>
+      </div>
+    </section>
+
+    <section id="teacherDashboardScene" class="scene teacher-dashboard-scene">
+      <div class="teacher-dashboard-shell">
+        <header class="teacher-dashboard-header">
+          <div>
+            <p class="eyebrow">Teacher Dashboard</p>
+            <h2>ภาพรวมการเรียนของนักเรียน</h2>
+            <p>ดูข้อมูลผู้เล่นจริงจากระบบเท่านั้น โดยไม่แก้ไขความคืบหน้าของนักเรียน</p>
+          </div>
+          <div class="teacher-dashboard-header-actions">
+            <button id="playerScoreReportsButton" class="primary-button" type="button">รายงานคะแนนผู้เล่น</button>
+            <button id="studentManagementButton" class="primary-button" type="button">จัดการรายชื่อผู้เรียน</button>
+            <button id="assetManagerButton" class="primary-button hidden" type="button" aria-hidden="true" hidden disabled>จัดการภาพและ Asset เกม</button>
+            <button id="teacherDashboardBackButton" class="secondary-button" type="button">กลับหน้าหลัก</button>
+          </div>
+        </header>
+
+        <div id="teacherDashboardOverviewPanel" class="teacher-dashboard-view">
+          <div id="teacherDashboardSummary" class="teacher-summary-grid" aria-live="polite"></div>
+
+          <div class="teacher-dashboard-filters">
+            <label>
+              <span>ระดับชั้น</span>
+              <select id="teacherClassLevelFilter">
+                <option value="all">ทุกระดับชั้น</option>
+                <option value="ม.1">ม.1</option>
+                <option value="ม.2">ม.2</option>
+                <option value="ม.3">ม.3</option>
+              </select>
+            </label>
+            <label>
+              <span>ห้อง</span>
+              <select id="teacherRoomFilter">
+                <option value="all">ทุกห้อง</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+              </select>
+            </label>
+            <label>
+              <span>ค้นหา</span>
+              <input id="teacherStudentSearchInput" type="search" placeholder="ค้นหาชื่อ / เลขที่">
+            </label>
+          </div>
+
+          <div class="teacher-dashboard-table-wrap">
+            <table class="teacher-dashboard-table">
+              <thead>
+                <tr>
+                  <th>ตัวละคร</th>
+                  <th>เลขที่</th>
+                  <th>ชื่อ-สกุล</th>
+                  <th>ชื่อในเกม</th>
+                  <th>ชั้น/ห้อง</th>
+                  <th>บทเรียนปัจจุบัน</th>
+                  <th>ความคืบหน้า</th>
+                  <th>Grammaria</th>
+                  <th>บอสที่ผ่าน</th>
+                  <th>เข้าเล่นล่าสุด</th>
+                </tr>
+              </thead>
+              <tbody id="teacherDashboardTableBody"></tbody>
+            </table>
+            <p id="teacherDashboardEmptyState" class="teacher-dashboard-empty hidden">ยังไม่พบข้อมูลนักเรียน</p>
+          </div>
+        </div>
+
+        <section id="playerScoreReportsPanel" class="player-score-reports-panel hidden" aria-labelledby="playerScoreReportsTitle">
+          <div class="player-score-reports-heading">
+            <div>
+              <p class="eyebrow">PLAYER SCORE REPORTS</p>
+              <h3 id="playerScoreReportsTitle">รายงานคะแนนผู้เล่น</h3>
+              <p>สรุปผลการประเมินจากการเล่นของผู้เรียน</p>
+            </div>
+            <button id="playerScoreReportsCloseButton" class="secondary-button" type="button">กลับหน้าภาพรวม</button>
+          </div>
+          <div class="player-score-reports-mode">รายงานผล VS Bosses</div>
+          <div class="vs-boss-report-filters">
+            <label><span>เลือกบอส</span><select id="vsBossReportBossSelect"><option value="">เลือกบอส</option></select></label>
+            <label><span>ระดับชั้น</span><select id="vsBossReportClassSelect" disabled><option value="">เลือกระดับชั้น</option></select></label>
+            <label><span>ห้อง</span><select id="vsBossReportRoomSelect" disabled><option value="">เลือกห้อง</option></select></label>
+            <button id="vsBossReportLoadButton" class="primary-button" type="button" disabled>แสดงรายงาน</button>
+          </div>
+          <p id="vsBossReportStatus" class="vs-boss-report-status" aria-live="polite">เลือกบอส ระดับชั้น และห้องเพื่อแสดงรายงาน</p>
+          <section id="vsBossReportContent" class="vs-boss-report-content hidden" aria-labelledby="vsBossReportTitle">
+            <div class="vs-boss-report-title-row">
+              <h4 id="vsBossReportTitle"></h4>
+              <p id="vsBossReportTopic"></p>
+            </div>
+            <div id="vsBossReportSummary" class="vs-boss-report-summary"></div>
+            <p id="vsBossReportDevelopmentNote" class="vs-boss-report-note"></p>
+            <p class="vs-boss-report-note">แหล่งข้อมูล: ผลการเล่น VS Bosses ที่บันทึกจากบัญชีนักเรียน ข้อมูลใช้สำหรับติดตามการเรียนรู้และพัฒนาการของผู้เรียน</p>
+            <div class="vs-boss-report-table-wrap">
+              <table class="vs-boss-report-table">
+                <thead><tr><th>เลขที่</th><th>ชื่อ-สกุล</th><th>ชื่อในเกม</th><th>ครั้งแรก</th><th>ล่าสุด</th><th>สูงสุด</th><th>จำนวนครั้ง</th><th>ผลต่าง</th><th>สถานะ</th></tr></thead>
+                <tbody id="vsBossReportTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section id="studentManagementPanel" class="student-management-panel hidden" aria-labelledby="studentManagementTitle">
+          <div class="student-management-heading">
+            <div>
+              <p class="eyebrow">Student Management</p>
+              <h3 id="studentManagementTitle">จัดการรายชื่อผู้เรียน</h3>
+              <p>ปรับเฉพาะ Grammaria หรือสถานะซ่อน โดยไม่แก้ความคืบหน้าและรางวัล</p>
+            </div>
+            <button id="studentManagementCloseButton" class="secondary-button" type="button">กลับหน้าภาพรวม</button>
+          </div>
+
+          <div class="student-management-toolbar">
+            <label>
+              <span>ค้นหา</span>
+              <input id="studentManagementSearchInput" type="search" placeholder="ชื่อ ชื่อในเกม ชื่อ-สกุล หรือ UID">
+            </label>
+            <label>
+              <span>ระดับชั้น</span>
+              <select id="studentManagementClassFilter">
+                <option value="all">ทุกระดับชั้น</option>
+                <option value="ม.1">ม.1</option>
+                <option value="ม.2">ม.2</option>
+                <option value="ม.3">ม.3</option>
+              </select>
+            </label>
+            <label>
+              <span>ห้อง</span>
+              <select id="studentManagementRoomFilter">
+                <option value="all">ทุกห้อง</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+              </select>
+            </label>
+            <label>
+              <span>สถานะ</span>
+              <select id="studentManagementStatusFilter">
+                <option value="active">ใช้งานอยู่</option>
+                <option value="deleted">ถูกลบ/ซ่อน</option>
+                <option value="all">ทั้งหมด</option>
+              </select>
+            </label>
+            <label>
+              <span>เรียงตาม</span>
+              <select id="studentManagementSortSelect">
+                <option value="grammaria-desc">Grammaria มากไปน้อย</option>
+                <option value="grammaria-asc">Grammaria น้อยไปมาก</option>
+                <option value="last-active">เข้าเล่นล่าสุด</option>
+                <option value="name">ชื่อผู้เรียน</option>
+              </select>
+            </label>
+          </div>
+
+          <p id="studentManagementStatus" class="student-management-status" aria-live="polite"></p>
+
+          <div class="student-management-content">
+            <div class="student-management-table-wrap">
+              <table class="student-management-table">
+                <thead>
+                  <tr>
+                    <th>ลำดับ</th>
+                    <th>ชื่อผู้เรียน / ชื่อในเกม</th>
+                    <th>ชื่อ-สกุล</th>
+                    <th>ชั้น</th>
+                    <th>ห้อง</th>
+                    <th>เลขที่</th>
+                    <th>Grammaria</th>
+                    <th>ยศพลัง</th>
+                    <th>บทเรียนปัจจุบัน</th>
+                    <th>ความคืบหน้า</th>
+                    <th>เข้าเล่นล่าสุด</th>
+                    <th>สถานะ</th>
+                    <th>จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="studentManagementTableBody"></tbody>
+              </table>
+              <p id="studentManagementEmptyState" class="teacher-dashboard-empty hidden">ไม่พบข้อมูลผู้เรียน</p>
+            </div>
+
+            <aside id="studentManagementDetailPanel" class="student-management-detail hidden" aria-live="polite">
+              <div class="student-management-detail-heading">
+                <h4>รายละเอียดผู้เรียน</h4>
+                <button id="studentManagementDetailCloseButton" class="student-management-icon-button" type="button" aria-label="ปิดรายละเอียด">×</button>
+              </div>
+              <div id="studentManagementDetailContent" class="student-management-detail-content"></div>
+              <div class="student-management-actions">
+                <button id="studentManagementAddPointsButton" class="student-success-button" type="button">เพิ่มแต้ม</button>
+                <button id="studentManagementReducePointsButton" class="student-warning-button" type="button">ลดแต้ม</button>
+                <button id="studentManagementDeleteButton" class="student-danger-button" type="button">ลบ/ซ่อนผู้เรียน</button>
+                <button id="studentManagementRestoreButton" class="student-success-button hidden" type="button">กู้คืนผู้เรียน</button>
+              </div>
+              <p class="student-management-hard-delete-note">การลบถาวรต้องใช้ระบบหลังบ้านเพิ่มเติม เพื่อป้องกันข้อมูลเสียหาย</p>
+            </aside>
+          </div>
+        </section>
+
+        <section id="assetManagerPanel" class="asset-manager-panel hidden" aria-labelledby="assetManagerTitle">
+          <div class="asset-manager-heading">
+            <div>
+              <p class="eyebrow">Game Asset Manager</p>
+              <h3 id="assetManagerTitle">จัดการภาพและ Asset เกม</h3>
+              <p>อัปโหลดภาพทดแทนโดยเก็บไฟล์ต้นฉบับของระบบไว้เป็น fallback เสมอ</p>
+            </div>
+            <button id="assetManagerCloseButton" class="secondary-button" type="button">กลับหน้าภาพรวม</button>
+          </div>
+
+          <div class="asset-manager-toolbar">
+            <label>
+              <span>ค้นหา Asset</span>
+              <input id="assetManagerSearchInput" type="search" placeholder="ค้นหาชื่อ คำอธิบาย หรือ asset key">
+            </label>
+            <label>
+              <span>หมวดหมู่</span>
+              <select id="assetManagerCategoryFilter">
+                <option value="all">ทั้งหมด</option>
+                <option value="characters">ตัวละคร</option>
+                <option value="enemies">บอส/ศัตรู</option>
+                <option value="backgrounds">พื้นหลัง</option>
+                <option value="items">ไอเทม</option>
+                <option value="charms">ชาม Grammaria</option>
+                <option value="ui">UI / เมนู</option>
+              </select>
+            </label>
+          </div>
+
+          <p id="assetManagerStatus" class="asset-manager-status" aria-live="polite"></p>
+          <div id="assetManagerGrid" class="asset-manager-grid" aria-live="polite"></div>
+          <p id="assetManagerEmptyState" class="teacher-dashboard-empty hidden">ไม่พบ Asset ในหมวดนี้</p>
+          <p class="asset-manager-storage-note">ไฟล์ที่อัปโหลดจะอยู่ใน Firebase Storage และการกลับไปใช้ภาพเดิมจะไม่ลบไฟล์ที่เคยอัปโหลด</p>
+        </section>
+      </div>
+    </section>
+
+    <section id="titleScene" class="scene">
+      <div class="sky-orbit"></div>
+      <div class="title-card">
+        <p class="eyebrow">ต้นแบบ 1</p>
+        <h1>Lingua</h1>
+        <p class="subtitle">RPG แห่งแกรมมาเรีย</p>
+        <button id="startButton" class="primary-button">เริ่มการเดินทาง</button>
+      </div>
+    </section>
+
+    <section id="storyScene" class="scene story-scene lesson-screen">
+      <header class="lesson-header">
+        <button id="lessonBackButton" class="lesson-round-btn" type="button" aria-label="กลับ">←</button>
+        <div class="lesson-title-banner">
+          <h2>บทเรียน</h2>
+          <p id="lessonActLabel" class="lesson-act-label">ACT: The Past Fragment</p>
+          <p id="lessonLocationLabel" class="lesson-location-label">หอคอยแห่ง Unity</p>
+        </div>
+        <button id="lessonDictionaryButton" class="lesson-dictionary-btn" type="button" aria-label="พจนานุกรม">
+          <span class="dictionary-icon">▤</span>
+          <span>พจนานุกรม</span>
+          <i aria-hidden="true"></i>
+        </button>
+      </header>
+
+      <div class="story-upper lesson-scene">
+        <div class="story-illustration lesson-bg-magic" aria-label="Magical library and Unity Tower lesson scene">
+          <div class="library-arch left"></div>
+          <div class="library-arch right"></div>
+          <div class="floating-letter letter-a">A</div>
+          <div class="floating-letter letter-b">G</div>
+          <div class="floating-letter letter-c">Ω</div>
+          <div class="floating-letter letter-d">V2</div>
+          <div class="floating-letter letter-e">L</div>
+          <div class="magic-circle"></div>
+          <div class="tower-art">
+            <span></span>
+          </div>
+
+          <div id="storyWanderer" class="vn-character wanderer-in-scene character-static-holder">
+            <img class="character-avatar wanderer-avatar main-character-gif" src="assets/characters/male_wanderer_idle.gif" alt="ผู้พเนจร" draggable="false">
+            <strong>ผู้พเนจร</strong>
+          </div>
+
+          <div id="storyVerion" class="vn-character verion-in-scene character-static-holder">
+            <img class="character-avatar verion-avatar lesson-character-teacher teacher-character-gif" src="assets/characters/master_verion_idle.gif" alt="มาสเตอร์เวรีออน" draggable="false">
+            <strong>อาจารย์เวเรียน</strong>
+          </div>
+
+          <div id="dialoguePanel" class="dialogue-panel vn-dialogue dialogue-box">
+            <div id="dialoguePortraitSlot" class="dialogue-speaker-portrait-slot hidden" aria-hidden="true">
+              <img id="dialogueSpeakerPortrait" class="dialogue-speaker-portrait" alt="" draggable="false">
+            </div>
+            <div class="dialogue-main-content">
+              <p id="speakerName" class="speaker-name"></p>
+              <p id="dialogueText" class="dialogue-text"></p>
+              <div id="dialogueChoices" class="dialogue-choices hidden"></div>
+            </div>
+          </div>
+
+          <div id="lessonStoryVisual" class="lesson-story-visual hidden" aria-live="polite"></div>
+
+          <div id="nounActivityVisual" class="activity-brief lesson-example-panel hidden">
+            <button id="explanationCloseButton" class="explanation-close" type="button" aria-label="ปิดคำอธิบาย">×</button>
+            <div class="explanation-header">
+              <p class="speaker-name">ระบบสอนเล่น</p>
+              <h3>ภารกิจฟื้นคืนอดีต</h3>
+              <p id="activityFeedback" class="activity-feedback">เรียนรู้ Verb ช่องที่ 2 เพื่อฟื้นคืน Past Fragment</p>
+            </div>
+            <div class="explanation-scroll-area">
+              <div id="wordGrid" class="word-grid lesson-chip-grid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="story-lower lesson-controls">
+        <button id="lessonSelectButton" class="lesson-round-btn lesson-map-btn" type="button">
+          <span>⌖</span>
+          <strong>แผนที่</strong>
+        </button>
+
+        <div class="lesson-progress-card" id="lessonProgressCard" role="button" tabindex="0" aria-label="เลือกบทเรียนที่เคยเรียนแล้ว">
+          <span>บทเรียน</span>
+          <strong id="lessonProgressText">1 / 1</strong>
+          <small>กดเพื่อเลือกบทเรียน</small>
+          <div class="lesson-progress-track">
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+        </div>
+
+        <div id="dialogueActions" class="story-actions lesson-main-action">
+          <div id="storyNameForm" class="story-name-form hidden">
+            <label for="storyNameInput">บอกชื่อของเจ้า</label>
+            <input id="storyNameInput" type="text" maxlength="24" placeholder="กรอกชื่อของคุณ">
+            <button id="confirmNameButton" class="primary-button">ยืนยันชื่อ</button>
+            <p id="namePromptStatus" class="form-status"></p>
+          </div>
+          <div class="dialogue-nav-actions">
+            <button id="previousDialogueButton" class="primary-button dialogue-prev-button hidden" type="button">← ย้อนกลับ</button>
+            <button id="nextDialogueButton" class="primary-button">ถัดไป</button>
+          </div>
+          <p id="lessonGrammariaDisplay" class="lesson-grammaria-display">Grammaria สะสม: 0</p>
+        </div>
+
+        <div id="nounActivity" class="activity-panel hidden">
+          <button id="battleButton" class="primary-button hidden">เริ่มตอบคำถาม</button>
+        </div>
+
+        <div class="lesson-side-actions">
+          <button id="lessonExplainButton" class="secondary-button" type="button">ดูคำอธิบาย</button>
+          <button id="lessonReviewButton" class="secondary-button" type="button">ทบทวนเนื้อหา</button>
+          <button id="skipLessonButton" class="secondary-button" type="button">ข้ามบทเรียน</button>
+          <button id="skipBattleButton" class="secondary-button" type="button">ข้ามไปต่อสู้</button>
+        </div>
+
+        <button class="lesson-round-btn lesson-bag-btn" type="button" disabled>
+          <span>▣</span>
+          <strong>กระเป๋า</strong>
+        </button>
+      </div>
+    </section>
+
+    <section id="battleScene" class="scene">
+      <header class="scene-header compact">
+        <button id="battleExitButton" class="battle-exit-button" type="button">ออกจากการต่อสู้</button>
+        <p class="eyebrow">การต่อสู้</p>
+        <h2 id="battleTitle">The Memory Breaker</h2>
+      </header>
+
+      <button id="battleLinguaAdvisorButton" class="battle-lingua-advisor-button" type="button">ถามที่ปรึกษา</button>
+
+      <div class="lingua-battle-upper" aria-label="สนามต่อสู้">
+        <div id="battleTurnIndicator" class="battle-turn-indicator hidden" aria-live="polite">
+          <div id="battleCurrentTurn" class="battle-current-turn">
+            <span class="battle-turn-label">ตาปัจจุบัน</span>
+            <strong id="battleCurrentTurnActor">ตาของผู้เล่น</strong>
+          </div>
+          <div class="battle-upcoming-turns">
+            <span class="battle-turn-label">5 ตาถัดไป</span>
+            <div id="battleUpcomingTurnList" class="battle-upcoming-turn-list"></div>
+          </div>
+        </div>
+
+        <div class="battle-stage battlefield-stage">
+          <article id="battlePlayer" class="combatant player-side">
+            <div class="player-model-motion">
+              <img id="battlePlayerSprite" class="character-avatar wanderer-avatar main-character-gif small battle-player-model" data-character-view="battle-back" src="assets/characters/male_wanderer_back.png" alt="ผู้พเนจร" draggable="false">
+            </div>
+            <div class="combat-text player-status-panel">
+              <h3 id="battlePlayerName">ผู้พเนจร · ผู้ฝึกเวทเริ่มต้น</h3>
+              <div class="hp-bar" aria-label="Player HP">
+                <span id="playerHpFill"></span>
+              </div>
+              <p id="playerHpText">พลังชีวิต 100 / 100</p>
+              <div id="playerApPips" class="ap-pips" aria-label="Action Points"></div>
+            </div>
+          </article>
+
+          <article id="battleEnemy" class="combatant enemy-side">
+            <div class="boss-model-motion">
+              <img id="battleEnemySprite" class="wisp-avatar enemy-memory-shade enemy-sprite boss-battle-model" src="assets/memory-shade.png" alt="Memory Shade">
+            </div>
+            <div class="combat-text boss-status-panel">
+              <h3 id="battleEnemyName">Memory Shade</h3>
+              <p id="battleEnemyDescription" class="enemy-description">เงาความทรงจำที่บิดเบือนคำกริยาในอดีต</p>
+              <div class="hp-bar enemy" aria-label="Enemy HP">
+                <span id="enemyHpFill"></span>
+              </div>
+              <p id="enemyHpText">พลังชีวิต 80 / 80</p>
+              <p id="bossStatusText" class="boss-status-text">Stun 0/100</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="battle-dashboard battle-resource-strip">
+          <div class="stat-pill battle-player-effects">
+            <span>สถานะผู้เล่น</span>
+            <strong id="shieldText">ไม่มี</strong>
+          </div>
+          <div class="stat-pill battle-grammaria-status">
+            <span>ยศพลัง Grammaria</span>
+            <strong id="grammariaText">0</strong>
+            <small id="grammariaRankProgressText">อีก 150 Grammaria ถึงยศถัดไป</small>
+          </div>
+          <div id="battleBoostStatus" class="battle-boost-status hidden">พลังโจมตี x2 พร้อมใช้</div>
+        </div>
+      </div>
+
+      <section class="battle-panel">
+        <p id="battleMessage" class="battle-message">เศษประโยคอดีตกำลังสั่นไหว</p>
+
+        <div id="bossIntentPanel" class="boss-intent-panel hidden">
+          <p class="enemy-attack-label">สัญญาณจากศัตรู</p>
+          <h3 id="bossIntentName">Memory Shade</h3>
+          <p id="bossIntentText">ศัตรูกำลังเตรียมโจมตี</p>
+          <p id="bossIntentType" class="boss-intent-type">เตรียมป้องกัน</p>
+          <button id="bossIntentReadyButton" class="primary-button" type="button">เตรียมพร้อม</button>
+        </div>
+
+        <div id="actionMenu" class="button-grid">
+          <button id="attackButton" class="action-button">โจมตี</button>
+          <button id="itemButton" class="action-button">ไอเทม</button>
+          <button id="focusButton" class="action-button">ตั้งสมาธิ</button>
+        </div>
+
+        <div id="itemPanel" class="battle-item-panel hidden">
+          <h3>เลือกไอเท็มที่ต้องการใช้</h3>
+          <div id="itemOptions" class="battle-item-grid"></div>
+          <button id="itemBackButton" class="secondary-button" type="button">กลับไปเลือกการกระทำ</button>
+        </div>
+
+        <div id="questionPanel" class="question-panel hidden">
+          <h3 id="questionText"></h3>
+          <div id="answerOptions" class="answer-options"></div>
+        </div>
+
+        <div id="postCorrectActionPanel" class="post-correct-action-panel hidden">
+          <h3>ตอบถูก! เลือกรูปแบบการโจมตี</h3>
+          <p id="postCorrectActionText">จะโจมตีทันที หรือใช้สกิลและชามเพื่อเพิ่มพลัง?</p>
+          <div class="post-correct-action-buttons">
+            <button id="normalAttackChoiceButton" class="primary-button" type="button">โจมตีปกติ</button>
+            <button id="skillCharmChoiceButton" class="secondary-button" type="button">เลือกสกิลและชาม</button>
+          </div>
+        </div>
+
+        <div id="battleSkillPanel" class="charm-panel battle-skill-selection-panel hidden">
+          <h3>เลือกสกิลโจมตี</h3>
+          <div id="battleSkillOptions" class="charm-options"></div>
+        </div>
+
+        <div id="charmPanel" class="charm-panel hidden">
+          <h3>เลือกเครื่องรางเวท 1 ชิ้น</h3>
+          <div id="charmOptions" class="charm-options"></div>
+        </div>
+
+        <div id="chargePanel" class="timing-panel hidden">
+          <h3>ชาร์จแกรมมาเรีย</h3>
+          <p id="chargePercentText" class="charge-percent-text">Charge 0%</p>
+          <div id="chargeBar" class="timing-bar">
+            <div id="perfectZone" class="perfect-zone"></div>
+            <div id="chargeMarker" class="timing-marker"></div>
+          </div>
+          <p id="chargeFeedbackText" class="charge-feedback-text">กดค้างเพื่อชาร์จ แล้วปล่อยเพื่อหยุดค่า</p>
+          <button id="stopChargeButton" class="primary-button">กดค้างเพื่อชาร์จ</button>
+        </div>
+
+        <div id="parryPanel" class="countdown-parry hidden">
+          <p class="enemy-attack-label">ศัตรูโจมตี</p>
+          <h3 id="enemyAttackName">ดูดกลืนชื่อ</h3>
+          <p id="parryHitText" class="parry-hit-text">Hit 1 / 1</p>
+          <p class="parry-instruction">กดปัดป้องเมื่อเส้นสีขาวเข้าโซนเป้าหมาย: ส้ม = Weak, เหลือง = Good, เขียวกลาง = Perfect</p>
+          <div id="parryCountdown" class="parry-countdown">TAP</div>
+          <div id="parryGauge" class="parry-gauge">
+            <div id="parryGaugeZone" class="parry-gauge-zone"></div>
+            <div id="parryGaugeMarker" class="parry-gauge-marker"></div>
+          </div>
+          <p id="parryHitResult" class="parry-hit-result"></p>
+          <button id="parryButton" class="primary-button">ปัดป้อง</button>
+        </div>
+
+        <div id="pointParryPanel" class="point-parry-panel hidden">
+          <p class="enemy-attack-label">Point Parry</p>
+          <h3 id="pointParryTitle">จับจุดพลังที่แตกออก</h3>
+          <p id="pointParryInstruction">แตะวงเวทที่ปรากฏให้ทันก่อนการโจมตี</p>
+          <div id="pointParryArena" class="point-parry-arena"></div>
+          <p id="pointParryResult" class="parry-hit-result"></p>
+        </div>
+
+        <button id="continueBattleButton" class="primary-button hidden">ดำเนินต่อ</button>
+      </section>
+    </section>
+
+    <section id="victoryScene" class="scene">
+      <div class="victory-card">
+        <p class="eyebrow">จบบท</p>
+        <h2 id="victoryTitle">ได้รับ Past Fragment</h2>
+        <p>ศัตรูที่พ่ายแพ้: <strong id="victoryEnemy">The Memory Breaker</strong></p>
+        <p id="victoryStory" class="story-close">อดีตของ Lingua ฟื้นคืนด้วยพลังของคำกริยาช่องที่ 2</p>
+        <div class="reward-list">
+          <div>
+            <span>แกรมมาเรียที่ได้รับ</span>
+            <strong id="victoryGrammaria">0</strong>
+          </div>
+          <div>
+            <span>Fragment ที่ได้รับ</span>
+            <strong id="victoryExtra">0</strong>
+          </div>
+          <div>
+            <span>Badge</span>
+            <strong id="victoryBadge">ผู้ฟื้นคืนอดีต</strong>
+          </div>
+        </div>
+        <p id="victoryFragmentText" class="fragment-text">สรุปบทเรียนโดยมาสเตอร์เวรีออน</p>
+        <button id="returnTitleButton" class="primary-button">กลับไปหน้าเริ่มต้น</button>
+      </div>
+    </section>
+
+    <div id="sceneTransition" class="scene-transition hidden">
+      <div class="transition-rune"></div>
+      <p id="transitionText">กำลังเข้าสู่หอคอยแห่ง Unity...</p>
+    </div>
+
+    <div id="prologueOverlay" class="prologue-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="prologueText">
+      <div class="prologue-content">
+        <p id="prologueText" class="prologue-text"></p>
+        <p id="prologueHint" class="prologue-hint">แตะเพื่อไปต่อ</p>
+        <button id="prologueNextButton" class="prologue-next-button" type="button">ถัดไป</button>
+      </div>
+    </div>
+
+    <div id="gameModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="gameModalTitle">
+      <div class="game-modal-card">
+        <button id="gameModalClose" class="game-modal-close" type="button" aria-label="ปิด">×</button>
+        <h3 id="gameModalTitle"></h3>
+        <p id="gameModalBody"></p>
+        <div id="gameModalContent" class="game-modal-content"></div>
+        <div id="gameModalActions" class="game-modal-actions"></div>
+      </div>
+    </div>
+
+    <div id="linguaAdvisorOverlay" class="advisor-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="linguaAdvisorTitle">
+      <section id="linguaAdvisorPanel" class="advisor-panel">
+        <header class="advisor-header">
+          <div id="advisorMasterVerionPortrait" class="advisor-master-verion">
+            <div class="advisor-master-portrait">
+              <img id="advisorMasterVerionImage" class="advisor-master-image" src="assets/characters/master_verion_idle.gif" alt="มาสเตอร์เวอริออน ที่ปรึกษาแกรมมาเรีย" draggable="false">
+              <span id="advisorMasterVerionPlaceholder" class="advisor-master-placeholder hidden" aria-hidden="true">V</span>
+            </div>
+            <div>
+              <p id="linguaAdvisorTitle" class="advisor-title">Lingua Advisor</p>
+              <strong id="advisorMasterVerionName" class="advisor-master-name">มาสเตอร์เวอริออน</strong>
+              <span id="advisorMasterVerionRole" class="advisor-master-role">ที่ปรึกษาแกรมมาเรีย</span>
+            </div>
+          </div>
+          <button id="linguaAdvisorCloseButton" class="advisor-close-button" type="button" aria-label="ปิดที่ปรึกษา">ปิด</button>
+        </header>
+        <div id="linguaAdvisorBody" class="advisor-body" aria-live="polite"></div>
+        <p class="advisor-footer-note">มาสเตอร์เวอริออนให้คำแนะนำเฉพาะหัวข้อที่เลือก และไม่ส่งผลต่อคะแนน HP หรือ Grammaria</p>
+      </section>
+    </div>
+    <p id="developerCredit" class="developer-credit">Lingua: Digital Game-based Learning Platform | พัฒนาโดย นายนครินทร์ พร้อมสุข ครูโรงเรียนแม่สอด</p>
+  </main>
+
+  <script src="assets/data/irregular_verb_memory_bank.js?v=verb-memory-bank-20260901"></script>
+  <script type="module" src="script.js?v=player-score-reports-20260913"></script>
+</body>
+</html>

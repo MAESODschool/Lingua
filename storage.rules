@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isTeacher() {
+      return signedIn() && (
+        request.auth.token.get('role', '') == 'teacher' ||
+        request.auth.token.get('teacher', false) == true ||
+        request.auth.token.get('admin', false) == true ||
+        request.auth.token.get('assetManager', false) == true
+      );
+    }
+
+    match /game-assets/{category}/{assetKey}/{fileName} {
+      allow read: if true;
+      allow create, update: if isTeacher()
+        && request.resource != null
+        && request.resource.size > 0
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType is string
+        && request.resource.contentType.matches('image/(png|jpeg|webp|gif)');
+      allow delete: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,23 @@
+# Backup archives
+*.zip
+
+# Development scratch / archived prompts
+work/
+
+# Node dependencies
+node_modules/
+
+# Firebase local/cache
+.firebase/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
