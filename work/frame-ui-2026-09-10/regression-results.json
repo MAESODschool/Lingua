@@ -1,0 +1,65 @@
+[
+  {
+    "test": "tests/asset-manager-upload-safety.cjs",
+    "exitCode": 0,
+    "output": "{\n  \"ok\": true,\n  \"checks\": 71,\n  \"uploadPath\": \"game-assets/{category}/{assetKey}/{fileName}\",\n  \"firestorePath\": \"gameAssetOverrides/{assetKey}\"\n}\n",
+    "errors": ""
+  },
+  {
+    "test": "tests/boss-asset-replacements.cjs",
+    "exitCode": 0,
+    "output": "Boss asset replacement checks passed (5 transparent PNG assets).\n",
+    "errors": ""
+  },
+  {
+    "test": "tests/lesson-music-routing.cjs",
+    "exitCode": 0,
+    "output": "{\n  \"ok\": true,\n  \"checks\": 27,\n  \"expectedRoutes\": {\n    \"story\": \"lesson\",\n    \"login\": \"login\",\n    \"mainMenu\": \"login\",\n    \"createCharacter\": \"login\",\n    \"battle\": \"battle\",\n    \"vsBosses\": \"linguaBreaker\",\n    \"verbMemoryPractice\": \"linguaBreaker\",\n    \"pvp\": \"linguaBreaker\",\n    \"teacherDashboard\": \"hall\",\n    \"assetManager\": \"hall\",\n    \"tutorialGuide\": \"hall\",\n    \"creatorCredits\": \"hall\",\n    \"victory\": \"hall\"\n  }\n}\n",
+    "errors": ""
+  },
+  {
+    "test": "tests/online-login-safety.cjs",
+    "exitCode": 0,
+    "output": "{\n  \"ok\": true,\n  \"checks\": 32\n}\n",
+    "errors": ""
+  },
+  {
+    "test": "tests/player-write-security.cjs",
+    "exitCode": 0,
+    "output": "{\n  \"ok\": true,\n  \"failures\": [],\n  \"checks\": 24\n}\n",
+    "errors": ""
+  },
+  {
+    "test": "tests/targeted-regressions.cjs",
+    "exitCode": 0,
+    "output": "{\n  \"rank\": \"passed, 11 registered bosses\",\n  \"rewindSlime\": {\n    \"ok\": true,\n    \"failures\": [],\n    \"warnings\": [],\n    \"rewindSlime\": {\n      \"found\": true,\n      \"relatedStageIds\": [\n        \"regular-rule-4\"\n      ],\n      \"questionCount\": 100\n    },\n    \"targetVerbs\": {\n      \"totalRequired\": 20,\n      \"found\": 20,\n      \"missing\": []\n    }\n  },\n  \"cvc\": {\n    \"ok\": true,\n    \"teachingStepCount\": 62,\n    \"guidedPracticeCount\": 9,\n    \"failures\": [],\n    \"warnings\": []\n  },\n  \"charm\": {\n    \"ok\": true,\n    \"damageWithoutCharm\": 6,\n    \"damageWithCharm\": 8,\n    \"charmMultiplier\": 1.25,\n    \"failures\": []\n  }\n}\nActual attack resolver: persistence, double-click, exact HP, feedback and wrong-answer guard passed.\nDirect Attack: zero AP, stale Focus state, cooldowns, 6 stages, MC/typing/arrangement controls, victory handoff, wrong answers, optional skills and VS isolation passed.\n",
+    "errors": ""
+  },
+  {
+    "test": "tests/teacher-dashboard-no-storage.cjs",
+    "exitCode": 0,
+    "output": "Teacher Dashboard no-Storage checks passed (21 assertions).\n",
+    "errors": ""
+  },
+  {
+    "test": "tests/teacher-dashboard-permission.cjs",
+    "exitCode": 0,
+    "output": "{\n  \"ok\": true,\n  \"checks\": 17,\n  \"teacherUid\": \"WJtnnbrZibUUyYOS348hHDVVbf53\",\n  \"collections\": [\n    \"players\",\n    \"playerClientProgress\"\n  ]\n}\n",
+    "errors": ""
+  },
+  {
+    "syntax": "script.js",
+    "exitCode": 0,
+    "errors": ""
+  },
+  {
+    "syntax": "api/lingua-advisor.js",
+    "exitCode": 0,
+    "errors": ""
+  },
+  {
+    "syntax": "assets/data/irregular_verb_memory_bank.js",
+    "exitCode": 0,
+    "errors": ""
+  }
+]

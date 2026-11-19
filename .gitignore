@@ -10,6 +10,11 @@ work/
 # Node dependencies
 node_modules/
 
+# Build output and caches
+dist/
+build/
+.cache/
+
 # Firebase local/cache
 .firebase/
 

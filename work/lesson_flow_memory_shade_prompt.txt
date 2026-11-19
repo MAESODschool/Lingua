@@ -1,0 +1,493 @@
+You are working on the existing HTML/CSS/JavaScript project “Lingua: A Grammaria RPG”.
+Current files:
+- index.html
+- style.css
+- script.js
+I will attach the official Memory Shade image reference.
+IMPORTANT:
+Please modify the actual working project files.
+Do not only summarize.
+Do not simulate.
+Do not only describe what you would do.
+Actually edit the project structure and logic.
+Do not remove these existing systems:
+- login / guest login
+- player data
+- localStorage
+- battle system
+- ACT / stage progression
+- current lesson data if possible
+- current UI theme direction
+Main goal of this task:
+Fix the lesson experience so it becomes a real guided teaching scene instead of a content dump inside a scrollable box.
+Also:
+Redesign / replace the enemy “Memory Shade” so it uses the attached official image.
+==================================================
+A. MAIN PROBLEM TO FIX
+==================================================
+Current problem:
+The lesson screen is wrong conceptually.
+Right now, the game is rendering lesson content like:
+- a grid
+- a list
+- a card menu
+- a scrollable content block
+- a mini stage list inside the lesson scene
+This is incorrect.
+It makes the lesson feel like:
+- a webpage
+- a list of topics
+- a stage selection panel
+- a content dump
+It does NOT feel like:
+- a teacher guiding a student
+- a fantasy lesson scene
+- a game-based learning experience
+The current design problem is:
+The game is stuffing too much content into one big box and expecting students to read it.
+Students will not read that.
+We need to change the entire lesson flow so the game teaches step by step through dialogue, examples, small interactions, and short checks.
+==================================================
+B. REQUIRED LESSON DESIGN PHILOSOPHY
+==================================================
+From now on, the lesson screen must follow this rule:
+DO NOT render lesson content as:
+- a scrollable list of lesson cards
+- a grid of rules
+- a menu of topics
+- a pile of content blocks
+Instead, render the lesson as:
+1. short dialogue step
+2. one clear idea
+3. one example
+4. one small interaction
+5. then move to the next teaching step
+The student should feel:
+“Master Verion is teaching me”
+NOT:
+“I have to read a giant box by myself”
+==================================================
+C. SEPARATE TWO TYPES OF SCREENS
+==================================================
+You must separate these two concepts clearly in the code and UI:
+1. LESSON MAP / STAGE SELECT SCREEN
+2. REAL TEACHING / LESSON SCENE SCREEN
+--------------------------------------------------
+1. LESSON MAP / STAGE SELECT SCREEN
+--------------------------------------------------
+This screen may show:
+- lesson nodes
+- stage cards
+- topics like:
+- อดีตคืออะไร
+- Tense คืออะไร
+- Regular Rule 1
+- Regular Rule 2
+- Irregular Verbs
+- Mini Boss
+- Final Boss
+This is where grid/cards/list are acceptable.
+This screen is a map or progress overview.
+--------------------------------------------------
+2. REAL TEACHING / LESSON SCENE SCREEN
+--------------------------------------------------
+This screen must NOT show:
+- a grid of topics
+- scrollable stage cards
+- multiple lesson blocks at once
+- a large list of lesson titles
+This screen must instead show:
+- characters
+- dialogue
+- example cards
+- thought bubbles
+- a small interaction
+- a main button like “ถัดไป”, “ตอบ”, “เริ่มฝึก”, “เริ่มต่อสู้”
+Important:
+The screenshot I am unhappy with is showing lesson content in the wrong format.
+That card/list/grid style should be moved to the lesson map screen if needed.
+It must not remain inside the teaching scene.
+==================================================
+D. NEW LESSON FLOW REQUIREMENTS
+==================================================
+For every lesson section, use this structure:
+1. Scene intro
+2. Teacher dialogue
+3. One teaching idea
+4. Visual example
+5. Small student interaction
+6. Teacher feedback
+7. Next teaching idea
+8. Small drill
+9. Practice encounter or battle only after learning
+Never dump the whole lesson at once.
+--------------------------------------------------
+Example structure for “What is the past?”
+--------------------------------------------------
+Step 1:
+Master Verion speaks:
+“ลองดู 3 ประโยคนี้ก่อน ผู้พเนจร”
+Step 2:
+Show example cards:
+- ฉันกินข้าววันนี้
+- ฉันกินข้าวเมื่อวาน
+- ฉันจะกินข้าวพรุ่งนี้
+Step 3:
+Master Verion speaks:
+“ทั้ง 3 ประโยคนี้พูดถึงเวลากันคนละแบบ
+เธอสังเกตเห็นไหมว่ามีคำบอกเวลาไม่เหมือนกัน”
+Step 4:
+Ask the player:
+“เธอคิดว่าประโยคใดเป็นเหตุการณ์ในอดีต?”
+Choices:
+- ฉันกินข้าววันนี้
+- ฉันกินข้าวเมื่อวาน
+- ฉันจะกินข้าวพรุ่งนี้
+Step 5:
+Teacher responds differently based on choice:
+If correct:
+“ถูกต้อง คำว่า ‘เมื่อวาน’ บอกว่าเหตุการณ์นั้นเกิดขึ้นไปแล้ว นี่แหละคืออดีต”
+If incorrect:
+“ยังไม่ใช่ ลองสังเกตคำบอกเวลาอีกครั้ง ‘เมื่อวาน’ คือเวลาที่ผ่านไปแล้ว”
+Step 6:
+Teacher continues:
+“ในภาษาไทย เรามักใช้คำบอกเวลาเพื่อช่วยให้รู้ว่าเหตุการณ์เกิดขึ้นตอนไหน”
+Step 7:
+Then compare to English in another step:
+- I go
+- I went
+- I will go
+Step 8:
+Teacher explains:
+“ภาษาอังกฤษแตกต่างออกไป เพราะรูปของคำกริยาจะช่วยบอกเวลาด้วย”
+This is the style required.
+==================================================
+E. LESSON UI / PRESENTATION RULES
+==================================================
+When showing a teaching scene:
+1. Show the player on the left.
+2. Show Master Verion on the right.
+3. Show one dialogue box at a time.
+4. Show one teaching idea at a time.
+5. Show one example card group at a time.
+6. Show one interaction or question at a time.
+7. No large scrollable content dump.
+The lesson content should be broken into “slides” or “steps”.
+Each step should be one of these types:
+- dialogue step
+- explanation step
+- example step
+- choice step
+- mini-check step
+- drill intro step
+- battle intro step
+Suggested data model:
+Use a lesson step array rather than a big paragraph.
+Example pseudo-structure:
+const lessonSteps = [
+{
+type: "dialogue",
+speaker: "teacher",
+text: "ลองดู 3 ประโยคนี้ก่อน ผู้พเนจร"
+},
+{
+type: "example-cards",
+title: "ประโยคตัวอย่าง",
+cards: [
+"ฉันกินข้าววันนี้",
+"ฉันกินข้าวเมื่อวาน",
+"ฉันจะกินข้าวพรุ่งนี้"
+]
+},
+{
+type: "choice",
+speaker: "teacher",
+text: "เธอคิดว่าประโยคใดเป็นอดีต?",
+choices: [
+{
+text: "ฉันกินข้าววันนี้",
+response: "ยังไม่ใช่ วันนี้คือปัจจุบัน"
+},
+{
+text: "ฉันกินข้าวเมื่อวาน",
+response: "ถูกต้อง เมื่อวานคืออดีต"
+},
+{
+text: "ฉันจะกินข้าวพรุ่งนี้",
+response: "ยังไม่ใช่ พรุ่งนี้คืออนาคต"
+}
+]
+}
+];
+You can adapt this to the existing code, but the teaching flow must become step-based.
+==================================================
+F. CRITICAL UI RESTRICTIONS
+==================================================
+Inside the teaching scene screen:
+- Do NOT render a grid of lesson topics
+- Do NOT render multiple stage cards at once
+- Do NOT render a scrollable list of rule cards
+- Do NOT place the lesson content inside one big generic grey content box
+- Do NOT force students to read a long paragraph in one panel
+Instead:
+- Use short dialogue bubble style
+- Use thought bubble style for quick rule explanation
+- Use example cards for examples
+- Use small buttons for learner responses
+- Use one-step-at-a-time flow
+Scrollbar inside the main lesson content area should be avoided.
+If a container scrolls because too much content is inside it, that is a design failure.
+Split the content into more steps instead.
+==================================================
+G. DETAILED TEACHING REQUIREMENTS
+==================================================
+Apply this step-by-step teaching style especially to these topics:
+--------------------------------------------------
+1. What is the past?
+--------------------------------------------------
+Must teach through:
+- Thai examples first
+- simple time words
+- one small question
+- teacher explanation
+- English comparison after that
+--------------------------------------------------
+2. What is tense?
+--------------------------------------------------
+Must teach through:
+- short definition
+- compare Thai and English
+- example cards
+- one learner question
+- teacher explanation
+--------------------------------------------------
+3. Regular Verbs
+--------------------------------------------------
+Do not present all rules in one block.
+Each rule must be taught separately.
+For each rule, use this micro-structure:
+1. teacher intro
+2. one idea
+3. example cards
+4. one small interactive question
+5. teacher response
+6. one quick drill
+7. then continue
+Rule groups:
+Rule 1:
+General verbs add -ed
+Examples:
+walk → walked
+jump → jumped
+wash → washed
+look → looked
+Rule 2:
+Ending in e add only -d
+Examples:
+love → loved
+like → liked
+dance → danced
+close → closed
+Rule 3:
+Ending in y
+Case A: vowel + y
+play → played
+enjoy → enjoyed
+Case B: consonant + y
+study → studied
+cry → cried
+try → tried
+Rule 4:
+Short CVC verbs double final consonant + ed
+stop → stopped
+plan → planned
+drop → dropped
+clap → clapped
+For each rule:
+Do not show all examples as a paragraph.
+Show them as example cards or thought bubbles.
+Teacher example:
+“คำนี้ลงท้ายด้วย e อยู่แล้ว
+เพราะฉะนั้นเราไม่เติม e ซ้ำ
+เราเติมแค่ -d”
+Then show:
+love → loved
+like → liked
+Then ask:
+“ถ้า dance เป็นอดีต เธอคิดว่าควรเป็นข้อใด?”
+--------------------------------------------------
+4. Irregular Verbs
+--------------------------------------------------
+Also teach step-by-step.
+Explain:
+“Irregular verbs ไม่เดินตามกฎการเติม -ed
+มันเปลี่ยนรูปไปเอง
+ดังนั้นเราต้องจำเป็นคำ ๆ”
+Compare:
+walk → walked
+play → played
+study → studied
+with:
+go → went
+eat → ate
+see → saw
+buy → bought
+Use short dialogue, example cards, one or two interactions, then drills.
+==================================================
+H. BUTTON BEHAVIOR RULES
+==================================================
+The main action button at the bottom should change according to context.
+Examples:
+- ถัดไป
+- ตอบคำถาม
+- ยืนยันคำตอบ
+- เริ่มฝึก
+- เริ่มต่อสู้
+Do NOT keep it as one generic action all the time.
+When a step is only dialogue:
+Main button = ถัดไป
+When a choice is shown:
+Main button may be hidden until a choice is selected
+or changed to ยืนยันคำตอบ
+When lesson teaching is done and drill starts:
+Main button = เริ่มฝึก
+When battle intro appears:
+Main button = เริ่มต่อสู้
+==================================================
+I. MEMORY SHADE REDESIGN
+==================================================
+I attached the official Memory Shade image.
+Use the attached image as the official design for the enemy “Memory Shade”.
+This is a required visual replacement.
+Character identity:
+Memory Shade is a shadowy magical enemy made of broken memories and distorted time-language energy.
+Official design features from the attached image:
+- floating ghost-like body
+- dark indigo / purple magical cloak-like form
+- glowing cyan/blue eyes
+- crystal core embedded in chest
+- gold-trimmed magical frame around hood and body
+- floating crystal shards
+- torn scroll fragments
+- broken clock fragments
+- cute but dangerous fantasy RPG style
+This image must replace the current Memory Shade visual.
+Required implementation:
+1. Add the attached image to local assets.
+Suggested path:
+assets/memory-shade.png
+2. Use it wherever the enemy id / type / name corresponds to Memory Shade.
+3. Update battle rendering so that Memory Shade uses this image.
+4. If there is a lesson or story encounter with Memory Shade, also use this image there.
+5. Do not stretch or crop the sprite.
+Suggested CSS:
+.enemy-memory-shade,
+.battle-enemy.memory-shade,
+.lesson-enemy.memory-shade {
+width: clamp(120px, 34vw, 200px);
+height: auto;
+object-fit: contain;
+object-position: center bottom;
+filter: drop-shadow(0 0 18px rgba(116, 74, 255, 0.55));
+}
+If the enemy is active during battle, you may slightly enlarge it, but do not crop the top or bottom.
+If there is a generic enemy rendering function, add a sprite lookup such as:
+{
+memoryShade: "assets/memory-shade.png"
+}
+==================================================
+J. FILE / CODE CHANGES EXPECTED
+==================================================
+Please update:
+- lesson rendering logic
+- lesson data structure or adapter logic
+- any renderLesson() / renderDialogue() / renderStage() functions
+- CSS classes for lesson steps
+- CSS classes for example cards
+- CSS classes for thought bubbles
+- CSS classes for choice buttons
+- enemy sprite lookup / battle render logic for Memory Shade
+You may create helper functions such as:
+- renderLessonStep()
+- renderDialogueStep()
+- renderExampleCards()
+- renderChoiceStep()
+- renderMiniCheck()
+- renderDrillIntro()
+- getEnemySprite()
+==================================================
+K. VISUAL COMPONENTS TO ADD FOR TEACHING
+==================================================
+Please support these teaching UI blocks:
+1. dialogue step
+- speaker
+- short text
+- next button
+2. example card step
+- title
+- 2–4 cards
+- clear highlighted words
+3. thought bubble step
+- short rule summary
+- one idea only
+4. choice step
+- teacher asks
+- 2–4 response buttons
+- teacher reacts to selected answer
+5. mini check step
+- one question
+- answer buttons
+- immediate feedback
+6. drill intro step
+- short summary
+- “เริ่มฝึก” button
+7. battle intro step
+- short story warning
+- “เริ่มต่อสู้” button
+These should replace the current “lesson cards in a box” approach.
+==================================================
+L. WHAT MUST BE REMOVED OR STOPPED
+==================================================
+Inside the teaching scene:
+STOP showing:
+- grid lesson cards
+- list of stage titles
+- multiple topic boxes at once
+- mini boss cards mixed into the lesson scene
+- scrollable lesson topic board
+If you need these, move them to the lesson map screen only.
+Again:
+Lesson scene = teaching
+Lesson map = overview / selection
+==================================================
+M. ACCEPTANCE TEST
+==================================================
+After editing, I should be able to verify:
+1. The teaching screen no longer shows a grid/list of lesson topic cards.
+2. The teaching screen now progresses step by step.
+3. Each teaching step shows only one idea or one activity at a time.
+4. The student is taught through dialogue, examples, and small interactions.
+5. There is no giant content dump box.
+6. There is no main scrollbar in the lesson content area caused by too much content.
+7. The lesson feels like a teacher is guiding the player.
+8. The player occasionally answers a short response/choice.
+9. Rule explanations for Regular Verbs are taught one rule at a time.
+10. Battles only happen after teaching and short drills.
+11. Memory Shade uses the attached official image.
+12. The old Memory Shade placeholder no longer appears.
+13. The rest of the game still works.
+==================================================
+N. END REPORT
+==================================================
+After editing, report:
+1. Files changed
+2. New lesson rendering structure
+3. What functions were added or changed
+4. What CSS components were added
+5. Where Memory Shade image was saved
+6. How Memory Shade is selected in rendering
+7. How to test the new teaching flow
+8. Any limitations
+Again:
+Actually modify the project files.
+Do not only summarize.
