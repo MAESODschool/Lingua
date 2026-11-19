@@ -6,7 +6,7 @@
   <meta name="lingua-advisor-mode" content="auto">
   <meta name="lingua-advisor-api-url" content="">
   <title>Lingua - RPG แห่งแกรมมาเรีย</title>
-  <link rel="stylesheet" href="style.css?v=player-score-reports-20260913">
+  <link rel="stylesheet" href="style.css?v=battle-layout-20261119">
 </head>
 <body>
   <div class="game-utility-controls" aria-label="ตัวเลือกเกม">
@@ -921,14 +921,15 @@
       </div>
     </section>
 
-    <section id="battleScene" class="scene">
+    <section id="battleScene" class="scene battle-layout">
       <header class="scene-header compact">
         <button id="battleExitButton" class="battle-exit-button" type="button">ออกจากการต่อสู้</button>
-        <p class="eyebrow">การต่อสู้</p>
-        <h2 id="battleTitle">The Memory Breaker</h2>
+        <div class="battle-heading">
+          <p class="eyebrow">การต่อสู้</p>
+          <h2 id="battleTitle">The Memory Breaker</h2>
+        </div>
+        <button id="battleLinguaAdvisorButton" class="battle-lingua-advisor-button" type="button">ถามที่ปรึกษา</button>
       </header>
-
-      <button id="battleLinguaAdvisorButton" class="battle-lingua-advisor-button" type="button">ถามที่ปรึกษา</button>
 
       <div class="lingua-battle-upper" aria-label="สนามต่อสู้">
         <div id="battleTurnIndicator" class="battle-turn-indicator hidden" aria-live="polite">
@@ -945,7 +946,7 @@
         <div class="battle-stage battlefield-stage">
           <article id="battlePlayer" class="combatant player-side">
             <div class="player-model-motion">
-              <img id="battlePlayerSprite" class="character-avatar wanderer-avatar main-character-gif small battle-player-model" data-character-view="battle-back" src="assets/characters/male_wanderer_back.png" alt="ผู้พเนจร" draggable="false">
+              <img id="battlePlayerSprite" class="character-avatar wanderer-avatar main-character-gif small battle-player-model" src="assets/characters/male_wanderer_idle.gif" alt="ผู้พเนจร" draggable="false">
             </div>
             <div class="combat-text player-status-panel">
               <h3 id="battlePlayerName">ผู้พเนจร · ผู้ฝึกเวทเริ่มต้น</h3>
@@ -999,9 +1000,18 @@
         </div>
 
         <div id="actionMenu" class="button-grid">
-          <button id="attackButton" class="action-button">โจมตี</button>
-          <button id="itemButton" class="action-button">ไอเทม</button>
-          <button id="focusButton" class="action-button">ตั้งสมาธิ</button>
+          <button id="attackButton" class="action-button" type="button">
+            <img src="assets/effects/skill_syntax_blade.png" alt="" draggable="false">
+            <span>โจมตี</span>
+          </button>
+          <button id="itemButton" class="action-button" type="button">
+            <img src="assets/items/hp_potion.png" alt="" draggable="false">
+            <span>ไอเทม</span>
+          </button>
+          <button id="focusButton" class="action-button" type="button">
+            <img src="assets/effects/skill_core_spark.png" alt="" draggable="false">
+            <span>ตั้งสมาธิ</span>
+          </button>
         </div>
 
         <div id="itemPanel" class="battle-item-panel hidden">
