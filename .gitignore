@@ -4,6 +4,9 @@
 # Development scratch / archived prompts
 work/
 
+# Separate nested Git repository
+/Lingua V2/
+
 # Node dependencies
 node_modules/
 
