@@ -30760,7 +30760,7 @@ function showFinalGrammariaEvaluation(onContinue = null) {
   const panel = document.createElement("div");
   panel.className = "final-evaluation-panel";
   panel.innerHTML = `
-    <div class="final-evaluation-summary">ชื่อผู้เล่น: ${evaluation.playerName}</div>
+    <div class="final-evaluation-summary" data-player-name></div>
     <div class="grammaria-breakdown">
       <div class="grammaria-breakdown-row"><span>ช่วงชั้น</span><strong>${evaluation.keyStageLabel}</strong></div>
       <div class="grammaria-breakdown-row"><span>Grammaria สะสมทั้งหมด</span><strong>${evaluation.totalGrammaria}</strong></div>
@@ -30769,6 +30769,7 @@ function showFinalGrammariaEvaluation(onContinue = null) {
     </div>
     <div class="final-evaluation-summary">${evaluation.summaryText}</div>
   `;
+  panel.querySelector("[data-player-name]").textContent = `ชื่อผู้เล่น: ${evaluation.playerName}`;
 
   openGameModal({
     title: "ผลการประเมินพลังภาษาแห่ง Lingua",
@@ -39613,12 +39614,13 @@ function openAccountSettingsModal() {
   const panel = document.createElement("div");
   panel.className = "account-settings-panel";
   panel.innerHTML = `
-    <div class="grammaria-breakdown-row"><span>Player Name / ชื่อผู้เล่น</span><strong>${view.playerName}</strong></div>
+    <div class="grammaria-breakdown-row"><span>Player Name / ชื่อผู้เล่น</span><strong data-player-name></strong></div>
     <div class="grammaria-breakdown-row"><span>Account Type / ประเภทบัญชี</span><strong>${view.accountType}</strong></div>
     <div class="grammaria-breakdown-row"><span>Current Act / Act ปัจจุบัน</span><strong>${view.currentActLabel}</strong></div>
     <div class="grammaria-breakdown-row"><span>Current Lesson / บทเรียนปัจจุบัน</span><strong>${view.currentLessonLabel}</strong></div>
     <div class="grammaria-breakdown-row"><span>Save Status / สถานะการบันทึก</span><strong>${view.saveStatus}</strong></div>
   `;
+  panel.querySelector("[data-player-name]").textContent = view.playerName;
   panel.appendChild(createAccountCharacterSection());
   openGameModal({
     title: "Account Settings / ตั้งค่าบัญชี",
