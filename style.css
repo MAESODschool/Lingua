@@ -2789,6 +2789,68 @@ button {
   box-shadow: 0 18px 46px rgba(0, 0, 0, 0.38), inset 0 0 42px rgba(93, 106, 225, 0.1);
 }
 
+.verb-memory-level-selector {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+  color: #ffe39a;
+  font-weight: 800;
+}
+
+.verb-memory-level-selector select {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px;
+  border: 1px solid #cdb773;
+  border-radius: 7px;
+  color: #fff4c8;
+  background: #131c42;
+  font: inherit;
+}
+
+.verb-memory-level-selector p {
+  margin: 0;
+  color: #bfeeff;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.verb-memory-challenge-panel {
+  scroll-margin-block: 12px;
+}
+
+.verb-memory-timer {
+  display: grid;
+  gap: 7px;
+  margin: 0 0 12px;
+  color: #ffe39a;
+  font-weight: 800;
+  text-align: center;
+}
+
+.verb-memory-time-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #10162e;
+}
+
+.verb-memory-time-track i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #ffab55, #ffe39a);
+}
+
+.verb-memory-result-taunt {
+  margin: 0;
+  padding: 12px;
+  border-left: 3px solid #f18fbb;
+  color: #ffd7e9;
+  background: rgba(70, 20, 56, 0.65);
+  line-height: 1.6;
+}
+
 .verb-memory-practice-header {
   display: grid;
   grid-template-columns: minmax(150px, 210px) minmax(0, 1fr) minmax(150px, 210px);

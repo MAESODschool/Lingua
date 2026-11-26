@@ -3268,3 +3268,66 @@ window.IRREGULAR_VERB_MEMORY_BANK = Object.freeze([
     }
   }
 ]);
+
+// Level 2 adds 50 verbs; the original level 1 bank remains unchanged.
+// Forms: Cambridge, A Comprehensive Grammar of the English Language irregular-verb list.
+// https://www.cambridge.org/core/services/aop-file-manager/file/5bd88a176431f1de07115e71/216-Irregular-verbs.pdf
+window.IRREGULAR_VERB_MEMORY_LEVEL_TWO_EXTRA = Object.freeze([
+  ["arise", "arose", "arisen", "เกิดขึ้น"],
+  ["have", "had", "had", "มี, รับประทาน"],
+  ["meet", "met", "met", "พบ, พบปะ"],
+  ["lean", "leant / leaned", "leant / leaned", "เอน, พิง"],
+  ["smell", "smelt / smelled", "smelt / smelled", "ได้กลิ่น, ดม"],
+  ["spell", "spelt / spelled", "spelt / spelled", "สะกดคำ"],
+  ["spoil", "spoilt / spoiled", "spoilt / spoiled", "ทำให้เสีย, ตามใจ"],
+  ["dwell", "dwelt / dwelled", "dwelt / dwelled", "อาศัยอยู่"],
+  ["foresee", "foresaw", "foreseen", "คาดการณ์ล่วงหน้า"],
+  ["foretell", "foretold", "foretold", "ทำนาย"],
+  ["misdeal", "misdealt", "misdealt", "แจกไพ่ผิด"],
+  ["mishear", "misheard", "misheard", "ฟังผิด"],
+  ["mislay", "mislaid", "mislaid", "วางผิดที่, วางแล้วหาไม่พบ"],
+  ["mislead", "misled", "misled", "ทำให้เข้าใจผิด"],
+  ["misspend", "misspent", "misspent", "ใช้เวลา หรือเงินอย่างไม่เหมาะสม"],
+  ["misunderstand", "misunderstood", "misunderstood", "เข้าใจผิด"],
+  ["outdo", "outdid", "outdone", "ทำได้ดีกว่า"],
+  ["outfight", "outfought", "outfought", "ต่อสู้ได้เหนือกว่า"],
+  ["outgrow", "outgrew", "outgrown", "โตเกิน, เติบโตจนไม่เหมาะกับสิ่งเดิม"],
+  ["outrun", "outran", "outrun", "วิ่งเร็วกว่า"],
+  ["outshine", "outshone", "outshone", "โดดเด่นกว่า, ส่องสว่างกว่า"],
+  ["overeat", "overate", "overeaten", "กินมากเกินไป"],
+  ["overfeed", "overfed", "overfed", "ให้อาหารมากเกินไป"],
+  ["overhang", "overhung", "overhung", "ยื่นหรือห้อยอยู่เหนือ"],
+  ["override", "overrode", "overridden", "ใช้คำสั่งหรืออำนาจแทนที่"],
+  ["overrun", "overran", "overrun", "ลุกลาม, เกินเวลาที่กำหนด"],
+  ["oversee", "oversaw", "overseen", "ดูแล, ควบคุมงาน"],
+  ["overshoot", "overshot", "overshot", "เลยเป้าหมาย"],
+  ["oversleep", "overslept", "overslept", "นอนตื่นสาย"],
+  ["partake", "partook", "partaken", "เข้าร่วม, ร่วมรับประทาน"],
+  ["prove", "proved", "proved / proven", "พิสูจน์"],
+  ["rebind", "rebound", "rebound", "ผูกใหม่, เข้าเล่มใหม่"],
+  ["rebuild", "rebuilt", "rebuilt", "สร้างใหม่"],
+  ["redo", "redid", "redone", "ทำใหม่"],
+  ["remake", "remade", "remade", "สร้างหรือทำขึ้นใหม่"],
+  ["repay", "repaid", "repaid", "ชำระคืน, ตอบแทน"],
+  ["rerun", "reran", "rerun", "ทำซ้ำ, ฉายซ้ำ"],
+  ["restring", "restrung", "restrung", "เปลี่ยนหรือขึงสายใหม่"],
+  ["retell", "retold", "retold", "เล่าใหม่"],
+  ["rethink", "rethought", "rethought", "คิดทบทวนใหม่"],
+  ["rewind", "rewound", "rewound", "กรอกลับ, หมุนกลับ"],
+  ["rewrite", "rewrote", "rewritten", "เขียนใหม่"],
+  ["unbend", "unbent", "unbent", "ทำให้ตรง, คลายความตึง"],
+  ["unbind", "unbound", "unbound", "แก้มัด"],
+  ["undergo", "underwent", "undergone", "ประสบ, ผ่านกระบวนการ"],
+  ["undertake", "undertook", "undertaken", "รับหน้าที่, ลงมือทำ"],
+  ["underwrite", "underwrote", "underwritten", "รับประกัน, สนับสนุนค่าใช้จ่าย"],
+  ["undo", "undid", "undone", "ยกเลิกสิ่งที่ทำ, แก้ออก"],
+  ["unfreeze", "unfroze", "unfrozen", "ทำให้ละลายจากการแช่แข็ง"],
+  ["unwind", "unwound", "unwound", "คลายออก, ผ่อนคลาย"]
+].map(([v1, v2, v3, meaningTh], index) => Object.freeze({
+  id: `iv_${170 + index}_${v1}`,
+  no: 170 + index,
+  v1, v2, v3, meaningTh,
+  accepted: Object.fromEntries(Object.entries({ v1, v2, v3 }).map(([slot, form]) => [
+    slot, [...new Set([form, ...form.split("/").map(value => value.trim())])]
+  ]))
+})));

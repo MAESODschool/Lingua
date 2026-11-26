@@ -42,6 +42,11 @@ const scenes = {
 const IRREGULAR_VERB_MEMORY_BANK = Array.isArray(globalThis.IRREGULAR_VERB_MEMORY_BANK)
   ? globalThis.IRREGULAR_VERB_MEMORY_BANK
   : [];
+const IRREGULAR_VERB_MEMORY_LEVEL_TWO_BANK = Object.freeze([
+  ...IRREGULAR_VERB_MEMORY_BANK,
+  ...(Array.isArray(globalThis.IRREGULAR_VERB_MEMORY_LEVEL_TWO_EXTRA)
+    ? globalThis.IRREGULAR_VERB_MEMORY_LEVEL_TWO_EXTRA : [])
+]);
 
 const mainStoryDialogue = [];
 const DIALOGUE_SPEED = 52;
@@ -23984,10 +23989,16 @@ const VERB_MEMORY_CONFIG = Object.freeze({
 });
 
 const VERB_MEMORY_SLOTS = Object.freeze(["v1", "v2", "v3"]);
+const VERB_MEMORY_LEVELS = Object.freeze({
+  1: Object.freeze({ id: 1, wordCount: 169, bossMaxHp: 1000, timeLimitMs: 0, timeoutDamage: 0 }),
+  2: Object.freeze({ id: 2, wordCount: 219, bossMaxHp: 2000, timeLimitMs: 5000, timeoutDamage: 5 })
+});
 const VERB_MEMORY_SCORE_BY_SLOT = Object.freeze({ v1: 10, v2: 12, v3: 15 });
 const VERB_MEMORY_FORBIDDEN_OPTION_PATTERN = /^(?:undefined|null|todo|wrong option|distractor|placeholder|ตัวเลือกหลอก)$/i;
 
 const verbMemoryPracticeState = {
+  levelId: 1,
+  sessionId: 0,
   active: false,
   bossId: VERB_MEMORY_CONFIG.bossId,
   bossName: VERB_MEMORY_CONFIG.bossName,
@@ -24013,8 +24024,12 @@ const verbMemoryPracticeState = {
   endedAt: null,
   isResolving: false,
   nextRoundTimer: null,
+  answerTimer: null,
+  answerDeadline: null,
+  timedOut: 0,
   bestRecord: null,
   bestRecordOwnerId: "",
+  bestRecordLevelId: null,
   validation: null,
   lastResult: null
 };
@@ -24323,6 +24338,12 @@ const els = {
   verbMemoryPracticeStartButton: document.getElementById("verbMemoryPracticeStartButton"),
   verbMemoryPracticeRestartButton: document.getElementById("verbMemoryPracticeRestartButton"),
   verbMemoryPracticeTitle: document.getElementById("verbMemoryPracticeTitle"),
+  verbMemoryBossLevelSelect: document.getElementById("verbMemoryBossLevelSelect"),
+  verbMemoryChallengePanel: document.getElementById("verbMemoryChallengePanel"),
+  verbMemoryTimer: document.getElementById("verbMemoryTimer"),
+  verbMemoryTimeText: document.getElementById("verbMemoryTimeText"),
+  verbMemoryTimeBar: document.getElementById("verbMemoryTimeBar"),
+  verbMemoryResultTaunt: document.getElementById("verbMemoryResultTaunt"),
   verbMemoryPracticeSubtitle: document.getElementById("verbMemoryPracticeSubtitle"),
   verbMemoryPlayerHpText: document.getElementById("verbMemoryPlayerHpText"),
   verbMemoryPlayerHpBar: document.getElementById("verbMemoryPlayerHpBar"),
@@ -24747,6 +24768,9 @@ function updateDeveloperCreditVisibility(sceneName) {
 }
 
 function showScene(name) {
+  if (name !== "verbMemoryPractice" && verbMemoryPracticeState.active) {
+    stopVerbMemoryPractice();
+  }
   cleanupButtonsForSceneChange(name);
   if (name !== "battle") {
     cleanupBattleSkillEffects();
@@ -29085,6 +29109,7 @@ async function loginAsGuest() {
 }
 
 async function logoutCurrentUser() {
+  stopVerbMemoryPractice();
   clearEnemyTurnTimer();
   stopTimer("charge");
   stopParryCountdown();
@@ -38482,6 +38507,15 @@ function validateVsBossCardQualityLevels() {
   };
 }
 
+function getVerbMemoryLevel(levelId = verbMemoryPracticeState.levelId) {
+  return VERB_MEMORY_LEVELS[Number(levelId)] || VERB_MEMORY_LEVELS[1];
+}
+
+function getVerbMemoryBank(levelId = verbMemoryPracticeState.levelId) {
+  return getVerbMemoryLevel(levelId).id === 2
+    ? IRREGULAR_VERB_MEMORY_LEVEL_TWO_BANK : IRREGULAR_VERB_MEMORY_BANK;
+}
+
 function normalizeVerbMemoryChoiceText(value) {
   return String(value ?? "")
     .trim()
@@ -38655,7 +38689,7 @@ function buildVerbMemorySpellingConfusions(verb) {
   return [...new Set(forms)];
 }
 
-function generateVerbMemoryChoices(verb, missingSlot) {
+function generateVerbMemoryChoices(verb, missingSlot, levelId = verbMemoryPracticeState.levelId) {
   const correctAnswer = String(verb?.[missingSlot] || "").trim();
   const acceptedAnswers = getVerbMemoryAcceptedAnswers(verb, missingSlot);
   const bannedChoices = buildVerbMemoryBannedChoiceSet(verb, missingSlot, correctAnswer, acceptedAnswers);
@@ -38682,7 +38716,7 @@ function generateVerbMemoryChoices(verb, missingSlot) {
   };
 
   const regularizedCandidates = buildVerbMemoryRegularizedForms(verb?.v1);
-  const otherVerbCandidates = shuffleVerbMemoryValues(IRREGULAR_VERB_MEMORY_BANK)
+  const otherVerbCandidates = shuffleVerbMemoryValues(getVerbMemoryBank(levelId))
     .filter(otherVerb => otherVerb?.id !== verb?.id)
     .map(otherVerb => otherVerb?.[missingSlot]);
   const spellingCandidates = buildVerbMemorySpellingConfusions(verb);
@@ -38715,10 +38749,11 @@ function checkVerbMemoryAnswer(selectedAnswer, challenge) {
 }
 
 function generateVerbMemoryChallenge() {
-  if (!IRREGULAR_VERB_MEMORY_BANK.length) {
+  const bank = getVerbMemoryBank();
+  if (!bank.length) {
     return null;
   }
-  const usableVerbs = IRREGULAR_VERB_MEMORY_BANK
+  const usableVerbs = bank
     .map(verb => ({ verb, validMissingSlots: getValidVerbMemoryMissingSlots(verb) }))
     .filter(entry => entry.validMissingSlots.length);
   if (!usableVerbs.length) {
@@ -38828,11 +38863,14 @@ function validateVerbMemoryMissingSlotDistribution(options = {}) {
   };
 }
 
-function validateIrregularVerbMemoryBank() {
+function validateIrregularVerbMemoryBank(levelId = verbMemoryPracticeState.levelId) {
   const failures = [];
-  const bank = IRREGULAR_VERB_MEMORY_BANK;
+  const bank = getVerbMemoryBank(levelId);
   if (!Array.isArray(bank)) {
     return { ok: false, count: 0, failures: ["IRREGULAR_VERB_MEMORY_BANK is not an array"] };
+  }
+  if (bank.length !== getVerbMemoryLevel(levelId).wordCount) {
+    failures.push(`Level ${levelId}: expected ${getVerbMemoryLevel(levelId).wordCount} verbs, found ${bank.length}`);
   }
   const ids = new Set();
   const numbers = new Set();
@@ -38895,8 +38933,12 @@ function validateIrregularVerbMemoryBank() {
 let verbMemoryChoiceValidationCache = null;
 
 function validateVerbMemoryChoiceGeneration(options = {}) {
+  const levelId = getVerbMemoryLevel(options.levelId ?? verbMemoryPracticeState.levelId).id;
+  const bank = getVerbMemoryBank(levelId);
   const runsPerCase = clamp(Math.floor(Number(options.runsPerCase) || 12), 1, 100);
-  if (verbMemoryChoiceValidationCache && !options.force && verbMemoryChoiceValidationCache.runsPerCase === runsPerCase) {
+  if (verbMemoryChoiceValidationCache && !options.force &&
+      verbMemoryChoiceValidationCache.levelId === levelId &&
+      verbMemoryChoiceValidationCache.runsPerCase === runsPerCase) {
     return verbMemoryChoiceValidationCache;
   }
   const failures = [];
@@ -38912,7 +38954,7 @@ function validateVerbMemoryChoiceGeneration(options = {}) {
     }
   };
 
-  IRREGULAR_VERB_MEMORY_BANK.forEach(verb => {
+  bank.forEach(verb => {
     const validSlots = new Set(getValidVerbMemoryMissingSlots(verb));
     VERB_MEMORY_SLOTS.forEach(slot => {
       if (!validSlots.has(slot)) {
@@ -38930,7 +38972,7 @@ function validateVerbMemoryChoiceGeneration(options = {}) {
       };
       const visibleForms = new Set(getVisibleVerbFormsForChallenge(verb, slot));
       for (let run = 0; run < runsPerCase; run += 1) {
-        const choices = generateVerbMemoryChoices(verb, slot);
+        const choices = generateVerbMemoryChoices(verb, slot, levelId);
         generatedChoiceSets += 1;
         if (choices.length !== 3) {
           addFailure(verb, slot, `generated ${choices.length} choices`);
@@ -38969,7 +39011,8 @@ function validateVerbMemoryChoiceGeneration(options = {}) {
 
   const report = {
     ok: failures.length === 0,
-    totalEntries: IRREGULAR_VERB_MEMORY_BANK.length,
+    levelId,
+    totalEntries: bank.length,
     checkedCases,
     skippedCases: skippedDetails.length,
     runsPerCase,
@@ -39000,8 +39043,33 @@ function getVerbMemoryPracticeOwnerId() {
   return String(user?.uid || user?.userId || user?.id || playerData?.userId || "guest");
 }
 
-function getVerbMemoryPracticeLocalStorageKey() {
-  return `lingua:verbMemoryPracticeBest:${getVerbMemoryPracticeOwnerId()}`;
+function getVerbMemoryPracticeLocalStorageKey(levelId = verbMemoryPracticeState.levelId, ownerId = getVerbMemoryPracticeOwnerId()) {
+  const suffix = getVerbMemoryLevel(levelId).id === 1 ? "" : ":level2";
+  return `lingua:verbMemoryPracticeBest:${ownerId}${suffix}`;
+}
+
+function getVerbMemoryBestRecordFromProgress(progress, levelId) {
+  return getVerbMemoryLevel(levelId).id === 1
+    ? progress?.verbMemoryPracticeBest
+    : progress?.verbMemoryPracticeBestByLevel?.[levelId];
+}
+
+function syncVerbMemoryBestRecordToPlayer(record, levelId, ownerId) {
+  if (!playerData || ownerId !== getVerbMemoryPracticeOwnerId()) return;
+  // Keep the normal progress snapshot in sync so returning to the menu cannot save an older record.
+  if (levelId === 1) {
+    playerData.verbMemoryPracticeBest = { ...record };
+  } else {
+    playerData.verbMemoryPracticeBestByLevel = {
+      ...(playerData.verbMemoryPracticeBestByLevel || {}),
+      [levelId]: { ...record }
+    };
+  }
+}
+
+function isCurrentVerbMemorySession(sessionId, levelId, ownerId) {
+  return verbMemoryPracticeState.sessionId === sessionId &&
+    verbMemoryPracticeState.levelId === levelId && getVerbMemoryPracticeOwnerId() === ownerId;
 }
 
 function normalizeVerbMemoryBestRecord(record = {}) {
@@ -39029,29 +39097,44 @@ function shouldUseFirestoreForVerbMemoryPractice() {
 
 async function loadVerbMemoryPracticeBestScore({ force = false } = {}) {
   const ownerId = getVerbMemoryPracticeOwnerId();
-  if (!force && verbMemoryPracticeState.bestRecord && verbMemoryPracticeState.bestRecordOwnerId === ownerId) {
+  const levelId = getVerbMemoryLevel().id;
+  const sessionId = verbMemoryPracticeState.sessionId;
+  const cachedRecord = verbMemoryPracticeState.bestRecord;
+  const fallbackRecord = getVerbMemoryBestRecordFromProgress(playerData, levelId) ||
+    (verbMemoryPracticeState.bestRecordOwnerId === ownerId && verbMemoryPracticeState.bestRecordLevelId === levelId
+      ? cachedRecord : null) || {};
+  if (!force && cachedRecord && verbMemoryPracticeState.bestRecordOwnerId === ownerId &&
+      verbMemoryPracticeState.bestRecordLevelId === levelId) {
     return verbMemoryPracticeState.bestRecord;
   }
-  let record = {};
+  let record = fallbackRecord;
   try {
     if (shouldUseFirestoreForVerbMemoryPractice()) {
       const clientSnapshot = await getDoc(getPlayerClientProgressDocRef(ownerId));
-      const playerSnapshot = await getDoc(getPlayerDocRef(ownerId));
       const clientRecord = clientSnapshot.exists()
-        ? clientSnapshot.data()?.progress?.verbMemoryPracticeBest || null
+        ? getVerbMemoryBestRecordFromProgress(clientSnapshot.data()?.progress, levelId)
         : null;
-      record = clientRecord || (playerSnapshot.exists() ? playerSnapshot.data()?.verbMemoryPracticeBest || {} : {});
+      record = clientRecord || fallbackRecord;
+      if (!clientRecord && levelId === 1) {
+        const playerSnapshot = await getDoc(getPlayerDocRef(ownerId));
+        record = (playerSnapshot.exists() ? playerSnapshot.data()?.verbMemoryPracticeBest : null) || fallbackRecord;
+      }
     } else {
-      const saved = playerStorage.get(getVerbMemoryPracticeLocalStorageKey());
-      record = saved ? JSON.parse(saved) : {};
+      const saved = playerStorage.get(getVerbMemoryPracticeLocalStorageKey(levelId, ownerId));
+      record = saved ? JSON.parse(saved) : fallbackRecord;
     }
   } catch (error) {
     console.warn("[Verb Memory Practice] failed to load best score", error);
-    record = {};
+    record = fallbackRecord;
   }
-  verbMemoryPracticeState.bestRecord = normalizeVerbMemoryBestRecord(record);
-  verbMemoryPracticeState.bestRecordOwnerId = ownerId;
-  return verbMemoryPracticeState.bestRecord;
+  const normalized = normalizeVerbMemoryBestRecord(record);
+  if (isCurrentVerbMemorySession(sessionId, levelId, ownerId) && verbMemoryPracticeState.bestRecord === cachedRecord) {
+    verbMemoryPracticeState.bestRecord = normalized;
+    verbMemoryPracticeState.bestRecordOwnerId = ownerId;
+    verbMemoryPracticeState.bestRecordLevelId = levelId;
+    syncVerbMemoryBestRecordToPlayer(normalized, levelId, ownerId);
+  }
+  return normalized;
 }
 
 function createVerbMemoryBestRecord(previousRecord, result) {
@@ -39071,19 +39154,31 @@ function createVerbMemoryBestRecord(previousRecord, result) {
 }
 
 async function saveVerbMemoryPracticeBestScore(result) {
-  const ownerId = getVerbMemoryPracticeOwnerId();
-  let previousRecord = normalizeVerbMemoryBestRecord(verbMemoryPracticeState.bestRecord);
+  const ownerId = result.ownerId || getVerbMemoryPracticeOwnerId();
+  const levelId = getVerbMemoryLevel(result.levelId ?? verbMemoryPracticeState.levelId).id;
+  const sessionId = result.sessionId ?? verbMemoryPracticeState.sessionId;
+  if (ownerId !== getVerbMemoryPracticeOwnerId()) throw new Error("Verb Memory player changed before save");
+  let previousRecord = normalizeVerbMemoryBestRecord(
+    verbMemoryPracticeState.bestRecordOwnerId === ownerId && verbMemoryPracticeState.bestRecordLevelId === levelId
+      ? verbMemoryPracticeState.bestRecord : {}
+  );
   let nextRecord = createVerbMemoryBestRecord(previousRecord, result);
   if (shouldUseFirestoreForVerbMemoryPractice()) {
     const clientProgressRef = getPlayerClientProgressDocRef(ownerId);
     await runTransaction(firestoreDb, async transaction => {
+      if (ownerId !== getVerbMemoryPracticeOwnerId()) throw new Error("Verb Memory player changed during save");
       const snapshot = await transaction.get(clientProgressRef);
       const remoteProgress = snapshot.exists() ? snapshot.data()?.progress || {} : {};
-      previousRecord = normalizeVerbMemoryBestRecord(remoteProgress.verbMemoryPracticeBest || previousRecord);
+      previousRecord = normalizeVerbMemoryBestRecord(getVerbMemoryBestRecordFromProgress(remoteProgress, levelId) || previousRecord);
       nextRecord = createVerbMemoryBestRecord(previousRecord, result);
       const nextProgress = {
         ...remoteProgress,
-        verbMemoryPracticeBest: { ...nextRecord }
+        ...(levelId === 1 ? { verbMemoryPracticeBest: { ...nextRecord } } : {
+          verbMemoryPracticeBestByLevel: {
+            ...(remoteProgress.verbMemoryPracticeBestByLevel || {}),
+            [levelId]: { ...nextRecord }
+          }
+        })
       };
       transaction.set(
         clientProgressRef,
@@ -39092,10 +39187,18 @@ async function saveVerbMemoryPracticeBestScore(result) {
       );
     });
   } else {
-    playerStorage.set(getVerbMemoryPracticeLocalStorageKey(), JSON.stringify(nextRecord));
+    const key = getVerbMemoryPracticeLocalStorageKey(levelId, ownerId);
+    const saved = playerStorage.get(key);
+    if (saved) previousRecord = normalizeVerbMemoryBestRecord(JSON.parse(saved));
+    nextRecord = createVerbMemoryBestRecord(previousRecord, result);
+    playerStorage.set(key, JSON.stringify(nextRecord));
   }
-  verbMemoryPracticeState.bestRecord = nextRecord;
-  verbMemoryPracticeState.bestRecordOwnerId = ownerId;
+  syncVerbMemoryBestRecordToPlayer(nextRecord, levelId, ownerId);
+  if (isCurrentVerbMemorySession(sessionId, levelId, ownerId)) {
+    verbMemoryPracticeState.bestRecord = nextRecord;
+    verbMemoryPracticeState.bestRecordOwnerId = ownerId;
+    verbMemoryPracticeState.bestRecordLevelId = levelId;
+  }
   return {
     record: nextRecord,
     previousBest: previousRecord.bestScore,
@@ -39110,20 +39213,75 @@ function clearVerbMemoryNextRoundTimer() {
   }
 }
 
+function clearVerbMemoryAnswerTimer() {
+  if (verbMemoryPracticeState.answerTimer !== null) {
+    clearTimeout(verbMemoryPracticeState.answerTimer);
+    verbMemoryPracticeState.answerTimer = null;
+  }
+  verbMemoryPracticeState.answerDeadline = null;
+}
+
+function renderVerbMemoryTimer() {
+  const level = getVerbMemoryLevel();
+  const remaining = Math.max(0, (verbMemoryPracticeState.answerDeadline || 0) - Date.now());
+  els.verbMemoryTimer?.classList.toggle("hidden", !level.timeLimitMs ||
+    !verbMemoryPracticeState.active || verbMemoryPracticeState.isResolving || verbMemoryPracticeState.answerDeadline === null);
+  if (els.verbMemoryTimeText) els.verbMemoryTimeText.textContent = (Math.ceil(remaining / 100) / 10).toFixed(1);
+  if (els.verbMemoryTimeBar) els.verbMemoryTimeBar.style.width = `${level.timeLimitMs ? remaining / level.timeLimitMs * 100 : 0}%`;
+}
+
+function startVerbMemoryAnswerTimer(challenge) {
+  clearVerbMemoryAnswerTimer();
+  const level = getVerbMemoryLevel();
+  if (!level.timeLimitMs) {
+    renderVerbMemoryTimer();
+    return;
+  }
+  const sessionId = verbMemoryPracticeState.sessionId;
+  verbMemoryPracticeState.answerDeadline = Date.now() + level.timeLimitMs;
+  const tick = () => {
+    if (!verbMemoryPracticeState.active || verbMemoryPracticeState.isResolving ||
+        verbMemoryPracticeState.sessionId !== sessionId || verbMemoryPracticeState.currentChallenge !== challenge) return;
+    const remaining = verbMemoryPracticeState.answerDeadline - Date.now();
+    renderVerbMemoryTimer();
+    if (remaining <= 0) {
+      handleVerbMemoryChoice(null, challenge);
+      return;
+    }
+    verbMemoryPracticeState.answerTimer = setTimeout(tick, Math.min(100, remaining));
+  };
+  tick();
+}
+
+function stopVerbMemoryPractice() {
+  clearVerbMemoryNextRoundTimer();
+  clearVerbMemoryAnswerTimer();
+  verbMemoryPracticeState.sessionId += 1;
+  verbMemoryPracticeState.active = false;
+  verbMemoryPracticeState.isResolving = false;
+  verbMemoryPracticeState.currentChallenge = null;
+  renderVerbMemoryTimer();
+}
+
 function resetVerbMemoryPracticeState({ preserveBest = true } = {}) {
   clearVerbMemoryNextRoundTimer();
+  clearVerbMemoryAnswerTimer();
+  const level = getVerbMemoryLevel();
   const bestRecord = preserveBest ? verbMemoryPracticeState.bestRecord : null;
   const bestRecordOwnerId = preserveBest ? verbMemoryPracticeState.bestRecordOwnerId : "";
+  const bestRecordLevelId = preserveBest ? verbMemoryPracticeState.bestRecordLevelId : null;
   const validation = verbMemoryPracticeState.validation;
   Object.assign(verbMemoryPracticeState, {
+    levelId: level.id,
+    sessionId: verbMemoryPracticeState.sessionId + 1,
     active: false,
     bossId: VERB_MEMORY_CONFIG.bossId,
     bossName: VERB_MEMORY_CONFIG.bossName,
     bossThaiName: VERB_MEMORY_CONFIG.bossThaiName,
     playerHp: VERB_MEMORY_CONFIG.playerMaxHp,
     playerMaxHp: VERB_MEMORY_CONFIG.playerMaxHp,
-    bossHp: VERB_MEMORY_CONFIG.bossMaxHp,
-    bossMaxHp: VERB_MEMORY_CONFIG.bossMaxHp,
+    bossHp: level.bossMaxHp,
+    bossMaxHp: level.bossMaxHp,
     score: 0,
     correct: 0,
     wrong: 0,
@@ -39141,11 +39299,16 @@ function resetVerbMemoryPracticeState({ preserveBest = true } = {}) {
     endedAt: null,
     isResolving: false,
     nextRoundTimer: null,
+    answerTimer: null,
+    answerDeadline: null,
+    timedOut: 0,
     bestRecord,
     bestRecordOwnerId,
+    bestRecordLevelId,
     validation,
     lastResult: null
   });
+  renderVerbMemoryTimer();
 }
 
 function setVerbMemoryStatus(message) {
@@ -39195,15 +39358,19 @@ function renderVerbMemoryChallenge() {
     button.className = "verb-memory-choice-button";
     button.textContent = choice;
     button.disabled = verbMemoryPracticeState.isResolving;
-    button.addEventListener("click", () => handleVerbMemoryChoice(choice));
+    button.addEventListener("click", () => handleVerbMemoryChoice(choice, challenge));
     els.verbMemoryChoices.appendChild(button);
   });
 }
 
 function renderVerbMemoryPracticeScene() {
+  const level = getVerbMemoryLevel();
+  if (els.verbMemoryBossLevelSelect) els.verbMemoryBossLevelSelect.value = String(level.id);
+  els.verbMemoryPracticeSubtitle.textContent = `ระดับ ${level.id} · คลัง ${getVerbMemoryBank().length} คำ · ${level.timeLimitMs ? "ตอบข้อละ 5 วินาที" : "ไม่จำกัดเวลา"}`;
   renderVerbMemoryHpAndScore();
   renderVerbMemoryChallenge();
-  els.verbMemoryBossName.textContent = verbMemoryPracticeState.bossName;
+  renderVerbMemoryTimer();
+  els.verbMemoryBossName.textContent = `${verbMemoryPracticeState.bossName} · ระดับ ${level.id}`;
   els.verbMemoryBossThaiName.textContent = verbMemoryPracticeState.bossThaiName;
   els.verbMemoryPracticeStartButton.classList.toggle("hidden", verbMemoryPracticeState.active || Boolean(verbMemoryPracticeState.lastResult));
   els.verbMemoryResultPanel.classList.toggle("hidden", !verbMemoryPracticeState.lastResult);
@@ -39269,6 +39436,10 @@ function queueNextVerbMemoryChallenge() {
   verbMemoryPracticeState.isResolving = false;
   renderVerbMemoryChallenge();
   setVerbMemoryStatus(`คำที่ ${challenge.no}: เลือก ${challenge.missingSlot.toUpperCase()} ที่หายไป`);
+  startVerbMemoryAnswerTimer(challenge);
+  if (getVerbMemoryLevel().timeLimitMs) {
+    els.verbMemoryChallengePanel?.scrollIntoView({ block: "nearest", behavior: "instant" });
+  }
 }
 
 function resolveVerbMemoryCorrect(challenge) {
@@ -39300,29 +39471,44 @@ function resolveVerbMemoryWrong(challenge) {
   return `ยังไม่ถูก คำตอบที่ถูกคือ ${challenge.correctAnswer} ชุดกริยาคือ ${challenge.v1} - ${challenge.v2} - ${challenge.v3} แปลว่า “${challenge.meaningTh}”`;
 }
 
-function handleVerbMemoryChoice(selectedAnswer) {
-  const challenge = verbMemoryPracticeState.currentChallenge;
-  if (!verbMemoryPracticeState.active || verbMemoryPracticeState.isResolving || !challenge) {
+function handleVerbMemoryChoice(selectedAnswer, challenge = verbMemoryPracticeState.currentChallenge) {
+  if (!verbMemoryPracticeState.active || verbMemoryPracticeState.isResolving ||
+      !challenge || challenge !== verbMemoryPracticeState.currentChallenge) {
     return;
   }
+  const timedOut = verbMemoryPracticeState.answerDeadline !== null && Date.now() >= verbMemoryPracticeState.answerDeadline;
+  clearVerbMemoryAnswerTimer();
   verbMemoryPracticeState.isResolving = true;
   verbMemoryPracticeState.total += 1;
-  const isCorrect = checkVerbMemoryAnswer(selectedAnswer, challenge);
-  const feedback = isCorrect
-    ? resolveVerbMemoryCorrect(challenge)
-    : resolveVerbMemoryWrong(challenge);
+  const isCorrect = !timedOut && checkVerbMemoryAnswer(selectedAnswer, challenge);
+  let feedback;
+  if (timedOut) {
+    verbMemoryPracticeState.timedOut += 1;
+    verbMemoryPracticeState.wrong += 1;
+    verbMemoryPracticeState.streak = 0;
+    const damage = getVerbMemoryLevel().timeoutDamage;
+    verbMemoryPracticeState.playerHp = Math.max(0, verbMemoryPracticeState.playerHp - damage);
+    animateVerbMemoryHit(els.verbMemoryPlayerHpText?.closest(".verb-memory-player-panel"), "is-hit");
+    feedback = `หมดเวลา 5 วินาที! เสีย HP ${damage} · คำตอบคือ ${challenge.correctAnswer} · ${challenge.v1} - ${challenge.v2} - ${challenge.v3} แปลว่า “${challenge.meaningTh}”`;
+  } else {
+    feedback = isCorrect ? resolveVerbMemoryCorrect(challenge) : resolveVerbMemoryWrong(challenge);
+  }
   els.verbMemoryChoices.querySelectorAll("button").forEach(button => {
     button.disabled = true;
-    const isSelected = normalizeVerbMemoryAnswer(button.textContent) === normalizeVerbMemoryAnswer(selectedAnswer);
+    const isSelected = !timedOut && normalizeVerbMemoryAnswer(button.textContent) === normalizeVerbMemoryAnswer(selectedAnswer);
     const isCorrectChoice = checkVerbMemoryAnswer(button.textContent, challenge);
     button.classList.toggle("is-correct", isCorrectChoice);
     button.classList.toggle("is-wrong", isSelected && !isCorrectChoice);
   });
   renderVerbMemoryHpAndScore();
+  renderVerbMemoryTimer();
   setVerbMemoryStatus(feedback);
   const gameEnded = verbMemoryPracticeState.bossHp <= 0 || verbMemoryPracticeState.playerHp <= 0;
   clearVerbMemoryNextRoundTimer();
+  const sessionId = verbMemoryPracticeState.sessionId;
   verbMemoryPracticeState.nextRoundTimer = setTimeout(() => {
+    if (!verbMemoryPracticeState.active || verbMemoryPracticeState.sessionId !== sessionId ||
+        verbMemoryPracticeState.currentChallenge !== challenge) return;
     verbMemoryPracticeState.nextRoundTimer = null;
     if (gameEnded) {
       void finishVerbMemoryPracticeGame(verbMemoryPracticeState.bossHp <= 0 ? "boss-defeated" : "player-defeated");
@@ -39333,6 +39519,7 @@ function handleVerbMemoryChoice(selectedAnswer) {
 }
 
 function renderVerbMemoryResult(result, { isNewBest = false, saveWarning = "" } = {}) {
+  if (result.sessionId !== undefined && !isCurrentVerbMemorySession(result.sessionId, result.levelId, result.ownerId)) return;
   const bestScore = Math.max(result.score, Number(verbMemoryPracticeState.bestRecord?.bestScore) || 0);
   els.verbMemoryResultTitle.textContent = result.reason === "boss-defeated"
     ? "เจ้าชนะ The Memory Breaker!"
@@ -39344,6 +39531,11 @@ function renderVerbMemoryResult(result, { isNewBest = false, saveWarning = "" } 
   els.verbMemoryResultBestStreak.textContent = String(result.bestStreak);
   els.verbMemoryResultBestScore.textContent = String(bestScore);
   els.verbMemoryResultRecord.textContent = [isNewBest ? "สถิติใหม่!" : "", saveWarning].filter(Boolean).join(" ");
+  if (els.verbMemoryResultTaunt) {
+    els.verbMemoryResultTaunt.textContent = result.reason === "player-defeated"
+      ? "The Memory Breaker: ฮ่า ๆ! ความทรงจำของเจ้ายังช้าเกินไป! กลับไปฝึกให้แม่น แล้วมาท้าข้าใหม่!" : "";
+    els.verbMemoryResultTaunt.classList.toggle("hidden", result.reason !== "player-defeated");
+  }
   els.verbMemoryResultPanel.classList.remove("hidden");
   els.verbMemoryPracticeStartButton.classList.add("hidden");
   renderVerbMemoryHpAndScore();
@@ -39354,13 +39546,19 @@ async function finishVerbMemoryPracticeGame(reason) {
     return;
   }
   clearVerbMemoryNextRoundTimer();
+  clearVerbMemoryAnswerTimer();
   verbMemoryPracticeState.active = false;
   verbMemoryPracticeState.isResolving = true;
   verbMemoryPracticeState.endedAt = Date.now();
+  renderVerbMemoryTimer();
   const accuracy = verbMemoryPracticeState.total > 0
     ? Math.round((verbMemoryPracticeState.correct / verbMemoryPracticeState.total) * 100)
     : 0;
   const result = {
+    levelId: getVerbMemoryLevel().id,
+    sessionId: verbMemoryPracticeState.sessionId,
+    ownerId: getVerbMemoryPracticeOwnerId(),
+    timedOut: verbMemoryPracticeState.timedOut,
     reason,
     score: verbMemoryPracticeState.score,
     correct: verbMemoryPracticeState.correct,
@@ -39380,6 +39578,7 @@ async function finishVerbMemoryPracticeGame(reason) {
     renderVerbMemoryResult(result, { isNewBest: saved.isNewBest });
   } catch (error) {
     console.error("[Verb Memory Practice] failed to save best score", error);
+    if (!isCurrentVerbMemorySession(result.sessionId, result.levelId, result.ownerId)) return;
     verbMemoryPracticeState.bestRecord = provisionalRecord;
     renderVerbMemoryResult(result, {
       isNewBest: result.score > previousBest,
@@ -39408,7 +39607,8 @@ function startVerbMemoryPracticeGame() {
 async function openVerbMemoryPracticeScene() {
   closeGameModal();
   const ownerId = getVerbMemoryPracticeOwnerId();
-  if (verbMemoryPracticeState.bestRecordOwnerId !== ownerId) {
+  const levelId = getVerbMemoryLevel().id;
+  if (verbMemoryPracticeState.bestRecordOwnerId !== ownerId || verbMemoryPracticeState.bestRecordLevelId !== levelId) {
     verbMemoryPracticeState.bestRecord = null;
     verbMemoryPracticeState.bestRecordOwnerId = "";
   }
@@ -39459,14 +39659,20 @@ async function openVerbMemoryPracticeScene() {
     startVerbMemoryPracticeGame();
   }
   await loadVerbMemoryPracticeBestScore();
-  renderVerbMemoryHpAndScore();
+  if (verbMemoryPracticeState.levelId === levelId && verbMemoryPracticeState.bestRecordOwnerId === ownerId) {
+    renderVerbMemoryHpAndScore();
+  }
+}
+
+function changeVerbMemoryBossLevel() {
+  const levelId = getVerbMemoryLevel(els.verbMemoryBossLevelSelect?.value).id;
+  if (levelId === verbMemoryPracticeState.levelId) return;
+  verbMemoryPracticeState.levelId = levelId;
+  void openVerbMemoryPracticeScene();
 }
 
 function returnFromVerbMemoryPracticeToMainMenu() {
-  clearVerbMemoryNextRoundTimer();
-  verbMemoryPracticeState.active = false;
-  verbMemoryPracticeState.isResolving = false;
-  verbMemoryPracticeState.currentChallenge = null;
+  stopVerbMemoryPractice();
   renderMainMenu();
   showScene("mainMenu");
 }
@@ -51108,6 +51314,7 @@ els.tutorialBackButton?.addEventListener("click", returnToMainMenuFromTutorial);
 els.creatorCreditsBackButton?.addEventListener("click", returnToMainMenuFromCreatorCredits);
 els.vsBossesBackButton?.addEventListener("click", showMainMenu);
 els.verbMemoryPracticeBackButton?.addEventListener("click", returnFromVerbMemoryPracticeToMainMenu);
+els.verbMemoryBossLevelSelect?.addEventListener("change", changeVerbMemoryBossLevel);
 els.verbMemoryPracticeStartButton?.addEventListener("click", startVerbMemoryPracticeGame);
 els.verbMemoryPracticeRestartButton?.addEventListener("click", startVerbMemoryPracticeGame);
 els.verbMemoryResultRetryButton?.addEventListener("click", startVerbMemoryPracticeGame);

@@ -6,7 +6,7 @@
   <meta name="lingua-advisor-mode" content="auto">
   <meta name="lingua-advisor-api-url" content="">
   <title>Lingua - RPG แห่งแกรมมาเรีย</title>
-  <link rel="stylesheet" href="style.css?v=battle-scroll-20261119">
+  <link rel="stylesheet" href="style.css?v=verb-memory-levels-20261126">
 </head>
 <body>
   <div class="game-utility-controls" aria-label="ตัวเลือกเกม">
@@ -190,6 +190,14 @@
 
     <section id="verbMemoryPracticeScene" class="scene verb-memory-practice-scene">
       <div class="verb-memory-practice-shell">
+        <div class="verb-memory-level-selector">
+          <label for="verbMemoryBossLevelSelect">เลือกระดับบอส</label>
+          <select id="verbMemoryBossLevelSelect">
+            <option value="1">ระดับ 1 · HP 1,000 · 169 คำ · ไม่จำกัดเวลา</option>
+            <option value="2">ระดับ 2 · HP 2,000 · 219 คำ · ข้อละ 5 วินาที</option>
+          </select>
+          <p>เปลี่ยนระดับเพื่อเริ่มรอบใหม่ · คะแนนสูงสุดแยกตามระดับ</p>
+        </div>
         <header class="verb-memory-practice-header">
           <button id="verbMemoryPracticeBackButton" class="secondary-button" type="button">กลับหน้าหลัก</button>
           <div>
@@ -223,6 +231,11 @@
           </section>
         </div>
 
+        <div id="verbMemoryChallengePanel" class="verb-memory-challenge-panel">
+          <div id="verbMemoryTimer" class="verb-memory-timer hidden" aria-label="เวลาตอบคำถาม">
+            <span>เหลือเวลา <strong id="verbMemoryTimeText">5.0</strong> วินาที · หมดเวลาเสีย HP 5</span>
+            <div class="verb-memory-time-track"><i id="verbMemoryTimeBar"></i></div>
+          </div>
         <section class="verb-memory-board" aria-label="กริยา 3 ช่อง">
           <article class="verb-memory-slot">
             <span>V1</span>
@@ -239,6 +252,7 @@
         </section>
 
         <div id="verbMemoryChoices" class="verb-memory-choice-grid" aria-label="ตัวเลือกคำตอบ"></div>
+        </div>
         <p id="verbMemoryStatusText" class="verb-memory-status" aria-live="polite">กดเริ่มฝึกเพื่อเผชิญหน้ากับบอสความจำ</p>
 
         <div class="verb-memory-score-row" aria-label="คะแนนฝึกจำ">
@@ -253,6 +267,7 @@
 
         <section id="verbMemoryResultPanel" class="verb-memory-result-panel hidden" aria-labelledby="verbMemoryResultTitle">
           <h3 id="verbMemoryResultTitle">ผลการฝึก</h3>
+          <p id="verbMemoryResultTaunt" class="verb-memory-result-taunt hidden"></p>
           <div class="verb-memory-result-grid">
             <p>คะแนนฝึกจำ <strong id="verbMemoryResultScore">0</strong></p>
             <p>ตอบถูก <strong id="verbMemoryResultAccuracy">0 / 0 (0%)</strong></p>
@@ -1152,7 +1167,7 @@
     <p id="developerCredit" class="developer-credit">Lingua: Digital Game-based Learning Platform | พัฒนาโดย นายอัครวัฒน์ นวสิริวงศ์สกุล ครูโรงเรียนแม่สอด</p>
   </main>
 
-  <script src="assets/data/irregular_verb_memory_bank.js?v=verb-memory-bank-20260901"></script>
-  <script type="module" src="script.js?v=player-score-reports-20260913"></script>
+  <script src="assets/data/irregular_verb_memory_bank.js?v=verb-memory-levels-20261126"></script>
+  <script type="module" src="script.js?v=player-score-reports-20260913&amp;rev=verb-memory-levels-20261126"></script>
 </body>
 </html>
