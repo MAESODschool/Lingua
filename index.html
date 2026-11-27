@@ -6,7 +6,7 @@
   <meta name="lingua-advisor-mode" content="auto">
   <meta name="lingua-advisor-api-url" content="">
   <title>Lingua - RPG แห่งแกรมมาเรีย</title>
-  <link rel="stylesheet" href="style.css?v=verb-memory-levels-20261126">
+  <link rel="stylesheet" href="style.css?v=act1-official-assets-20261127">
 </head>
 <body>
   <div class="game-utility-controls" aria-label="ตัวเลือกเกม">
@@ -160,6 +160,7 @@
             <button id="verbMemoryPracticeButton" class="secondary-button main-menu-button" type="button">ฝึกฝนกริยา 3 ช่อง</button>
             <button id="pvpModeButton" class="secondary-button main-menu-button" type="button">PvP Duel</button>
             <button id="assessmentResultButton" class="secondary-button main-menu-button" type="button">ผลการประเมิน</button>
+            <button id="act1EpilogueReplayButton" class="secondary-button main-menu-button hidden" type="button">รับชมบทส่งท้าย Past Realm</button>
             <button id="tutorialGuideButton" class="secondary-button main-menu-button" type="button">วิธีเล่น</button>
             <button id="linguaAdvisorButton" class="secondary-button main-menu-button" type="button">ถามที่ปรึกษา</button>
             <button id="accountSettingsButton" class="secondary-button main-menu-button" type="button">ตั้งค่าบัญชี</button>
@@ -860,6 +861,32 @@
             <strong>อาจารย์เวเรียน</strong>
           </div>
 
+          <div id="act1EpilogueVisual" class="act1-epilogue-visual hidden" role="group" aria-label="บทส่งท้ายแห่งอดีต">
+            <div class="act1-past-energy" aria-hidden="true">
+              <div class="act1-fragment-orbit">
+                <i style="--fragment-x:-70px;--fragment-y:-40px"></i>
+                <i style="--fragment-x:65px;--fragment-y:-55px"></i>
+                <i style="--fragment-x:-85px;--fragment-y:30px"></i>
+                <i style="--fragment-x:80px;--fragment-y:25px"></i>
+                <i style="--fragment-x:0px;--fragment-y:-80px"></i>
+              </div>
+              <span id="act1PastCrystal" class="act1-past-crystal"><img id="act1PastCrystalImage" class="hidden" alt="" draggable="false"></span>
+              <span id="act1CrystalLabel" class="act1-crystal-label"></span>
+            </div>
+            <div id="act1PastGuardian" class="act1-past-guardian hidden" aria-hidden="true">
+              <span class="act1-guardian-silhouette"></span>
+              <span class="act1-guardian-fallback-label">ผู้พิทักษ์แห่งอดีต · ภาพสำรอง</span>
+              <img id="act1GuardianSprite" class="hidden" alt="ผู้พิทักษ์แห่งอดีต" draggable="false">
+            </div>
+            <div id="act1EpilogueSummary" class="act1-epilogue-summary hidden">
+              <p>ACT I COMPLETED</p>
+              <h3>THE PAST FRAGMENT</h3>
+              <p>Past Core — Restored<br>Guardian of the Past — Awakened</p>
+              <p>การเดินทางยังไม่สิ้นสุด...</p>
+              <p>NEXT CHAPTER<br><strong>PRESENT REALM</strong></p>
+            </div>
+          </div>
+
           <div id="dialoguePanel" class="dialogue-panel vn-dialogue dialogue-box">
             <div id="dialoguePortraitSlot" class="dialogue-speaker-portrait-slot hidden" aria-hidden="true">
               <img id="dialogueSpeakerPortrait" class="dialogue-speaker-portrait" alt="" draggable="false">
@@ -1168,6 +1195,6 @@
   </main>
 
   <script src="assets/data/irregular_verb_memory_bank.js?v=verb-memory-levels-20261126"></script>
-  <script type="module" src="script.js?v=player-score-reports-20260913&amp;rev=verb-memory-levels-20261126"></script>
+  <script type="module" src="script.js?v=player-score-reports-20260913&amp;rev=act1-official-assets-20261127"></script>
 </body>
 </html>

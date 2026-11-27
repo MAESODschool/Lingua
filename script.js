@@ -21708,7 +21708,301 @@ const PLAYER_CHARACTERS = {
     battleFallbackAsset: PLAYER_BATTLE_BACK_MODEL_BY_GENDER.male
   }
 };
+const ACT1_EPILOGUE_VERSION = 1;
+const ACT1_EPILOGUE_ASSETS = Object.freeze({
+  fragment: "",
+  core: "assets/items/past_core.png",
+  guardianSprite: "assets/characters/guardian-of-the-past.png",
+  guardianPortrait: "assets/characters/guardian-of-the-past.png"
+});
+const DEFAULT_ACT1_EPILOGUE_PROGRESS = Object.freeze({
+  pastCoreRestored: false,
+  pastGuardianAwakened: false,
+  pastCoreAndGuardianAcquired: false,
+  act1EpilogueCompleted: false,
+  act1EpilogueVersion: 0,
+  act1EpilogueDialogueIndex: 0
+});
+const ACT1_EPILOGUE_DIALOGUE = [
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "ในที่สุด... ข้าก็เอาชนะ The Memory Breaker ได้แล้ว!",
+    "act1EpilogueNode": 1
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "ยอดเยี่ยมมาก ผู้พเนจร เจ้าเดินทางมาไกลกว่าที่ข้าเคยคาดคิดไว้เสียอีก",
+    "act1EpilogueNode": 2
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "เช่นนั้น ภารกิจของเราในดินแดนแห่งอดีตก็สิ้นสุดลงแล้วใช่หรือไม่?",
+    "act1EpilogueNode": 3
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "ยังไม่สิ้นสุดหรอก จงมองดูสิ่งที่กำลังปรากฏอยู่เบื้องหน้าเจ้าเสียก่อน",
+    "act1EpilogueNode": 4
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "แสงนั่นมัน...!",
+    "act1EpilogueNode": 5,
+    "eventBefore": "LAST_FRAGMENT_APPEARS"
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "นั่นคือ Past Fragment ชิ้นสุดท้ายที่เราตามหา",
+    "act1EpilogueNode": 6
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "ในที่สุด ชิ้นส่วนแห่งอดีตที่กระจัดกระจายอยู่ทั่วดินแดนก็กลับมาครบถ้วนแล้ว",
+    "act1EpilogueNode": 7
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "ถ้าเช่นนั้น เราก็สามารถฟื้นคืน Past Core ได้แล้วสินะ!",
+    "act1EpilogueNode": 8
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "ถูกต้อง ผู้พเนจร ถึงเวลาที่เราจะนำสิ่งที่แตกสลายกลับคืนเป็นหนึ่งเดียว",
+    "act1EpilogueNode": 9
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "จงนำชิ้นส่วนทั้งหมดที่เจ้าได้รวบรวมมาตลอดการเดินทางออกมาเถิด",
+    "act1EpilogueNode": 10
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "ชิ้นส่วนเหล่านี้... ข้าได้มันมาจากทุกสถานที่ที่เราเคยเดินทางผ่าน",
+    "act1EpilogueNode": 11,
+    "eventBefore": "ALL_PAST_FRAGMENTS_APPEAR"
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "ทุกชิ้นส่วนคือหลักฐานแห่งความพยายามและการเรียนรู้ของเจ้า",
+    "act1EpilogueNode": 12
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "ท่านมาสเตอร์! ดูสิ พวกมันกำลังส่องแสง!",
+    "act1EpilogueNode": 13
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "พวกมันกำลังตอบสนองต่อกัน เพราะครั้งหนึ่งพวกมันเคยเป็นส่วนหนึ่งของแกนเดียวกัน",
+    "act1EpilogueNode": 14,
+    "eventBefore": "FRAGMENTS_RESONANCE"
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "ก่อนที่ The Great Fracture จะพรากพวกมันออกจากกัน",
+    "act1EpilogueNode": 15
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "แล้วข้าต้องทำอย่างไรต่อ?",
+    "act1EpilogueNode": 16
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "จงรวบรวมพลังแกรมมาเรียของเจ้า และระลึกถึงทุกสิ่งที่เจ้าได้เรียนรู้เกี่ยวกับอดีต",
+    "act1EpilogueNode": 17
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "ให้ความรู้ของเจ้าเป็นพลังเชื่อมโยงเศษเสี้ยวแห่งกาลเวลาเหล่านี้เข้าด้วยกัน",
+    "act1EpilogueNode": 18
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "เข้าใจแล้ว ข้าจะลองดู!",
+    "act1EpilogueNode": 19
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "ดีมาก! อย่าหยุดประสานพลัง ชิ้นส่วนทั้งหมดกำลังหลอมรวมกันแล้ว!",
+    "act1EpilogueNode": 20,
+    "eventBefore": "FRAGMENTS_BEGIN_MERGING"
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "จงกลับคืนมาเถิด... พลังแห่งอดีต!",
+    "act1EpilogueNode": 21
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "สำเร็จแล้ว... เราทำสำเร็จแล้ว ท่านมาสเตอร์!",
+    "act1EpilogueNode": 22,
+    "eventBefore": "PAST_CORE_RESTORED"
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "สิ่งที่อยู่เบื้องหน้าเจ้า คือหนึ่งในสามแกนแห่งกาลเวลาที่หล่อเลี้ยงโลก Lingua",
+    "act1EpilogueNode": 23
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "Past Core — หัวใจแห่งอดีต",
+    "act1EpilogueNode": 24
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "ข้าสัมผัสได้ถึงพลังบางอย่างที่อยู่ภายในผลึกนี้...",
+    "act1EpilogueNode": 25
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "ไม่ใช่เพียงพลังหรอก ผู้พเนจร",
+    "act1EpilogueNode": 26
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "ผู้พิทักษ์แห่งอดีตที่หลับใหลมาเนิ่นนาน กำลังจะตื่นขึ้นอีกครั้ง",
+    "act1EpilogueNode": 27
+  },
+  {
+    "speaker": "ผู้พิทักษ์แห่งอดีต",
+    "text": "แสงแห่งกาลเวลา... ข้าสัมผัสมันได้อีกครั้ง",
+    "act1EpilogueNode": 28,
+    "eventBefore": "GUARDIAN_AWAKENING"
+  },
+  {
+    "speaker": "ผู้พิทักษ์แห่งอดีต",
+    "text": "นี่ข้าหลับใหลไปนานเพียงใดกัน...",
+    "act1EpilogueNode": 29
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "ยินดีต้อนรับกลับมา ผู้พิทักษ์แห่งอดีต",
+    "act1EpilogueNode": 30
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "ท่านคือผู้พิทักษ์แห่ง Past Core อย่างนั้นหรือ?",
+    "act1EpilogueNode": 31
+  },
+  {
+    "speaker": "ผู้พิทักษ์แห่งอดีต",
+    "text": "ใช่แล้ว ข้าคือผู้ที่ได้รับหน้าที่ดูแลกาลเวลาแห่งอดีต",
+    "act1EpilogueNode": 32
+  },
+  {
+    "speaker": "ผู้พิทักษ์แห่งอดีต",
+    "text": "แต่ครั้งหนึ่ง ข้ากลับหลงลืมความหมายที่แท้จริงของหน้าที่นั้น",
+    "act1EpilogueNode": 33
+  },
+  {
+    "speaker": "ผู้พิทักษ์แห่งอดีต",
+    "text": "ข้าเคยได้ยินเสียงลึกลับถามว่า... ในบรรดากาลเวลาทั้งสาม เวลาใดสำคัญที่สุด?",
+    "act1EpilogueNode": 34
+  },
+  {
+    "speaker": "ผู้พิทักษ์แห่งอดีต",
+    "text": "ข้าเชื่อว่าอดีตสำคัญเหนือสิ่งอื่นใด เพราะทุกสิ่งล้วนมีจุดเริ่มต้นจากอดีต",
+    "act1EpilogueNode": 35
+  },
+  {
+    "speaker": "ผู้พิทักษ์แห่งอดีต",
+    "text": "ความเชื่อนั้นทำให้ข้าแตกหักกับผู้พิทักษ์อีกสองตน และปรารถนาจะครอบครอง Unity Core ไว้เพียงผู้เดียว",
+    "act1EpilogueNode": 36
+  },
+  {
+    "speaker": "ผู้พิทักษ์แห่งอดีต",
+    "text": "จนกระทั่งทุกสิ่งแตกสลาย...",
+    "act1EpilogueNode": 37
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "แต่อดีตไม่ได้มีไว้ให้เรายึดติดอยู่กับสิ่งที่ผ่านไปแล้วไม่ใช่หรือ?",
+    "act1EpilogueNode": 38
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "มันมีไว้ให้เราจดจำสิ่งที่เกิดขึ้น เรียนรู้จากมัน และก้าวต่อไป",
+    "act1EpilogueNode": 39
+  },
+  {
+    "speaker": "ผู้พิทักษ์แห่งอดีต",
+    "text": "ถูกต้อง... เจ้าทำให้ข้าได้ระลึกถึงสิ่งที่ข้าหลงลืมไป",
+    "act1EpilogueNode": 40
+  },
+  {
+    "speaker": "ผู้พิทักษ์แห่งอดีต",
+    "text": "อดีตไม่อาจดำรงความหมายได้อย่างสมบูรณ์ หากปราศจากปัจจุบันและอนาคต",
+    "act1EpilogueNode": 41
+  },
+  {
+    "speaker": "ผู้พิทักษ์แห่งอดีต",
+    "text": "ขอบใจเจ้า ผู้พเนจร ผู้คืนความหมายให้แก่ถ้อยคำที่แตกสลาย",
+    "act1EpilogueNode": 42
+  },
+  {
+    "speaker": "ผู้พิทักษ์แห่งอดีต",
+    "text": "ข้าขอมอบ Past Core ไว้ในความดูแลของเจ้า",
+    "act1EpilogueNode": 43
+  },
+  {
+    "speaker": "ผู้พิทักษ์แห่งอดีต",
+    "text": "และข้าจะร่วมเป็นส่วนหนึ่งในการฟื้นฟูความสมดุลของโลก Lingua อีกครั้ง",
+    "act1EpilogueNode": 44
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "ข้าสัญญาว่าจะรวบรวมแกนแห่งกาลเวลาทั้งสามกลับมาให้สำเร็จ",
+    "act1EpilogueNode": 45
+  },
+  {
+    "speaker": "ผู้พิทักษ์แห่งอดีต",
+    "text": "ข้าเชื่อมั่นในตัวเจ้า ผู้ฟื้นคืนอดีต",
+    "act1EpilogueNode": 46
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "ภารกิจของเราในดินแดนแห่งอดีตสำเร็จแล้ว ผู้พเนจร",
+    "act1EpilogueNode": 47,
+    "eventBefore": "PAST_CORE_AND_GUARDIAN_ACQUIRED"
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "แต่เรายังต้องตามหา Present Core และ Future Core ใช่หรือไม่?",
+    "act1EpilogueNode": 48
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "ถูกต้อง ตราบใดที่แกนทั้งสามยังไม่กลับคืนมา Unity Core ก็ไม่อาจสมบูรณ์ได้",
+    "act1EpilogueNode": 49
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "และอำนาจมืดที่ทำให้โลกแห่งนี้แตกสลาย ก็ยังคงเป็นปริศนา",
+    "act1EpilogueNode": 50
+  },
+  {
+    "speaker": "ผู้พเนจร",
+    "text": "เช่นนั้น ข้าพร้อมแล้วสำหรับการเดินทางครั้งต่อไป!",
+    "act1EpilogueNode": 51
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "อดีตได้หวนคืนมาแล้ว บัดนี้ถึงเวลาที่เราจะเผชิญหน้ากับปัจจุบัน",
+    "act1EpilogueNode": 52
+  },
+  {
+    "speaker": "มาสเตอร์เวรีออน",
+    "text": "จุดหมายต่อไปของเรา... Present Realm",
+    "act1EpilogueNode": 53,
+    "eventAfter": "ACT1_EPILOGUE_COMPLETED"
+  }
+];
 const DIALOGUE_SPEAKER_PORTRAITS = {
+  past_guardian: {
+    name: "ผู้พิทักษ์แห่งอดีต",
+    portrait: ACT1_EPILOGUE_ASSETS.guardianPortrait
+  },
   master_verion: {
     name: "มาสเตอร์เวรีออน",
     portrait: "assets/portraits/master_verion_portrait.png"
@@ -23455,6 +23749,7 @@ function hasCompletedCharacterCreation() {
 }
 
 function restoreLessonSceneFromSession(session) {
+  if (resumeAct1EpilogueIfNeeded(loadProgress())) return true;
   const stage = getStageById(session?.stageId || session?.lessonId);
   const stageIndex = stage ? getStageIndexById(stage.id) : -1;
   if (stage && stageIndex >= 0) {
@@ -23469,6 +23764,7 @@ function restoreLessonSceneFromSession(session) {
 
 function restoreBattleSceneFromSession(session) {
   const progress = loadProgress();
+  if (resumeAct1EpilogueIfNeeded(progress)) return true;
   if (progress?.resumeCheckpoint?.scene === "battle" && restoreResumeCheckpoint(progress.resumeCheckpoint)) {
     return true;
   }
@@ -23522,6 +23818,7 @@ async function restoreLastSceneForCurrentUser() {
         return restoreBattleSceneFromSession(session);
       case "assessmentResult":
       case "victory":
+        if (resumeAct1EpilogueIfNeeded(loadProgress())) return true;
         if (loadProgress()?.finalBossDefeated || loadProgress()?.currentScreen === "victory" || loadProgress()?.currentScreen === "pastFragmentVictory") {
           completeActVictoryScene();
           return true;
@@ -24328,6 +24625,7 @@ const els = {
   mainMenuBossesDefeated: document.getElementById("mainMenuBossesDefeated"),
   mainMenuCollection: document.getElementById("mainMenuCollection"),
   continueJourneyButton: document.getElementById("continueJourneyButton"),
+  act1EpilogueReplayButton: document.getElementById("act1EpilogueReplayButton"),
   lessonMapButton: document.getElementById("lessonMapButton"),
   vsBossesButton: document.getElementById("vsBossesButton"),
   verbMemoryPracticeButton: document.getElementById("verbMemoryPracticeButton"),
@@ -24491,6 +24789,13 @@ const els = {
   dialoguePanel: document.getElementById("dialoguePanel"),
   dialogueActions: document.getElementById("dialogueActions"),
   lessonStoryVisual: document.getElementById("lessonStoryVisual"),
+  act1EpilogueVisual: document.getElementById("act1EpilogueVisual"),
+  act1EpilogueSummary: document.getElementById("act1EpilogueSummary"),
+  act1PastGuardian: document.getElementById("act1PastGuardian"),
+  act1GuardianSprite: document.getElementById("act1GuardianSprite"),
+  act1PastCrystal: document.getElementById("act1PastCrystal"),
+  act1PastCrystalImage: document.getElementById("act1PastCrystalImage"),
+  act1CrystalLabel: document.getElementById("act1CrystalLabel"),
   nounActivity: document.getElementById("nounActivity"),
   nounActivityVisual: document.getElementById("nounActivityVisual"),
   explanationCloseButton: document.getElementById("explanationCloseButton"),
@@ -24768,6 +25073,9 @@ function updateDeveloperCreditVisibility(sceneName) {
 }
 
 function showScene(name) {
+  if (name !== "story") {
+    clearAct1EpilogueVisual();
+  }
   if (name !== "verbMemoryPractice" && verbMemoryPracticeState.active) {
     stopVerbMemoryPractice();
   }
@@ -29326,6 +29634,7 @@ function createDefaultPlayerData(user) {
         irregularMiniBossDefeated: false,
         twistSeen: false,
         finalBossDefeated: false,
+        ...DEFAULT_ACT1_EPILOGUE_PROGRESS,
         rewards: [],
         completedStages: [],
         fragments: [],
@@ -29778,6 +30087,9 @@ function updateDialogueSpeakerTone(speaker = "") {
 
 function getDialogueSpeakerId(speaker = "") {
   const text = String(speaker || "");
+  if (text === "ผู้พิทักษ์แห่งอดีต") {
+    return "past_guardian";
+  }
   if (text.includes("ผู้พเนจร")) {
     return ensurePlayerCharacterData();
   }
@@ -29813,6 +30125,16 @@ function updateDialogueSpeakerPortrait(speaker = "") {
 
   const speakerId = getDialogueSpeakerId(speaker);
   const portraitConfig = speakerId ? DIALOGUE_SPEAKER_PORTRAITS[speakerId] : null;
+  els.dialoguePortraitSlot.classList.toggle("act1-guardian-portrait", speakerId === "past_guardian");
+  if (speakerId === "past_guardian" && state.currentLessonStage?.isAct1Epilogue) {
+    els.dialoguePanel.classList.remove("dialogue-portrait-missing");
+    els.dialoguePortraitSlot.classList.remove("hidden");
+    els.dialogueSpeakerPortrait.alt = "ผู้พิทักษ์แห่งอดีต";
+    setAct1EpilogueAsset(els.dialogueSpeakerPortrait, portraitConfig.portrait, els.dialoguePortraitSlot);
+    return;
+  }
+  delete els.dialogueSpeakerPortrait.dataset.epilogueAsset;
+  els.dialogueSpeakerPortrait.onload = null;
   if (!portraitConfig?.portrait) {
     hideDialogueSpeakerPortrait("");
     return;
@@ -30114,11 +30436,14 @@ function startStory() {
 
 function restoreSavedProgress() {
   const progress = loadProgress();
+  if (resumeAct1EpilogueIfNeeded(progress)) {
+    return true;
+  }
   if (!progress || progress.currentScreen === "story") {
     return false;
   }
 
-  if (progress.finalBossDefeated || progress.currentScreen === "victory") {
+  if (hasAct1StoryVictory(progress) || progress.currentScreen === "victory") {
     completeActVictoryScene();
     return true;
   }
@@ -30267,6 +30592,7 @@ function ensureActProgress() {
     irregularMiniBossDefeated: false,
     twistSeen: false,
     finalBossDefeated: false,
+    ...DEFAULT_ACT1_EPILOGUE_PROGRESS,
     rewards: [],
     completedStages: [],
     fragments: [],
@@ -31072,7 +31398,7 @@ function captureLessonResumeCheckpoint(source, savedAt) {
     return null;
   }
 
-  const phase = state.lessonStoryMode
+  const phase = state.currentLessonStage?.isAct1Epilogue ? "postBossDialogue" : state.lessonStoryMode
     ? (state.lessonStorySteps[state.lessonStoryStepIndex]?.phase || (stage.isPostBossDialogue ? "postBossDialogue" : "teacherExplanation"))
     : (ensureActProgress()?.lessonPhase || "teacherExplanation");
 
@@ -31090,7 +31416,8 @@ function captureLessonResumeCheckpoint(source, savedAt) {
       dialogueIndex: Math.max(0, Number(state.lessonStoryStepIndex) || 0),
       lessonStepIndex: Math.max(0, Number(state.lessonStepIndex) || 0),
       isReplay: Boolean(state.activeReplayLessonId === stage.id),
-      replayReturnProgress: state.replayReturnProgress || null
+      replayReturnProgress: state.replayReturnProgress || null,
+      ...(state.currentLessonStage?.isAct1Epilogue ? { act1EpilogueVersion: ACT1_EPILOGUE_VERSION } : {})
     },
     battle: null
   };
@@ -31219,6 +31546,9 @@ function validateResumeCheckpoint(checkpoint) {
 }
 
 function restoreLessonResumeCheckpoint(checkpoint) {
+  if (!checkpoint.lesson?.isReplay && resumeAct1EpilogueIfNeeded(loadProgress())) {
+    return true;
+  }
   const stage = getStageById(checkpoint.stageId);
   const stageIndex = getStageIndexById(checkpoint.stageId);
   if (!stage || stageIndex < 0) {
@@ -31230,7 +31560,9 @@ function restoreLessonResumeCheckpoint(checkpoint) {
   state.replayReturnProgress = lesson.replayReturnProgress || null;
 
   if (lesson.mode === "postBossDialogue" || lesson.phase === "postBossDialogue") {
-    startPostBossDialogue(stage, lesson.dialogueIndex || 0);
+    startPostBossDialogue(stage, lesson.dialogueIndex || 0, {
+      epilogueReplay: lesson.isReplay && lesson.act1EpilogueVersion === ACT1_EPILOGUE_VERSION
+    });
     return true;
   }
 
@@ -34427,6 +34759,9 @@ function renderMainMenu() {
   setButtonAction(els.verbMemoryPracticeButton, "ฝึกฝนกริยา 3 ช่อง", openVerbMemoryPracticeScene, { lock: false });
   setButtonAction(els.pvpModeButton, "PvP Duel", enterPvpMode, { lock: false });
   setButtonAction(els.assessmentResultButton, "ผลการประเมิน", openMainMenuAssessmentResult, { lock: false });
+  setButtonAction(els.act1EpilogueReplayButton, "รับชมบทส่งท้าย Past Realm", openAct1EpilogueReplay, {
+    lock: false, hidden: !loadProgress()?.act1EpilogueCompleted
+  });
   setButtonAction(els.tutorialGuideButton, "วิธีเล่น", openTutorialGuide, { lock: false });
   setButtonAction(els.linguaAdvisorButton, "ถามที่ปรึกษา", () => openLinguaAdvisor("main-menu"), { lock: false });
   setButtonAction(els.accountSettingsButton, "ตั้งค่าบัญชี", openAccountSettingsModal, { lock: false });
@@ -41544,7 +41879,176 @@ function validateCvcLessonTeachingFlow() {
   return { ok: failures.length === 0, teachingStepCount: steps.length - 1, guidedPracticeCount: checks.length, failures, warnings: [] };
 }
 
+function hasAct1StoryVictory(progress) {
+  return Boolean(progress && (progress.finalBossDefeated ||
+    progress.completedStages?.includes("final-boss")));
+}
+
+function canStartAct1Epilogue(stage) {
+  return Boolean(stage?.id === "final-boss" && hasAct1StoryVictory(loadProgress()) &&
+    !isReplayingStage(stage) && !isPracticeModeActive() && !isVsBossPracticeActive() &&
+    !verbMemoryPracticeState.active && !pvpState.active);
+}
+
+function resumeAct1EpilogueIfNeeded(progress) {
+  if (!hasAct1StoryVictory(progress) || progress.act1EpilogueCompleted ||
+      isPracticeModeActive() || isVsBossPracticeActive() ||
+      verbMemoryPracticeState.active || pvpState.active) {
+    return false;
+  }
+  const stage = getStageById("final-boss");
+  if (!stage) return false;
+  // Old saves can contain a pre-victory checkpoint or the old two-line ending.
+  // Only this version's dedicated index identifies a node in the new epilogue.
+  const index = progress.act1EpilogueVersion === ACT1_EPILOGUE_VERSION
+    ? clamp(Number(progress.act1EpilogueDialogueIndex) || 0, 0, ACT1_EPILOGUE_DIALOGUE.length - 1)
+    : 0;
+  state.activeReplayLessonId = null;
+  state.replayReturnProgress = null;
+  startPostBossDialogue(stage, index);
+  return true;
+}
+
+function getAct1EpilogueProgressUpdate(step) {
+  if (!step?.act1EpilogueNode || !state.currentLessonStage?.isAct1Epilogue ||
+      isReplayingStage(state.currentLessonStage)) return {};
+  const node = step.act1EpilogueNode;
+  // Going back changes the illustration, not already-earned story achievements.
+  return {
+    act1EpilogueVersion: ACT1_EPILOGUE_VERSION,
+    act1EpilogueDialogueIndex: node - 1,
+    ...(node >= 22 ? { pastCoreRestored: true } : {}),
+    ...(node >= 28 ? { pastGuardianAwakened: true } : {}),
+    ...(node >= 47 ? { pastCoreAndGuardianAcquired: true } : {})
+  };
+}
+
+function getAct1EpilogueVisualState(dialogueIndex) {
+  const states = {
+    LAST_FRAGMENT_APPEARS: "last-fragment",
+    ALL_PAST_FRAGMENTS_APPEAR: "fragments",
+    FRAGMENTS_RESONANCE: "resonance",
+    FRAGMENTS_BEGIN_MERGING: "merging",
+    PAST_CORE_RESTORED: "core",
+    GUARDIAN_AWAKENING: "guardian",
+    PAST_CORE_AND_GUARDIAN_ACQUIRED: "acquired"
+  };
+  let visualState = "quiet";
+  ACT1_EPILOGUE_DIALOGUE.slice(0, dialogueIndex + 1).forEach(node => {
+    visualState = states[node.eventBefore] || visualState;
+  });
+  return visualState;
+}
+
+function setAct1EpilogueAsset(image, path, host) {
+  if (image.dataset.epilogueAsset === path) return;
+  image.dataset.epilogueAsset = path;
+  host.classList.remove("act1-asset-ready");
+  image.classList.add("hidden");
+  image.onload = () => {
+    host.classList.add("act1-asset-ready");
+    image.classList.remove("hidden");
+  };
+  image.onerror = () => {
+    host.classList.remove("act1-asset-ready");
+    image.classList.add("hidden");
+    image.removeAttribute("src");
+  };
+  if (path) image.src = path;
+  else image.removeAttribute("src");
+}
+
+function renderAct1EpilogueVisual(step) {
+  if (!step.act1EpilogueNode || !state.currentLessonStage?.isAct1Epilogue) {
+    clearAct1EpilogueVisual();
+    return;
+  }
+  const visualState = getAct1EpilogueVisualState(step.act1EpilogueNode - 1);
+  const guardianVisible = ["guardian", "acquired"].includes(visualState);
+  const coreVisible = ["core", "guardian", "acquired"].includes(visualState);
+  state.act1EpilogueSummaryVisible = false;
+  scenes.story.classList.add("act1-epilogue");
+  scenes.story.dataset.epilogueState = visualState;
+  els.act1EpilogueVisual.classList.remove("hidden");
+  els.act1EpilogueSummary.classList.add("hidden");
+  els.dialoguePanel.classList.remove("hidden");
+  els.act1PastGuardian.classList.toggle("hidden", !guardianVisible);
+  els.act1CrystalLabel.textContent = visualState === "quiet" ? ""
+    : coreVisible ? "Past Core" : "Past Fragment";
+  els.act1EpilogueVisual.setAttribute("aria-label", {
+    quiet: "หลังชัยชนะเหนือ The Memory Breaker",
+    "last-fragment": "Past Fragment ชิ้นสุดท้ายปรากฏ",
+    fragments: "ชิ้นส่วนแห่งอดีตทั้งหมดกลับมารวมกัน",
+    resonance: "ชิ้นส่วนกำลังประสานพลัง",
+    merging: "ชิ้นส่วนกำลังหลอมรวม",
+    core: "Past Core ฟื้นคืนแล้ว",
+    guardian: "ผู้พิทักษ์แห่งอดีตตื่นขึ้นแล้ว",
+    acquired: "ได้รับ Past Core และความร่วมมือจากผู้พิทักษ์"
+  }[visualState]);
+  setAct1EpilogueAsset(els.act1PastCrystalImage,
+    coreVisible ? ACT1_EPILOGUE_ASSETS.core : ACT1_EPILOGUE_ASSETS.fragment, els.act1PastCrystal);
+  if (guardianVisible) {
+    setAct1EpilogueAsset(els.act1GuardianSprite, ACT1_EPILOGUE_ASSETS.guardianSprite, els.act1PastGuardian);
+  }
+  els.lessonActLabel.textContent = "ACT I: THE PAST FRAGMENT";
+  els.lessonLocationLabel.textContent = "Final Chapter: The Rebirth of the Past Core · การฟื้นคืนแกนแห่งอดีต";
+}
+
+function showAct1EpilogueSummary() {
+  stopTypewriter();
+  cancelNextDialogueHold();
+  state.isTypingDialogue = false;
+  state.activeDialogue = [];
+  state.act1EpilogueSummaryVisible = true;
+  scenes.story.dataset.epilogueState = "completed";
+  els.dialoguePanel.classList.add("hidden");
+  els.act1EpilogueSummary.classList.remove("hidden");
+  els.nextDialogueButton.textContent = isReplayingStage(state.currentLessonStage)
+    ? "กลับเมนูหลัก" : "ดูผลประเมิน Act 1";
+  updatePreviousDialogueButton();
+  if (!isReplayingStage(state.currentLessonStage)) {
+    saveProgress({
+      ...getAct1EpilogueProgressUpdate(ACT1_EPILOGUE_DIALOGUE[52]),
+      act1EpilogueCompleted: true,
+      lessonPhase: "postBossDialogue",
+      currentScreen: "lesson",
+      lastSafeScreen: "lesson"
+    });
+  }
+}
+
+function clearAct1EpilogueVisual() {
+  if (!scenes.story?.classList.contains("act1-epilogue")) return;
+  stopTypewriter();
+  cancelNextDialogueHold();
+  state.isTypingDialogue = false;
+  state.act1EpilogueSummaryVisible = false;
+  scenes.story.classList.remove("act1-epilogue");
+  delete scenes.story.dataset.epilogueState;
+  els.act1EpilogueVisual.classList.add("hidden");
+  els.act1EpilogueSummary.classList.add("hidden");
+  els.act1PastGuardian.classList.add("hidden");
+  els.dialoguePortraitSlot.classList.remove("act1-guardian-portrait", "act1-asset-ready");
+  delete els.dialogueSpeakerPortrait.dataset.epilogueAsset;
+  els.dialogueSpeakerPortrait.onload = null;
+  els.dialogueSpeakerPortrait.onerror = null;
+}
+
+function openAct1EpilogueReplay() {
+  const progress = loadProgress();
+  if (!hasAct1StoryVictory(progress) || !progress.act1EpilogueCompleted ||
+      isPracticeModeActive() || isVsBossPracticeActive() ||
+      verbMemoryPracticeState.active || pvpState.active) return;
+  state.activeReplayLessonId = "final-boss";
+  state.replayReturnProgress = JSON.parse(JSON.stringify(progress));
+  startPostBossDialogue(getStageById("final-boss"), 0, { epilogueReplay: true });
+}
+
 function buildPostBossDialogue(stage) {
+  if (stage?.isAct1Epilogue) {
+    return ACT1_EPILOGUE_DIALOGUE.map(({ speaker, text, ...metadata }) =>
+      createSegmentNode(text, "postBossDialogue", speaker, metadata));
+  }
   const segment = getLessonSegmentDefinition(stage?.id);
   const lines = segment?.postBossDialogue?.length
     ? segment.postBossDialogue
@@ -41688,6 +42192,8 @@ function renderLessonStoryStep(options = {}) {
     return;
   }
 
+  renderAct1EpilogueVisual(step);
+
   if (step.optionalMasterReturn) {
     const menuIndex = clamp(step.optionalMasterMenuIndex, 0, Math.max(state.lessonStorySteps.length - 1, 0));
     removeOptionalMasterTempSteps(menuIndex);
@@ -41696,8 +42202,9 @@ function renderLessonStoryStep(options = {}) {
     return;
   }
 
-  if (state.currentLessonStage && !options.suppressProgressSave && !step.optionalMasterTemp && !isReplayingStage(state.currentLessonStage)) {
+  if (state.currentLessonStage && (!options.suppressProgressSave || step.act1EpilogueNode) && !step.optionalMasterTemp && !isReplayingStage(state.currentLessonStage)) {
     saveProgress({
+      ...getAct1EpilogueProgressUpdate(step),
       currentStageId: state.currentLessonStage.id,
       currentLessonId: state.currentLessonStage.id,
       currentScreen: "lesson",
@@ -41871,6 +42378,10 @@ function advanceLessonStoryStep() {
 
 function finishPastDialogueLesson() {
   const stage = state.currentLessonStage;
+  if (stage?.isAct1Epilogue && !state.act1EpilogueSummaryVisible) {
+    showAct1EpilogueSummary();
+    return;
+  }
   const lastStoryStepIndex = Math.max(0, state.lessonStorySteps.length - 1);
   const lastStoryStep = state.lessonStorySteps[lastStoryStepIndex] || null;
   const battleReturnContext = isBattleStageConfig(stage)
@@ -41926,12 +42437,16 @@ function finishPastDialogueLesson() {
   }
 }
 
-function startPostBossDialogue(stage, dialogueIndex = 0) {
+function startPostBossDialogue(stage, dialogueIndex = 0, options = {}) {
   const postBossStage = {
     ...stage,
     questions: [],
     isPostBossDialogue: true
   };
+  if (canStartAct1Epilogue(stage) || (options.epilogueReplay && stage?.id === "final-boss" &&
+      hasAct1StoryVictory(loadProgress()) && loadProgress().act1EpilogueCompleted && isReplayingStage(stage))) {
+    postBossStage.isAct1Epilogue = true;
+  }
   setActBackground(getAct1BackgroundKeyForStage(stage), { warnMissing: true });
   state.postBossDialogueStage = stage;
   state.currentLessonStage = postBossStage;
@@ -41949,7 +42464,7 @@ function startPostBossDialogue(stage, dialogueIndex = 0) {
     });
   }
   console.log("[Lesson Start]", `${stage.id}:postBoss`, ["postBossDialogue"]);
-  startLessonDialogueSequence(postBossStage, buildPostBossDialogue(stage), dialogueIndex);
+  startLessonDialogueSequence(postBossStage, buildPostBossDialogue(postBossStage), dialogueIndex);
 }
 
 function buildRegularEdLessonSteps(stage) {

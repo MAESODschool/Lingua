@@ -12563,3 +12563,241 @@ body:has(#battleScene.battle-layout.active) .developer-credit {
     overflow: visible;
   }
 }
+/* Act I epilogue only: keep the Lesson scene, controls, and character assets. */
+#storyScene.act1-epilogue {
+  overflow-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+#storyScene.act1-epilogue .story-upper { flex: 1 0 auto; }
+#storyScene.act1-epilogue .story-lower {
+  flex: 0 0 auto;
+  grid-template-columns: 64px minmax(0, 1fr) 56px;
+  grid-template-rows: auto auto auto;
+  overflow: visible;
+}
+#storyScene.act1-epilogue .lesson-main-action { display: contents; }
+#storyScene.act1-epilogue .dialogue-nav-actions { grid-column: 2 / 4; grid-row: 1; min-width: 0; }
+#storyScene.act1-epilogue .dialogue-nav-actions .primary-button { min-width: 0; padding: 10px; overflow-wrap: anywhere; }
+#storyScene.act1-epilogue .lesson-progress-card { min-height: 104px; }
+#storyScene.act1-epilogue .lesson-grammaria-display { grid-column: 2; grid-row: 2; margin: 0 auto; }
+#storyScene.act1-epilogue .lesson-side-actions {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+#storyScene.act1-epilogue .story-illustration {
+  display: flex;
+  flex-direction: column;
+  min-height: 510px;
+  isolation: isolate;
+}
+#storyScene.act1-epilogue .story-illustration .vn-dialogue {
+  position: relative;
+  order: 1;
+  inset: auto;
+  width: calc(100% - 24px);
+  margin: 12px;
+  min-height: 150px;
+  max-height: none;
+  flex: 0 0 auto;
+  z-index: 6;
+}
+#storyScene.act1-epilogue .story-illustration .vn-dialogue .dialogue-main-content .dialogue-text {
+  max-height: none;
+  overflow: visible;
+}
+#storyScene.act1-epilogue .dialogue-speaker-portrait-slot { height: 136px; }
+#storyScene.act1-epilogue .act1-epilogue-visual {
+  position: relative;
+  order: 2;
+  flex: 1 0 300px;
+  min-height: 300px;
+  width: 100%;
+  z-index: 3;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 40%, #9765ff40, transparent 65%);
+}
+#storyScene.act1-epilogue .act1-past-energy {
+  position: absolute;
+  left: 50%;
+  top: 24%;
+  width: 80px;
+  height: 90px;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 18px #ab83fa);
+}
+#storyScene.act1-epilogue[data-epilogue-state="quiet"] .act1-past-energy { visibility: hidden; }
+#storyScene.act1-epilogue .act1-past-crystal {
+  display: block;
+  width: 62px;
+  height: 76px;
+  margin: auto;
+  background: linear-gradient(115deg, #fff3b0, #baabff 25%, #7c48d4 55%, #bdf1ff);
+  clip-path: polygon(50% 0, 90% 26%, 100% 65%, 50% 100%, 0 65%, 12% 25%);
+}
+#storyScene.act1-epilogue .act1-past-crystal.act1-asset-ready { clip-path: none; background: none; }
+#storyScene.act1-epilogue .act1-past-crystal img { width: 100%; height: 100%; object-fit: contain; }
+#storyScene.act1-epilogue .act1-crystal-label {
+  display: block;
+  width: 150px;
+  margin: 8px 0 0 -35px;
+  color: #ffe7a3;
+  text-align: center;
+  font-size: .8rem;
+  text-shadow: 0 2px 4px #100b2e, 0 0 6px #100b2e;
+}
+#storyScene.act1-epilogue .act1-fragment-orbit { position: absolute; inset: 0; opacity: 0; }
+#storyScene.act1-epilogue .act1-fragment-orbit i {
+  position: absolute;
+  left: 32px;
+  top: 30px;
+  width: 19px;
+  height: 27px;
+  background: linear-gradient(130deg, #ffedb0, #b48bff, #4c66c8);
+  clip-path: polygon(50% 0, 100% 40%, 66% 100%, 0 60%);
+  transform: translate(var(--fragment-x), var(--fragment-y)) rotate(18deg);
+  transition: transform .65s ease, opacity .65s ease;
+}
+#storyScene.act1-epilogue:is([data-epilogue-state="fragments"], [data-epilogue-state="resonance"], [data-epilogue-state="merging"]) .act1-fragment-orbit { opacity: 1; }
+#storyScene.act1-epilogue[data-epilogue-state="resonance"] .act1-past-energy { animation: act1-epilogue-resonance 2.8s ease-in-out infinite; }
+#storyScene.act1-epilogue[data-epilogue-state="merging"] .act1-fragment-orbit i { transform: translate(0, 0) scale(.2); opacity: .3; }
+#storyScene.act1-epilogue:is([data-epilogue-state="core"], [data-epilogue-state="guardian"], [data-epilogue-state="acquired"]) .act1-past-energy {
+  top: 88px;
+  width: clamp(112px, 28%, 144px);
+  height: auto;
+  filter: drop-shadow(0 0 16px #a47aff) drop-shadow(0 0 9px #ffe594);
+}
+#storyScene.act1-epilogue:is([data-epilogue-state="core"], [data-epilogue-state="guardian"], [data-epilogue-state="acquired"]) .act1-past-crystal {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  animation: act1-epilogue-core-float 5.6s ease-in-out infinite;
+}
+#storyScene.act1-epilogue:is([data-epilogue-state="core"], [data-epilogue-state="guardian"], [data-epilogue-state="acquired"]) .act1-crystal-label {
+  width: 100%;
+  margin: 8px 0 0;
+}
+#storyScene.act1-epilogue:is([data-epilogue-state="core"], [data-epilogue-state="guardian"], [data-epilogue-state="acquired"]) .act1-epilogue-visual {
+  flex-basis: 440px;
+  min-height: 440px;
+  background: radial-gradient(ellipse at 50% 35%, #ffe59435, #9460ee25 40%, transparent 75%);
+}
+#storyScene.act1-epilogue #storyWanderer,
+#storyScene.act1-epilogue #storyVerion {
+  bottom: 16px;
+  translate: 0 0;
+  width: 32%;
+  z-index: 4;
+}
+#storyScene.act1-epilogue #storyWanderer { left: 2%; }
+#storyScene.act1-epilogue #storyVerion { right: 1%; }
+#storyScene.act1-epilogue .vn-character .character-avatar {
+  width: 100%;
+  height: 195px;
+  max-width: 180px;
+  object-fit: contain;
+}
+#storyScene.act1-epilogue .vn-character strong { max-width: 100%; font-size: .7rem; }
+#storyScene.act1-epilogue:is([data-epilogue-state="guardian"], [data-epilogue-state="acquired"]) #storyVerion {
+  right: 34%;
+  width: 28%;
+}
+#storyScene.act1-epilogue:is([data-epilogue-state="guardian"], [data-epilogue-state="acquired"]) #storyVerion img { height: 160px; }
+#storyScene.act1-epilogue .act1-past-guardian {
+  position: absolute;
+  right: 0;
+  bottom: 14px;
+  width: 36%;
+  height: 250px;
+  display: grid;
+  place-items: center;
+}
+#storyScene.act1-epilogue .act1-past-guardian img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px #d5b4ff65);
+}
+#storyScene.act1-epilogue .act1-guardian-silhouette {
+  width: 70%;
+  height: 85%;
+  border-radius: 50% 50% 15% 15%;
+  background: radial-gradient(ellipse at 50% 16%, #b9a4ed 0 13%, transparent 14%), linear-gradient(transparent 18%, #322445 25%, #8c65bd);
+  box-shadow: 0 0 25px #ad87ef;
+}
+#storyScene.act1-epilogue .act1-guardian-fallback-label {
+  position: absolute;
+  bottom: 0;
+  color: #ffe7a3;
+  font-size: .65rem;
+  text-align: center;
+}
+#storyScene.act1-epilogue .act1-past-guardian.act1-asset-ready :is(.act1-guardian-silhouette, .act1-guardian-fallback-label) { display: none; }
+#storyScene.act1-epilogue .act1-guardian-portrait:not(.act1-asset-ready)::after {
+  content: "ผู้พิทักษ์ · ภาพสำรอง";
+  position: absolute;
+  inset: 12px 6px 6px;
+  display: grid;
+  align-items: end;
+  text-align: center;
+  font-size: .65rem;
+  color: #ffe7a3;
+  background: radial-gradient(ellipse at 50% 25%, #b9a4ed 0 18%, transparent 19%), linear-gradient(transparent 45%, #695082);
+}
+#storyScene.act1-epilogue .act1-guardian-portrait img {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 440%;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  transform: translate(-52%, -12%);
+}
+#storyScene.act1-epilogue .act1-epilogue-summary {
+  position: relative;
+  z-index: 5;
+  margin: 22px 14px;
+  padding: 22px 14px;
+  border: var(--lingua-frame-border);
+  border-radius: 16px;
+  color: #fff3ce;
+  text-align: center;
+  background: linear-gradient(160deg, #302154f5, #101430f5);
+  box-shadow: 0 0 32px #d4b06a30;
+}
+#storyScene.act1-epilogue .act1-epilogue-summary h3 { color: #ffe29d; font-size: 1.15rem; }
+#storyScene.act1-epilogue .act1-epilogue-summary p { margin: 12px 0; line-height: 1.65; }
+#storyScene.act1-epilogue[data-epilogue-state="completed"] :is(.act1-past-energy, .act1-past-guardian, #storyWanderer, #storyVerion) { visibility: hidden; }
+@keyframes act1-epilogue-resonance {
+  50% { filter: drop-shadow(0 0 28px #ffe594); }
+}
+@keyframes act1-epilogue-core-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@media (max-width: 720px) {
+  #storyScene.act1-epilogue .lesson-dictionary-btn { margin-top: 92px; }
+}
+@media (max-width: 420px) {
+  #storyScene.act1-epilogue .story-illustration .vn-dialogue {
+    grid-template-columns: 68px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+  #storyScene.act1-epilogue .dialogue-speaker-portrait-slot { width: 68px; height: 110px; min-height: 110px; }
+  #storyScene.act1-epilogue .lesson-location-label { font-size: .68rem; }
+  #storyScene.act1-epilogue .act1-past-guardian { height: 220px; width: 35%; }
+  #storyScene.act1-epilogue:is([data-epilogue-state="core"], [data-epilogue-state="guardian"], [data-epilogue-state="acquired"]) .act1-epilogue-visual {
+    flex-basis: 400px;
+    min-height: 400px;
+  }
+  #storyScene.act1-epilogue .vn-character .character-avatar { height: 170px; }
+  #storyScene.act1-epilogue #storyVerion img { height: 155px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #storyScene.act1-epilogue[data-epilogue-state="resonance"] .act1-past-energy { animation: none; }
+  #storyScene.act1-epilogue:is([data-epilogue-state="core"], [data-epilogue-state="guardian"], [data-epilogue-state="acquired"]) .act1-past-crystal { animation: none; }
+  #storyScene.act1-epilogue .act1-fragment-orbit i { transition: none; }
+}
